@@ -32,6 +32,3 @@ test-mac:
         - cd ./testbenches/mac
         - vsim -c -do "../../ci/simulate.tcl"
         - cd ../..
-    artifacts:
-        reports:
-            junit: vsg_results.xml
