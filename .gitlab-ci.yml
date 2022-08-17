@@ -28,7 +28,7 @@ test-mac:
             - hdl/mac.vhd
             - testbenches/mac/src/*
     script:
-        - source /tools/mentor/set_modelsim_10.6b.should
+        - source /tools/mentor/set_modelsim_10.6b.sh
         - cd ./testbenches/mac
         - vsim -c -do "../../ci/simulate.tcl"
         - cd ../..
