@@ -26,7 +26,7 @@ vmap axi_filter_dma_v1_00_a $axi_filter_dma_v1_00_a
 source sources.tcl
 
 # initialize and run simulation
-vsim -voptargs="+acc" $SIM_TOP_LEVEL
+vsim -onfinish stop -voptargs="+acc" $SIM_TOP_LEVEL
 source wave.do
 
 run $SIM_TIME

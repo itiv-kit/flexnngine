@@ -29,7 +29,7 @@ begin
     if (rstn = '0') then
       result       <= (others => '0');
       result_valid <= '0';
-    else
+    elsif (rising_edge(clk)) then
       result <= std_logic_vector(signed(data_in_a) * signed(data_in_b));
       if (en = '0') then
         result_valid <= '0';

@@ -1,6 +1,8 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use std.env.finish;
+use std.env.stop;
 
 entity mac_tb is
 generic(
@@ -35,8 +37,37 @@ architecture rtl of mac_tb is
     signal data_in_b : std_logic_vector(input_width -1 downto 0);
     signal result : std_logic_vector(input_width * 2 -1 downto 0);
 
+    type input_type is array (natural range<>) of std_logic_vector(input_width - 1 downto 0);
+    type output_type is array (natural range<>) of integer;
+
+    constant number_tests : positive := 5;
+
+    constant test_inputs_a : input_type(0 to number_tests - 1) := (
+        "00000010",
+        "00000010",
+        "00000010",
+        "11101101",
+        "00000010"
+    );
+    constant test_inputs_b : input_type(0 to number_tests - 1) := (
+        "00000010",
+        "00000100",
+        "11101101",
+        "11101101",
+        "00010001"
+    );
+
+    constant test_outputs : output_type (0 to number_tests - 1) := (
+        4,
+        8,
+        -38,
+        361,
+        34
+    );
+
 begin
 
+    -- Unit under test
     UUT: mac
         generic map (
             input_width => input_width,
@@ -52,43 +83,41 @@ begin
             result_valid => result_valid
         );  
 
+    -- Clock generation
     CLOCK : process(clk)
     begin
         clk <= not clk after 10 ns;
     end process;
 
+    -- Stimuli creation process
     STIMULI: process
     begin
         rstn <= '0';
         en <= '0';
         data_in_a <= (others => '0');
         data_in_b <= (others => '0');
-
+        
         wait for 100 ns;
         rstn <= '1';
-
-        en <= '1';
-        data_in_a <= "00000010";
-        data_in_b <= "00000010";
-
-        wait until rising_edge(clk);
-
-        data_in_a <= "00000010";
-        data_in_b <= "00000100";
-
-        wait until rising_edge(clk);
-
-        data_in_a <= "11101101";
-        data_in_b <= "00000100";
+        wait for 50 ns;
         
+        input_loop : for i in 0 to number_tests - 1 loop
+            wait until rising_edge(clk);
+            en <= '1';
+
+            if(i=3) 
+            then
+                en <= '0';
+                wait for 40 ns;
+                en <= '1';
+            end if; 
+
+            data_in_a <= test_inputs_a(i);
+            data_in_b <= test_inputs_b(i);
+        end loop;
+
         wait until rising_edge(clk);
-
-        data_in_a <= "00010001";
-        data_in_b <= "00000100";
-
-        wait until rising_edge(clk);
-
-
+        
         rstn <= '1';
         en <= '0';
         wait for 50 ns;
@@ -96,45 +125,38 @@ begin
     end process;
 
 
-
+    -- Output checking process
     CHECK: process
     begin
-        wait until rising_edge(result_valid);
-        wait until rising_edge(clk);
 
-        assert result = std_logic_vector(to_signed(4,output_width))
-        report "first output does not match"
-        severity failure;
+        output_loop : for i in 0 to number_tests - 1 loop
+            wait until rising_edge(clk);
 
-        wait until rising_edge(clk);
-        if(result_valid = '0') 
-        then
-            wait until rising_edge(result_valid);
-        end if;
-                
-        assert result = std_logic_vector(to_signed(8,output_width))
-        report "second output does not match"
-        severity failure;
+            -- If result is not valid, wait until next rising edge with valid results.
+            if(result_valid = '0') 
+            then
+                wait until rising_edge(clk) and result_valid = '1'; 
+            end if;
+            
+            assert result = std_logic_vector(to_signed(test_outputs(i), output_width))
+            report "Output wrong. Result is " & integer'image(to_integer(signed(result))) & " - should be " & integer'image(test_outputs(i)) 
+            severity failure;
 
-        wait until rising_edge(clk);
-        if(result_valid = '0') 
-        then
-            wait until rising_edge(result_valid);
-        end if;
-        assert result = std_logic_vector(to_signed(-76, output_width))
-        report "third output does not match"
-        severity failure;
+            report "Got correct result " & integer'image(to_integer(signed(result)));
+
+        end loop;
 
         wait until rising_edge(clk);
-        if(result_valid = '0') 
-        then
-            wait until rising_edge(result_valid);
-        end if;
-        assert result = std_logic_vector(to_signed(1, output_width))
-        report "fourth output does not match"
+
+        -- Check if result valid signal is set to zero after calculations
+        assert result_valid = '0'
+        report "Result valid should be zero"
         severity failure;
 
-        report "output check is finished." severity note;
+        wait for 50 ns;
+
+        report "Output check is finished." severity note;
+        finish;
     end process;
 
 end architecture rtl;
