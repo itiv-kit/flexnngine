@@ -24,7 +24,8 @@ stages:          # List of stages for jobs, and their order of execution
 style-guide:
     stage: lint
     before_script:
-        - pip3 install vsg
+        - git clone https://github.com/jeremiah-c-leary/vhdl-style-guide.git >/dev/null
+        - python setup.py install
     script:
         - vsg -f hdl/mac.vhd -j vsg_results.xml
     artifacts:
