@@ -26,11 +26,7 @@ stages:          # List of stages for jobs, and their order of execution
 style-guide:
     stage: lint
     before_script:
-        - apt update && apt install -y git
-        - apt install -y python3-setuptools
-        - git clone https://github.com/jeremiah-c-leary/vhdl-style-guide.git
-        - cd vhdl-style-guide
-        - python setup.py install
+        - pip3 install vsg
     script:
         - vsg -f hdl/mac.vhd -j vsg_results.xml
     artifacts:
