@@ -21,6 +21,8 @@ stages:          # List of stages for jobs, and their order of execution
  
 test-mac:
     stage: mac
+    before_script:
+        - pip3 install vsg
     tags:
         - modelsim
     only:
@@ -28,7 +30,11 @@ test-mac:
             - hdl/mac.vhd
             - testbenches/mac/src/*
     script:
+        - vsg -f hdl/mac.vhd testbenches/mac/src/* -j vsg_results.xml
         - source /tools/mentor/set_modelsim_10.6b.sh
         - cd ./testbenches/mac
         - vsim -c -do "../../ci/simulate.tcl"
         - cd ../..
+    artifacts:
+        reports:
+            junit: vsg_results.xml
