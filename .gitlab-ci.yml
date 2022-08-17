@@ -25,6 +25,7 @@ style-guide:
     stage: lint
     before_script:
         - git clone https://github.com/jeremiah-c-leary/vhdl-style-guide.git
+        - cd vhdl-style-guide
         - python setup.py install
     script:
         - vsg -f hdl/mac.vhd -j vsg_results.xml
