@@ -31,6 +31,7 @@ test-mac:
         - cd vhdl-style-guide/bin
         - pwd
         - ls -l
+        - export PYTHONPATH="$PYTHONPATH:."
         - python3 vsg -f ../../hdl/mac.vhd ../../testbenches/mac/src/* -j vsg_results.xml
         - source /tools/mentor/set_modelsim_10.6b.sh
         - cd ./testbenches/mac
