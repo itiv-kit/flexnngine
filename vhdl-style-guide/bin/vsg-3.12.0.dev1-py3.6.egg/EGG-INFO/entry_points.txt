@@ -1,3 +1,0 @@
-[console_scripts]
-vsg = vsg.__main__:main
-
