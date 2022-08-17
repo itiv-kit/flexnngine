@@ -6,25 +6,27 @@ library ieee;
 
 entity mac_tb is
   generic (
-    input_width : positive := 8
+    input_width  : positive := 8;
+    acc_width    : positive := 16;
+    output_width : positive := 17
   );
 end entity mac_tb;
 
 architecture rtl of mac_tb is
 
-  signal output_width : positive := 2 * input_width;
-
   component mac is
     generic (
-      input_width  : positive := 8;
-      output_width : positive := 16
+      input_width  : positive := input_width;
+      acc_width    : positive := acc_width;
+      output_width : positive := output_width
     );
     port (
       clk          : in    std_logic;
       en           : in    std_logic;
       rstn         : in    std_logic;
       data_in_a    : in    std_logic_vector(input_width - 1 downto 0);
-      data_in_b    : in    std_logic_vector(input_width - 1 downto 0);
+      data_in_w    : in    std_logic_vector(input_width - 1 downto 0);
+      data_in_acc  : in    std_logic_vector(acc_width - 1 downto 0);
       result       : out   std_logic_vector(output_width - 1 downto 0);
       result_valid : out   std_logic
     );
@@ -35,39 +37,56 @@ architecture rtl of mac_tb is
   signal en           : std_logic;
   signal result_valid : std_logic;
   signal data_in_a    : std_logic_vector(input_width - 1 downto 0);
-  signal data_in_b    : std_logic_vector(input_width - 1 downto 0);
-  signal result       : std_logic_vector(input_width * 2 - 1 downto 0);
+  signal data_in_w    : std_logic_vector(input_width - 1 downto 0);
+  signal data_in_acc  : std_logic_vector(acc_width - 1 downto 0);
+  signal result       : std_logic_vector(output_width - 1 downto 0);
 
   type input_type is array (natural range<>) of std_logic_vector(input_width - 1 downto 0);
-
+  type input_type_acc is array (natural range<>) of std_logic_vector(acc_width - 1 downto 0);
   type output_type is array (natural range<>) of integer;
 
-  constant number_tests : positive := 5;
+  constant number_tests : positive := 6;
 
+  --   Input a for the multiplication
   constant test_inputs_a : input_type(0 to number_tests - 1) :=
   (
     "00000010",
     "00000010",
     "00000010",
     "11101101",
-    "00000010"
+    "00000010",
+    "01111111"
   );
-  constant test_inputs_b : input_type(0 to number_tests - 1) :=
+  --   Input b for the multiplication
+  constant test_inputs_w : input_type(0 to number_tests - 1) :=
   (
     "00000010",
     "00000100",
     "11101101",
     "11101101",
-    "00010001"
+    "00010001",
+    "01111111"
+  );
+  --   Input for the accumulation
+  constant test_inputs_acc : input_type_acc(0 to number_tests - 1) :=
+  (
+    "0000000000000001",
+    "0000000000000000",
+    "0000000000000000",
+    "0000000000000000",
+    "0100000000000000",
+    "0111111111111111"
   );
 
+  -- Expected outputs
   constant test_outputs : output_type (0 to number_tests - 1) :=
   (
-    4,
+    5,
     8,
     -38,
     361,
-    34
+    16418,
+    48896
   );
 
 begin
@@ -76,14 +95,16 @@ begin
   uut : component mac
     generic map (
       input_width  => input_width,
-      output_width => input_width * 2
+      acc_width    => acc_width,
+      output_width => output_width
     )
     port map (
       clk          => clk,
       en           => en,
       rstn         => rstn,
       data_in_a    => data_in_a,
-      data_in_b    => data_in_b,
+      data_in_w    => data_in_w,
+      data_in_acc  => data_in_acc,
       result       => result,
       result_valid => result_valid
     );
@@ -103,7 +124,8 @@ begin
     rstn      <= '0';
     en        <= '0';
     data_in_a <= (others => '0');
-    data_in_b <= (others => '0');
+    data_in_w <= (others => '0');
+    data_in_acc <= (others => '0');
 
     wait for 100 ns;
     rstn <= '1';
@@ -121,8 +143,9 @@ begin
       end if;
 
       data_in_a <= test_inputs_a(i);
-      data_in_b <= test_inputs_b(i);
-
+      data_in_w <= test_inputs_w(i);
+      data_in_acc <= test_inputs_acc(i);
+      
     end loop;
 
     wait until rising_edge(clk);
