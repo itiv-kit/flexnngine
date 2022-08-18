@@ -16,11 +16,26 @@
 # This specific template is located at:
 # https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Getting-Started.gitlab-ci.yml
 
+image: python:latest
+
 stages:          # List of stages for jobs, and their order of execution
-  - mac
+  - lint
+  - test
  
+
+style-guide:
+    stage: lint
+    before_script:
+        - pip3 install vsg
+    script:
+        - vsg -f hdl/mac.vhd -j vsg_results.xml
+        - cat vsg_results.xml
+    artifacts:
+        reports:
+            junit: vsg_results.xml
+
 test-mac:
-    stage: mac
+    stage: test
     tags:
         - modelsim
     only:
