@@ -157,7 +157,7 @@ begin
   end process stimuli;
 
   -- Output checking process
-  check : process is
+  output_check : process is
   begin
 
     output_loop : for i in 0 to number_tests - 1 loop
@@ -190,6 +190,6 @@ begin
       severity note;
     finish;
 
-  end process check;
+  end process output_check;
 
 end architecture rtl;

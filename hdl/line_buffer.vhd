@@ -20,12 +20,13 @@ entity line_buffer is
         clk            : in    std_logic;                                 --! Clock input
         rstn           : in    std_logic;                                 --! Negated asynchronous reset
         data_in        : in    std_logic_vector(data_width - 1 downto 0); --! Input to be pushed to the FIFO
-        data_in_valid  : in    std_logic;                                 --! Input bit indicating if the current input data (#data_in) should be pushed to the back of the FIFO queue
-        data_out       : out   std_logic_vector(data_width - 1 downto 0); --! Outputs the element at the front of the FIFO queue
-        data_out_valid : out   std_logic;                                 --! If #data_out_valid is '1', the front element (accessible through #data_out) will be removed from the FIFO queue until the next clock cycle
+        data_in_valid  : in    std_logic;                                 --! Data only read if valid = '1'
+        data_out       : out   std_logic_vector(data_width - 1 downto 0); --! Outputs the element read_offset away from the head of the FIFO
+        data_out_valid : out   std_logic;
+        buffer_full    : out   std_logic;
         update_val     : in    std_logic_vector(data_width - 1 downto 0);
         update_addr    : in    std_logic_vector(addr_width - 1 downto 0);
-        read_offset    : in    std_logic_vector(addr_width - 1 downto 0);
+        read_offset    : in    std_logic_vector(addr_width - 1 downto 0); --! Offset from head of FIFO; Shrink FIFO by this many elements
         command        : in    std_logic_vector(1 downto 0)
     );
 end entity line_buffer;
@@ -64,8 +65,11 @@ architecture rtl of line_buffer is
     -- process internal signals
     signal pointer_head_s : integer;
     signal pointer_tail_s : integer;
-    signal fifo_filled_s  : std_logic;
-    signal fifo_empty_s   : std_logic;
+    -- signal fifo_filled_s    : std_logic;
+    signal fifo_empty_s     : std_logic;
+    signal fifo_shrink_s    : std_logic;
+    signal data_out_valid_s : std_logic;
+    signal read_offset_s    : integer;
 
     -- Increment by one
 
@@ -86,14 +90,33 @@ architecture rtl of line_buffer is
         signal pointer : inout integer;
         signal offset  : in integer) is
     begin
-    
-        /* TODO: implement procedure */
-    
+
+        if pointer + offset >= line_length then
+            pointer <= pointer + offset - line_length;
+        else
+            pointer <= pointer + offset;
+        end if;
+
     end procedure;
 
-    -- Decrement by offset
+    -- Increment by offset variable
 
-    procedure decr (
+    procedure incr_offset_v (
+        variable pointer : inout integer;
+        variable offset  : in integer) is
+    begin
+
+        if pointer + offset >= line_length then
+            pointer := pointer + offset - line_length;
+        else
+            pointer := pointer + offset;
+        end if;
+
+    end procedure;
+
+    -- Decrement by offset variable
+
+    /*procedure decr (
         variable pointer : inout integer;
         variable offset  : in integer) is
     begin
@@ -106,7 +129,7 @@ architecture rtl of line_buffer is
             pointer := pointer - offset;
         end if;
 
-    end procedure;
+    end procedure;*/
 
 begin
 
@@ -127,7 +150,7 @@ begin
             doutb => doutb
         );
 
-    -- Process to write values that are present and valid at the input
+    -- Process to store input values that are valid
     write_val : process (clk, rstn) is
     begin
 
@@ -136,26 +159,38 @@ begin
             addra          <= (others => '0');
             dina           <= (others => '0');
             pointer_tail_s <= 0;
-            fifo_filled_s  <= '0';
             fifo_empty_s   <= '1';
         elsif rising_edge(clk) then
-            if data_in_valid and not fifo_filled_s then
-                if pointer_tail_s = pointer_head_s and fifo_empty_s = '0' then
-                    fifo_filled_s <= '1';
-                    wena          <= '0';
-                else
-                    wena  <= '1';
-                    addra <= std_logic_vector(to_unsigned(pointer_tail_s, addr_width));
-                    dina  <= data_in;
-                    incr(pointer_tail_s);
-                    fifo_empty_s <= '0';
-                end if;
+            if data_in_valid and not buffer_full then
+                wena         <= '1';
+                addra        <= std_logic_vector(to_unsigned(pointer_tail_s, addr_width));
+                dina         <= data_in;
+                incr(pointer_tail_s);
+                fifo_empty_s <= '0';
             else
-                wena <= '0';
+                wena  <= '0';
+                addra <= (others => '0');
+                dina  <= (others => '0');
             end if;
         end if;
 
     end process write_val;
+
+    -- Process to set / clear the buffer full flag
+    fifo_status : process (all) is
+    begin
+
+        if not rstn then
+            buffer_full <= '0';
+        else
+            if pointer_tail_s = pointer_head_s and fifo_empty_s = '0' then
+                buffer_full <= '1';
+            elsif fifo_shrink_s then
+                buffer_full <= '0';
+            end if;
+        end if;
+
+    end process fifo_status;
 
     -- Process to execute read / read from address / update / shrink
     read_command : process (clk, rstn) is
@@ -166,41 +201,56 @@ begin
     begin
 
         if not rstn then
+            wenb             <= '0';
+            addrb            <= (others => '0');
+            dinb             <= (others => '0');
+            pointer_head_s   <= 0;
+            pointer_read_v   := 0;
+            data_out_valid   <= '0';
+            data_out_valid_s <= '0';
+        elsif rising_edge(clk) then
+            data_out_valid <= data_out_valid_s;
+            fifo_shrink_s  <= '0';
             wenb           <= '0';
             addrb          <= (others => '0');
             dinb           <= (others => '0');
-            pointer_head_s <= 0;
-            pointer_read_v := 0;
-        elsif rising_edge(clk) then
 
             case command is
 
                 -- idle
                 when "00" =>
 
-                    data_out_valid <= '0';
+                    data_out_valid_s <= '0';
 
                 -- read
                 when "01" =>
+
                     pointer_read_v := pointer_head_s;
-                    offset_v := to_integer(unsigned(read_offset));
-                    decr(pointer_read_v, offset_v);
+                    if or read_offset /= '0' then -- only calculate offset if read_offset not zero
+                        offset_v := to_integer(unsigned(read_offset));
+                        incr_offset_v(pointer_read_v, offset_v);
+                    end if;
                     -- read at pointer_read_v that was offset from pointer_head_s by read_offset
-                    addrb          <= std_logic_vector(to_unsigned(pointer_read_v, addr_width));
-                    data_out_valid <= '1';
+                    addrb            <= std_logic_vector(to_unsigned(pointer_read_v, addr_width));
+                    data_out_valid_s <= '1';
 
                 -- read / update
                 when "10" =>
 
+                    /* TODO */
+                    data_out_valid_s <= '1';
+
                 -- shrink
                 when "11" =>
 
-                    data_out_valid <= '0';
-                    incr(pointer_head_s);
+                    data_out_valid_s <= '0';
+                    -- incr(pointer_head_s);
+                    incr_offset(pointer_head_s,  read_offset_s);
+                    fifo_shrink_s <= '1';
 
                 when others =>
 
-                    data_out_valid <= '0';
+                    data_out_valid_s <= '0';
 
             end case;
 
@@ -208,6 +258,8 @@ begin
 
     end process read_command;
 
-    data_out <= doutb;
+    read_offset_s <= to_integer(unsigned(read_offset));
+    data_out      <= doutb;
+-- buffer_full <= fifo_filled_s;
 
 end architecture rtl;

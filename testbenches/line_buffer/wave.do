@@ -5,18 +5,24 @@ add wave -noupdate -expand -group Generics -radix unsigned /line_buffer_tb/ADDR_
 add wave -noupdate -expand -group Generics -radix unsigned /line_buffer_tb/DATA_WIDTH
 add wave -noupdate -expand -group Generics -radix unsigned /line_buffer_tb/LINE_LENGTH
 add wave -noupdate -expand -group Generics -radix unsigned /line_buffer_tb/NUMBER_OF_LINES
+
 add wave -noupdate -expand -group {Line_Buffer Input} -radix unsigned /line_buffer_tb/clk
 add wave -noupdate -expand -group {Line_Buffer Input} -radix unsigned /line_buffer_tb/rstn
 add wave -noupdate -expand -group {Line_Buffer Input} -radix unsigned /line_buffer_tb/data_in
 add wave -noupdate -expand -group {Line_Buffer Input} -radix unsigned /line_buffer_tb/data_in_valid
+
 add wave -noupdate -expand -group Line_Buffer_Output -radix unsigned /line_buffer_tb/data_out
 add wave -noupdate -expand -group Line_Buffer_Output -radix unsigned /line_buffer_tb/data_out_valid
+
 add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_tb/line_buffer_inst/pointer_head_s
 add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_tb/line_buffer_inst/pointer_tail_s
-add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_tb/line_buffer_inst/fifo_filled_s
+add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_tb/line_buffer_inst/buffer_full
 add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_tb/line_buffer_inst/fifo_empty_s
 add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_tb/line_buffer_inst/read_command/pointer_read_v
+add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_tb/line_buffer_inst/read_offset
 add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_tb/line_buffer_inst/command
+
+add wave -noupdate -expand -group RAM_internal -radix unsigned /line_buffer_tb/line_buffer_inst/ram/ram_instance
 
 TreeUpdate [SetDefaultTree]
 WaveRestoreCursors {{Cursor 1} {0 ns} 0}

@@ -43,8 +43,8 @@ architecture syn of ram_dp is
 
     shared variable ram_instance : ram_type;
 
-    signal douta_int : std_logic_vector(data_width - 1 downto 0);
-    signal doutb_int : std_logic_vector(data_width - 1 downto 0);
+    signal douta_s : std_logic_vector(data_width - 1 downto 0);
+    signal doutb_s : std_logic_vector(data_width - 1 downto 0);
 
 begin
 
@@ -54,9 +54,9 @@ begin
         if rising_edge(clk) then
             if wena = '1' then
                 ram_instance(conv_integer(addra)) := dina;
-                douta_int                         <= dina;
+                douta_s                           <= dina;
             else
-                douta_int <= ram_instance(conv_integer(addra));
+                douta_s <= ram_instance(conv_integer(addra));
             end if;
         end if;
 
@@ -68,17 +68,17 @@ begin
         if rising_edge(clk) then
             if wenb = '1' then
                 ram_instance(conv_integer(addrb)) := dinb;
-                doutb_int                         <= dinb;
+                doutb_s                           <= dinb;
             else
-                doutb_int <= ram_instance(conv_integer(addrb));
+                doutb_s <= ram_instance(conv_integer(addrb));
             end if;
         end if;
 
     end process port_b;
 
     g0_use_output_reg_0 : if use_output_reg = '0' generate   -- directly connected with the output
-        douta <= douta_int;
-        doutb <= doutb_int;
+        douta <= douta_s;
+        doutb <= doutb_s;
     end generate g0_use_output_reg_0;
 
     g0_use_output_reg_1 : if use_output_reg = '1' generate   -- optional output register is being used
@@ -87,8 +87,8 @@ begin
         begin
 
             if rising_edge(clk) then
-                douta <= douta_int;
-                doutb <= doutb_int;
+                douta <= douta_s;
+                doutb <= doutb_s;
             end if;
 
         end process output_buffer;
