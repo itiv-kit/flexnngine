@@ -10,17 +10,17 @@ library ieee;
 --! The testbench checks if the correct pixels appear on the line_buffer output
 --! at the right time.
 
-entity line_buffer_tb is
+entity line_buffer_iact_tb is
     generic (
         line_length     : positive := 7; --! Length of the lines in the test image
         number_of_lines : positive := 5; --! Number of lines in the test image
         addr_width      : positive := 3; --! Address width for the ram_dp component
         data_width      : positive := 8; --! 8 bit data being saved
-        kernel_size     : positive := 3  --! 3 pixel kernel
+        kernel_size     : positive := 5  --! 3 pixel kernel
     );
-end entity line_buffer_tb;
+end entity line_buffer_iact_tb;
 
-architecture imp of line_buffer_tb is
+architecture imp of line_buffer_iact_tb is
 
     component line_buffer is
         generic (
@@ -37,7 +37,7 @@ architecture imp of line_buffer_tb is
             data_out_valid : out   std_logic;
             buffer_full    : out   std_logic;
             update_val     : in    std_logic_vector(data_width - 1 downto 0);
-            update_addr    : in    std_logic_vector(addr_width - 1 downto 0);
+            update_offset    : in    std_logic_vector(addr_width - 1 downto 0);
             read_offset    : in    std_logic_vector(addr_width - 1 downto 0);
             command        : in    std_logic_vector(1 downto 0)
         );
@@ -51,7 +51,7 @@ architecture imp of line_buffer_tb is
     signal data_out_valid : std_logic;
     signal buffer_full    : std_logic;
     signal update_val     : std_logic_vector(data_width - 1 downto 0);
-    signal update_addr    : std_logic_vector(addr_width - 1 downto 0);
+    signal update_offset    : std_logic_vector(addr_width - 1 downto 0);
     signal read_offset    : std_logic_vector(addr_width - 1 downto 0);
     signal command        : std_logic_vector(1 downto 0);
 
@@ -66,15 +66,16 @@ architecture imp of line_buffer_tb is
         (29, 30, 31, 32, 33, 34, 35)
     );
 
-    /*-- Kernel 5 px
+    -- Kernel 5 px
     constant expected_output : image_t(0 to number_of_lines-1, 0 to (line_length-kernel_size+1)*kernel_size-1) := (
         (1,  2,  3,  4,  5,  2,  3,  4,  5,  6,  3,  4,  5,  6,  7),
         (8,  9,  10, 11, 12, 9,  10, 11, 12, 13, 10, 11, 12, 13, 14),
         (15, 16, 17, 18, 19, 16, 17, 18, 19, 20, 17, 18, 19, 20, 21),
         (22, 23, 24, 25, 26, 23, 24, 25, 26, 27, 24, 25, 26, 27, 28),
         (29, 30, 31, 32, 33, 30, 31, 32, 33, 34, 31, 32, 33, 34, 35) 
-    );*/
+    );
 
+    /*
     -- Kernel 3 px
     constant expected_output : image_t(0 to number_of_lines-1, 0 to (line_length-kernel_size+1)*kernel_size-1) := (
         (1,  2,  3,  2,  3,  4,  3,  4,  5,  4,  5,  6,  5,  6,  7 ),
@@ -82,7 +83,8 @@ architecture imp of line_buffer_tb is
         (15, 16, 17, 16, 17, 18, 17, 18, 19, 18, 19, 20, 19, 20, 21),
         (22, 23, 24, 23, 24, 25, 24, 25, 26, 25, 26, 27, 26, 27, 28),
         (29, 30, 31, 30, 31, 32, 31, 32, 33, 32, 33, 34, 33, 34, 35)
-    );
+    );*/
+
     type command_t is (c_idle, c_read, c_read_update, c_shrink);
     signal command_enum : command_t;
 
@@ -103,7 +105,7 @@ begin
             data_out_valid => data_out_valid,
             buffer_full    => buffer_full,
             update_val     => update_val,
-            update_addr    => update_addr,
+            update_offset  => update_offset,
             read_offset    => read_offset,
             command        => command
         );
@@ -213,7 +215,7 @@ begin
 
                 wait until rising_edge(clk);*/
 
-                for z in 0 to kernel_size - 1 loop -- Flush remaining pixels
+                for z in 0 to kernel_size - 1 loop -- Read data according to 1D-conv
 
                     command_enum <= c_read;
                     read_offset  <= std_logic_vector(to_unsigned(z, addr_width));

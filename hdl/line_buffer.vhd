@@ -25,7 +25,7 @@ entity line_buffer is
         data_out_valid : out   std_logic;
         buffer_full    : out   std_logic;
         update_val     : in    std_logic_vector(data_width - 1 downto 0);
-        update_addr    : in    std_logic_vector(addr_width - 1 downto 0);
+        update_offset    : in    std_logic_vector(addr_width - 1 downto 0);
         read_offset    : in    std_logic_vector(addr_width - 1 downto 0); --! Offset from head of FIFO; Shrink FIFO by this many elements
         command        : in    std_logic_vector(1 downto 0)
     );
@@ -67,7 +67,7 @@ architecture rtl of line_buffer is
     signal pointer_tail_s : integer;
     -- signal fifo_filled_s    : std_logic;
     signal fifo_empty_s     : std_logic;
-    signal fifo_shrink_s    : std_logic;
+    -- signal fifo_shrink_s    : std_logic;
     signal data_out_valid_s : std_logic;
     signal read_offset_s    : integer;
 
@@ -152,6 +152,8 @@ begin
 
     -- Process to store input values that are valid
     write_val : process (clk, rstn) is
+        variable pointer_update_v : integer;
+        variable offset_v         : integer;
     begin
 
         if not rstn then
@@ -161,12 +163,24 @@ begin
             pointer_tail_s <= 0;
             fifo_empty_s   <= '1';
         elsif rising_edge(clk) then
-            if data_in_valid and not buffer_full then
+            -- Update data
+            if command = "10" then
+                pointer_update_v := pointer_head_s;
+                if or update_offset /= '0' then -- only calculate offset if update_offset not zero
+                    offset_v := to_integer(unsigned(update_offset));
+                    incr_offset_v(pointer_update_v, offset_v);
+                end if;
+                wena  <= '1';
+                addra <= std_logic_vector(to_unsigned(pointer_update_v, addr_width));
+                dina  <= update_val; 
+            -- Write data to tail
+            elsif data_in_valid and not buffer_full then
                 wena         <= '1';
                 addra        <= std_logic_vector(to_unsigned(pointer_tail_s, addr_width));
                 dina         <= data_in;
                 incr(pointer_tail_s);
                 fifo_empty_s <= '0';
+            -- Idle
             else
                 wena  <= '0';
                 addra <= (others => '0');
@@ -177,7 +191,7 @@ begin
     end process write_val;
 
     -- Process to set / clear the buffer full flag
-    fifo_status : process (all) is
+    /*fifo_status : process (all) is
     begin
 
         if not rstn then
@@ -190,7 +204,9 @@ begin
             end if;
         end if;
 
-    end process fifo_status;
+    end process fifo_status;*/
+
+    buffer_full <= '1' when (pointer_tail_s = pointer_head_s) and (fifo_empty_s = '0') else '0';
 
     -- Process to execute read / read from address / update / shrink
     read_command : process (clk, rstn) is
@@ -208,9 +224,10 @@ begin
             pointer_read_v   := 0;
             data_out_valid   <= '0';
             data_out_valid_s <= '0';
-        elsif rising_edge(clk) then
-            data_out_valid <= data_out_valid_s;
-            fifo_shrink_s  <= '0';
+
+            elsif rising_edge(clk) then
+            data_out_valid   <= data_out_valid_s;
+            -- fifo_shrink_s  <= '0';
             wenb           <= '0';
             addrb          <= (others => '0');
             dinb           <= (others => '0');
@@ -237,7 +254,13 @@ begin
                 -- read / update
                 when "10" =>
 
-                    /* TODO */
+                    pointer_read_v := pointer_head_s;
+                    if or read_offset /= '0' then -- only calculate offset if read_offset not zero
+                        offset_v := to_integer(unsigned(read_offset));
+                        incr_offset_v(pointer_read_v, offset_v);
+                    end if;
+                    -- read at pointer_read_v that was offset from pointer_head_s by read_offset
+                    addrb            <= std_logic_vector(to_unsigned(pointer_read_v, addr_width));
                     data_out_valid_s <= '1';
 
                 -- shrink
@@ -246,7 +269,7 @@ begin
                     data_out_valid_s <= '0';
                     -- incr(pointer_head_s);
                     incr_offset(pointer_head_s,  read_offset_s);
-                    fifo_shrink_s <= '1';
+                    -- fifo_shrink_s <= '1';
 
                 when others =>
 
@@ -258,8 +281,8 @@ begin
 
     end process read_command;
 
-    read_offset_s <= to_integer(unsigned(read_offset));
-    data_out      <= doutb;
+    read_offset_s   <= to_integer(unsigned(read_offset));
+    data_out        <= doutb;
 -- buffer_full <= fifo_filled_s;
 
 end architecture rtl;
