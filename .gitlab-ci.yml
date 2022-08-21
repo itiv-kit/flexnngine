@@ -28,7 +28,7 @@ style-guide:
     before_script:
         - pip3 install vsg
     script:
-        - vsg -f hdl/mac.vhd -j vsg_results.xml
+        - vsg -c ci/vsg_configuration.json -f hdl/mac.vhd -j vsg_results.xml
         - cat vsg_results.xml
     artifacts:
         reports:
