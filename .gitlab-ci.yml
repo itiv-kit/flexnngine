@@ -47,3 +47,17 @@ test-mac:
         - cd ./testbenches/mac
         - vsim -c -do "../../ci/simulate.tcl"
         - cd ../..
+
+test-line-buffer:
+    stage: test
+    tags:
+        - modelsim
+    only:
+        changes:
+            - hdl/line_buffer.vhd
+            - testbenches/line_buffer/src/*
+    script:
+        - source /tools/mentor/set_modelsim_10.6b.sh
+        - cd ./testbenches/line_buffer
+        - vsim -c -do "../../ci/simulate.tcl"
+        - cd ../..

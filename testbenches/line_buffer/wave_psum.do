@@ -4,7 +4,6 @@ quietly WaveActivateNextPane {} 0
 add wave -noupdate -expand -group Generics -radix unsigned /line_buffer_psum_tb/ADDR_WIDTH
 add wave -noupdate -expand -group Generics -radix unsigned /line_buffer_psum_tb/DATA_WIDTH
 add wave -noupdate -expand -group Generics -radix unsigned /line_buffer_psum_tb/LINE_LENGTH
-add wave -noupdate -expand -group Generics -radix unsigned /line_buffer_psum_tb/NUMBER_OF_LINES
 
 add wave -noupdate -expand -group {Line_Buffer Input} -radix unsigned /line_buffer_psum_tb/clk
 add wave -noupdate -expand -group {Line_Buffer Input} -radix unsigned /line_buffer_psum_tb/rstn
@@ -12,6 +11,9 @@ add wave -noupdate -expand -group {Line_Buffer Input} -radix unsigned /line_buff
 add wave -noupdate -expand -group {Line_Buffer Input} -radix unsigned /line_buffer_psum_tb/data_in_valid
 add wave -noupdate -expand -group {Line_Buffer Input} -radix unsigned /line_buffer_psum_tb/update_val
 add wave -noupdate -expand -group {Line_Buffer Input} -radix unsigned /line_buffer_psum_tb/update_offset
+add wave -noupdate -expand -group {Line_Buffer Input} -radix unsigned /line_buffer_psum_tb/line_buffer_inst/update_offset_delay_s
+add wave -noupdate -expand -group {Line_Buffer Input} -radix unsigned /line_buffer_psum_tb/line_buffer_inst/forward_update_s
+add wave -noupdate -expand -group {Line_Buffer Input} -radix unsigned /line_buffer_psum_tb/line_buffer_inst/forward_update_delay_s
 
 add wave -noupdate -expand -group Line_Buffer_Output -radix unsigned /line_buffer_psum_tb/data_out
 add wave -noupdate -expand -group Line_Buffer_Output -radix unsigned /line_buffer_psum_tb/data_out_valid
@@ -23,6 +25,7 @@ add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_psum_tb/line
 add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_psum_tb/line_buffer_inst/read_command/pointer_read_v
 add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_psum_tb/line_buffer_inst/read_offset
 add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_psum_tb/line_buffer_inst/command
+add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_psum_tb/line_buffer_inst/command_delay_s
 
 add wave -noupdate -expand -group RAM_internal -radix unsigned /line_buffer_psum_tb/line_buffer_inst/ram/ram_instance
 

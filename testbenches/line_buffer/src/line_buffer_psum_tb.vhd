@@ -13,7 +13,8 @@ library ieee;
 entity line_buffer_psum_tb is
     generic (
         line_length     : positive := 7; --! Length of the lines in the test image
-        number_of_lines : positive := 5; --! Number of lines in the test image
+        command_length  : positive := 17; --! Number of commands in the test
+        output_length   : positive := 12; --! Number of outputs expected
         addr_width      : positive := 3; --! Address width for the ram_dp component
         data_width      : positive := 8; --! 8 bit data being saved
         kernel_size     : positive := 5  --! 3 pixel kernel
@@ -37,7 +38,7 @@ architecture imp of line_buffer_psum_tb is
             data_out_valid : out   std_logic;
             buffer_full    : out   std_logic;
             update_val     : in    std_logic_vector(data_width - 1 downto 0);
-            update_offset    : in    std_logic_vector(addr_width - 1 downto 0);
+            update_offset  : in    std_logic_vector(addr_width - 1 downto 0);
             read_offset    : in    std_logic_vector(addr_width - 1 downto 0);
             command        : in    std_logic_vector(1 downto 0)
         );
@@ -55,24 +56,31 @@ architecture imp of line_buffer_psum_tb is
     signal read_offset    : std_logic_vector(addr_width - 1 downto 0);
     signal command        : std_logic_vector(1 downto 0);
 
-    type image_t is array(natural range <>, natural range <>) of integer;
+    type command_t is (c_idle, c_read, c_read_update, c_shrink);
+    signal command_enum : command_t;
+
+    type command_array_t is array(natural range <>) of command_t;
+    type integer_t is array(natural range <>) of integer;
 
     -- test data, simulates the output of classify
-    constant test_image : image_t(0 to number_of_lines-1, 0 to line_length-1) := (
-        (1,  2,  3,  4,  5,  6,  7 ),
-        (8,  9,  10, 11, 12, 13, 14),
-        (15 ,16 ,17 ,18 ,19, 20, 21),
-        (22, 23, 24, 25, 26, 27, 28),
-        (29, 30, 31, 32, 33, 34, 35)
+    constant command_sequence : command_array_t(0 to command_length-1) := (
+        (c_idle, c_read_update, c_read_update, c_read_update,  
+         c_idle, c_read_update, c_read_update, c_read_update, 
+         c_idle, c_read_update, c_read_update, c_read_update, 
+         c_idle, c_read , c_read , c_read, c_idle)
+    );
+
+    constant read_offset_sequence : integer_t(0 to command_length-1) := (
+        (0,0,0,0,0,1,1,1,0,2,2,2,0,0,1,2,0)
+    );
+ 
+    constant update_offset_sequence : integer_t(0 to command_length-1) := (
+        (0,0,0,0,0,1,1,1,0,2,2,2,0,0,0,0,0)
     );
 
     -- Kernel 5 px
-    constant expected_output : image_t(0 to number_of_lines-1, 0 to (line_length-kernel_size+1)*kernel_size-1) := (
-        (1,  2,  3,  4,  5,  2,  3,  4,  5,  6,  3,  4,  5,  6,  7),
-        (8,  9,  10, 11, 12, 9,  10, 11, 12, 13, 10, 11, 12, 13, 14),
-        (15, 16, 17, 18, 19, 16, 17, 18, 19, 20, 17, 18, 19, 20, 21),
-        (22, 23, 24, 25, 26, 23, 24, 25, 26, 27, 24, 25, 26, 27, 28),
-        (29, 30, 31, 32, 33, 30, 31, 32, 33, 34, 31, 32, 33, 34, 35) 
+    constant expected_data_out : integer_t(0 to output_length-1) := (
+        (0,1,2,0,1,2,0,1,2,3,3,3)
     );
 
     /*
@@ -84,9 +92,6 @@ architecture imp of line_buffer_psum_tb is
         (22, 23, 24, 23, 24, 25, 24, 25, 26, 25, 26, 27, 26, 27, 28),
         (29, 30, 31, 30, 31, 32, 31, 32, 33, 32, 33, 34, 33, 34, 35)
     );*/
-
-    type command_t is (c_idle, c_read, c_read_update, c_shrink);
-    signal command_enum : command_t;
 
 begin
 
@@ -109,6 +114,15 @@ begin
             read_offset    => read_offset,
             command        => command
         );
+
+
+    adder : process is
+    begin
+
+        wait until rising_edge(clk);
+        update_val <= std_logic_vector(to_signed(to_integer(signed(data_out)) + 1, data_width));
+
+    end process adder;
 
     command_gen : process (all) is
     begin
@@ -147,32 +161,22 @@ begin
         wait until rising_edge(clk);
         data_in_valid <= '1';
 
-        for y in 0 to number_of_lines - 1 loop
+        -- Fill buffer with zeros
+        while buffer_full = '0' loop
+            data_in <= std_logic_vector(to_signed(0, data_width));
+            wait until rising_edge(clk);
+        end loop;
 
-            for x in 0 to line_length - 1 loop
+        for y in 0 to line_length - 1 loop
 
-                while buffer_full = '1' loop
+            while buffer_full = '1' loop
 
-                    wait until rising_edge(clk);
-
-                end loop;
-
-                data_in <= std_logic_vector(to_signed(test_image(y, x), data_width));
                 wait until rising_edge(clk);
 
-                -- Check behavior with delays in data_in
-                if x = 2 then
-                    data_in_valid <= '0';
-                    wait until rising_edge(clk);
-                    data_in_valid <= '1';
-                elsif x = 4 then
-                    data_in_valid <= '0';
-                    wait until rising_edge(clk);
-                    wait until rising_edge(clk);
-                    data_in_valid <= '1';
-                end if;
-
             end loop;
+
+            data_in <= std_logic_vector(to_signed(0, data_width));
+            wait until rising_edge(clk);
 
         end loop;
 
@@ -186,76 +190,22 @@ begin
         wait until rstn = '1';
         read_offset <= (others => '0');
 
-        for y in 0 to number_of_lines - 1 loop
+        report "Waiting until buffer full";
 
-            for x in 0 to line_length - kernel_size loop
+        if buffer_full = '0' then
+            wait until buffer_full = '1';
+        end if;
 
-                report "Waiting until buffer full";
+        wait until rising_edge(clk);
 
-                if buffer_full = '0' then
-                    wait until buffer_full = '1';
-                end if;
+        report "Buffer full, start with commands";
 
+        for y in 0 to command_length - 1 loop
+
+                command_enum  <= command_sequence(y);
+                read_offset   <= std_logic_vector(to_signed(read_offset_sequence(y), addr_width));
+                update_offset <= std_logic_vector(to_signed(update_offset_sequence(y), addr_width));
                 wait until rising_edge(clk);
-                wait until rising_edge(clk);
-
-                report "Buffer full, start with commands";
-
-                /*command_enum <= c_read;
-                read_offset <= "000";
-
-                wait until rising_edge(clk);
-
-                command_enum <= c_read;
-                read_offset <= "001";
-
-                wait until rising_edge(clk);
-
-                command_enum <= c_read;
-                read_offset <= "010";
-
-                wait until rising_edge(clk);*/
-
-                command_enum  <= c_read_update;
-                read_offset   <= "000";
-                update_offset <= "000";
-                update_val    <= std_logic_vector(to_signed(90, data_width));
-
-                wait until rising_edge(clk);
-
-                read_offset   <= "001";
-                update_offset <= "001";
-                update_val    <= std_logic_vector(to_signed(91, data_width));
-
-                wait until rising_edge(clk);
-
-                read_offset   <= "010";
-                update_offset <= "010";
-                update_val    <= std_logic_vector(to_signed(92, data_width));
-
-                wait until rising_edge(clk);
-
-                command_enum <= c_idle;
-
-                wait for 100 ns;
-                finish;
-
-            end loop;
-
-            wait until rising_edge(clk);
-
-            read_offset  <= std_logic_vector(to_unsigned(kernel_size - 1, addr_width));
-            command_enum <= c_shrink;
-
-            wait until rising_edge(clk);
-            /*for z in 0 to kernel_size - 1 loop -- Flush remaining pixels 
-
-                wait until rising_edge(clk);
-                command_enum <= c_shrink;
-
-            end loop;*/
-
-            command_enum <= c_idle;
 
         end loop;
 
@@ -264,9 +214,7 @@ begin
     output_check : process is
     begin
 
-        output_loop_lines : for i in 0 to number_of_lines - 1 loop
-
-            output_loop_pixels : for j in 0 to (line_length - kernel_size + 1) * kernel_size - 1 loop
+        output_loop_lines : for i in 0 to output_length - 1 loop
 
                 wait until rising_edge(clk);
 
@@ -275,20 +223,18 @@ begin
                     wait until rising_edge(clk) and data_out_valid = '1';
                 end if;
 
-                /*assert data_out = std_logic_vector(to_signed(expected_output(i, j), data_width))
+                assert data_out = std_logic_vector(to_signed(expected_data_out(i), data_width))
                     report "Output wrong. Result is " & integer'image(to_integer(signed(data_out))) & " - should be "
-                           & integer'image(expected_output(i, j))
-                    severity failure;*/
+                           & integer'image(expected_data_out(i))
+                    severity failure;
 
-                report "Got ---- correct result " & integer'image(to_integer(signed(data_out)));
-
-            end loop;
+                report "Got correct result " & integer'image(to_integer(signed(data_out)));
 
         end loop;
 
         wait until rising_edge(clk);
 
-        -- Check if result valid signal is set to zero after calculations
+        -- Check if result valid signal is set to zero afterwards
         assert data_out_valid = '0'
             report "Result valid should be zero"
             severity failure;

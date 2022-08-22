@@ -25,7 +25,7 @@ entity line_buffer is
         data_out_valid : out   std_logic;
         buffer_full    : out   std_logic;
         update_val     : in    std_logic_vector(data_width - 1 downto 0);
-        update_offset    : in    std_logic_vector(addr_width - 1 downto 0);
+        update_offset  : in    std_logic_vector(addr_width - 1 downto 0);
         read_offset    : in    std_logic_vector(addr_width - 1 downto 0); --! Offset from head of FIFO; Shrink FIFO by this many elements
         command        : in    std_logic_vector(1 downto 0)
     );
@@ -70,6 +70,16 @@ architecture rtl of line_buffer is
     -- signal fifo_shrink_s    : std_logic;
     signal data_out_valid_s : std_logic;
     signal read_offset_s    : integer;
+    -- signal update_offset_s  : std_logic_vector(addr_width - 1 downto 0);
+    -- signal command_s        : std_logic_vector(1 downto 0);
+    signal forward_update_s : std_logic;
+    signal forward_update_delay_s : std_logic_vector(1 downto 0);
+
+    type t_array_command is array (0 to 2) of std_logic_vector(1 downto 0);
+    signal command_delay_s : t_array_command;
+
+    type t_array_update_offset is array (0 to 2) of std_logic_vector(addr_width - 1 downto 0);
+    signal update_offset_delay_s : t_array_update_offset;
 
     -- Increment by one
 
@@ -164,10 +174,10 @@ begin
             fifo_empty_s   <= '1';
         elsif rising_edge(clk) then
             -- Update data
-            if command = "10" then
+            if command_delay_s(2) = "10" then
                 pointer_update_v := pointer_head_s;
-                if or update_offset /= '0' then -- only calculate offset if update_offset not zero
-                    offset_v := to_integer(unsigned(update_offset));
+                if or update_offset_delay_s(2) /= '0' then -- only calculate offset if update_offset not zero
+                    offset_v := to_integer(unsigned(update_offset_delay_s(2)));
                     incr_offset_v(pointer_update_v, offset_v);
                 end if;
                 wena  <= '1';
@@ -206,7 +216,24 @@ begin
 
     end process fifo_status;*/
 
-    buffer_full <= '1' when (pointer_tail_s = pointer_head_s) and (fifo_empty_s = '0') else '0';
+    buffer_full     <= '1' when (pointer_tail_s = pointer_head_s) and (fifo_empty_s = '0') else '0';
+    forward_update_s <= '1' when command_delay_s(0) = "10" and (command = "10" or command = "01") and update_offset = update_offset_delay_s(0) else '0';
+    read_offset_s   <= to_integer(unsigned(read_offset));
+    data_out        <= update_val when forward_update_delay_s(1) = '1' else doutb ;
+
+    -- Process to delay signals
+    delays : process(clk, rstn) is
+    begin
+        if not rstn then
+            forward_update_delay_s <= (others => '0');
+            command_delay_s <= (others => (others => '0'));
+            update_offset_delay_s <= (others => (others => '0'));
+        elsif rising_edge(clk) then
+            forward_update_delay_s <= forward_update_delay_s(0) & forward_update_s;
+            command_delay_s <= (command, command_delay_s(0), command_delay_s(1));
+            update_offset_delay_s <= (update_offset, update_offset_delay_s(0), update_offset_delay_s(1));
+        end if;
+    end process delays;
 
     -- Process to execute read / read from address / update / shrink
     read_command : process (clk, rstn) is
@@ -280,9 +307,5 @@ begin
         end if;
 
     end process read_command;
-
-    read_offset_s   <= to_integer(unsigned(read_offset));
-    data_out        <= doutb;
--- buffer_full <= fifo_filled_s;
 
 end architecture rtl;
