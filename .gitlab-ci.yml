@@ -62,7 +62,7 @@ test-line-buffer-iact:
         - vsim -c -do "../../ci/simulate.tcl"
         - cd ../..
 
-test-line-buffer-iact:
+test-line-buffer-psum:
     stage: test
     tags:
         - modelsim
