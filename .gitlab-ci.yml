@@ -48,16 +48,30 @@ test-mac:
         - vsim -c -do "../../ci/simulate.tcl"
         - cd ../..
 
-test-line-buffer:
+test-line-buffer-iact:
     stage: test
     tags:
         - modelsim
     only:
         changes:
             - hdl/line_buffer.vhd
-            - testbenches/line_buffer/src/*
+            - testbenches/line_buffer_iact/src/*
     script:
         - source /tools/mentor/set_modelsim_10.6b.sh
-        - cd ./testbenches/line_buffer
+        - cd ./testbenches/line_buffer_iact
+        - vsim -c -do "../../ci/simulate.tcl"
+        - cd ../..
+
+test-line-buffer-iact:
+    stage: test
+    tags:
+        - modelsim
+    only:
+        changes:
+            - hdl/line_buffer.vhd
+            - testbenches/line_buffer_psum/src/*
+    script:
+        - source /tools/mentor/set_modelsim_10.6b.sh
+        - cd ./testbenches/line_buffer_psum
         - vsim -c -do "../../ci/simulate.tcl"
         - cd ../..
