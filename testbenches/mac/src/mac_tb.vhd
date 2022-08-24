@@ -1,54 +1,56 @@
 library ieee;
-  use ieee.std_logic_1164.all;
-  use ieee.numeric_std.all;
-  use std.env.finish;
-  use std.env.stop;
+    use ieee.std_logic_1164.all;
+    use ieee.numeric_std.all;
+    use std.env.finish;
+    use std.env.stop;
 
 entity mac_tb is
-  generic (
-    input_width  : positive := 8;
-    acc_width    : positive := 16;
-    output_width : positive := 17
-  );
+    generic (
+        input_width  : positive := 8;
+        acc_width    : positive := 16;
+        output_width : positive := 17
+    );
 end entity mac_tb;
 
 architecture rtl of mac_tb is
 
-  component mac is
-    generic (
-      input_width  : positive := input_width;
-      acc_width    : positive := acc_width;
-      output_width : positive := output_width
-    );
-    port (
-      clk          : in    std_logic;
-      en           : in    std_logic;
-      rstn         : in    std_logic;
-      data_in_a    : in    std_logic_vector(input_width - 1 downto 0);
-      data_in_w    : in    std_logic_vector(input_width - 1 downto 0);
-      data_in_acc  : in    std_logic_vector(acc_width - 1 downto 0);
-      result       : out   std_logic_vector(output_width - 1 downto 0);
-      result_valid : out   std_logic
-    );
-  end component;
+    component mac is
+        generic (
+            input_width  : positive := input_width;
+            acc_width    : positive := acc_width;
+            output_width : positive := output_width
+        );
+        port (
+            clk          : in    std_logic;
+            en           : in    std_logic;
+            rstn         : in    std_logic;
+            data_in_a    : in    std_logic_vector(input_width - 1 downto 0);
+            data_in_w    : in    std_logic_vector(input_width - 1 downto 0);
+            data_in_acc  : in    std_logic_vector(acc_width - 1 downto 0);
+            result       : out   std_logic_vector(output_width - 1 downto 0);
+            result_valid : out   std_logic
+        );
+    end component;
 
-  signal clk          : std_logic := '1';
-  signal rstn         : std_logic;
-  signal en           : std_logic;
-  signal result_valid : std_logic;
-  signal data_in_a    : std_logic_vector(input_width - 1 downto 0);
-  signal data_in_w    : std_logic_vector(input_width - 1 downto 0);
-  signal data_in_acc  : std_logic_vector(acc_width - 1 downto 0);
-  signal result       : std_logic_vector(output_width - 1 downto 0);
+    signal clk          : std_logic := '1';
+    signal rstn         : std_logic;
+    signal en           : std_logic;
+    signal result_valid : std_logic;
+    signal data_in_a    : std_logic_vector(input_width - 1 downto 0);
+    signal data_in_w    : std_logic_vector(input_width - 1 downto 0);
+    signal data_in_acc  : std_logic_vector(acc_width - 1 downto 0);
+    signal result       : std_logic_vector(output_width - 1 downto 0);
 
-  type input_type is array (natural range<>) of std_logic_vector(input_width - 1 downto 0);
-  type input_type_acc is array (natural range<>) of std_logic_vector(acc_width - 1 downto 0);
-  type output_type is array (natural range<>) of integer;
+    type input_type is array (natural range<>) of std_logic_vector(input_width - 1 downto 0);
 
-  constant number_tests : positive := 6;
+    type input_type_acc is array (natural range<>) of std_logic_vector(acc_width - 1 downto 0);
 
-  --   Input a for the multiplication
-  constant test_inputs_a : input_type(0 to number_tests - 1) :=
+    type output_type is array (natural range<>) of integer;
+
+    constant number_tests : positive := 6;
+
+    --   Input a for the multiplication
+    constant test_inputs_a : input_type(0 to number_tests - 1) :=
   (
     "00000010",
     "00000010",
@@ -57,8 +59,8 @@ architecture rtl of mac_tb is
     "00000010",
     "01111111"
   );
-  --   Input b for the multiplication
-  constant test_inputs_w : input_type(0 to number_tests - 1) :=
+    --   Input b for the multiplication
+    constant test_inputs_w : input_type(0 to number_tests - 1) :=
   (
     "00000010",
     "00000100",
@@ -67,8 +69,8 @@ architecture rtl of mac_tb is
     "00010001",
     "01111111"
   );
-  --   Input for the accumulation
-  constant test_inputs_acc : input_type_acc(0 to number_tests - 1) :=
+    --   Input for the accumulation
+    constant test_inputs_acc : input_type_acc(0 to number_tests - 1) :=
   (
     "0000000000000001",
     "0000000000000000",
@@ -78,8 +80,8 @@ architecture rtl of mac_tb is
     "0111111111111111"
   );
 
-  -- Expected outputs
-  constant test_outputs : output_type (0 to number_tests - 1) :=
+    -- Expected outputs
+    constant test_outputs : output_type (0 to number_tests - 1) :=
   (
     5,
     8,
@@ -91,105 +93,105 @@ architecture rtl of mac_tb is
 
 begin
 
-  -- Unit under test
-  uut : component mac
-    generic map (
-      input_width  => input_width,
-      acc_width    => acc_width,
-      output_width => output_width
-    )
-    port map (
-      clk          => clk,
-      en           => en,
-      rstn         => rstn,
-      data_in_a    => data_in_a,
-      data_in_w    => data_in_w,
-      data_in_acc  => data_in_acc,
-      result       => result,
-      result_valid => result_valid
-    );
+    -- Unit under test
+    uut : component mac
+        generic map (
+            input_width  => input_width,
+            acc_width    => acc_width,
+            output_width => output_width
+        )
+        port map (
+            clk          => clk,
+            en           => en,
+            rstn         => rstn,
+            data_in_a    => data_in_a,
+            data_in_w    => data_in_w,
+            data_in_acc  => data_in_acc,
+            result       => result,
+            result_valid => result_valid
+        );
 
-  -- Clock generation
-  clock : process (clk) is
-  begin
+    -- Clock generation
+    clock : process (clk) is
+    begin
 
-    clk <= not clk after 10 ns;
+        clk <= not clk after 10 ns;
 
-  end process clock;
+    end process clock;
 
-  -- Stimuli creation process
-  stimuli : process is
-  begin
+    -- Stimuli creation process
+    stimuli : process is
+    begin
 
-    rstn      <= '0';
-    en        <= '0';
-    data_in_a <= (others => '0');
-    data_in_w <= (others => '0');
-    data_in_acc <= (others => '0');
+        rstn        <= '0';
+        en          <= '0';
+        data_in_a   <= (others => '0');
+        data_in_w   <= (others => '0');
+        data_in_acc <= (others => '0');
 
-    wait for 100 ns;
-    rstn <= '1';
-    wait for 50 ns;
+        wait for 100 ns;
+        rstn <= '1';
+        wait for 50 ns;
 
-    input_loop : for i in 0 to number_tests - 1 loop
+        input_loop : for i in 0 to number_tests - 1 loop
 
-      wait until rising_edge(clk);
-      en <= '1';
+            wait until rising_edge(clk);
+            en <= '1';
 
-      if (i=3) then
-        en <= '0';
-        wait for 40 ns;
-        en <= '1';
-      end if;
+            if i=3 then
+                en <= '0';
+                wait for 40 ns;
+                en <= '1';
+            end if;
 
-      data_in_a <= test_inputs_a(i);
-      data_in_w <= test_inputs_w(i);
-      data_in_acc <= test_inputs_acc(i);
-      
-    end loop;
+            data_in_a   <= test_inputs_a(i);
+            data_in_w   <= test_inputs_w(i);
+            data_in_acc <= test_inputs_acc(i);
 
-    wait until rising_edge(clk);
+        end loop;
 
-    rstn <= '1';
-    en   <= '0';
-    wait for 50 ns;
+        wait until rising_edge(clk);
 
-  end process stimuli;
+        rstn <= '1';
+        en   <= '0';
+        wait for 50 ns;
 
-  -- Output checking process
-  output_check : process is
-  begin
+    end process stimuli;
 
-    output_loop : for i in 0 to number_tests - 1 loop
+    -- Output checking process
+    output_check : process is
+    begin
 
-      wait until rising_edge(clk);
+        output_loop : for i in 0 to number_tests - 1 loop
 
-      -- If result is not valid, wait until next rising edge with valid results.
-      if (result_valid = '0') then
-        wait until rising_edge(clk) and result_valid = '1';
-      end if;
+            wait until rising_edge(clk);
 
-      assert result = std_logic_vector(to_signed(test_outputs(i), output_width))
-        report "Output wrong. Result is " & integer'image(to_integer(signed(result))) & " - should be " & integer'image(test_outputs(i))
-        severity failure;
+            -- If result is not valid, wait until next rising edge with valid results.
+            if result_valid = '0' then
+                wait until rising_edge(clk) and result_valid = '1';
+            end if;
 
-      report "Got correct result " & integer'image(to_integer(signed(result)));
+            assert result = std_logic_vector(to_signed(test_outputs(i), output_width))
+                report "Output wrong. Result is " & integer'image(to_integer(signed(result))) & " - should be " & integer'image(test_outputs(i))
+                severity failure;
 
-    end loop;
+            report "Got correct result " & integer'image(to_integer(signed(result)));
 
-    wait until rising_edge(clk);
+        end loop;
 
-    -- Check if result valid signal is set to zero after calculations
-    assert result_valid = '0'
-      report "Result valid should be zero"
-      severity failure;
+        wait until rising_edge(clk);
 
-    wait for 50 ns;
+        -- Check if result valid signal is set to zero after calculations
+        assert result_valid = '0'
+            report "Result valid should be zero"
+            severity failure;
 
-    report "Output check is finished."
-      severity note;
-    finish;
+        wait for 50 ns;
 
-  end process output_check;
+        report "Output check is finished."
+            severity note;
+        finish;
+
+    end process output_check;
 
 end architecture rtl;

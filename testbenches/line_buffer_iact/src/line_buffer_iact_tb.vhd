@@ -37,7 +37,7 @@ architecture imp of line_buffer_iact_tb is
             data_out_valid : out   std_logic;
             buffer_full    : out   std_logic;
             update_val     : in    std_logic_vector(data_width - 1 downto 0);
-            update_offset    : in    std_logic_vector(addr_width - 1 downto 0);
+            update_offset  : in    std_logic_vector(addr_width - 1 downto 0);
             read_offset    : in    std_logic_vector(addr_width - 1 downto 0);
             command        : in    std_logic_vector(1 downto 0)
         );
@@ -51,15 +51,15 @@ architecture imp of line_buffer_iact_tb is
     signal data_out_valid : std_logic;
     signal buffer_full    : std_logic;
     signal update_val     : std_logic_vector(data_width - 1 downto 0);
-    signal update_offset    : std_logic_vector(addr_width - 1 downto 0);
+    signal update_offset  : std_logic_vector(addr_width - 1 downto 0);
     signal read_offset    : std_logic_vector(addr_width - 1 downto 0);
     signal command        : std_logic_vector(1 downto 0);
 
     type image_t is array(natural range <>, natural range <>) of integer;
 
     -- test data, simulates the output of classify
-    constant test_image : image_t(0 to number_of_lines-1, 0 to line_length-1) := (
-        (1,  2,  3,  4,  5,  6,  7 ),
+    constant test_image : image_t(0 to number_of_lines - 1, 0 to line_length - 1) := (
+        (1,  2,  3,  4,  5,  6,  7),
         (8,  9,  10, 11, 12, 13, 14),
         (15 ,16 ,17 ,18 ,19, 20, 21),
         (22, 23, 24, 25, 26, 27, 28),
@@ -67,12 +67,12 @@ architecture imp of line_buffer_iact_tb is
     );
 
     -- Kernel 5 px
-    constant expected_output : image_t(0 to number_of_lines-1, 0 to (line_length-kernel_size+1)*kernel_size-1) := (
+    constant expected_output : image_t(0 to number_of_lines - 1, 0 to (line_length - kernel_size + 1) * kernel_size - 1) := (
         (1,  2,  3,  4,  5,  2,  3,  4,  5,  6,  3,  4,  5,  6,  7),
         (8,  9,  10, 11, 12, 9,  10, 11, 12, 13, 10, 11, 12, 13, 14),
         (15, 16, 17, 18, 19, 16, 17, 18, 19, 20, 17, 18, 19, 20, 21),
         (22, 23, 24, 25, 26, 23, 24, 25, 26, 27, 24, 25, 26, 27, 28),
-        (29, 30, 31, 32, 33, 30, 31, 32, 33, 34, 31, 32, 33, 34, 35) 
+        (29, 30, 31, 32, 33, 30, 31, 32, 33, 34, 31, 32, 33, 34, 35)
     );
 
     /*
@@ -86,6 +86,7 @@ architecture imp of line_buffer_iact_tb is
     );*/
 
     type command_t is (c_idle, c_read, c_read_update, c_shrink);
+
     signal command_enum : command_t;
 
 begin

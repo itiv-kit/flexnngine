@@ -12,12 +12,12 @@ library ieee;
 
 entity line_buffer_psum_tb is
     generic (
-        line_length     : positive := 7; --! Length of the lines in the test image
-        command_length  : positive := 17; --! Number of commands in the test
-        output_length   : positive := 12; --! Number of outputs expected
-        addr_width      : positive := 3; --! Address width for the ram_dp component
-        data_width      : positive := 8; --! 8 bit data being saved
-        kernel_size     : positive := 5  --! 3 pixel kernel
+        line_length    : positive := 7;  --! Length of the lines in the test image
+        command_length : positive := 17; --! Number of commands in the test
+        output_length  : positive := 12; --! Number of outputs expected
+        addr_width     : positive := 3;  --! Address width for the ram_dp component
+        data_width     : positive := 8;  --! 8 bit data being saved
+        kernel_size    : positive := 5   --! 3 pixel kernel
     );
 end entity line_buffer_psum_tb;
 
@@ -52,34 +52,36 @@ architecture imp of line_buffer_psum_tb is
     signal data_out_valid : std_logic;
     signal buffer_full    : std_logic;
     signal update_val     : std_logic_vector(data_width - 1 downto 0);
-    signal update_offset    : std_logic_vector(addr_width - 1 downto 0);
+    signal update_offset  : std_logic_vector(addr_width - 1 downto 0);
     signal read_offset    : std_logic_vector(addr_width - 1 downto 0);
     signal command        : std_logic_vector(1 downto 0);
 
     type command_t is (c_idle, c_read, c_read_update, c_shrink);
+
     signal command_enum : command_t;
 
     type command_array_t is array(natural range <>) of command_t;
+
     type integer_t is array(natural range <>) of integer;
 
     -- test data, simulates the output of classify
-    constant command_sequence : command_array_t(0 to command_length-1) := (
-        (c_idle, c_read_update, c_read_update, c_read_update,  
-         c_idle, c_read_update, c_read_update, c_read_update, 
-         c_idle, c_read_update, c_read_update, c_read_update, 
+    constant command_sequence : command_array_t(0 to command_length - 1) := (
+        (c_idle, c_read_update, c_read_update, c_read_update,
+         c_idle, c_read_update, c_read_update, c_read_update,
+         c_idle, c_read_update, c_read_update, c_read_update,
          c_idle, c_read , c_read , c_read, c_idle)
     );
 
-    constant read_offset_sequence : integer_t(0 to command_length-1) := (
+    constant read_offset_sequence : integer_t(0 to command_length - 1) := (
         (0,0,0,0,0,1,1,1,0,2,2,2,0,0,1,2,0)
     );
- 
-    constant update_offset_sequence : integer_t(0 to command_length-1) := (
+
+    constant update_offset_sequence : integer_t(0 to command_length - 1) := (
         (0,0,0,0,0,1,1,1,0,2,2,2,0,0,0,0,0)
     );
 
     -- Kernel 5 px
-    constant expected_data_out : integer_t(0 to output_length-1) := (
+    constant expected_data_out : integer_t(0 to output_length - 1) := (
         (0,1,2,0,1,2,0,1,2,3,3,3)
     );
 
@@ -114,7 +116,6 @@ begin
             read_offset    => read_offset,
             command        => command
         );
-
 
     adder : process is
     begin
@@ -163,8 +164,10 @@ begin
 
         -- Fill buffer with zeros
         while buffer_full = '0' loop
+
             data_in <= std_logic_vector(to_signed(0, data_width));
             wait until rising_edge(clk);
+
         end loop;
 
         for y in 0 to line_length - 1 loop
@@ -202,10 +205,10 @@ begin
 
         for y in 0 to command_length - 1 loop
 
-                command_enum  <= command_sequence(y);
-                read_offset   <= std_logic_vector(to_signed(read_offset_sequence(y), addr_width));
-                update_offset <= std_logic_vector(to_signed(update_offset_sequence(y), addr_width));
-                wait until rising_edge(clk);
+            command_enum  <= command_sequence(y);
+            read_offset   <= std_logic_vector(to_signed(read_offset_sequence(y), addr_width));
+            update_offset <= std_logic_vector(to_signed(update_offset_sequence(y), addr_width));
+            wait until rising_edge(clk);
 
         end loop;
 
@@ -216,19 +219,19 @@ begin
 
         output_loop_lines : for i in 0 to output_length - 1 loop
 
-                wait until rising_edge(clk);
+            wait until rising_edge(clk);
 
-                -- If result is not valid, wait until next rising edge with valid results.
-                if data_out_valid = '0' then
-                    wait until rising_edge(clk) and data_out_valid = '1';
-                end if;
+            -- If result is not valid, wait until next rising edge with valid results.
+            if data_out_valid = '0' then
+                wait until rising_edge(clk) and data_out_valid = '1';
+            end if;
 
-                assert data_out = std_logic_vector(to_signed(expected_data_out(i), data_width))
-                    report "Output wrong. Result is " & integer'image(to_integer(signed(data_out))) & " - should be "
-                           & integer'image(expected_data_out(i))
-                    severity failure;
+            assert data_out = std_logic_vector(to_signed(expected_data_out(i), data_width))
+                report "Output wrong. Result is " & integer'image(to_integer(signed(data_out))) & " - should be "
+                       & integer'image(expected_data_out(i))
+                severity failure;
 
-                report "Got correct result " & integer'image(to_integer(signed(data_out)));
+            report "Got correct result " & integer'image(to_integer(signed(data_out)));
 
         end loop;
 

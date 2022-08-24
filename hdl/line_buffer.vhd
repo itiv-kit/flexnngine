@@ -63,19 +63,21 @@ architecture rtl of line_buffer is
     signal pointer_head_s : integer;
     signal pointer_tail_s : integer;
     -- signal fifo_filled_s    : std_logic;
-    signal fifo_empty_s     : std_logic;
+    signal fifo_empty_s : std_logic;
     -- signal fifo_shrink_s    : std_logic;
     signal data_out_valid_s : std_logic;
     signal read_offset_s    : integer;
     -- signal update_offset_s  : std_logic_vector(addr_width - 1 downto 0);
     -- signal command_s        : std_logic_vector(1 downto 0);
-    signal forward_update_s : std_logic;
+    signal forward_update_s       : std_logic;
     signal forward_update_delay_s : std_logic_vector(1 downto 0);
 
     type t_array_command is array (0 to 2) of std_logic_vector(1 downto 0);
+
     signal command_delay_s : t_array_command;
 
     type t_array_update_offset is array (0 to 2) of std_logic_vector(addr_width - 1 downto 0);
+
     signal update_offset_delay_s : t_array_update_offset;
 
     -- Increment by one
@@ -159,8 +161,10 @@ begin
 
     -- Process to store input values that are valid
     write_val : process (clk, rstn) is
+
         variable pointer_update_v : integer;
         variable offset_v         : integer;
+
     begin
 
         if not rstn then
@@ -179,7 +183,7 @@ begin
                 end if;
                 wena  <= '1';
                 addra <= std_logic_vector(to_unsigned(pointer_update_v, addr_width));
-                dina  <= update_val; 
+                dina  <= update_val;
             -- Write data to tail
             elsif data_in_valid and not buffer_full then
                 wena         <= '1';
@@ -213,23 +217,29 @@ begin
 
     end process fifo_status;*/
 
-    buffer_full     <= '1' when (pointer_tail_s = pointer_head_s) and (fifo_empty_s = '0') else '0';
-    forward_update_s <= '1' when command_delay_s(0) = "10" and (command = "10" or command = "01") and update_offset = update_offset_delay_s(0) else '0';
-    read_offset_s   <= to_integer(unsigned(read_offset));
-    data_out        <= update_val when forward_update_delay_s(1) = '1' else doutb ;
+    buffer_full      <= '1' when (pointer_tail_s = pointer_head_s) and (fifo_empty_s = '0') else
+                        '0';
+    forward_update_s <= '1' when command_delay_s(0) = "10" and (command = "10" or command = "01")
+                                 and update_offset = update_offset_delay_s(0) else
+                        '0';
+    read_offset_s    <= to_integer(unsigned(read_offset));
+    data_out         <= update_val when forward_update_delay_s(1) = '1' else
+                        doutb;
 
     -- Process to delay signals
-    delays : process(clk, rstn) is
+    delays : process (clk, rstn) is
     begin
+
         if not rstn then
             forward_update_delay_s <= (others => '0');
-            command_delay_s <= (others => (others => '0'));
-            update_offset_delay_s <= (others => (others => '0'));
+            command_delay_s        <= (others => (others => '0'));
+            update_offset_delay_s  <= (others => (others => '0'));
         elsif rising_edge(clk) then
             forward_update_delay_s <= forward_update_delay_s(0) & forward_update_s;
-            command_delay_s <= (command, command_delay_s(0), command_delay_s(1));
-            update_offset_delay_s <= (update_offset, update_offset_delay_s(0), update_offset_delay_s(1));
+            command_delay_s        <= (command, command_delay_s(0), command_delay_s(1));
+            update_offset_delay_s  <= (update_offset, update_offset_delay_s(0), update_offset_delay_s(1));
         end if;
+
     end process delays;
 
     -- Process to execute read / read from address / update / shrink
@@ -248,13 +258,12 @@ begin
             pointer_read_v   := 0;
             data_out_valid   <= '0';
             data_out_valid_s <= '0';
-
-            elsif rising_edge(clk) then
-            data_out_valid   <= data_out_valid_s;
+        elsif rising_edge(clk) then
+            data_out_valid <= data_out_valid_s;
             -- fifo_shrink_s  <= '0';
-            wenb           <= '0';
-            addrb          <= (others => '0');
-            dinb           <= (others => '0');
+            wenb  <= '0';
+            addrb <= (others => '0');
+            dinb  <= (others => '0');
 
             case command is
 
@@ -267,7 +276,8 @@ begin
                 when "01" =>
 
                     pointer_read_v := pointer_head_s;
-                    if or read_offset /= '0' then -- only calculate offset if read_offset not zero
+                    -- only calculate offset if read_offset not zero
+                    if or read_offset /= '0' then
                         offset_v := to_integer(unsigned(read_offset));
                         incr_offset_v(pointer_read_v, offset_v);
                     end if;
@@ -279,7 +289,8 @@ begin
                 when "10" =>
 
                     pointer_read_v := pointer_head_s;
-                    if or read_offset /= '0' then -- only calculate offset if read_offset not zero
+                    -- only calculate offset if read_offset not zero
+                    if or read_offset /= '0' then
                         offset_v := to_integer(unsigned(read_offset));
                         incr_offset_v(pointer_read_v, offset_v);
                     end if;
@@ -293,7 +304,7 @@ begin
                     data_out_valid_s <= '0';
                     -- incr(pointer_head_s);
                     incr_offset(pointer_head_s,  read_offset_s);
-                    -- fifo_shrink_s <= '1';
+                -- fifo_shrink_s <= '1';
 
                 when others =>
 
