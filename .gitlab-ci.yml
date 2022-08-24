@@ -55,6 +55,7 @@ test-line-buffer-iact:
     only:
         changes:
             - hdl/line_buffer.vhd
+            - hdl/ram_dp.vhd
             - testbenches/line_buffer_iact/src/*
     script:
         - source /tools/mentor/set_modelsim_10.6b.sh
@@ -69,6 +70,7 @@ test-line-buffer-psum:
     only:
         changes:
             - hdl/line_buffer.vhd
+            - hdl/ram_dp.vhd
             - testbenches/line_buffer_psum/src/*
     script:
         - source /tools/mentor/set_modelsim_10.6b.sh
@@ -84,9 +86,30 @@ test-line-buffer-wght:
     only:
         changes:
             - hdl/line_buffer.vhd
+            - hdl/ram_dp.vhd
             - testbenches/line_buffer_wght/src/*
     script:
         - source /tools/mentor/set_modelsim_10.6b.sh
         - cd ./testbenches/line_buffer_wght
+        - vsim -c -do "../../ci/simulate.tcl"
+        - cd ../..
+
+
+test-pe-conv:
+    stage: test
+    tags:
+        - modelsim
+    only:
+        changes:
+            - hdl/pe.vhd
+            - hdl/line_buffer.vhd
+            - hdl/mult.vhd
+            - hdl/mux.vhd
+            - hdl/add.vhd
+            - hdl/ram_dp.vhd
+            - testbenches/pe_conv/src/*
+    script:
+        - source /tools/mentor/set_modelsim_10.6b.sh
+        - cd ./testbenches/pe_conv
         - vsim -c -do "../../ci/simulate.tcl"
         - cd ../..
