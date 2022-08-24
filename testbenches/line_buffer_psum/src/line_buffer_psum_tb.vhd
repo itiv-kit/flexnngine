@@ -177,7 +177,7 @@ begin
 
         for y in 0 to command_length - 1 loop
 
-            command  <= command_sequence(y);
+            command       <= command_sequence(y);
             read_offset   <= std_logic_vector(to_signed(read_offset_sequence(y), addr_width));
             update_offset <= std_logic_vector(to_signed(update_offset_sequence(y), addr_width));
             wait until rising_edge(clk);

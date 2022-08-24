@@ -190,21 +190,21 @@ begin
 
                 for z in 0 to kernel_size - 1 loop -- Read data according to 1D-conv
 
-                    command <= c_lb_read;
-                    read_offset  <= std_logic_vector(to_unsigned(z, addr_width));
+                    command     <= c_lb_read;
+                    read_offset <= std_logic_vector(to_unsigned(z, addr_width));
                     wait until rising_edge(clk);
 
                 end loop;
 
-                read_offset  <= std_logic_vector(to_unsigned(1, addr_width));
-                command <= c_shrink;
+                read_offset <= std_logic_vector(to_unsigned(1, addr_width));
+                command     <= c_shrink;
 
             end loop;
 
             wait until rising_edge(clk);
 
-            read_offset  <= std_logic_vector(to_unsigned(kernel_size - 1, addr_width));
-            command <= c_shrink;
+            read_offset <= std_logic_vector(to_unsigned(kernel_size - 1, addr_width));
+            command     <= c_shrink;
 
             wait until rising_edge(clk);
             /*for z in 0 to kernel_size - 1 loop -- Flush remaining pixels 

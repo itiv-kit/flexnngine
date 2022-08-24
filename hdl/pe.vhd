@@ -142,7 +142,8 @@ architecture behavioral of pe is
 
 begin
 
-    sel_mult_psum   <= '0' when command = c_pe_mux_mac else '1' when command = c_pe_mux_psum;
+    sel_mult_psum   <= '0' when command = c_pe_mux_mac else
+                       '1' when command = c_pe_mux_psum;
     data_acc_valid  <= (data_acc_in1_valid and data_acc_in2_valid) or data_acc_in2_valid;
     iact_wght_valid <= data_iact_valid and data_wght_valid;
     data_out_valid  <= data_acc_out_valid;
