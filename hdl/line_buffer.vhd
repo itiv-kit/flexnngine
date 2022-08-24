@@ -2,9 +2,6 @@ library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
 
-library axi_filter_dma_v1_00_a;
-    use axi_filter_dma_v1_00_a.all;
-
 --! This component buffers the pixels of one line in the input image
 --! The component implements a FIFO like buffer with a depth of #line_length.
 --! If #data_in_valid is '1' the first element in the FIFO queue will be removed
