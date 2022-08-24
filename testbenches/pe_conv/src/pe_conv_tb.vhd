@@ -45,10 +45,10 @@ architecture imp of pe_conv_tb is
             clk  : in    std_logic;
             rstn : in    std_logic;
 
-            command      : in    std_logic_vector(1 downto 0);
-            command_iact : in    std_logic_vector(1 downto 0);
-            command_psum : in    std_logic_vector(1 downto 0);
-            command_wght : in    std_logic_vector(1 downto 0);
+            command      : in    command_pe_t;
+            command_iact : in    command_lb_t;
+            command_psum : in    command_lb_t;
+            command_wght : in    command_lb_t;
 
             data_in_iact : in    std_logic_vector(data_width_iact - 1 downto 0);
             data_in_psum : in    std_logic_vector(data_width_psum - 1 downto 0);
@@ -80,10 +80,10 @@ architecture imp of pe_conv_tb is
     signal clk  : std_logic := '1';
     signal rstn : std_logic;
 
-    signal command      : std_logic_vector(1 downto 0);
-    signal command_iact : std_logic_vector(1 downto 0);
-    signal command_psum : std_logic_vector(1 downto 0);
-    signal command_wght : std_logic_vector(1 downto 0);
+    signal command      : command_pe_t;
+    signal command_iact : command_lb_t;
+    signal command_psum : command_lb_t;
+    signal command_wght : command_lb_t;
 
     signal data_in_iact : std_logic_vector(data_width_iact_wght - 1 downto 0);
     signal data_in_wght : std_logic_vector(data_width_iact_wght - 1 downto 0);
@@ -112,7 +112,9 @@ architecture imp of pe_conv_tb is
 
     -- type command_t is (c_idle, c_read, c_read_update, c_shrink);
 
-    type command_array_t is array(natural range <>, natural range <>) of command_line_buffer_t;
+    type command_array_lb_t is array(natural range <>, natural range <>) of command_lb_t;
+
+    type command_array_pe_t is array(natural range <>) of command_pe_t;
 
     type offset_array_t is array(natural range <>, natural range <>) of integer;
 
@@ -138,14 +140,14 @@ architecture imp of pe_conv_tb is
         (0,1,2,3,4)
     );
 
-    constant input_pe_command : integer_t(0 to command_length - 1) := (
-        (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+    constant input_pe_command : command_array_pe_t(0 to command_length - 1) := (
+        (c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac)
     );
 
-    constant input_command : command_array_t(0 to 2, 0 to command_length - 1) := (
-        (c_read, c_read, c_read, c_shrink, c_read, c_read, c_read, c_shrink, c_read, c_read, c_read, c_shrink, c_read, c_read, c_read, c_shrink, c_read, c_read, c_read, c_shrink, c_idle),                                                                                                -- iact
-        (c_idle, c_read_update, c_read_update, c_read_update, c_idle, c_read_update, c_read_update, c_read_update, c_idle, c_read_update, c_read_update, c_read_update, c_idle, c_read_update, c_read_update, c_read_update, c_idle, c_read_update, c_read_update, c_read_update, c_idle), -- psum
-        (c_read, c_read, c_read, c_idle, c_read, c_read, c_read, c_idle, c_read, c_read, c_read, c_idle, c_read, c_read, c_read, c_idle, c_read, c_read, c_read, c_idle, c_idle)                                                                                                           -- wght
+    constant input_command : command_array_lb_t(0 to 2, 0 to command_length - 1) := (
+        (c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_idle),                                                                                                -- iact
+        (c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle), -- psum
+        (c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle)                                                                                                           -- wght
     );
 
     constant input_read_offset : offset_array_t(0 to 2, 0 to command_length - 1) := (
@@ -159,31 +161,6 @@ architecture imp of pe_conv_tb is
         (0,0,0,0,0,1,1,1,0,2,2,2,0,3,3,3,0,4,4,4,0), -- psum
         (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)  -- wght
     );
-
-    function get_command (command : command_line_buffer_t) return std_logic_vector is
-    begin
-
-        case command is
-
-            when c_idle =>
-
-                return "00";
-
-            when c_read =>
-
-                return "01";
-
-            when c_read_update =>
-
-                return "10";
-
-            when c_shrink =>
-
-                return "11";
-
-        end case;
-
-    end function get_command;
 
 begin
 
@@ -345,11 +322,11 @@ begin
 
         for y in 0 to command_length - 1 loop
 
-            command <= std_logic_vector(to_unsigned(input_pe_command(y), 2));
+            command <= input_pe_command(y);
 
-            command_iact <= get_command(input_command(0,y));
-            command_psum <= get_command(input_command(1,y));
-            command_wght <= get_command(input_command(2,y));
+            command_iact <= input_command(0,y);
+            command_psum <= input_command(1,y);
+            command_wght <= input_command(2,y);
 
             read_offset_iact <= std_logic_vector(to_unsigned(input_read_offset(0,y), addr_width_iact_wght));
             read_offset_psum <= std_logic_vector(to_unsigned(input_read_offset(1,y), addr_width_psum));
@@ -367,14 +344,14 @@ begin
 
         get_outputs : for i in 0 to expected_output'length - 1 loop
 
-            command          <= "01";
-            command_psum     <= get_command(c_read);
+            command          <= c_pe_mux_psum;
+            command_psum     <= c_lb_read;
             read_offset_psum <= std_logic_vector(to_unsigned(output_idx(i), addr_width_psum));
             wait until rising_edge(clk);
 
         end loop;
 
-        command_psum <= get_command(c_idle);
+        command_psum <= c_lb_idle;
 
         wait for 2000 ns;
 

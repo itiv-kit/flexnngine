@@ -3,6 +3,7 @@ library ieee;
     use ieee.numeric_std.all;
     use std.env.finish;
     use std.env.stop;
+    use work.utilities.all;
 
 --! This testbench can be used to test the line_buffer component.
 
@@ -40,7 +41,7 @@ architecture imp of line_buffer_wght_tb is
             update_val     : in    std_logic_vector(data_width - 1 downto 0);
             update_offset  : in    std_logic_vector(addr_width - 1 downto 0);
             read_offset    : in    std_logic_vector(addr_width - 1 downto 0);
-            command        : in    std_logic_vector(1 downto 0)
+            command        : in    command_lb_t
         );
     end component;
 
@@ -54,19 +55,15 @@ architecture imp of line_buffer_wght_tb is
     signal update_val     : std_logic_vector(data_width - 1 downto 0);
     signal update_offset  : std_logic_vector(addr_width - 1 downto 0);
     signal read_offset    : std_logic_vector(addr_width - 1 downto 0);
-    signal command        : std_logic_vector(1 downto 0);
+    signal command        : command_lb_t;
 
-    type command_t is (c_idle, c_read, c_read_update, c_shrink);
-
-    signal command_enum : command_t;
-
-    type command_array_t is array(natural range <>) of command_t;
+    type command_array_t is array(natural range <>) of command_lb_t;
 
     type integer_t is array(natural range <>) of integer;
 
     -- test data, simulates the output of classify
     constant command_sequence : command_array_t(0 to command_length - 1) := (
-        (c_read, c_read, c_read, c_idle, c_read, c_read, c_read, c_shrink, c_read,c_read,c_read,c_idle,c_read, c_read, c_read, c_idle)
+        (c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_shrink, c_lb_read,c_lb_read,c_lb_read,c_lb_idle,c_lb_read, c_lb_read, c_lb_read, c_lb_idle)
     );
 
     constant read_offset_sequence : integer_t(0 to command_length - 1) := (
@@ -121,31 +118,6 @@ begin
 
     end process adder;
 
-    command_gen : process (all) is
-    begin
-
-        case command_enum is
-
-            when c_idle =>
-
-                command <= "00";
-
-            when c_read =>
-
-                command <= "01";
-
-            when c_read_update =>
-
-                command <= "10";
-
-            when c_shrink =>
-
-                command <= "11";
-
-        end case;
-
-    end process command_gen;
-
     stimuli_data : process is
     begin
 
@@ -193,7 +165,7 @@ begin
 
         for y in 0 to command_length - 1 loop
 
-            command_enum <= command_sequence(y);
+            command <= command_sequence(y);
             read_offset  <= std_logic_vector(to_signed(read_offset_sequence(y), addr_width));
             wait until rising_edge(clk);
 

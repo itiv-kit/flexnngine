@@ -3,6 +3,7 @@ library ieee;
     use ieee.numeric_std.all;
     use std.env.finish;
     use std.env.stop;
+    use work.utilities.all;
 
 --! This testbench can be used to test the line_buffer component.
 
@@ -39,7 +40,7 @@ architecture imp of line_buffer_iact_tb is
             update_val     : in    std_logic_vector(data_width - 1 downto 0);
             update_offset  : in    std_logic_vector(addr_width - 1 downto 0);
             read_offset    : in    std_logic_vector(addr_width - 1 downto 0);
-            command        : in    std_logic_vector(1 downto 0)
+            command        : in    command_lb_t
         );
     end component;
 
@@ -53,7 +54,7 @@ architecture imp of line_buffer_iact_tb is
     signal update_val     : std_logic_vector(data_width - 1 downto 0);
     signal update_offset  : std_logic_vector(addr_width - 1 downto 0);
     signal read_offset    : std_logic_vector(addr_width - 1 downto 0);
-    signal command        : std_logic_vector(1 downto 0);
+    signal command        : command_lb_t;
 
     type image_t is array(natural range <>, natural range <>) of integer;
 
@@ -85,10 +86,6 @@ architecture imp of line_buffer_iact_tb is
         (29, 30, 31, 30, 31, 32, 31, 32, 33, 32, 33, 34, 33, 34, 35)
     );*/
 
-    type command_t is (c_idle, c_read, c_read_update, c_shrink);
-
-    signal command_enum : command_t;
-
 begin
 
     line_buffer_inst : component line_buffer
@@ -110,31 +107,6 @@ begin
             read_offset    => read_offset,
             command        => command
         );
-
-    command_gen : process (all) is
-    begin
-
-        case command_enum is
-
-            when c_idle =>
-
-                command <= "00";
-
-            when c_read =>
-
-                command <= "01";
-
-            when c_read_update =>
-
-                command <= "10";
-
-            when c_shrink =>
-
-                command <= "11";
-
-        end case;
-
-    end process command_gen;
 
     stimuli_data : process is
     begin
@@ -218,21 +190,21 @@ begin
 
                 for z in 0 to kernel_size - 1 loop -- Read data according to 1D-conv
 
-                    command_enum <= c_read;
+                    command <= c_lb_read;
                     read_offset  <= std_logic_vector(to_unsigned(z, addr_width));
                     wait until rising_edge(clk);
 
                 end loop;
 
                 read_offset  <= std_logic_vector(to_unsigned(1, addr_width));
-                command_enum <= c_shrink;
+                command <= c_shrink;
 
             end loop;
 
             wait until rising_edge(clk);
 
             read_offset  <= std_logic_vector(to_unsigned(kernel_size - 1, addr_width));
-            command_enum <= c_shrink;
+            command <= c_shrink;
 
             wait until rising_edge(clk);
             /*for z in 0 to kernel_size - 1 loop -- Flush remaining pixels 
@@ -242,7 +214,7 @@ begin
 
             end loop;*/
 
-            command_enum <= c_idle;
+            command <= c_lb_idle;
 
         end loop;
 

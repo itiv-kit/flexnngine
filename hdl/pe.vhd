@@ -21,10 +21,10 @@ entity pe is
         clk  : in    std_logic;
         rstn : in    std_logic;
 
-        command      : in    std_logic_vector(1 downto 0);
-        command_iact : in    std_logic_vector(1 downto 0);
-        command_psum : in    std_logic_vector(1 downto 0);
-        command_wght : in    std_logic_vector(1 downto 0);
+        command      : in    command_pe_t;
+        command_iact : in    command_lb_t;
+        command_psum : in    command_lb_t;
+        command_wght : in    command_lb_t;
 
         data_in_iact : in    std_logic_vector(data_width_iact - 1 downto 0);
         data_in_psum : in    std_logic_vector(data_width_psum - 1 downto 0);
@@ -70,7 +70,7 @@ architecture behavioral of pe is
             update_val     : in    std_logic_vector(data_width - 1 downto 0);
             update_offset  : in    std_logic_vector(addr_width - 1 downto 0);
             read_offset    : in    std_logic_vector(addr_width - 1 downto 0);
-            command        : in    std_logic_vector(1 downto 0)
+            command        : in    command_lb_t
         );
     end component line_buffer;
 
@@ -142,7 +142,7 @@ architecture behavioral of pe is
 
 begin
 
-    sel_mult_psum   <= command(0);
+    sel_mult_psum   <= '0' when command = c_pe_mux_mac else '1' when command = c_pe_mux_psum;
     data_acc_valid  <= (data_acc_in1_valid and data_acc_in2_valid) or data_acc_in2_valid;
     iact_wght_valid <= data_iact_valid and data_wght_valid;
     data_out_valid  <= data_acc_out_valid;

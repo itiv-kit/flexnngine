@@ -1,6 +1,7 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
+    use work.utilities.all;
 
 --! This component buffers the pixels of one line in the input image
 --! The component implements a FIFO like buffer with a depth of #line_length.
@@ -24,7 +25,7 @@ entity line_buffer is
         update_val     : in    std_logic_vector(data_width - 1 downto 0);
         update_offset  : in    std_logic_vector(addr_width - 1 downto 0);
         read_offset    : in    std_logic_vector(addr_width - 1 downto 0); --! Offset from head of FIFO; Shrink FIFO by this many elements
-        command        : in    std_logic_vector(1 downto 0)
+        command        : in    command_lb_t
     );
 end entity line_buffer;
 
@@ -72,7 +73,7 @@ architecture rtl of line_buffer is
     signal forward_update_s       : std_logic;
     signal forward_update_delay_s : std_logic_vector(1 downto 0);
 
-    type t_array_command is array (0 to 2) of std_logic_vector(1 downto 0);
+    type t_array_command is array (0 to 2) of command_lb_t;
 
     signal command_delay_s : t_array_command;
 
@@ -175,7 +176,7 @@ begin
             fifo_empty_s   <= '1';
         elsif rising_edge(clk) then
             -- Update data
-            if command_delay_s(2) = "10" then
+            if command_delay_s(2) = c_lb_read_update then
                 pointer_update_v := pointer_head_s;
                 if or update_offset_delay_s(2) /= '0' then -- only calculate offset if update_offset not zero
                     offset_v := to_integer(unsigned(update_offset_delay_s(2)));
@@ -219,7 +220,7 @@ begin
 
     buffer_full      <= '1' when (pointer_tail_s = pointer_head_s) and (fifo_empty_s = '0') else
                         '0';
-    forward_update_s <= '1' when command_delay_s(0) = "10" and (command = "10" or command = "01")
+    forward_update_s <= '1' when command_delay_s(0) = c_lb_read_update and (command = c_lb_read_update or command = c_lb_read)
                                  and update_offset = update_offset_delay_s(0) else
                         '0';
     read_offset_s    <= to_integer(unsigned(read_offset));
@@ -232,7 +233,7 @@ begin
 
         if not rstn then
             forward_update_delay_s <= (others => '0');
-            command_delay_s        <= (others => (others => '0'));
+            command_delay_s        <= (others => c_lb_idle);
             update_offset_delay_s  <= (others => (others => '0'));
         elsif rising_edge(clk) then
             forward_update_delay_s <= forward_update_delay_s(0) & forward_update_s;
@@ -268,12 +269,12 @@ begin
             case command is
 
                 -- idle
-                when "00" =>
+                when c_lb_idle =>
 
                     data_out_valid_s <= '0';
 
                 -- read
-                when "01" =>
+                when c_lb_read =>
 
                     pointer_read_v := pointer_head_s;
                     -- only calculate offset if read_offset not zero
@@ -286,7 +287,7 @@ begin
                     data_out_valid_s <= '1';
 
                 -- read / update
-                when "10" =>
+                when c_lb_read_update =>
 
                     pointer_read_v := pointer_head_s;
                     -- only calculate offset if read_offset not zero
@@ -299,7 +300,7 @@ begin
                     data_out_valid_s <= '1';
 
                 -- shrink
-                when "11" =>
+                when c_lb_shrink =>
 
                     data_out_valid_s <= '0';
                     -- incr(pointer_head_s);
