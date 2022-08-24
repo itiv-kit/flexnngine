@@ -197,14 +197,14 @@ begin
                 end loop;
 
                 read_offset <= std_logic_vector(to_unsigned(1, addr_width));
-                command     <= c_shrink;
+                command     <= c_lb_shrink;
 
             end loop;
 
             wait until rising_edge(clk);
 
             read_offset <= std_logic_vector(to_unsigned(kernel_size - 1, addr_width));
-            command     <= c_shrink;
+            command     <= c_lb_shrink;
 
             wait until rising_edge(clk);
             /*for z in 0 to kernel_size - 1 loop -- Flush remaining pixels 

@@ -63,7 +63,7 @@ architecture imp of line_buffer_wght_tb is
 
     -- test data, simulates the output of classify
     constant command_sequence : command_array_t(0 to command_length - 1) := (
-        (c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_shrink, c_lb_read,c_lb_read,c_lb_read,c_lb_idle,c_lb_read, c_lb_read, c_lb_read, c_lb_idle)
+        (c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_read,c_lb_read,c_lb_read,c_lb_idle,c_lb_read, c_lb_read, c_lb_read, c_lb_idle)
     );
 
     constant read_offset_sequence : integer_t(0 to command_length - 1) := (
