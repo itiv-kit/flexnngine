@@ -39,7 +39,7 @@ style-guide-tb:
     before_script:
         - pip3 install vsg
     script:
-        - vsg -c ci/vsg_configuration_tb.json -f hdl/*.vhd -j vsg_results_tb.xml
+        - vsg -c ci/vsg_configuration_tb.json -f testbenches/*/src/*.vhd -j vsg_results_tb.xml
         - cat vsg_results_tb.xml
     artifacts:
         reports:
