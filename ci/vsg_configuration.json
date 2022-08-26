@@ -6297,7 +6297,7 @@
       "severity": "Error"
     },
     "type_010": {
-      "disable": false,
+      "disable": true,
       "fixable": true,
       "indentSize": 4,
       "phase": 3,
@@ -6305,7 +6305,7 @@
       "style": "require_blank_line"
     },
     "type_011": {
-      "disable": false,
+      "disable": true,
       "fixable": true,
       "indentSize": 4,
       "phase": 3,
