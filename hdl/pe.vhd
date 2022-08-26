@@ -171,7 +171,7 @@ begin
 
     end process output_valid;
 
-    delays : process (clk) is
+    delays : process (clk, rstn) is
     begin
 
         if not rstn then
