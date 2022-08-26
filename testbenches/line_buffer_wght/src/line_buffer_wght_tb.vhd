@@ -5,10 +5,10 @@ library ieee;
     use std.env.stop;
     use work.utilities.all;
 
---! This testbench can be used to test the line_buffer component.
+--! Testbench for the line buffer
 
---! The line_buffer is filled with the pixels of a test image.
---! The testbench checks if the correct pixels appear on the line_buffer output
+--! The line_buffer is filled with the weights of a test convolution.
+--! The testbench checks if the correct weights appear on the output
 --! at the right time.
 
 entity line_buffer_wght_tb is

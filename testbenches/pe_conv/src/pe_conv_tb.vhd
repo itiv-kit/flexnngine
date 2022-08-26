@@ -5,11 +5,10 @@ library ieee;
     use std.env.stop;
     use work.utilities.all;
 
---! This testbench can be used to test the line_buffer component.
+--! This testbench can be used to test the pe component with a convolution.
 
---! The line_buffer is filled with the pixels of a test image.
---! The testbench checks if the correct pixels appear on the line_buffer output
---! at the right time.
+--! 1-D convolution with kernel size 3 performed. Program and kernel size can be adjusted
+--! Outputs are checked if they match the expected outputs
 
 entity pe_conv_tb is
     generic (

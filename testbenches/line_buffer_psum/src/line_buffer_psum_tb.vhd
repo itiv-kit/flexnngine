@@ -5,11 +5,11 @@ library ieee;
     use std.env.stop;
     use work.utilities.all;
 
---! This testbench can be used to test the line_buffer component.
+--! Testbench for the line buffer
 
---! The line_buffer is filled with the pixels of a test image.
---! The testbench checks if the correct pixels appear on the line_buffer output
---! at the right time.
+--! The line_buffer is filled with the psums of a test convolution.
+--! The testbench checks if the read / update of psums works and the
+--! right outputs appear at the right time.
 
 entity line_buffer_psum_tb is
     generic (

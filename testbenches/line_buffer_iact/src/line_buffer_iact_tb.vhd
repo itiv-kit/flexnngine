@@ -5,11 +5,11 @@ library ieee;
     use std.env.stop;
     use work.utilities.all;
 
---! This testbench can be used to test the line_buffer component.
+--! Testbench for the line buffer
 
---! The line_buffer is filled with the pixels of a test image.
---! The testbench checks if the correct pixels appear on the line_buffer output
---! at the right time.
+--! The line_buffer is filled with the input activations of a test image.
+--! The testbench checks if the correct input activations appear on the output
+--! at the right time according to a convolution with kernel 5.
 
 entity line_buffer_iact_tb is
     generic (

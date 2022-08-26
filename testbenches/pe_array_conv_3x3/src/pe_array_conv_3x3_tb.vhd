@@ -5,11 +5,10 @@ library ieee;
     use std.env.stop;
     use work.utilities.all;
 
---! This testbench can be used to test the line_buffer component.
+--! Testbench to perform a 3x3 convolution on a 5x5 input image
 
---! The line_buffer is filled with the pixels of a test image.
---! The testbench checks if the correct pixels appear on the line_buffer output
---! at the right time.
+--! The image as well as commands are fed into the pe_array
+--! Convolution outputs are validated
 
 entity pe_array_conv_3x3_tb is
     generic (
