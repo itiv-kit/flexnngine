@@ -46,18 +46,6 @@ entity pe_array is
         o_buffer_full_psum : out   std_logic;
         o_buffer_full_wght : out   std_logic;
 
-        /*data_in_iact : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(data_width_iact - 1 downto 0);
-        data_in_psum : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(data_width_psum - 1 downto 0);
-        data_in_wght : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(data_width_wght - 1 downto 0);
-
-        data_in_iact_valid : in    std_logic_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-        data_in_psum_valid : in    std_logic_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-        data_in_wght_valid : in    std_logic_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-
-        buffer_full_iact : out   std_logic_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-        buffer_full_psum : out   std_logic_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-        buffer_full_wght : out   std_logic_row_col_t(0 to size_y - 1, 0 to size_x - 1);      */
-
         update_offset_iact : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
         update_offset_psum : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
         update_offset_wght : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
@@ -68,9 +56,6 @@ entity pe_array is
 
         o_psums       : out   array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
         o_psums_valid : out   std_logic_vector(size_x - 1 downto 0)
-
-        /*data_out       : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(data_width_psum - 1 downto 0);
-        data_out_valid : out   std_logic_row_col_t(0 to size_y - 1, 0 to size_x - 1)      */
     );
 end entity pe_array;
 
