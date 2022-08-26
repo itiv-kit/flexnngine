@@ -140,14 +140,47 @@ architecture behavioral of pe is
 
     signal sel_mult_psum : std_logic;
 
+    signal command_read_delay : std_logic;
+    signal command_read       : std_logic;
+
 begin
 
     sel_mult_psum   <= '0' when command = c_pe_mux_mac else
                        '1' when command = c_pe_mux_psum;
     data_acc_valid  <= (data_acc_in1_valid and data_acc_in2_valid) or data_acc_in2_valid;
     iact_wght_valid <= data_iact_valid and data_wght_valid;
-    data_out_valid  <= data_acc_out_valid;
-    data_out        <= data_acc_out;
+    -- data_out_valid  <= data_acc_out_valid;
+    -- data_out        <= data_acc_out;
+    data_out <= data_acc_in2;
+    -- data_out_valid <= data_acc_in2_valid;
+
+    data_out_valid <= command_read_delay;
+
+    output_valid : process (clk, rstn) is
+    begin
+
+        if not rstn then
+            command_read <= '0';
+        elsif rising_edge(clk) then
+            if command_psum = c_lb_read then
+                command_read <= '1';
+            else
+                command_read <= '0';
+            end if;
+        end if;
+
+    end process output_valid;
+
+    delays : process (clk) is
+    begin
+
+        if not rstn then
+            command_read_delay <= '0';
+        elsif rising_edge(clk) then
+            command_read_delay <= command_read;
+        end if;
+
+    end process delays;
 
     line_buffer_iact : component line_buffer
         generic map (

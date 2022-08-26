@@ -129,7 +129,8 @@ architecture imp of pe_conv_tb is
     );
 
     constant expected_psums : integer_t(0 to (line_length - kernel_size + 1) * kernel_size - 1) := (
-        (0,2,4,1,5,8,2,8,12,3,11,16,4,14,20)
+        --( 0,2,4,1,5,8,2,8,12,3,11,16,4,14,20)
+        (0,0,2,0,1,5,0,2,8,0,3,11,0,4,14)
     );
 
     constant expected_output : integer_t(0 to line_length - kernel_size) := (
@@ -360,7 +361,9 @@ begin
     output_check : process is
     begin
 
-        report "PSUMS -----------------------------------------------------"
+        -- Output from read/update disabled, no PSUM output.
+
+        /*report "PSUMS -----------------------------------------------------"
             severity note;
 
         psums_loop : for i in 0 to expected_psums'length - 1 loop
@@ -379,7 +382,7 @@ begin
 
             report "Got correct result " & integer'image(to_integer(signed(data_out)));
 
-        end loop;
+        end loop;*/
 
         report "OUTPUTS -----------------------------------------------------"
             severity note;

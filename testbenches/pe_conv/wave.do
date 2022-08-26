@@ -19,6 +19,8 @@ add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_con
 add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_iact/data_out_valid
 add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_psum/data_out
 add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_psum/data_out_valid
+add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_psum/update_val
+add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_psum/update_offset
 add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_wght/data_out
 add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_wght/data_out_valid
 
