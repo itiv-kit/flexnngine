@@ -46,6 +46,10 @@ entity pe_array is
         o_buffer_full_psum : out   std_logic;
         o_buffer_full_wght : out   std_logic;
 
+        o_buffer_full_next_iact : out std_logic;
+        o_buffer_full_next_psum : out std_logic;
+        o_buffer_full_next_wght : out std_logic;
+
         update_offset_iact : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
         update_offset_psum : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
         update_offset_wght : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
@@ -96,6 +100,10 @@ architecture behavioral of pe_array is
             buffer_full_psum : out   std_logic;
             buffer_full_wght : out   std_logic;
 
+            buffer_full_next_iact : out   std_logic;
+            buffer_full_next_psum : out   std_logic;
+            buffer_full_next_wght : out   std_logic;
+
             update_offset_iact : in    std_logic_vector(addr_width_iact - 1 downto 0);
             update_offset_psum : in    std_logic_vector(addr_width_psum - 1 downto 0);
             update_offset_wght : in    std_logic_vector(addr_width_wght - 1 downto 0);
@@ -133,6 +141,10 @@ architecture behavioral of pe_array is
     signal w_buffer_full_iact : std_logic_row_col_t(0 to size_y - 1, 0 to size_x - 1);
     signal w_buffer_full_psum : std_logic_row_col_t(0 to size_y - 1, 0 to size_x - 1);
     signal w_buffer_full_wght : std_logic_row_col_t(0 to size_y - 1, 0 to size_x - 1);
+
+    signal w_buffer_full_next_iact : std_logic_row_col_t(0 to size_y - 1, 0 to size_x - 1);
+    signal w_buffer_full_next_psum : std_logic_row_col_t(0 to size_y - 1, 0 to size_x - 1);
+    signal w_buffer_full_next_wght : std_logic_row_col_t(0 to size_y - 1, 0 to size_x - 1);
 
     signal w_data_out       : array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(data_width_psum - 1 downto 0);
     signal w_data_out_valid : std_logic_row_col_t(0 to size_y - 1, 0 to size_x - 1);
@@ -272,6 +284,10 @@ begin
     o_buffer_full_psum <= w_buffer_full_psum(0, 0) and w_buffer_full_psum(0, 1) and w_buffer_full_psum(0, 2) and w_buffer_full_psum(1, 0) and w_buffer_full_psum(1, 1) and w_buffer_full_psum(1, 2) and w_buffer_full_psum(2, 0) and w_buffer_full_psum(2, 1) and w_buffer_full_psum(2, 2);
     o_buffer_full_wght <= w_buffer_full_wght(0, 0) and w_buffer_full_wght(0, 1) and w_buffer_full_wght(0, 2) and w_buffer_full_wght(1, 0) and w_buffer_full_wght(1, 1) and w_buffer_full_wght(1, 2) and w_buffer_full_wght(2, 0) and w_buffer_full_wght(2, 1) and w_buffer_full_wght(2, 2);
 
+    o_buffer_full_next_iact <= w_buffer_full_next_iact(0, 0) and w_buffer_full_next_iact(0, 1) and w_buffer_full_next_iact(0, 2) and w_buffer_full_next_iact(1, 0) and w_buffer_full_next_iact(1, 1) and w_buffer_full_next_iact(1, 2) and w_buffer_full_next_iact(2, 0) and w_buffer_full_next_iact(2, 1) and w_buffer_full_next_iact(2, 2);
+    o_buffer_full_next_psum <= w_buffer_full_next_psum(0, 0) and w_buffer_full_next_psum(0, 1) and w_buffer_full_next_psum(0, 2) and w_buffer_full_next_psum(1, 0) and w_buffer_full_next_psum(1, 1) and w_buffer_full_next_psum(1, 2) and w_buffer_full_next_psum(2, 0) and w_buffer_full_next_psum(2, 1) and w_buffer_full_next_psum(2, 2);
+    o_buffer_full_next_wght <= w_buffer_full_next_wght(0, 0) and w_buffer_full_next_wght(0, 1) and w_buffer_full_next_wght(0, 2) and w_buffer_full_next_wght(1, 0) and w_buffer_full_next_wght(1, 1) and w_buffer_full_next_wght(1, 2) and w_buffer_full_next_wght(2, 0) and w_buffer_full_next_wght(2, 1) and w_buffer_full_next_wght(2, 2);
+
     -- GENERATE PE ---------
     -- Generate PE instances
 
@@ -292,29 +308,32 @@ begin
                     addr_width_wght  => addr_width_wght
                 )
                 port map (
-                    clk                => clk,
-                    rstn               => rstn,
-                    command            => command(y,x),
-                    command_iact       => command_iact(y,x),
-                    command_psum       => command_psum(y,x),
-                    command_wght       => command_wght(y,x),
-                    data_in_iact       => w_data_in_iact(y,x),
-                    data_in_psum       => w_data_in_psum(y,x),
-                    data_in_wght       => w_data_in_wght(y,x),
-                    data_in_iact_valid => w_data_in_iact_valid(y,x),
-                    data_in_psum_valid => w_data_in_psum_valid(y,x),
-                    data_in_wght_valid => w_data_in_wght_valid(y,x),
-                    buffer_full_iact   => w_buffer_full_iact(y,x),
-                    buffer_full_psum   => w_buffer_full_psum(y,x),
-                    buffer_full_wght   => w_buffer_full_wght(y,x),
-                    update_offset_iact => update_offset_iact(y,x),
-                    update_offset_psum => update_offset_psum(y,x),
-                    update_offset_wght => update_offset_wght(y,x),
-                    read_offset_iact   => read_offset_iact(y,x),
-                    read_offset_psum   => read_offset_psum(y,x),
-                    read_offset_wght   => read_offset_wght(y,x),
-                    data_out           => w_data_out(y,x),
-                    data_out_valid     => w_data_out_valid(y,x)
+                    clk                     => clk,
+                    rstn                    => rstn,
+                    command                 => command(y,x),
+                    command_iact            => command_iact(y,x),
+                    command_psum            => command_psum(y,x),
+                    command_wght            => command_wght(y,x),
+                    data_in_iact            => w_data_in_iact(y,x),
+                    data_in_psum            => w_data_in_psum(y,x),
+                    data_in_wght            => w_data_in_wght(y,x),
+                    data_in_iact_valid      => w_data_in_iact_valid(y,x),
+                    data_in_psum_valid      => w_data_in_psum_valid(y,x),
+                    data_in_wght_valid      => w_data_in_wght_valid(y,x),
+                    buffer_full_iact        => w_buffer_full_iact(y,x),
+                    buffer_full_psum        => w_buffer_full_psum(y,x),
+                    buffer_full_wght        => w_buffer_full_wght(y,x),
+                    buffer_full_next_iact   => w_buffer_full_next_iact(y,x),
+                    buffer_full_next_psum   => w_buffer_full_next_psum(y,x),
+                    buffer_full_next_wght   => w_buffer_full_next_wght(y,x),
+                    update_offset_iact      => update_offset_iact(y,x),
+                    update_offset_psum      => update_offset_psum(y,x),
+                    update_offset_wght      => update_offset_wght(y,x),
+                    read_offset_iact        => read_offset_iact(y,x),
+                    read_offset_psum        => read_offset_psum(y,x),
+                    read_offset_wght        => read_offset_wght(y,x),
+                    data_out                => w_data_out(y,x),
+                    data_out_valid          => w_data_out_valid(y,x)
                 );
 
         end generate pe_inst_x;

@@ -15,17 +15,18 @@ entity line_buffer is
         data_width  : positive := 8  --! Data width for the ram_dp subcomponent - should be the width of data to be stored (8 / 16 bit?)
     );
     port (
-        clk            : in    std_logic;                                 --! Clock input
-        rstn           : in    std_logic;                                 --! Negated asynchronous reset
-        data_in        : in    std_logic_vector(data_width - 1 downto 0); --! Input to be pushed to the FIFO
-        data_in_valid  : in    std_logic;                                 --! Data only read if valid = '1'
-        data_out       : out   std_logic_vector(data_width - 1 downto 0); --! Outputs the element read_offset away from the head of the FIFO
-        data_out_valid : out   std_logic;
-        buffer_full    : out   std_logic;
-        update_val     : in    std_logic_vector(data_width - 1 downto 0);
-        update_offset  : in    std_logic_vector(addr_width - 1 downto 0);
-        read_offset    : in    std_logic_vector(addr_width - 1 downto 0); --! Offset from head of FIFO; Shrink FIFO by this many elements
-        command        : in    command_lb_t
+        clk              : in    std_logic;                                 --! Clock input
+        rstn             : in    std_logic;                                 --! Negated asynchronous reset
+        data_in          : in    std_logic_vector(data_width - 1 downto 0); --! Input to be pushed to the FIFO
+        data_in_valid    : in    std_logic;                                 --! Data only read if valid = '1'
+        data_out         : out   std_logic_vector(data_width - 1 downto 0); --! Outputs the element read_offset away from the head of the FIFO
+        data_out_valid   : out   std_logic;
+        buffer_full      : out   std_logic;
+        buffer_full_next : out   std_logic;
+        update_val       : in    std_logic_vector(data_width - 1 downto 0);
+        update_offset    : in    std_logic_vector(addr_width - 1 downto 0);
+        read_offset      : in    std_logic_vector(addr_width - 1 downto 0); --! Offset from head of FIFO; Shrink FIFO by this many elements
+        command          : in    command_lb_t
     );
 end entity line_buffer;
 
@@ -63,6 +64,7 @@ architecture rtl of line_buffer is
     -- process internal signals
     signal pointer_head_s : integer;
     signal pointer_tail_s : integer;
+    signal fill_count     : integer;
     -- signal fifo_filled_s    : std_logic;
     signal fifo_empty_s : std_logic;
     -- signal fifo_shrink_s    : std_logic;
@@ -123,23 +125,6 @@ architecture rtl of line_buffer is
         end if;
 
     end procedure;
-
-    -- Decrement by offset variable
-
-    /*procedure decr (
-        variable pointer : inout integer;
-        variable offset  : in integer) is
-    begin
-
-        if pointer = offset - 1 then
-            pointer := line_length - 1;
-        elsif pointer < offset - 1 then
-            pointer := line_length - (offset - pointer);
-        else
-            pointer := pointer - offset;
-        end if;
-
-    end procedure;*/
 
 begin
 
@@ -202,6 +187,25 @@ begin
 
     end process write_val;
 
+    buffer_full_next <= '1' when fill_count = line_length - 1 else 
+                        '0';
+    buffer_full <= '1' when fill_count = line_length else
+                    '0';
+
+    p_fill_stat : process (clk, rstn) is
+    begin
+        if not rstn then
+            fill_count <= 0;
+        elsif rising_edge(clk) then
+            if data_in_valid = '1' and (buffer_full = '0') and (command_delay_s(2) /= c_lb_read_update) then
+                fill_count <= fill_count + 1;
+            end if;
+            if command = c_lb_shrink then
+                fill_count <= fill_count - read_offset_s;
+            end if;
+        end if;
+    end process;
+
     -- Process to set / clear the buffer full flag
     /*fifo_status : process (all) is
     begin
@@ -218,8 +222,9 @@ begin
 
     end process fifo_status;*/
 
-    buffer_full      <= '1' when (pointer_tail_s = pointer_head_s) and (fifo_empty_s = '0') else
-                        '0';
+    --buffer_full      <= '1' when (pointer_tail_s = pointer_head_s) and (fifo_empty_s = '0') else
+    --                    '0';
+    
     forward_update_s <= '1' when command_delay_s(0) = c_lb_read_update and (command = c_lb_read_update or command = c_lb_read)
                                  and update_offset = update_offset_delay_s(0) else
                         '0';

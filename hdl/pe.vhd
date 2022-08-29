@@ -38,6 +38,10 @@ entity pe is
         buffer_full_psum : out   std_logic;
         buffer_full_wght : out   std_logic;
 
+        buffer_full_next_iact : out std_logic;
+        buffer_full_next_psum : out std_logic;
+        buffer_full_next_wght : out std_logic;
+
         update_offset_iact : in    std_logic_vector(addr_width_iact - 1 downto 0);
         update_offset_psum : in    std_logic_vector(addr_width_psum - 1 downto 0);
         update_offset_wght : in    std_logic_vector(addr_width_wght - 1 downto 0);
@@ -60,17 +64,18 @@ architecture behavioral of pe is
             data_width  : positive := 8
         );
         port (
-            clk            : in    std_logic;
-            rstn           : in    std_logic;
-            data_in        : in    std_logic_vector(data_width - 1 downto 0);
-            data_in_valid  : in    std_logic;
-            data_out       : out   std_logic_vector(data_width - 1 downto 0);
-            data_out_valid : out   std_logic;
-            buffer_full    : out   std_logic;
-            update_val     : in    std_logic_vector(data_width - 1 downto 0);
-            update_offset  : in    std_logic_vector(addr_width - 1 downto 0);
-            read_offset    : in    std_logic_vector(addr_width - 1 downto 0);
-            command        : in    command_lb_t
+            clk              : in    std_logic;
+            rstn             : in    std_logic;
+            data_in          : in    std_logic_vector(data_width - 1 downto 0);
+            data_in_valid    : in    std_logic;
+            data_out         : out   std_logic_vector(data_width - 1 downto 0);
+            data_out_valid   : out   std_logic;
+            buffer_full      : out   std_logic;
+            buffer_full_next : out   std_logic;
+            update_val       : in    std_logic_vector(data_width - 1 downto 0);
+            update_offset    : in    std_logic_vector(addr_width - 1 downto 0);
+            read_offset      : in    std_logic_vector(addr_width - 1 downto 0);
+            command          : in    command_lb_t
         );
     end component line_buffer;
 
@@ -189,17 +194,18 @@ begin
             data_width  => data_width_iact
         )
         port map (
-            clk            => clk,
-            rstn           => rstn,
-            data_in        => data_in_iact,
-            data_in_valid  => data_in_iact_valid,
-            data_out       => data_iact,
-            data_out_valid => data_iact_valid,
-            buffer_full    => buffer_full_iact,
-            update_val     => (others=>'0'),
-            update_offset  => update_offset_iact,
-            read_offset    => read_offset_iact,
-            command        => command_iact
+            clk              => clk,
+            rstn             => rstn,
+            data_in          => data_in_iact,
+            data_in_valid    => data_in_iact_valid,
+            data_out         => data_iact,
+            data_out_valid   => data_iact_valid,
+            buffer_full      => buffer_full_iact,
+            buffer_full_next => buffer_full_next_iact,
+            update_val       => (others=>'0'),
+            update_offset    => update_offset_iact,
+            read_offset      => read_offset_iact,
+            command          => command_iact
         );
 
     line_buffer_psum : component line_buffer
@@ -209,17 +215,18 @@ begin
             data_width  => data_width_psum
         )
         port map (
-            clk            => clk,
-            rstn           => rstn,
-            data_in        => data_in_psum,
-            data_in_valid  => data_in_psum_valid,
-            data_out       => data_acc_in2,
-            data_out_valid => data_acc_in2_valid,
-            buffer_full    => buffer_full_psum,
-            update_val     => data_acc_out,
-            update_offset  => update_offset_psum,
-            read_offset    => read_offset_psum,
-            command        => command_psum
+            clk              => clk,
+            rstn             => rstn,
+            data_in          => data_in_psum,
+            data_in_valid    => data_in_psum_valid,
+            data_out         => data_acc_in2,
+            data_out_valid   => data_acc_in2_valid,
+            buffer_full      => buffer_full_psum,
+            buffer_full_next => buffer_full_next_psum,
+            update_val       => data_acc_out,
+            update_offset    => update_offset_psum,
+            read_offset      => read_offset_psum,
+            command          => command_psum
         );
 
     line_buffer_wght : component line_buffer
@@ -229,17 +236,18 @@ begin
             data_width  => data_width_wght
         )
         port map (
-            clk            => clk,
-            rstn           => rstn,
-            data_in        => data_in_wght,
-            data_in_valid  => data_in_wght_valid,
-            data_out       => data_wght,
-            data_out_valid => data_wght_valid,
-            buffer_full    => buffer_full_wght,
-            update_val     => (others=>'0'),
-            update_offset  => update_offset_wght,
-            read_offset    => read_offset_wght,
-            command        => command_wght
+            clk              => clk,
+            rstn             => rstn,
+            data_in          => data_in_wght,
+            data_in_valid    => data_in_wght_valid,
+            data_out         => data_wght,
+            data_out_valid   => data_wght_valid,
+            buffer_full      => buffer_full_wght,
+            buffer_full_next => buffer_full_next_wght,
+            update_val       => (others=>'0'),
+            update_offset    => update_offset_wght,
+            read_offset      => read_offset_wght,
+            command          => command_wght
         );
 
     mult_1 : component mult
