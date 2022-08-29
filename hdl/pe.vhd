@@ -38,9 +38,9 @@ entity pe is
         buffer_full_psum : out   std_logic;
         buffer_full_wght : out   std_logic;
 
-        buffer_full_next_iact : out std_logic;
-        buffer_full_next_psum : out std_logic;
-        buffer_full_next_wght : out std_logic;
+        buffer_full_next_iact : out   std_logic;
+        buffer_full_next_psum : out   std_logic;
+        buffer_full_next_wght : out   std_logic;
 
         update_offset_iact : in    std_logic_vector(addr_width_iact - 1 downto 0);
         update_offset_psum : in    std_logic_vector(addr_width_psum - 1 downto 0);
