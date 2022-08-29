@@ -187,13 +187,14 @@ begin
 
     end process write_val;
 
-    buffer_full_next <= '1' when fill_count = line_length - 1 else 
+    buffer_full_next <= '1' when fill_count = line_length - 1 else
                         '0';
-    buffer_full <= '1' when fill_count = line_length else
-                    '0';
+    buffer_full      <= '1' when fill_count = line_length else
+                        '0';
 
     p_fill_stat : process (clk, rstn) is
     begin
+
         if not rstn then
             fill_count <= 0;
         elsif rising_edge(clk) then
@@ -204,7 +205,8 @@ begin
                 fill_count <= fill_count - read_offset_s;
             end if;
         end if;
-    end process;
+
+    end process p_fill_stat;
 
     -- Process to set / clear the buffer full flag
     /*fifo_status : process (all) is
@@ -222,9 +224,9 @@ begin
 
     end process fifo_status;*/
 
-    --buffer_full      <= '1' when (pointer_tail_s = pointer_head_s) and (fifo_empty_s = '0') else
+    -- buffer_full      <= '1' when (pointer_tail_s = pointer_head_s) and (fifo_empty_s = '0') else
     --                    '0';
-    
+
     forward_update_s <= '1' when command_delay_s(0) = c_lb_read_update and (command = c_lb_read_update or command = c_lb_read)
                                  and update_offset = update_offset_delay_s(0) else
                         '0';
