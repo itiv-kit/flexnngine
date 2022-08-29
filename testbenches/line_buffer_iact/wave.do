@@ -17,6 +17,7 @@ add wave -noupdate -expand -group Line_Buffer_Output -radix unsigned /line_buffe
 add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/pointer_head_s
 add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/pointer_tail_s
 add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/buffer_full
+add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/buffer_full_next
 add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/fifo_empty_s
 add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/read_command/pointer_read_v
 add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/read_offset

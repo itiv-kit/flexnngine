@@ -30,31 +30,33 @@ architecture imp of line_buffer_iact_tb is
             data_width  : positive := 8
         );
         port (
-            clk            : in    std_logic;
-            rstn           : in    std_logic;
-            data_in        : in    std_logic_vector(data_width - 1 downto 0);
-            data_in_valid  : in    std_logic;
-            data_out       : out   std_logic_vector(data_width - 1 downto 0);
-            data_out_valid : out   std_logic;
-            buffer_full    : out   std_logic;
-            update_val     : in    std_logic_vector(data_width - 1 downto 0);
-            update_offset  : in    std_logic_vector(addr_width - 1 downto 0);
-            read_offset    : in    std_logic_vector(addr_width - 1 downto 0);
-            command        : in    command_lb_t
+            clk              : in    std_logic;
+            rstn             : in    std_logic;
+            data_in          : in    std_logic_vector(data_width - 1 downto 0);
+            data_in_valid    : in    std_logic;
+            data_out         : out   std_logic_vector(data_width - 1 downto 0);
+            data_out_valid   : out   std_logic;
+            buffer_full      : out   std_logic;
+            buffer_full_next : out   std_logic;
+            update_val       : in    std_logic_vector(data_width - 1 downto 0);
+            update_offset    : in    std_logic_vector(addr_width - 1 downto 0);
+            read_offset      : in    std_logic_vector(addr_width - 1 downto 0);
+            command          : in    command_lb_t
         );
     end component;
 
-    signal clk            : std_logic := '1';
-    signal rstn           : std_logic;
-    signal data_in_valid  : std_logic;
-    signal data_in        : std_logic_vector(data_width - 1 downto 0);
-    signal data_out       : std_logic_vector(data_width - 1 downto 0);
-    signal data_out_valid : std_logic;
-    signal buffer_full    : std_logic;
-    signal update_val     : std_logic_vector(data_width - 1 downto 0);
-    signal update_offset  : std_logic_vector(addr_width - 1 downto 0);
-    signal read_offset    : std_logic_vector(addr_width - 1 downto 0);
-    signal command        : command_lb_t;
+    signal clk              : std_logic := '1';
+    signal rstn             : std_logic;
+    signal data_in_valid    : std_logic;
+    signal data_in          : std_logic_vector(data_width - 1 downto 0);
+    signal data_out         : std_logic_vector(data_width - 1 downto 0);
+    signal data_out_valid   : std_logic;
+    signal buffer_full      : std_logic;
+    signal buffer_full_next : std_logic;
+    signal update_val       : std_logic_vector(data_width - 1 downto 0);
+    signal update_offset    : std_logic_vector(addr_width - 1 downto 0);
+    signal read_offset      : std_logic_vector(addr_width - 1 downto 0);
+    signal command          : command_lb_t;
 
     type image_t is array(natural range <>, natural range <>) of integer;
 
@@ -95,20 +97,24 @@ begin
             data_width  => data_width
         )
         port map (
-            clk            => clk,
-            rstn           => rstn,
-            data_in        => data_in,
-            data_in_valid  => data_in_valid,
-            data_out       => data_out,
-            data_out_valid => data_out_valid,
-            buffer_full    => buffer_full,
-            update_val     => update_val,
-            update_offset  => update_offset,
-            read_offset    => read_offset,
-            command        => command
+            clk              => clk,
+            rstn             => rstn,
+            data_in          => data_in,
+            data_in_valid    => data_in_valid,
+            data_out         => data_out,
+            data_out_valid   => data_out_valid,
+            buffer_full      => buffer_full,
+            buffer_full_next => buffer_full_next,
+            update_val       => update_val,
+            update_offset    => update_offset,
+            read_offset      => read_offset,
+            command          => command
         );
 
     stimuli_data : process is
+        variable x : integer := 0;
+        variable y : integer := 0;
+        variable done : boolean := false;
     begin
 
         rstn          <= '0';
@@ -119,33 +125,47 @@ begin
         rstn          <= '1';
         wait until rising_edge(clk);
         data_in_valid <= '1';
+        
+        while not done loop
 
-        for y in 0 to number_of_lines - 1 loop
+            while buffer_full = '0' loop
 
-            for x in 0 to line_length - 1 loop
+                    /*while buffer_full = '1' or buffer_full_next = '1' loop
 
-                while buffer_full = '1' loop
+                        wait until rising_edge(clk);
 
+                    end loop;*/
+
+                    data_in <= std_logic_vector(to_signed(test_image(y, x), data_width));
                     wait until rising_edge(clk);
 
-                end loop;
+                    -- Check behavior with delays in data_in
+                    if x = 2 then
+                        data_in_valid <= '0';
+                        wait until rising_edge(clk);
+                        data_in_valid <= '1';
+                    elsif x = 4 then
+                        data_in_valid <= '0';
+                        wait until rising_edge(clk);
+                        wait until rising_edge(clk);
+                        data_in_valid <= '1';
+                    end if;
 
-                data_in <= std_logic_vector(to_signed(test_image(y, x), data_width));
-                wait until rising_edge(clk);
-
-                -- Check behavior with delays in data_in
-                if x = 2 then
-                    data_in_valid <= '0';
-                    wait until rising_edge(clk);
-                    data_in_valid <= '1';
-                elsif x = 4 then
-                    data_in_valid <= '0';
-                    wait until rising_edge(clk);
-                    wait until rising_edge(clk);
-                    data_in_valid <= '1';
-                end if;
+                    if buffer_full_next = '0' then
+                        x := x + 1;
+                        if x = line_length then
+                            x := 0;
+                            y := y + 1;
+                        end if;
+                    else 
+                        data_in_valid <= '0';
+                    end if;
 
             end loop;
+
+            wait until buffer_full = '0';
+
+            data_in_valid <= '1';
 
         end loop;
 
