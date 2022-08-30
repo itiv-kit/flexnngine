@@ -172,8 +172,8 @@ begin
 
     iact_input_y : for i in 0 to size_y - 1 generate
 
-        w_data_in_iact(i,0)       <= i_data_iact(i) when rising_edge(clk);
-        w_data_in_iact_valid(i,0) <= i_data_iact_valid(i) when rising_edge(clk);
+        w_data_in_iact(i,0)       <= i_data_iact(i);       -- when rising_edge(clk);
+        w_data_in_iact_valid(i,0) <= i_data_iact_valid(i); -- when rising_edge(clk);
 
     end generate iact_input_y;
 
@@ -182,8 +182,8 @@ begin
 
     iact_input_x : for i in 1 to size_x - 1 generate
 
-        w_data_in_iact(size_y - 1, i)       <= i_data_iact(size_y - 1 + i) when rising_edge(clk);
-        w_data_in_iact_valid(size_y - 1, i) <= i_data_iact_valid(size_y - 1 + i) when rising_edge(clk);
+        w_data_in_iact(size_y - 1, i)       <= i_data_iact(size_y - 1 + i);       -- when rising_edge(clk);
+        w_data_in_iact_valid(size_y - 1, i) <= i_data_iact_valid(size_y - 1 + i); -- when rising_edge(clk);
 
     end generate iact_input_x;
 

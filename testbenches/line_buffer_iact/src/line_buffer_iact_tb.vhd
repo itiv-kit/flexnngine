@@ -14,8 +14,9 @@ library ieee;
 entity line_buffer_iact_tb is
     generic (
         line_length     : positive := 7; --! Length of the lines in the test image
+        line_length_lb  : positive := 5; --! Length of line buffer
         number_of_lines : positive := 5; --! Number of lines in the test image
-        addr_width      : positive := 3; --! Address width for the ram_dp component
+        addr_width      : positive := 4; --! Address width for the ram_dp component
         data_width      : positive := 8; --! 8 bit data being saved
         kernel_size     : positive := 5  --! 3 pixel kernel
     );
@@ -46,6 +47,7 @@ architecture imp of line_buffer_iact_tb is
     end component;
 
     signal clk              : std_logic := '1';
+    signal clk_2            : std_logic := '1';
     signal rstn             : std_logic;
     signal data_in_valid    : std_logic;
     signal data_in          : std_logic_vector(data_width - 1 downto 0);
@@ -57,6 +59,9 @@ architecture imp of line_buffer_iact_tb is
     signal update_offset    : std_logic_vector(addr_width - 1 downto 0);
     signal read_offset      : std_logic_vector(addr_width - 1 downto 0);
     signal command          : command_lb_t;
+    signal s_x              : integer;
+    signal s_y              : integer;
+    signal s_done           : boolean;
 
     type image_t is array(natural range <>, natural range <>) of integer;
 
@@ -88,11 +93,23 @@ architecture imp of line_buffer_iact_tb is
         (29, 30, 31, 30, 31, 32, 31, 32, 33, 32, 33, 34, 33, 34, 35)
     );*/
 
+    procedure incr (signal pointer_y : inout integer; signal pointer_x : inout integer) is
+    begin
+
+        if pointer_x = line_length - 1 then
+            pointer_x <= 0;
+            pointer_y <= pointer_y + 1;
+        else
+            pointer_x <= pointer_x + 1;
+        end if;
+
+    end procedure;
+
 begin
 
     line_buffer_inst : component line_buffer
         generic map (
-            line_length => line_length,
+            line_length => line_length_lb,
             addr_width  => addr_width,
             data_width  => data_width
         )
@@ -111,65 +128,42 @@ begin
             command          => command
         );
 
-    stimuli_data : process is
-        variable x : integer := 0;
-        variable y : integer := 0;
-        variable done : boolean := false;
+    p_rstn : process is
     begin
 
-        rstn          <= '0';
-        data_in       <= (others => '0');
-        data_in_valid <= '0';
-
+        rstn <= '0';
         wait for 100 ns;
-        rstn          <= '1';
-        wait until rising_edge(clk);
-        data_in_valid <= '1';
-        
-        while not done loop
+        rstn <= '1';
+        wait for 4000 ns;
 
-            while buffer_full = '0' loop
+    end process p_rstn;
 
-                    /*while buffer_full = '1' or buffer_full_next = '1' loop
+    clkgen_2 : process (clk_2) is
+    begin
 
-                        wait until rising_edge(clk);
+        clk_2 <= not clk_2 after 10 ns;
 
-                    end loop;*/
+    end process clkgen_2;
 
-                    data_in <= std_logic_vector(to_signed(test_image(y, x), data_width));
-                    wait until rising_edge(clk);
+    stimuli_data : process (rstn, clk) is
+    begin
 
-                    -- Check behavior with delays in data_in
-                    if x = 2 then
-                        data_in_valid <= '0';
-                        wait until rising_edge(clk);
-                        data_in_valid <= '1';
-                    elsif x = 4 then
-                        data_in_valid <= '0';
-                        wait until rising_edge(clk);
-                        wait until rising_edge(clk);
-                        data_in_valid <= '1';
-                    end if;
-
-                    if buffer_full_next = '0' then
-                        x := x + 1;
-                        if x = line_length then
-                            x := 0;
-                            y := y + 1;
-                        end if;
-                    else 
-                        data_in_valid <= '0';
-                    end if;
-
-            end loop;
-
-            wait until buffer_full = '0';
-
-            data_in_valid <= '1';
-
-        end loop;
-
-        wait for 2000 ns;
+        if not rstn then
+            data_in       <= (others => '0');
+            data_in_valid <= '0';
+            s_x           <= 0;
+            s_y           <= 0;
+            s_done        <= false;
+        elsif rising_edge(clk) then
+            if s_y = number_of_lines then
+                s_done <= true;
+            -- data_in_valid <= '0';
+            elsif buffer_full = '0' then
+                data_in_valid <= '1';
+                data_in       <= std_logic_vector(to_signed(test_image(s_y, s_x), data_width));
+                incr(s_y,s_x);
+            end if;
+        end if;
 
     end process stimuli_data;
 
@@ -181,13 +175,15 @@ begin
 
         for y in 0 to number_of_lines - 1 loop
 
+            wait until s_x = 5 or buffer_full = '1';
+
             for x in 0 to line_length - kernel_size loop
 
                 report "Waiting until buffer full";
 
-                if buffer_full = '0' then
+                /*if buffer_full = '0' then
                     wait until buffer_full = '1';
-                end if;
+                end if;*/
 
                 wait until rising_edge(clk);
 
@@ -272,7 +268,7 @@ begin
             report "Result valid should be zero"
             severity failure;
 
-        wait for 50 ns;
+        wait for 90 ns;
 
         report "Output check is finished."
             severity note;

@@ -198,10 +198,12 @@ begin
         if not rstn then
             fill_count <= 0;
         elsif rising_edge(clk) then
-            if data_in_valid = '1' and (buffer_full = '0') and (command_delay_s(2) /= c_lb_read_update) then
+            if data_in_valid = '1' and (buffer_full = '0') and (command_delay_s(2) /= c_lb_read_update) and command /= c_lb_shrink then
                 fill_count <= fill_count + 1;
-            end if;
-            if command = c_lb_shrink then
+            -- end if;
+            elsif command = c_lb_shrink and data_in_valid = '1' and (buffer_full = '0') and (command_delay_s(2) /= c_lb_read_update) then
+                fill_count <= fill_count - read_offset_s + 1;
+            elsif command = c_lb_shrink then
                 fill_count <= fill_count - read_offset_s;
             end if;
         end if;

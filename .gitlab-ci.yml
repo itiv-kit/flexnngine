@@ -152,3 +152,24 @@ test-pe-array-conv-3x3:
         - cd ./testbenches/pe_array_conv_3x3
         - vsim -c -do "../../ci/simulate.tcl"
         - cd ../..
+
+test-pe-array-conv-3x3-wide:
+    stage: test_3
+    tags:
+        - modelsim
+    only:
+        changes:
+            - hdl/pe.vhd
+            - hdl/line_buffer.vhd
+            - hdl/mult.vhd
+            - hdl/mux.vhd
+            - hdl/add.vhd
+            - hdl/ram_dp.vhd
+            - hdl/pe_array.vhd
+            - testbenches/pe_array_conv_3x3_wide/src/*
+            - .gitlab-ci.yml
+    script:
+        - source /tools/mentor/set_modelsim_10.6b.sh
+        - cd ./testbenches/pe_array_conv_3x3
+        - vsim -c -do "../../ci/simulate.tcl"
+        - cd ../..

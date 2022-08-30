@@ -28,13 +28,13 @@ entity pe_array_conv_3x3_tb is
         line_length_wght : positive := 7;
         addr_width_wght  : positive := 3;
 
-        image_x : positive := 5; --! size of input image
+        image_x : positive := 9; --! size of input image
         image_y : positive := 5; --! size of input image
 
         output_length : positive := 12; --! Number of outputs expected
 
-        command_length        : positive := 13;
-        output_command_length : positive := 10;
+        command_length        : positive := 29;
+        output_command_length : positive := 22;
 
         kernel_size : positive := 3 --! 3 pixel kernel
     );
@@ -147,11 +147,11 @@ architecture imp of pe_array_conv_3x3_tb is
     -- INPUT IMAGE, FILTER WEIGTHS AND EXPECTED OUTPUT
 
     constant input_image : int_image_t(0 to image_y - 1, 0 to image_x - 1) := (
-        (1,2,3,4,5),
-        (6,7,8,9,10),
-        (11,12,13,14,15),
-        (16,17,18,19,20),
-        (21,22,23,24,25)
+        (1,2,3,4,5,4,3,2,1),
+        (6,7,8,9,10,9,8,7,6),
+        (11,12,13,14,15,14,13,12,11),
+        (16,17,18,19,20,19,18,17,16),
+        (21,22,23,24,25,24,23,22,21)
     );
 
     constant input_weights : int_image_t(0 to size_y - 1, 0 to size_x - 1) := (
@@ -161,55 +161,55 @@ architecture imp of pe_array_conv_3x3_tb is
     );
 
     constant expected_output : int_image_t(0 to image_y - kernel_size, 0 to image_x - kernel_size) := (
-        (177,198,219),
-        (282,303,324),
-        (387,408,429)
+        (177, 198, 219, 228, 219, 198, 177),
+        (282, 303, 324, 333, 324, 303, 282),
+        (387, 408, 429, 438, 429, 408, 387)
     );
 
     -- COMMANDS FOR PES AND LINE BUFFERS
 
     constant input_pe_command : command_pe_array_t(0 to command_length - 1) := (
-        (c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac)
+        (c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac)
     );
 
     constant input_command : command_lb_row_col_t(0 to 2, 0 to command_length - 1) := (
-        (c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_idle),                                                          -- iact
-        (c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle), -- psum
-        (c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle)                                                                 -- wght
+        (c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_read, c_lb_read, c_lb_read, c_lb_shrink,c_lb_read, c_lb_read, c_lb_read, c_lb_shrink,c_lb_read, c_lb_read, c_lb_read, c_lb_shrink,c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_idle),                                                                                                                                         -- iact
+        (c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle), -- psum
+        (c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle,c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle)                                                                                                                                                      -- wght
     );
 
     constant input_read_offset : int_image_t(0 to 2, 0 to command_length - 1) := (
-        (0,1,2,1,0,1,2,1,0,1,2,1,0), -- iact
-        (0,0,0,0,0,1,1,1,0,2,2,2,0), -- psum
-        (0,1,2,0,0,1,2,0,0,1,2,0,0)  -- wght
+        (0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1,0), -- iact
+        (0,0,0,0,0,1,1,1,0,2,2,2,0,3,3,3,0,4,4,4,0,5,5,5,0,6,6,6,0), -- psum
+        (0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0)  -- wght
     );
 
     constant input_update_offset : int_image_t(0 to 2, 0 to command_length - 1) := (
-        (0,0,0,0,0,0,0,0,0,0,0,0,0), -- iact
-        (0,0,0,0,0,1,1,1,0,2,2,2,0), -- psum
-        (0,0,0,0,0,0,0,0,0,0,0,0,0)  -- wght
+        (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), -- iact
+        (0,0,0,0,0,1,1,1,0,2,2,2,0,3,3,3,0,4,4,4,0,5,5,5,0,6,6,6,0), -- psum
+        (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)  -- wght
     );
 
     constant output_command     : command_lb_row_col_t(0 to 2, 0 to output_command_length - 1) := (
-        (c_lb_idle, c_lb_idle, c_lb_idle, c_lb_read_update, c_lb_read_update,c_lb_read_update,c_lb_read,c_lb_read,c_lb_read,c_lb_idle),                             -- row 0
-        (c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle),                        -- row 1
-        (c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle,c_lb_idle, c_lb_idle)                                               -- row 2
+        (c_lb_idle, c_lb_idle, c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_idle),                                                             -- row 0
+        (c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle),                                             -- row 1
+        (c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle,c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle)                                                                                                -- row 2
     );
     constant output_pe_command  : command_pe_row_col_t(0 to 2, 0 to output_command_length - 1) := (
-        (c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum, c_pe_mux_psum , c_pe_mux_psum, c_pe_mux_psum ,c_pe_mux_psum,c_pe_mux_psum), -- row 0
-        (c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum),  -- row 1
-        (c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum)      -- row 2
+        (c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum, c_pe_mux_psum , c_pe_mux_psum, c_pe_mux_psum ,c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum), -- row 0
+        (c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum,c_pe_mux_psum , c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum), -- row 1
+        (c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum     , c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum)  -- row 2
     );
     constant output_read_offset : int_image_t(0 to 2, 0 to output_command_length - 1) := (
-        (0,0,0,0,1,2,0,1,2,0),                                                                                                                                      -- row 0
-        (0,1,2,0,1,2,0,0,0,0),                                                                                                                                      -- row 1
-        (0,1,2,0,0,0,0,0,0,0)                                                                                                                                       -- row 2
+        (0,0,0,0,0,0,0,0,1,2,3,4,5,6,0,1,2,3,4,5,6,0),                                                                                                                                                                                                                                                                                                   -- row 0
+        (0,1,2,3,4,5,6,0,1,2,3,4,5,6,0,0,0,0,0,0,0,0),                                                                                                                                                                                                                                                                                                   -- row 1
+        (0,1,2,3,4,5,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)                                                                                                                                                                                                                                                                                                    -- row 2
     );
 
     constant output_update_offset : int_image_t(0 to 2, 0 to output_command_length - 1) := (
-        (0,0,0,0,1,2,0,0,0,0), -- row 0
-        (0,1,2,0,0,0,0,0,0,0), -- row 1
-        (0,0,0,0,0,0,0,0,0,0)  -- row 2
+        (0,0,0,0,0,0,0,0,1,2,3,4,5,6,0,0,0,0,0,0,0,0), -- row 0
+        (0,1,2,3,4,5,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), -- row 1
+        (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)  -- row 2
     );
 
     procedure incr (signal pointer_y : inout integer; signal pointer_x : inout integer) is
