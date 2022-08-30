@@ -5,7 +5,7 @@
 
 library ieee;
     use ieee.std_logic_1164.all;
-    use ieee.std_logic_unsigned.all;
+    use ieee.numeric_std.all;
 
 library axi_filter_dma_v1_00_a;
     use axi_filter_dma_v1_00_a.all;
@@ -53,10 +53,10 @@ begin
 
         if rising_edge(clk) then
             if wena = '1' then
-                ram_instance(conv_integer(addra)) := dina;
-                douta_s                           <= dina;
+                ram_instance(to_integer(unsigned(addra))) := dina;
+                douta_s                                   <= dina;
             else
-                douta_s <= ram_instance(conv_integer(addra));
+                douta_s <= ram_instance(to_integer(unsigned(addra)));
             end if;
         end if;
 
@@ -67,10 +67,10 @@ begin
 
         if rising_edge(clk) then
             if wenb = '1' then
-                ram_instance(conv_integer(addrb)) := dinb;
-                doutb_s                           <= dinb;
+                ram_instance(to_integer(unsigned(addrb))) := dinb;
+                doutb_s                                   <= dinb;
             else
-                doutb_s <= ram_instance(conv_integer(addrb));
+                doutb_s <= ram_instance(to_integer(unsigned(addrb)));
             end if;
         end if;
 
