@@ -4,6 +4,7 @@ library ieee;
     use std.env.finish;
     use std.env.stop;
     use work.utilities.all;
+    use std.textio.all;
 
 --! Testbench to perform a 3x3 convolution on a 5x5 input image
 
@@ -148,35 +149,9 @@ architecture imp of pe_array_conv_3x3_tb is
 
     -- INPUT IMAGE, FILTER WEIGTHS AND EXPECTED OUTPUT
 
-    constant input_image : int_image_t(0 to image_y - 1, 0 to image_x - 1) := (
-        (1,2,3,4,5,4,3,2,1),
-        (6,7,8,9,10,9,8,7,6),
-        (11,12,13,14,15,14,13,12,11),
-        (16,17,18,19,20,19,18,17,16),
-        (21,22,23,24,25,24,23,22,21),
-        (1,2,3,4,5,4,3,2,1),
-        (6,7,8,9,10,9,8,7,6),
-        (11,12,13,14,15,14,13,12,11),
-        (16,17,18,19,20,19,18,17,16),
-        (21,22,23,24,25,24,23,22,21)
-    );
-
-    constant input_weights : int_image_t(0 to size_y - 1, 0 to size_x - 1) := (
-        (1,2,1),
-        (2,3,2),
-        (3,4,3)
-    );
-
-    constant expected_output : int_image_t(0 to image_y - kernel_size, 0 to image_x - kernel_size) := (
-        (177, 198, 219, 228, 219, 198, 177),
-        (282, 303, 324, 333, 324, 303, 282),
-        (387, 408, 429, 438, 429, 408, 387),
-        (242, 263, 284, 293, 284, 263, 242),
-        (172, 193, 214, 223, 214, 193, 172),
-        (177, 198, 219, 228, 219, 198, 177),
-        (282, 303, 324, 333, 324, 303, 282),
-        (387, 408, 429, 438, 429, 408, 387)
-    );
+    signal s_input_image     : int_image_t(0 to image_y - 1, 0 to image_x - 1);
+    signal s_input_weights   : int_image_t(0 to size_y - 1, 0 to size_x - 1);
+    signal s_expected_output : int_image_t(0 to image_y - kernel_size, 0 to image_x - kernel_size);
 
     -- COMMANDS FOR PES AND LINE BUFFERS
 
@@ -284,6 +259,16 @@ begin
             o_psums_valid           => o_psums_valid
         );
 
+    p_read_files : process is
+    begin
+
+        s_input_image     <= read_file(file_name => "src/_image.txt", num_col => 9, num_row => 10);
+        s_input_weights   <= read_file(file_name => "src/_kernel.txt", num_col => 3, num_row => 3);
+        s_expected_output <= read_file(file_name => "src/_convolution.txt", num_col => 7, num_row => 8);
+        wait for 8000 ns;
+
+    end process p_read_files;
+
     rstn_gen : process is
     begin
 
@@ -323,7 +308,7 @@ begin
             for y in 0 to size_y - 1 loop
 
                 -- data_in_wght <= std_logic_vector(to_signed(input_wght(i), data_width_iact_wght));
-                i_data_wght(y) <= std_logic_vector(to_signed(input_weights(y,i), data_width_wght));
+                i_data_wght(y) <= std_logic_vector(to_signed(s_input_weights(y,i), data_width_wght));
 
             end loop;
 
@@ -362,7 +347,7 @@ begin
                 for i in 0 to loop_max - 1 loop
 
                     i_data_iact_valid(i) <= '1';
-                    i_data_iact(i)       <= std_logic_vector(to_signed(input_image(i + s_y, s_x), data_width_iact));
+                    i_data_iact(i)       <= std_logic_vector(to_signed(s_input_image(i + s_y, s_x), data_width_iact));
 
                 end loop;
 
@@ -751,9 +736,9 @@ begin
 
             for y in 0 to size_y - 1 loop
 
-                assert o_psums(y) = std_logic_vector(to_signed(expected_output(y,i), data_width_psum))
+                assert o_psums(y) = std_logic_vector(to_signed(s_expected_output(y,i), data_width_psum))
                     report "Output wrong. Result is " & integer'image(to_integer(signed(o_psums(y)))) & " - should be "
-                           & integer'image(expected_output(y,i))
+                           & integer'image(s_expected_output(y,i))
                     severity failure;
 
                 report "Got correct result " & integer'image(to_integer(signed(o_psums(y))));
@@ -777,9 +762,9 @@ begin
 
             for y in 0 to size_y - 1 loop
 
-                assert o_psums(y) = std_logic_vector(to_signed(expected_output(y + kernel_size,i), data_width_psum))
+                assert o_psums(y) = std_logic_vector(to_signed(s_expected_output(y + kernel_size,i), data_width_psum))
                     report "Output wrong. Result is " & integer'image(to_integer(signed(o_psums(y)))) & " - should be "
-                           & integer'image(expected_output(y,i))
+                           & integer'image(s_expected_output(y,i))
                     severity failure;
 
                 report "Got correct result " & integer'image(to_integer(signed(o_psums(y))));
@@ -803,9 +788,9 @@ begin
 
             for y in 0 to size_y - 2 loop
 
-                assert o_psums(y) = std_logic_vector(to_signed(expected_output(y + 2 * kernel_size, i), data_width_psum))
+                assert o_psums(y) = std_logic_vector(to_signed(s_expected_output(y + 2 * kernel_size, i), data_width_psum))
                     report "Output wrong. Result is " & integer'image(to_integer(signed(o_psums(y)))) & " - should be "
-                           & integer'image(expected_output(y,i))
+                           & integer'image(s_expected_output(y,i))
                     severity failure;
 
                 report "Got correct result " & integer'image(to_integer(signed(o_psums(y))));
