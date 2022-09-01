@@ -15,11 +15,11 @@ def convolution2d(image, kernel, bias):
     return new_image
 
 # create array with random values from -10 to 10
-kernel = np.random.randint(-10, 10, (kernel_size, kernel_size))
+kernel = np.random.randint(-127, 127, (kernel_size, kernel_size))
 # kernel = np.array([[1,2,1],[2,3,2],[3,4,3]])
 
 # create 10x10 array with random values from -100 to 100
-image = np.random.randint(-100, 100, (19, 19))
+image = np.random.randint(-127, 127, (19, 19))
 # size_x = 9
 # size_y = 10
 

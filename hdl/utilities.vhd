@@ -24,37 +24,42 @@ package utilities is
 
 end package utilities;
 
-package body utilities is 
+package body utilities is
 
-    function read_file
-        (file_name : string;
+    function read_file (
+        file_name : string;
         num_col : integer;
         num_row : integer)
         return int_image_t is
-            
-            file testfile                   : text open read_mode is file_name;
-            variable row                    : line;
-            variable v_data_read            : int_line_t(1 to num_col);
-            variable v_data_row_counter     : integer := 0;
-            variable v_input_image          : int_image_t(0 to num_row - 1, 0 to num_col - 1);
-            
+
+        file     testfile           : text open read_mode is file_name;
+        variable row                : line;
+        variable v_data_read        : int_line_t(1 to num_col);
+        variable v_data_row_counter : integer;
+        variable v_input_image      : int_image_t(0 to num_row - 1, 0 to num_col - 1);
+
     begin
 
-            -- read row from input file
-            while not endfile(testfile) loop
-                v_data_row_counter := v_data_row_counter + 1;
-                readline(testfile,row);
+        v_data_row_counter := 0;
 
-                -- read integer from row
-                for i in 1 to num_col loop
-                    read(row,v_data_read(i));
-                    v_input_image(v_data_row_counter - 1, i - 1) := v_data_read(i);
-                end loop;
+        -- read row from input file
+        while not endfile(testfile) loop
+
+            v_data_row_counter := v_data_row_counter + 1;
+            readline(testfile, row);
+
+            -- read integer from row
+            for i in 1 to num_col loop
+
+                read(row, v_data_read(i));
+                v_input_image(v_data_row_counter - 1, i - 1) := v_data_read(i);
 
             end loop;
 
+        end loop;
+
         return v_input_image;
-    
+
     end function;
 
-end package body;
+end package body utilities;
