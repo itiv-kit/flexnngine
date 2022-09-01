@@ -199,9 +199,10 @@ test-pe-array-conv-5x5:
             - .gitlab-ci.yml
     before_script:
         - pip3 install numpy
-        - cd ./testbenches/pe_array_conv_5x5
+        - cd ./testbenches/pe_array_conv_5x5/src
         - python3 stimuli.py
     script:
+        - cd ..
         - source /tools/mentor/set_modelsim_10.6b.sh
         - vsim -c -do "../../ci/simulate.tcl"
         - cd ../..
