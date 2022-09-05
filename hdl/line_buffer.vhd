@@ -202,9 +202,17 @@ begin
                 fill_count <= fill_count + 1;
             -- end if;
             elsif command = c_lb_shrink and data_in_valid = '1' and (buffer_full = '0') and (command_delay_s(2) /= c_lb_read_update) then
-                fill_count <= fill_count - read_offset_s + 1;
+                if (fill_count - read_offset_s + 1 < 0) then
+                    fill_count <= 0;
+                else 
+                    fill_count <= fill_count - read_offset_s + 1;
+                end if;
             elsif command = c_lb_shrink then
-                fill_count <= fill_count - read_offset_s;
+                if (fill_count - read_offset_s < 0) then
+                    fill_count <= 0;
+                else
+                    fill_count <= fill_count - read_offset_s;
+                end if;
             end if;
         end if;
 
