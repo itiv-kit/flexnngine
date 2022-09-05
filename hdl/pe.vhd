@@ -148,6 +148,9 @@ architecture behavioral of pe is
     signal command_read_delay : std_logic;
     signal command_read       : std_logic;
 
+    signal w_data_in_psum       : std_logic_vector(data_width_psum - 1 downto 0);
+    signal w_data_in_psum_valid : std_logic;
+
 begin
 
     sel_mult_psum   <= '0' when command = c_pe_mux_mac else
@@ -218,7 +221,7 @@ begin
             clk              => clk,
             rstn             => rstn,
             data_in          => data_in_psum,
-            data_in_valid    => data_in_psum_valid,
+            data_in_valid    => w_data_in_psum_valid,
             data_out         => data_acc_in2,
             data_out_valid   => data_acc_in2_valid,
             buffer_full      => buffer_full_psum,
@@ -304,6 +307,19 @@ begin
             v_i(1)(0) => data_in_psum_valid,
             sel(0)    => sel_mult_psum,
             z_o(0)    => data_acc_in1_valid
+        );
+
+    mux_psum_input_valid : component mux
+        generic map (
+            input_width   => 1,
+            input_num     => 2,
+            address_width => 1
+        )
+        port map (
+            v_i(0)(0) => data_in_psum_valid,
+            v_i(1)(0) => '0',
+            sel(0)    => sel_mult_psum,
+            z_o(0)    => w_data_in_psum_valid
         );
 
 end architecture behavioral;
