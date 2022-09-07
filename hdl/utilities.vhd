@@ -21,15 +21,15 @@ package utilities is
     type command_pe_array_t is array (natural range <>) of command_pe_t;
     type command_pe_row_col_t is array (natural range <>, natural range <>) of command_pe_t;
 
-    function read_file (file_name : string; num_col : integer; num_row : integer) return int_image_t;
+    impure function read_file (file_name : string; num_col : integer; num_row : integer) return int_image_t;
 
-    function read_file (file_name : string; num_col : integer; num_row : integer; num_channels : integer) return int_image3_t;
+    impure function read_file (file_name : string; num_col : integer; num_row : integer; num_channels : integer) return int_image3_t;
 
 end package utilities;
 
 package body utilities is
 
-    function read_file (
+    impure function read_file (
         file_name : string;
         num_col : integer;
         num_row : integer)
@@ -65,7 +65,7 @@ package body utilities is
 
     end function;
 
-    function read_file (
+    impure function read_file (
         file_name : string;
         num_col : integer;
         num_row : integer;
