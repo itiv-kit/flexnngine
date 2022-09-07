@@ -2147,10 +2147,10 @@
     },
     "constant_013": {
       "disable": false,
-      "fixable": true,
+      "fixable": false,
       "indentSize": 4,
       "phase": 6,
-      "severity": "Error"
+      "severity": "Warning"
     },
     "constant_014": {
       "align_left": "no",
