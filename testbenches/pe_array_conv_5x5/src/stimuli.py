@@ -2,6 +2,12 @@ import numpy as np
 
 kernel_size = 5
 
+np.random.seed(None)
+st = np.random.get_state()
+print(st)
+
+#state = ['MT19937', key_array, 624, 0, 0.0]
+
 def convolution2d(image, kernel, bias):
     m, n = kernel.shape
     if (m == n):
