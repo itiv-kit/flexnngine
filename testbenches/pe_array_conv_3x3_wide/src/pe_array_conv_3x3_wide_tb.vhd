@@ -169,7 +169,7 @@ architecture imp of pe_array_conv_3x3_tb is
     -- COMMANDS FOR PES AND LINE BUFFERS
 
     constant input_pe_command : command_pe_array_t(0 to command_length - 1) := (
-        (c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac)
+        (c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult)
     );
 
     constant input_command : command_lb_row_col_t(0 to 2, 0 to command_length - 1) := (
@@ -196,9 +196,9 @@ architecture imp of pe_array_conv_3x3_tb is
         (c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle,c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle)                                                                                                -- row 2
     );
     constant output_pe_command  : command_pe_row_col_t(0 to 2, 0 to output_command_length - 1) := (
-        (c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum, c_pe_mux_psum , c_pe_mux_psum, c_pe_mux_psum ,c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum), -- row 0
-        (c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum,c_pe_mux_psum , c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum), -- row 1
-        (c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum     , c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum)  -- row 2
+        (c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum, c_pe_conv_psum , c_pe_conv_psum, c_pe_conv_psum ,c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum), -- row 0
+        (c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum,c_pe_conv_psum , c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum), -- row 1
+        (c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum     , c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum)  -- row 2
     );
     constant output_read_offset : int_image_t(0 to 2, 0 to output_command_length - 1) := (
         (0,0,0,0,0,0,0,0,1,2,3,4,5,6,0,1,2,3,4,5,6,0),                                                                                                                                                                                                                                                                                                   -- row 0

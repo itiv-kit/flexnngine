@@ -7,11 +7,10 @@ vcom ../../hdl/acc.vhd
 vcom ../../hdl/mux.vhd
 vcom ../../hdl/demux.vhd
 vcom ../../hdl/pe.vhd
-vcom ../../hdl/pe_array.vhd
 
 # testbench
-vcom src/pe_array_conv_5x5_tb.vhd
+vcom src/demux_tb.vhd
 
-set SIM_TIME "15 us"
-set SIM_TOP_LEVEL "pe_array_conv_5x5_tb"
+set SIM_TIME "10 us"
+set SIM_TOP_LEVEL "demux_tb"
 

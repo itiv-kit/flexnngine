@@ -113,7 +113,16 @@ architecture behavioral of pe_array is
             read_offset_wght : in    std_logic_vector(addr_width_wght - 1 downto 0);
 
             data_out       : out   std_logic_vector(data_width_psum - 1 downto 0);
-            data_out_valid : out   std_logic
+            data_out_valid : out   std_logic;
+
+            data_in       : in    std_logic_vector(data_width_psum - 1 downto 0);
+            data_in_valid : in    std_logic;
+
+            data_out_iact : out   std_logic_vector(data_width_iact - 1 downto 0);
+            data_out_wght : out   std_logic_vector(data_width_wght - 1 downto 0);
+
+            data_out_iact_valid : out   std_logic;
+            data_out_wght_valid : out   std_logic
         );
     end component pe;
 
@@ -149,19 +158,27 @@ architecture behavioral of pe_array is
     signal w_data_out       : array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(data_width_psum - 1 downto 0);
     signal w_data_out_valid : std_logic_row_col_t(0 to size_y - 1, 0 to size_x - 1);
 
+    signal w_data_in       : array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(data_width_psum - 1 downto 0);
+    signal w_data_in_valid : std_logic_row_col_t(0 to size_y - 1, 0 to size_x - 1);
+
+    signal w_data_out_iact       : array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(data_width_iact - 1 downto 0);
+    signal w_data_out_wght       : array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(data_width_wght - 1 downto 0);
+    signal w_data_out_iact_valid : std_logic_row_col_t(0 to size_y - 1, 0 to size_x - 1);
+    signal w_data_out_wght_valid : std_logic_row_col_t(0 to size_y - 1, 0 to size_x - 1);
+
 begin
 
     -- INPUT ACTIVATIONS ----------------------------------------------------------
     -- Input activations to PEs that are not directly connected to outside of array
     -- Diagonal blue connections in diagram
-    /* TODO implement a way to only feed data to the outer PEs to support GEMM */
+    /* TODO MODIFIED */
 
     iact_wire_y : for y in 0 to size_y - 2 generate
 
         iact_wire_x : for x in 1 to size_x - 1 generate
 
-            w_data_in_iact(y,x)       <= w_data_in_iact(y + 1, x - 1);
-            w_data_in_iact_valid(y,x) <= w_data_in_iact_valid(y + 1, x - 1);
+            w_data_in_iact(y,x)       <= w_data_out_iact(y + 1, x - 1);
+            w_data_in_iact_valid(y,x) <= w_data_out_iact_valid(y + 1, x - 1);
 
         end generate iact_wire_x;
 
@@ -190,13 +207,14 @@ begin
     -- WEIGHTS ----------------------------------------------------------
     -- Weights to PEs that are not directly connected to outside of array
     -- Green arrows in the diagram
+    /* TODO MODIFIED */
 
     wght_wire_x : for x in 1 to size_x - 1 generate
 
         wght_wire_y : for y in 0 to size_y - 1 generate
 
-            w_data_in_wght(y,x)       <= w_data_in_wght(y, x - 1);
-            w_data_in_wght_valid(y,x) <= w_data_in_wght_valid(y, x - 1);
+            w_data_in_wght(y,x)       <= w_data_out_wght(y, x - 1);
+            w_data_in_wght_valid(y,x) <= w_data_out_wght_valid(y, x - 1);
 
         end generate wght_wire_y;
 
@@ -213,58 +231,44 @@ begin
     end generate wght_input;
 
     -- PARTIAL SUMS ---------------------------------------
-    -- Partial sums to PEs that are not directly connected to outside of array
-    -- Partial sums are fed by the output of the PE south to the PE. (red arrows in diagram)
-    -- MUX for preloading psums
-    /* TODO use different solution to preload psums / bias to the buffer*/
-
-    psum_wire_y : for y in 0 to size_y - 2 generate
-
-        psum_wire_x : for x in 0 to size_x - 1 generate
-
-            mux_psum_preload : component mux
-                generic map (
-                    input_width   => data_width_psum,
-                    input_num     => 2,
-                    address_width => 1
-                )
-                port map (
-                    v_i(0) => w_data_out(y + 1, x),
-                    v_i(1) => i_preload_psum,
-                    sel(0) => i_preload_psum_valid,
-                    z_o    => w_data_in_psum(y,x)
-                );
-
-            mux_psum_preload_valid : component mux
-                generic map (
-                    input_width   => 1,
-                    input_num     => 2,
-                    address_width => 1
-                )
-                port map (
-                    v_i(0)(0) => w_data_out_valid(y + 1, x),
-                    v_i(1)(0) => i_preload_psum_valid,
-                    sel(0)    => i_preload_psum_valid,
-                    z_o(0)    => w_data_in_psum_valid(y,x)
-                );
-
-        -- w_data_in_psum(y,x)       <= w_data_out(y + 1, x);
-        -- w_data_in_psum_valid(y,x) <= w_data_out_valid(y + 1, x);
-
-        end generate psum_wire_x;
-
-    end generate psum_wire_y;
-
     -- Partial sums to PEs that are connected to south. Connect all PEs in the south to the same input (i_data_psum).
     -- Hereby all psums within the PEs in the south can only be filled with the same value (bias).
-    /* TODO implement more connectivity to have meaningful bias */
+    /* TODO implement bias on north PEs ?? */
+    /* TODO MODIFIED */
 
-    psum_input : for i in 0 to size_x - 1 generate
+    psum_input_x : for x in 0 to size_x - 1 generate
 
-        w_data_in_psum(size_y - 1, i)       <= i_data_psum;
-        w_data_in_psum_valid(size_y - 1, i) <= i_data_psum_valid;
+        psum_input_y : for y in 0 to size_y - 1 generate
 
-    end generate psum_input;
+            w_data_in_psum(y,x)       <= (others => '0');
+            w_data_in_psum_valid(y,x) <= rstn;
+
+        end generate psum_input_y;
+
+    end generate psum_input_x;
+
+    -- Partial sums propagating through PE array
+    /* TODO ADDED */
+
+    psum_propagate : for y in 0 to size_y - 2 generate
+
+        psum_propagate_x : for x in 0 to size_x - 1 generate
+
+            w_data_in(y,x)       <= w_data_out(y + 1, x);
+            w_data_in_valid(y,x) <= w_data_out_valid(y + 1, x);
+
+        end generate psum_propagate_x;
+
+    end generate psum_propagate;
+
+    -- Partial sums valid for south PEs
+    /* TODO ADDED */
+
+    psum_valid : for x in 0 to size_x - 1 generate
+
+        w_data_in_valid(size_y - 1,x) <= '0';
+
+    end generate psum_valid;
 
     -- Partial sums output from north PE row. This is the actual output of the PE array.
 
@@ -333,7 +337,13 @@ begin
                     read_offset_psum      => read_offset_psum(y,x),
                     read_offset_wght      => read_offset_wght(y,x),
                     data_out              => w_data_out(y,x),
-                    data_out_valid        => w_data_out_valid(y,x)
+                    data_out_valid        => w_data_out_valid(y,x),
+                    data_in               => w_data_in(y,x),
+                    data_in_valid         => w_data_in_valid(y,x),
+                    data_out_iact         => w_data_out_iact(y,x),
+                    data_out_wght         => w_data_out_wght(y,x),
+                    data_out_iact_valid   => w_data_out_iact_valid(y,x),
+                    data_out_wght_valid   => w_data_out_wght_valid(y,x)
                 );
 
         end generate pe_inst_x;

@@ -3,7 +3,7 @@ import numpy as np
 
 np.set_printoptions(precision=1)
 
-channels = 3 # number of channels
+channels = 30 # number of channels
 kernel_size = 5 # 5x5 kernel
 size_x = 5 # PE array width
 size_y = 5 # PE array height
@@ -123,10 +123,10 @@ list_input_command_psum.append('c_lb_idle')
 # input pe command
 list_input_pe_command = []
 for i in range(image_size - kernel_size + 1):
-    list_input_pe_command.append('c_pe_mux_mac')
+    list_input_pe_command.append('c_pe_conv_mult')
     for j in range(kernel_size * channels):
-        list_input_pe_command.append('c_pe_mux_mac')
-list_input_pe_command.append('c_pe_mux_mac')
+        list_input_pe_command.append('c_pe_conv_mult')
+list_input_pe_command.append('c_pe_conv_mult')
 # print('\n')
 # print("Input pe command")
 # print(*list_input_pe_command, sep =', ')
@@ -232,8 +232,8 @@ print("Output pe command (mux)")
 
 list_output_pe_command = []
 for j in range(size_y * (image_size - kernel_size + 1)):
-    list_output_pe_command.append('c_pe_mux_psum')
-list_output_pe_command.append('c_pe_mux_mac')
+    list_output_pe_command.append('c_pe_conv_psum')
+list_output_pe_command.append('c_pe_conv_mult')
 # print('\n')
 # print("Output pe command for all lines")
 # print(*list, sep =', ')

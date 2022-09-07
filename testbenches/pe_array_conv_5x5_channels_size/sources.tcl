@@ -5,6 +5,7 @@ vcom ../../hdl/line_buffer.vhd
 vcom ../../hdl/mult.vhd
 vcom ../../hdl/acc.vhd
 vcom ../../hdl/mux.vhd
+vcom ../../hdl/demux.vhd
 vcom ../../hdl/pe.vhd
 vcom ../../hdl/pe_array.vhd
 

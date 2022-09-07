@@ -70,7 +70,16 @@ architecture imp of pe_conv_tb is
             read_offset_wght : in    std_logic_vector(addr_width_wght - 1 downto 0);
 
             data_out       : out   std_logic_vector(data_width_psum - 1 downto 0);
-            data_out_valid : out   std_logic
+            data_out_valid : out   std_logic;
+
+            data_in       : in    std_logic_vector(data_width_psum - 1 downto 0);
+            data_in_valid : in    std_logic;
+
+            data_out_iact : out   std_logic_vector(data_width_iact - 1 downto 0);
+            data_out_wght : out   std_logic_vector(data_width_wght - 1 downto 0);
+
+            data_out_iact_valid : out   std_logic;
+            data_out_wght_valid : out   std_logic
         );
     end component pe;
 
@@ -141,7 +150,7 @@ architecture imp of pe_conv_tb is
     );
 
     constant input_pe_command : command_array_pe_t(0 to command_length - 1) := (
-        (c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac)
+        (c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult)
     );
 
     constant input_command : command_array_lb_t(0 to 2, 0 to command_length - 1) := (
@@ -201,7 +210,13 @@ begin
             read_offset_psum   => read_offset_psum,
             read_offset_wght   => read_offset_wght,
             data_out           => data_out,
-            data_out_valid     => data_out_valid
+            data_out_valid     => data_out_valid,
+            data_in             => (others => '0'),
+            data_in_valid       => '0',
+            data_out_iact       => open,
+            data_out_wght       => open,
+            data_out_iact_valid => open,
+            data_out_wght_valid => open
         );
 
     rstn_gen : process is
@@ -344,7 +359,7 @@ begin
 
         get_outputs : for i in 0 to expected_output'length - 1 loop
 
-            command          <= c_pe_mux_psum;
+            command          <= c_pe_conv_psum;
             command_psum     <= c_lb_read;
             read_offset_psum <= std_logic_vector(to_unsigned(output_idx(i), addr_width_psum));
             wait until rising_edge(clk);
