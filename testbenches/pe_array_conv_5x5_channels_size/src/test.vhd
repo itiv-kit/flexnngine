@@ -37,10 +37,10 @@ entity pe_array_conv_5x5_channels_tb is
 
         command_length        : positive := 3521;
         output_command_length : positive := 1101;
-        
+
         kernel_size : positive := 5; --! 3 pixel kernel
 
-        tiles : positive := positive(ceil(real((image_y -  kernel_size + 1)/kernel_size)))
+        tiles : positive := positive(ceil(real((image_y -  kernel_size + 1) / kernel_size)))
     );
 end entity pe_array_conv_5x5_channels_tb;
 
@@ -60,7 +60,7 @@ architecture imp of pe_array_conv_5x5_channels_tb is
             data_width_psum  : positive;
             line_length_psum : positive;
             addr_width_psum  : positive;
-            
+
             data_width_wght  : positive;
             line_length_wght : positive;
             addr_width_wght  : positive
@@ -150,11 +150,11 @@ architecture imp of pe_array_conv_5x5_channels_tb is
     signal s_done : boolean;
 
     signal s_reset_psum : boolean;
-    signal s_tile_done : boolean;
+    signal s_tile_done  : boolean;
 
     -- INPUT IMAGE, FILTER WEIGTHS AND EXPECTED OUTPUT
 
-    signal s_input_image     : int_image3_t(0 to channels - 1, 0 to image_y - 1, 0 to image_x - 1); -- int_image_t(0 to image_y - 1, 0 to image_x - 1);
+    signal s_input_image     : int_image3_t(0 to channels - 1, 0 to image_y - 1, 0 to image_x - 1);         -- int_image_t(0 to image_y - 1, 0 to image_x - 1);
     signal s_input_weights   : int_image3_t(0 to channels - 1, 0 to kernel_size - 1, 0 to kernel_size - 1); -- int_image_t(0 to kernel_size - 1, 0 to kernel_size - 1);
     signal s_expected_output : int_image_t(0 to image_y - kernel_size, 0 to image_x - kernel_size);
 
@@ -199,10 +199,10 @@ architecture imp of pe_array_conv_5x5_channels_tb is
         /*INPUT_UPDATE_OFFSET_PSUM*/
         /*INPUT_UPDATE_OFFSET_WGHT*/
         (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
-        /*INPUT_UPDATE_OFFSET_WGHT*/  
+        /*INPUT_UPDATE_OFFSET_WGHT*/
     );
 
-    constant output_command     : command_lb_row_col_t(0 to 4, 0 to output_command_length - 1) := (
+    constant output_command : command_lb_row_col_t(0 to 4, 0 to output_command_length - 1) := (
         /*OUTPUT_COMMAND*/
         (c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_idle),
         (c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle),
@@ -211,7 +211,7 @@ architecture imp of pe_array_conv_5x5_channels_tb is
         (c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle)
         /*OUTPUT_COMMAND*/
     );
-    constant output_pe_command  : command_pe_row_col_t(0 to 4, 0 to output_command_length - 1) := (
+    constant output_pe_command : command_pe_row_col_t(0 to 4, 0 to output_command_length - 1) := (
         /*OUTPUT_PE_COMMAND*/
         (c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum),
         (c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum,c_pe_mux_psum),
@@ -243,6 +243,7 @@ architecture imp of pe_array_conv_5x5_channels_tb is
 
     procedure incr (signal pointer_y : inout integer; signal pointer_x : inout integer; signal pointer_c : inout integer) is
     begin
+
         if pointer_x = image_x - 1 and pointer_c = channels - 1 then
             pointer_c <= 0;
             pointer_x <= 0;
@@ -317,7 +318,7 @@ begin
     p_constant_check : process is
     begin
 
-        assert line_length_iact >= kernel_size*channels
+        assert line_length_iact >= kernel_size * channels
             report "Line length to store input values must be greater or equal to the kernel size"
             severity failure;
 
@@ -325,7 +326,7 @@ begin
             report "Y dimension of PE array has to be greater or equal to kernel size"
             severity failure;
 
-        assert line_length_wght >= kernel_size*channels
+        assert line_length_wght >= kernel_size * channels
             report "Length of wght buffer has to be greater or equal to kernel size, buffer has to store values of one kernel row at a time."
             severity failure;
 
@@ -395,7 +396,7 @@ begin
                 end loop;
 
                 wait until rising_edge(clk);
-            
+
             end loop;
 
         end loop;
@@ -491,7 +492,7 @@ begin
         read_offset_psum <= (others => (others => (others => '0')));
         read_offset_wght <= (others => (others => (others => '0')));
 
-        for j in 0 to tiles - 1 loop /* TODO Adjust range based on image sizes */ 
+        for j in 0 to tiles - 1 loop /* TODO Adjust range based on image sizes */
 
             s_reset_psum <= true;
             wait until rising_edge(clk);
@@ -500,7 +501,9 @@ begin
             report "Waiting until first values in buffer";
 
             for i in 0 to image_x + 20 loop
+
                 wait until rising_edge(clk);
+
             end loop;
 
             report "Start with calculation of 1-D convolutions ...";
@@ -585,7 +588,7 @@ begin
             command_iact     <= (others => (others => c_lb_shrink));
 
             -- Shrink psums to clear line buffer
-            read_offset_psum <= (others => (others => std_logic_vector(to_unsigned(image_x - kernel_size + 1, addr_width_psum)))); /* TODO used to be: image_x - kernel_size + 1, addr_width_psum */ 
+            read_offset_psum <= (others => (others => std_logic_vector(to_unsigned(image_x - kernel_size + 1, addr_width_psum)))); /* TODO used to be: image_x - kernel_size + 1, addr_width_psum */
             command_psum     <= (others => (others => c_lb_shrink));
 
             wait until rising_edge(clk);
@@ -598,7 +601,6 @@ begin
 
         end loop;
 
-
         wait for 50 ns;
         wait until rising_edge(clk);
 
@@ -607,7 +609,9 @@ begin
     end process stimuli_commands;
 
     output_check : process is
+
         variable check_rows : integer;
+
     begin
 
         report "OUTPUTS -----------------------------------------------------"
@@ -625,15 +629,16 @@ begin
                 end if;
 
                 check_rows := size_y - 1;
+
                 if j = 2 then
                     check_rows := size_y - 1; /* TODO Adjust based on image size */
                 end if;
 
                 for y in 0 to size_y - 1 loop
 
-                    assert o_psums(y) = std_logic_vector(to_signed(s_expected_output(y + j*kernel_size,i), data_width_psum))
+                    assert o_psums(y) = std_logic_vector(to_signed(s_expected_output(y + j * kernel_size,i), data_width_psum))
                         report "Output wrong. Result is " & integer'image(to_integer(signed(o_psums(y)))) & " - should be "
-                            & integer'image(s_expected_output(y + j*kernel_size,i))
+                               & integer'image(s_expected_output(y + j * kernel_size,i))
                         severity failure;
 
                     report "Got correct result " & integer'image(to_integer(signed(o_psums(y))));
