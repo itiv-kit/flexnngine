@@ -741,7 +741,7 @@ begin
 
     output_check : for p in 0 to size_x - 1 generate
 
-        test : if p = size_x - 1 generate
+        output_check_last_row : if p = size_x - 1 generate
 
             output_check : process is
 
@@ -797,11 +797,11 @@ begin
 
             end process output_check;
 
-        end generate test;
+        end generate output_check_last_row;
 
-        test2 : if p /= size_x - 1 generate
+        output_check_other_rows : if p /= size_x - 1 generate
 
-            output_check2 : process is
+            output_check : process is
 
                 variable check_rows : integer;
 
@@ -849,9 +849,9 @@ begin
 
                 wait;
 
-            end process output_check2;
+            end process output_check;
 
-        end generate test2;
+        end generate output_check_other_rows;
 
     end generate output_check;
 
