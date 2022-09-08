@@ -284,9 +284,9 @@ begin
 
     -- o_buffer_full_iact <= and w_buffer_full_iact;
 
-    o_buffer_full_iact <= w_buffer_full_iact(0, 0) and w_buffer_full_iact(0, 1) and w_buffer_full_iact(0, 2) and w_buffer_full_iact(1, 0) and w_buffer_full_iact(1, 1) and w_buffer_full_iact(1, 2) and w_buffer_full_iact(2, 0) and w_buffer_full_iact(2, 1) and w_buffer_full_iact(2, 2);
+    o_buffer_full_iact <= w_buffer_full_iact(0, 0); -- and w_buffer_full_iact(0, 1) and w_buffer_full_iact(0, 2) and w_buffer_full_iact(1, 0) and w_buffer_full_iact(1, 1) and w_buffer_full_iact(1, 2) and w_buffer_full_iact(2, 0) and w_buffer_full_iact(2, 1) and w_buffer_full_iact(2, 2);
     o_buffer_full_psum <= w_buffer_full_psum(0, 0) and w_buffer_full_psum(0, 1) and w_buffer_full_psum(0, 2) and w_buffer_full_psum(1, 0) and w_buffer_full_psum(1, 1) and w_buffer_full_psum(1, 2) and w_buffer_full_psum(2, 0) and w_buffer_full_psum(2, 1) and w_buffer_full_psum(2, 2);
-    o_buffer_full_wght <= w_buffer_full_wght(0, 0) and w_buffer_full_wght(0, 1) and w_buffer_full_wght(0, 2) and w_buffer_full_wght(1, 0) and w_buffer_full_wght(1, 1) and w_buffer_full_wght(1, 2) and w_buffer_full_wght(2, 0) and w_buffer_full_wght(2, 1) and w_buffer_full_wght(2, 2);
+    o_buffer_full_wght <= w_buffer_full_wght(0, 0); -- and w_buffer_full_wght(0, 1) and w_buffer_full_wght(0, 2) and w_buffer_full_wght(1, 0) and w_buffer_full_wght(1, 1) and w_buffer_full_wght(1, 2) and w_buffer_full_wght(2, 0) and w_buffer_full_wght(2, 1) and w_buffer_full_wght(2, 2);
 
     o_buffer_full_next_iact <= w_buffer_full_next_iact(0, 0) and w_buffer_full_next_iact(0, 1) and w_buffer_full_next_iact(0, 2) and w_buffer_full_next_iact(1, 0) and w_buffer_full_next_iact(1, 1) and w_buffer_full_next_iact(1, 2) and w_buffer_full_next_iact(2, 0) and w_buffer_full_next_iact(2, 1) and w_buffer_full_next_iact(2, 2);
     o_buffer_full_next_psum <= w_buffer_full_next_psum(0, 0) and w_buffer_full_next_psum(0, 1) and w_buffer_full_next_psum(0, 2) and w_buffer_full_next_psum(1, 0) and w_buffer_full_next_psum(1, 1) and w_buffer_full_next_psum(1, 2) and w_buffer_full_next_psum(2, 0) and w_buffer_full_next_psum(2, 1) and w_buffer_full_next_psum(2, 2);

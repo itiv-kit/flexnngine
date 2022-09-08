@@ -18,47 +18,90 @@ add wave -noupdate -expand -group {Line_Buffer Data in} -radix symbolic /pe_arra
 # add wave -noupdate -expand -group {Line_Buffer Data in} -radix symbolic /pe_array_conv_3x3_tb/i_preload_psum_valid
 
 add wave -noupdate -expand -group {Commands} -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/command_psum
-add wave -noupdate -expand -group {Commands} -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_inst/command_psum
-add wave -noupdate -expand -group {Commands} -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_inst/command_psum
+add wave -noupdate -expand -group {Commands} -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_inst/command_psum
+add wave -noupdate -expand -group {Commands} -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(2)/pe_inst/command_psum
 add wave -noupdate -expand -group {Commands} -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/command_iact
+add wave -noupdate -expand -group {Commands} -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_inst/command_iact
+add wave -noupdate -expand -group {Commands} -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(2)/pe_inst/command_iact
 add wave -noupdate -expand -group {Commands} -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/read_offset_iact
+add wave -noupdate -expand -group {Commands} -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_inst/read_offset_iact
+add wave -noupdate -expand -group {Commands} -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(2)/pe_inst/read_offset_iact
 add wave -noupdate -expand -group {Commands} -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/read_offset_psum
+add wave -noupdate -expand -group {Commands} -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_inst/read_offset_psum
+add wave -noupdate -expand -group {Commands} -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(2)/pe_inst/read_offset_psum
 add wave -noupdate -expand -group {Commands} -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/update_offset_psum
+add wave -noupdate -expand -group {Commands} -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_inst/update_offset_psum
+add wave -noupdate -expand -group {Commands} -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(2)/pe_inst/update_offset_psum
 
 
-add wave -noupdate -expand -group Pe_output -radix unsigned /pe_array_conv_3x3_tb/o_psums
-add wave -noupdate -expand -group Pe_output -radix unsigned /pe_array_conv_3x3_tb/o_psums_valid
+add wave -noupdate -expand -group Pe_output -radix decimal /pe_array_conv_3x3_tb/o_psums
+add wave -noupdate -expand -group Pe_output -radix decimal /pe_array_conv_3x3_tb/o_psums_valid
 
 add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/sel_mult_psum
 add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/update_offset_psum
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/data_acc_out
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/data_acc_in1
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/data_acc_in2
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/data_acc_in1_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/data_acc_in2_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/line_buffer_psum/ram/ram_instance
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/data_in_iact
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/line_buffer_iact/ram/ram_instance
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/data_acc_out
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/data_acc_in1
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/data_acc_in2
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/data_acc_in1_valid
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/data_acc_in2_valid
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/line_buffer_psum/ram/ram_instance
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/data_in_iact
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/line_buffer_iact/ram/ram_instance
 
 add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_inst/sel_mult_psum
 add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_inst/update_offset_psum
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_inst/data_acc_out
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_inst/data_acc_in1
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_inst/data_acc_in2
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_inst/data_acc_in1_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_inst/data_acc_in2_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_inst/line_buffer_psum/ram/ram_instance
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_inst/line_buffer_iact/ram/ram_instance
+add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_inst/data_acc_out
+add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_inst/data_acc_in1
+add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_inst/data_acc_in2
+add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_inst/data_acc_in1_valid
+add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_inst/data_acc_in2_valid
+add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_inst/line_buffer_psum/ram/ram_instance
+add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_inst/line_buffer_iact/ram/ram_instance
+add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_inst/line_buffer_wght/ram/ram_instance
 
 add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_inst/sel_mult_psum
 add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_inst/update_offset_psum
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_inst/data_acc_out
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_inst/data_acc_in1
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_inst/data_acc_in2
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_inst/data_acc_in1_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_inst/data_acc_in2_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_inst/line_buffer_psum/ram/ram_instance
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_inst/line_buffer_iact/ram/ram_instance
+add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_inst/data_acc_out
+add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_inst/data_acc_in1
+add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_inst/data_acc_in2
+add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_inst/data_acc_in1_valid
+add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_inst/data_acc_in2_valid
+add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_inst/line_buffer_psum/ram/ram_instance
+add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix decimal /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_inst/line_buffer_iact/ram/ram_instance
+
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_1 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_inst/sel_mult_psum
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_1 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_inst/update_offset_psum
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_inst/data_acc_out
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_inst/data_acc_in1
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_inst/data_acc_in2
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_inst/data_acc_in1_valid
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_inst/data_acc_in2_valid
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_inst/line_buffer_psum/ram/ram_instance
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_inst/line_buffer_iact/ram/ram_instance
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_inst/line_buffer_wght/ram/ram_instance
+
+add wave -noupdate -expand -group RAM_internal -expand -group PE_1_1 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(1)/pe_inst/sel_mult_psum
+add wave -noupdate -expand -group RAM_internal -expand -group PE_1_1 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(1)/pe_inst/update_offset_psum
+add wave -noupdate -expand -group RAM_internal -expand -group PE_1_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(1)/pe_inst/data_acc_out
+add wave -noupdate -expand -group RAM_internal -expand -group PE_1_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(1)/pe_inst/data_acc_in1
+add wave -noupdate -expand -group RAM_internal -expand -group PE_1_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(1)/pe_inst/data_acc_in2
+add wave -noupdate -expand -group RAM_internal -expand -group PE_1_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(1)/pe_inst/data_acc_in1_valid
+add wave -noupdate -expand -group RAM_internal -expand -group PE_1_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(1)/pe_inst/data_acc_in2_valid
+add wave -noupdate -expand -group RAM_internal -expand -group PE_1_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(1)/pe_inst/line_buffer_psum/ram/ram_instance
+add wave -noupdate -expand -group RAM_internal -expand -group PE_1_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(1)/pe_inst/line_buffer_iact/ram/ram_instance
+add wave -noupdate -expand -group RAM_internal -expand -group PE_1_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(1)/pe_inst/line_buffer_wght/ram/ram_instance
+
+
+add wave -noupdate -expand -group RAM_internal -expand -group PE_2_1 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(1)/pe_inst/sel_mult_psum
+add wave -noupdate -expand -group RAM_internal -expand -group PE_2_1 -radix unsigned /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(1)/pe_inst/update_offset_psum
+add wave -noupdate -expand -group RAM_internal -expand -group PE_2_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(1)/pe_inst/data_acc_out
+add wave -noupdate -expand -group RAM_internal -expand -group PE_2_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(1)/pe_inst/data_acc_in1
+add wave -noupdate -expand -group RAM_internal -expand -group PE_2_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(1)/pe_inst/data_acc_in2
+add wave -noupdate -expand -group RAM_internal -expand -group PE_2_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(1)/pe_inst/data_acc_in1_valid
+add wave -noupdate -expand -group RAM_internal -expand -group PE_2_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(1)/pe_inst/data_acc_in2_valid
+add wave -noupdate -expand -group RAM_internal -expand -group PE_2_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(1)/pe_inst/line_buffer_psum/ram/ram_instance
+add wave -noupdate -expand -group RAM_internal -expand -group PE_2_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(1)/pe_inst/line_buffer_iact/ram/ram_instance
+add wave -noupdate -expand -group RAM_internal -expand -group PE_2_1 -radix decimal  /pe_array_conv_3x3_tb/pe_array_inst/pe_inst_y(2)/pe_inst_x(1)/pe_inst/line_buffer_wght/ram/ram_instance
 
 
 TreeUpdate [SetDefaultTree]

@@ -29,6 +29,7 @@ add wave -noupdate -expand -group {Commands} -radix decimal /pe_array_conv_5x5_c
 add wave -noupdate -expand -group {Commands} -radix decimal /pe_array_conv_5x5_channels_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_inst/update_offset_psum
 
 
+add wave -noupdate -expand -group Pe_output -radix decimal /pe_array_conv_5x5_channels_tb/s_tile_done
 add wave -noupdate -expand -group Pe_output -radix decimal /pe_array_conv_5x5_channels_tb/o_psums
 add wave -noupdate -expand -group Pe_output -radix decimal /pe_array_conv_5x5_channels_tb/o_psums_valid
 

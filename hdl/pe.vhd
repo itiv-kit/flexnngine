@@ -194,11 +194,33 @@ begin
     data_acc_in2       <= data_psum;
     data_acc_in2_valid <= data_psum_valid;
 
-    sel_mult_psum <= '0' when command = c_pe_conv_mult or command = c_pe_gemm_mult else
-                     '1' when command = c_pe_conv_psum or command = c_pe_gemm_psum;
+    sel_signals : process (clk, rstn) is
+    begin
 
-    sel_conv_gemm <= '0' when command = c_pe_conv_mult or command = c_pe_conv_psum else
-                     '1' when command = c_pe_gemm_mult or command = c_pe_gemm_psum;
+        if not rstn then
+            sel_mult_psum <= '0';
+            sel_conv_gemm <= '0';
+        elsif rising_edge(clk) then
+            if command = c_pe_conv_mult or command = c_pe_gemm_mult then
+                sel_mult_psum <= '0';
+            else
+                sel_mult_psum <= '1';
+            end if;
+
+            if command = c_pe_conv_mult or command = c_pe_conv_psum then
+                sel_conv_gemm <= '0';
+            else
+                sel_conv_gemm <= '1';
+            end if;
+        end if;
+
+    end process sel_signals;
+
+    /*sel_mult_psum <= '0' when (command = c_pe_conv_mult or command = c_pe_gemm_mult) and rising_edge(clk) else
+                     '1' when (command = c_pe_conv_psum or command = c_pe_gemm_psum) and rising_edge(clk);
+
+    sel_conv_gemm <= '0' when (command = c_pe_conv_mult or command = c_pe_conv_psum) and rising_edge(clk) else
+                     '1' when (command = c_pe_gemm_mult or command = c_pe_gemm_psum) and rising_edge(clk);*/
 
     data_acc_valid  <= (data_acc_in1_valid and data_acc_in2_valid) or data_acc_in2_valid;
     iact_wght_valid <= data_iact_valid and data_wght_valid;
@@ -471,7 +493,7 @@ begin
             sel(0)    => sel_conv_gemm,
             z_o(0)(0) => demux_input_psum_valid,
             z_o(1)(0) => demux_input_iact_valid
-            --z_o => test
+        -- z_o => test
         );
 
 end architecture behavioral;

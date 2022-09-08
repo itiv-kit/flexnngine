@@ -34,8 +34,8 @@ entity pe_array_conv_3x3_tb is
 
         output_length : positive := 12; --! Number of outputs expected
 
-        command_length        : positive := 29;
-        output_command_length : positive := 22;
+        command_length        : positive := 31;
+        output_command_length : positive := 24;
 
         kernel_size : positive := 3 --! 3 pixel kernel
     );
@@ -114,13 +114,19 @@ architecture imp of pe_array_conv_3x3_tb is
     signal command_psum : command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
     signal command_wght : command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
 
-    signal i_data_iact : array_t (0 to size_rows - 1)(data_width_iact - 1 downto 0);
-    signal i_data_psum : std_logic_vector(data_width_psum - 1 downto 0);
-    signal i_data_wght : array_t (0 to size_y - 1)(data_width_wght - 1 downto 0);
+    type delay_array_t is array (natural range <>) of array_t;
 
-    signal i_data_iact_valid : std_logic_vector(size_rows - 1 downto 0);
-    signal i_data_psum_valid : std_logic;
-    signal i_data_wght_valid : std_logic_vector(size_y - 1 downto 0);
+    signal i_data_iact       : array_t (0 to size_rows - 1)(data_width_iact - 1 downto 0);
+    signal i_data_iact_delay : delay_array_t (0 to 2)(0 to size_rows - 1)(data_width_iact - 1 downto 0);
+    signal i_data_iact_array : array_t (0 to size_rows - 1)(data_width_iact - 1 downto 0);
+    signal i_data_psum       : std_logic_vector(data_width_psum - 1 downto 0);
+    signal i_data_wght       : array_t (0 to size_y - 1)(data_width_wght - 1 downto 0);
+
+    signal i_data_iact_valid       : std_logic_vector(size_rows - 1 downto 0);
+    signal i_data_iact_valid_delay : array_t(0 to 2)(size_rows - 1 downto 0);
+    signal i_data_iact_valid_array : std_logic_vector(size_rows - 1 downto 0);
+    signal i_data_psum_valid       : std_logic;
+    signal i_data_wght_valid       : std_logic_vector(size_y - 1 downto 0);
 
     signal o_buffer_full_iact : std_logic;
     signal o_buffer_full_psum : std_logic;
@@ -145,8 +151,6 @@ architecture imp of pe_array_conv_3x3_tb is
     signal s_y    : integer;
     signal s_done : boolean;
 
-    signal s_reset_psum : boolean;
-
     -- INPUT IMAGE, FILTER WEIGTHS AND EXPECTED OUTPUT
 
     signal s_input_image     : int_image_t(0 to image_y - 1, 0 to image_x - 1);
@@ -155,48 +159,92 @@ architecture imp of pe_array_conv_3x3_tb is
 
     -- COMMANDS FOR PES AND LINE BUFFERS
 
-    constant input_pe_command : command_pe_array_t(0 to command_length - 1) := (
-        (c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac,c_pe_mux_mac)
+    constant input_pe_command : command_pe_row_col_t(0 to 2, 0 to command_length - 1) := (
+        (c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult),
+        (c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult),
+        (c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult,c_pe_conv_mult)
     );
 
-    constant input_command : command_lb_row_col_t(0 to 2, 0 to command_length - 1) := (
-        (c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_read, c_lb_read, c_lb_read, c_lb_shrink,c_lb_read, c_lb_read, c_lb_read, c_lb_shrink,c_lb_read, c_lb_read, c_lb_read, c_lb_shrink,c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_idle),                                                                                                                                         -- iact
-        (c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle), -- psum
-        (c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle,c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle)                                                                                                                                                      -- wght
+    constant input_command : command_lb_row_col_t(0 to 8, 0 to command_length - 1) := (
+        (c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_read, c_lb_read, c_lb_read, c_lb_shrink,c_lb_read, c_lb_read, c_lb_read, c_lb_shrink,c_lb_read, c_lb_read, c_lb_read, c_lb_shrink,c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_idle,c_lb_idle,c_lb_idle),                                                                                                                                         -- iact
+        (c_lb_idle,c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_read, c_lb_read, c_lb_read, c_lb_shrink,c_lb_read, c_lb_read, c_lb_read, c_lb_shrink,c_lb_read, c_lb_read, c_lb_read, c_lb_shrink,c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_idle,c_lb_idle),                                                                                                                                         -- iact
+        (c_lb_idle,c_lb_idle,c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_read, c_lb_read, c_lb_read, c_lb_shrink,c_lb_read, c_lb_read, c_lb_read, c_lb_shrink,c_lb_read, c_lb_read, c_lb_read, c_lb_shrink,c_lb_read, c_lb_read, c_lb_read, c_lb_shrink, c_lb_idle),                                                                                                                                         -- iact
+        (c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle,c_lb_idle,c_lb_idle), -- psum
+        (c_lb_idle,c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle,c_lb_idle), -- psum
+        (c_lb_idle,c_lb_idle,c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_idle), -- psum
+        (c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle,c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle,c_lb_idle,c_lb_idle),                                                                                                                                                     -- wght
+        (c_lb_idle,c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle,c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle,c_lb_idle),                                                                                                                                                     -- wght
+        (c_lb_idle,c_lb_idle,c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle,c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle)                                                                                                                                                      -- wght
     );
 
-    constant input_read_offset : int_image_t(0 to 2, 0 to command_length - 1) := (
-        (0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1,0), -- iact
-        (0,0,0,0,0,1,1,1,0,2,2,2,0,3,3,3,0,4,4,4,0,5,5,5,0,6,6,6,0), -- psum
-        (0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0)  -- wght
+    constant input_read_offset : int_image_t(0 to 8, 0 to command_length - 1) := (
+        (0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1,0,0,0), -- iact
+        (0,0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1,0,0), -- iact
+        (0,0,0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1,0), -- iact
+        (0,0,0,0,0,1,1,1,0,2,2,2,0,3,3,3,0,4,4,4,0,5,5,5,0,6,6,6,0,0,0), -- psum
+        (0,0,0,0,0,0,1,1,1,0,2,2,2,0,3,3,3,0,4,4,4,0,5,5,5,0,6,6,6,0,0), -- psum
+        (0,0,0,0,0,0,0,1,1,1,0,2,2,2,0,3,3,3,0,4,4,4,0,5,5,5,0,6,6,6,0), -- psum
+        (0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0,0,0), -- wght
+        (0,0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0,0), -- wght
+        (0,0,0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0)  -- wght
     );
 
-    constant input_update_offset : int_image_t(0 to 2, 0 to command_length - 1) := (
-        (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), -- iact
-        (0,0,0,0,0,1,1,1,0,2,2,2,0,3,3,3,0,4,4,4,0,5,5,5,0,6,6,6,0), -- psum
-        (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)  -- wght
+    constant input_update_offset : int_image_t(0 to 8, 0 to command_length - 1) := (
+        (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), -- iact
+        (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), -- iact
+        (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), -- iact
+        (0,0,0,0,0,1,1,1,0,2,2,2,0,3,3,3,0,4,4,4,0,5,5,5,0,6,6,6,0,0,0), -- psum
+        (0,0,0,0,0,0,1,1,1,0,2,2,2,0,3,3,3,0,4,4,4,0,5,5,5,0,6,6,6,0,0), -- psum
+        (0,0,0,0,0,0,0,1,1,1,0,2,2,2,0,3,3,3,0,4,4,4,0,5,5,5,0,6,6,6,0), -- psum
+        (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), -- wght
+        (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), -- wght
+        (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)  -- wght
     );
 
-    constant output_command     : command_lb_row_col_t(0 to 2, 0 to output_command_length - 1) := (
-        (c_lb_idle, c_lb_idle, c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_idle),                                                             -- row 0
-        (c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle),                                             -- row 1
-        (c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle,c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle)                                                                                                -- row 2
+    constant output_command     : command_lb_row_col_t(0 to 8, 0 to output_command_length - 1) := (
+        (c_lb_idle, c_lb_idle, c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_idle,c_lb_idle,c_lb_idle),                                                                                               -- row 0
+        (c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_idle,c_lb_idle),                                                                                              -- row 0
+        (c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle,c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read_update,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_read,c_lb_idle),                                                                                             -- row 0
+        (c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle,c_lb_idle,c_lb_idle),                                                                               -- row 1
+        (c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle,c_lb_idle),                                                                              -- row 1
+        (c_lb_idle, c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle),                                                                             -- row 1
+        (c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle,c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle,c_lb_idle,c_lb_idle),                                                                                                                                 -- row 2
+        (c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle,c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle,c_lb_idle),                                                                                                                                -- row 2
+        (c_lb_idle, c_lb_idle, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle,c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle)                                                                                                                                -- row 2
     );
-    constant output_pe_command  : command_pe_row_col_t(0 to 2, 0 to output_command_length - 1) := (
-        (c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum, c_pe_mux_psum , c_pe_mux_psum, c_pe_mux_psum ,c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum), -- row 0
-        (c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum , c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum,c_pe_mux_psum , c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum), -- row 1
-        (c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum     , c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum, c_pe_mux_psum)  -- row 2
+    constant output_pe_command  : command_pe_row_col_t(0 to 8, 0 to output_command_length - 1) := (
+        (c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum, c_pe_conv_psum , c_pe_conv_psum, c_pe_conv_psum ,c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum), -- row 0
+        (c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum, c_pe_conv_psum , c_pe_conv_psum, c_pe_conv_psum ,c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum), -- row 0
+        (c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum, c_pe_conv_psum , c_pe_conv_psum, c_pe_conv_psum ,c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum), -- row 0
+        (c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum,c_pe_conv_psum , c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum), -- row 1
+        (c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum,c_pe_conv_psum , c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum), -- row 1
+        (c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum,c_pe_conv_psum , c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum), -- row 1
+        (c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum     , c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum), -- row 2
+        (c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum     , c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum), -- row 2
+        (c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum     , c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum)  -- row 2
     );
-    constant output_read_offset : int_image_t(0 to 2, 0 to output_command_length - 1) := (
-        (0,0,0,0,0,0,0,0,1,2,3,4,5,6,0,1,2,3,4,5,6,0),                                                                                                                                                                                                                                                                                                   -- row 0
-        (0,1,2,3,4,5,6,0,1,2,3,4,5,6,0,0,0,0,0,0,0,0),                                                                                                                                                                                                                                                                                                   -- row 1
-        (0,1,2,3,4,5,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)                                                                                                                                                                                                                                                                                                    -- row 2
+    constant output_read_offset : int_image_t(0 to 8, 0 to output_command_length - 1) := (
+        (0,0,0,0,0,0,0,0,1,2,3,4,5,6,0,1,2,3,4,5,6,0,0,0),                                                                                                                                                                                                                                                                                                                                                     -- row 0
+        (0,0,0,0,0,0,0,0,0,1,2,3,4,5,6,0,1,2,3,4,5,6,0,0),                                                                                                                                                                                                                                                                                                                                                     -- row 0
+        (0,0,0,0,0,0,0,0,0,0,1,2,3,4,5,6,0,1,2,3,4,5,6,0),                                                                                                                                                                                                                                                                                                                                                     -- row 0
+        (0,1,2,3,4,5,6,0,1,2,3,4,5,6,0,0,0,0,0,0,0,0,0,0),                                                                                                                                                                                                                                                                                                                                                     -- row 1
+        (0,0,1,2,3,4,5,6,0,1,2,3,4,5,6,0,0,0,0,0,0,0,0,0),                                                                                                                                                                                                                                                                                                                                                     -- row 1
+        (0,0,0,1,2,3,4,5,6,0,1,2,3,4,5,6,0,0,0,0,0,0,0,0),                                                                                                                                                                                                                                                                                                                                                     -- row 1
+        (0,1,2,3,4,5,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),                                                                                                                                                                                                                                                                                                                                                     -- row 2
+        (0,0,1,2,3,4,5,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),                                                                                                                                                                                                                                                                                                                                                     -- row 2
+        (0,0,0,1,2,3,4,5,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)                                                                                                                                                                                                                                                                                                                                                      -- row 2
     );
 
-    constant output_update_offset : int_image_t(0 to 2, 0 to output_command_length - 1) := (
-        (0,0,0,0,0,0,0,0,1,2,3,4,5,6,0,0,0,0,0,0,0,0), -- row 0
-        (0,1,2,3,4,5,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), -- row 1
-        (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)  -- row 2
+    constant output_update_offset : int_image_t(0 to 8, 0 to output_command_length - 1) := (
+        (0,0,0,0,0,0,0,0,1,2,3,4,5,6,0,0,0,0,0,0,0,0,0,0), -- row 0
+        (0,0,0,0,0,0,0,0,0,1,2,3,4,5,6,0,0,0,0,0,0,0,0,0), -- row 0
+        (0,0,0,0,0,0,0,0,0,0,1,2,3,4,5,6,0,0,0,0,0,0,0,0), -- row 0
+        (0,1,2,3,4,5,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), -- row 1
+        (0,0,1,2,3,4,5,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), -- row 1
+        (0,0,0,1,2,3,4,5,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), -- row 1
+        (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), -- row 2
+        (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), -- row 2
+        (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)  -- row 2
     );
 
     procedure incr (signal pointer_y : inout integer; signal pointer_x : inout integer) is
@@ -212,6 +260,18 @@ architecture imp of pe_array_conv_3x3_tb is
     end procedure;
 
 begin
+
+    i_data_iact_delay(2) <= i_data_iact when rising_edge(clk);
+    i_data_iact_delay(1) <= i_data_iact_delay(2) when rising_edge(clk);
+    i_data_iact_delay(0) <= i_data_iact_delay(1) when rising_edge(clk);
+
+    i_data_iact_array <= i_data_iact(0 to 2) & i_data_iact_delay(2)(3) & i_data_iact_delay(1)(4);
+
+    i_data_iact_valid_delay(2) <= i_data_iact_valid when rising_edge(clk);
+    i_data_iact_valid_delay(1) <= i_data_iact_valid_delay(2) when rising_edge(clk);
+    i_data_iact_valid_delay(0) <= i_data_iact_valid_delay(1) when rising_edge(clk);
+
+    i_data_iact_valid_array <= i_data_iact_valid_delay(1)(4) & i_data_iact_valid_delay(2)(3) & i_data_iact_valid(2 downto 0);
 
     pe_array_inst : component pe_array
         generic map (
@@ -237,10 +297,10 @@ begin
             command_iact            => command_iact,
             command_psum            => command_psum,
             command_wght            => command_wght,
-            i_data_iact             => i_data_iact,
+            i_data_iact             => i_data_iact_array,
             i_data_psum             => i_data_psum,
             i_data_wght             => i_data_wght,
-            i_data_iact_valid       => i_data_iact_valid,
+            i_data_iact_valid       => i_data_iact_valid_array,
             i_data_psum_valid       => i_data_psum_valid,
             i_data_wght_valid       => i_data_wght_valid,
             o_buffer_full_iact      => o_buffer_full_iact,
@@ -357,90 +417,6 @@ begin
 
     end process stimuli_data_iact;
 
-    stimuli_data_psum : process is
-    begin
-
-        i_data_psum       <= (others => '0');
-        i_data_psum_valid <= '0';
-
-        i_preload_psum       <= (others => '0');
-        i_preload_psum_valid <= '0';
-
-        wait until rstn = '1';
-        wait until rising_edge(clk);
-
-        i_data_psum_valid    <= '1';
-        i_preload_psum_valid <= '1';
-
-        for i in 0 to image_x - kernel_size loop
-
-            while o_buffer_full_psum = '1' loop
-
-                wait until rising_edge(clk);
-
-            end loop;
-
-            i_data_psum    <= std_logic_vector(to_signed(0, data_width_psum));
-            i_preload_psum <= std_logic_vector(to_signed(0, data_width_psum));
-            wait until rising_edge(clk);
-
-        end loop;
-
-        i_data_psum_valid    <= '0';
-        i_preload_psum_valid <= '0';
-
-        -- SECOND TURN
-
-        wait until s_reset_psum = true;
-
-        i_data_psum_valid    <= '1';
-        i_preload_psum_valid <= '1';
-
-        for i in 0 to image_x - kernel_size loop
-
-            while o_buffer_full_psum = '1' loop
-
-                wait until rising_edge(clk);
-
-            end loop;
-
-            i_data_psum    <= std_logic_vector(to_signed(0, data_width_psum));
-            i_preload_psum <= std_logic_vector(to_signed(0, data_width_psum));
-            wait until rising_edge(clk);
-
-        end loop;
-
-        i_data_psum_valid    <= '0';
-        i_preload_psum_valid <= '0';
-
-        -- THIRD TURN
-
-        wait until s_reset_psum = true;
-
-        i_data_psum_valid    <= '1';
-        i_preload_psum_valid <= '1';
-
-        for i in 0 to image_x - kernel_size loop
-
-            while o_buffer_full_psum = '1' loop
-
-                wait until rising_edge(clk);
-
-            end loop;
-
-            i_data_psum    <= std_logic_vector(to_signed(0, data_width_psum));
-            i_preload_psum <= std_logic_vector(to_signed(0, data_width_psum));
-            wait until rising_edge(clk);
-
-        end loop;
-
-        i_data_psum_valid    <= '0';
-        i_preload_psum_valid <= '0';
-
-        wait for 8000 ns;
-
-    end process stimuli_data_psum;
-
     stimuli_commands : process is
     begin
 
@@ -465,19 +441,19 @@ begin
 
                 for x in 0 to size_x - 1 loop
 
-                    command(y,x) <= input_pe_command(i);
+                    command(y,x) <= input_pe_command(x,i);
 
-                    command_iact(y,x) <= input_command(0,i);
-                    command_psum(y,x) <= input_command(1,i);
-                    command_wght(y,x) <= input_command(2,i);
+                    command_iact(y,x) <= input_command(0 + x,i);
+                    command_psum(y,x) <= input_command(3 + x,i);
+                    command_wght(y,x) <= input_command(6 + x,i);
 
-                    read_offset_iact(y,x) <= std_logic_vector(to_unsigned(input_read_offset(0,i), addr_width_iact));
-                    read_offset_psum(y,x) <= std_logic_vector(to_unsigned(input_read_offset(1,i), addr_width_psum));
-                    read_offset_wght(y,x) <= std_logic_vector(to_unsigned(input_read_offset(2,i), addr_width_wght));
+                    read_offset_iact(y,x) <= std_logic_vector(to_unsigned(input_read_offset(0 + x,i), addr_width_iact));
+                    read_offset_psum(y,x) <= std_logic_vector(to_unsigned(input_read_offset(3 + x,i), addr_width_psum));
+                    read_offset_wght(y,x) <= std_logic_vector(to_unsigned(input_read_offset(6 + x,i), addr_width_wght));
 
-                    update_offset_iact(y,x) <= std_logic_vector(to_unsigned(input_update_offset(0,i), addr_width_iact));
-                    update_offset_psum(y,x) <= std_logic_vector(to_unsigned(input_update_offset(1,i), addr_width_psum));
-                    update_offset_wght(y,x) <= std_logic_vector(to_unsigned(input_update_offset(2,i), addr_width_wght));
+                    update_offset_iact(y,x) <= std_logic_vector(to_unsigned(input_update_offset(0 + x,i), addr_width_iact));
+                    update_offset_psum(y,x) <= std_logic_vector(to_unsigned(input_update_offset(3 + x,i), addr_width_psum));
+                    update_offset_wght(y,x) <= std_logic_vector(to_unsigned(input_update_offset(6 + x,i), addr_width_wght));
 
                 end loop;
 
@@ -496,21 +472,21 @@ begin
 
             for x in 0 to size_x - 1 loop
 
-                command(0,x) <= output_pe_command(0,i);
-                command(1,x) <= output_pe_command(1,i);
-                command(2,x) <= output_pe_command(2,i);
+                command(0,x) <= output_pe_command(0 + x,i);
+                command(1,x) <= output_pe_command(3 + x,i);
+                command(2,x) <= output_pe_command(6 + x,i);
 
-                command_psum(0,x) <= output_command(0,i);
-                command_psum(1,x) <= output_command(1,i);
-                command_psum(2,x) <= output_command(2,i);
+                command_psum(0,x) <= output_command(0 + x,i);
+                command_psum(1,x) <= output_command(3 + x,i);
+                command_psum(2,x) <= output_command(6 + x,i);
 
-                read_offset_psum(0,x) <= std_logic_vector(to_unsigned(output_read_offset(0,i), addr_width_psum));
-                read_offset_psum(1,x) <= std_logic_vector(to_unsigned(output_read_offset(1,i), addr_width_psum));
-                read_offset_psum(2,x) <= std_logic_vector(to_unsigned(output_read_offset(2,i), addr_width_psum));
+                read_offset_psum(0,x) <= std_logic_vector(to_unsigned(output_read_offset(0 + x,i), addr_width_psum));
+                read_offset_psum(1,x) <= std_logic_vector(to_unsigned(output_read_offset(3 + x,i), addr_width_psum));
+                read_offset_psum(2,x) <= std_logic_vector(to_unsigned(output_read_offset(6 + x,i), addr_width_psum));
 
-                update_offset_psum(0,x) <= std_logic_vector(to_unsigned(output_update_offset(0,i), addr_width_psum));
-                update_offset_psum(1,x) <= std_logic_vector(to_unsigned(output_update_offset(1,i), addr_width_psum));
-                update_offset_psum(2,x) <= std_logic_vector(to_unsigned(output_update_offset(2,i), addr_width_psum));
+                update_offset_psum(0,x) <= std_logic_vector(to_unsigned(output_update_offset(0 + x,i), addr_width_psum));
+                update_offset_psum(1,x) <= std_logic_vector(to_unsigned(output_update_offset(3 + x,i), addr_width_psum));
+                update_offset_psum(2,x) <= std_logic_vector(to_unsigned(output_update_offset(6 + x,i), addr_width_psum));
 
             end loop;
 
@@ -526,20 +502,30 @@ begin
         report "Clear psums and fill with zeros";
 
         -- Shrink iact inputs by line_length_iact - kernel_size and thus clear the line buffer
-        read_offset_iact <= (others => (others => std_logic_vector(to_unsigned(line_length_iact - kernel_size, addr_width_iact))));
-        command_iact     <= (others => (others => c_lb_shrink));
+        for x in 0 to size_x - 1 loop
+
+            for y in 0 to size_y - 1 loop
+
+                read_offset_iact  <= (others => (others => std_logic_vector(to_unsigned(line_length_iact - kernel_size, addr_width_iact))));
+                command_iact(y,x) <= c_lb_shrink;
+
+            end loop;
+
+            wait until rising_edge(clk);
+
+            -- Stop shrinking --> set commands back to idle
+            read_offset_iact <= (others => (others => std_logic_vector(to_unsigned(0, addr_width_iact))));
+            command_iact     <= (others => (others => c_lb_idle));
+
+        end loop;
 
         -- Shrink psums to clear line buffer
         read_offset_psum <= (others => (others => std_logic_vector(to_unsigned(image_x - kernel_size + 1, addr_width_psum))));
         command_psum     <= (others => (others => c_lb_shrink));
 
-        s_reset_psum <= true;
         wait until rising_edge(clk);
-        s_reset_psum <= false;
 
         -- Stop shrinking --> set commands back to idle
-        read_offset_iact <= (others => (others => std_logic_vector(to_unsigned(0, addr_width_iact))));
-        command_iact     <= (others => (others => c_lb_idle));
         read_offset_psum <= (others => (others => std_logic_vector(to_unsigned(0, addr_width_psum))));
         command_psum     <= (others => (others => c_lb_idle));
 
@@ -558,19 +544,19 @@ begin
 
                 for x in 0 to size_x - 1 loop
 
-                    command(y,x) <= input_pe_command(i);
+                    command(y,x) <= input_pe_command(x,i);
 
-                    command_iact(y,x) <= input_command(0,i);
-                    command_psum(y,x) <= input_command(1,i);
-                    command_wght(y,x) <= input_command(2,i);
+                    command_iact(y,x) <= input_command(0 + x,i);
+                    command_psum(y,x) <= input_command(3 + x,i);
+                    command_wght(y,x) <= input_command(6 + x,i);
 
-                    read_offset_iact(y,x) <= std_logic_vector(to_unsigned(input_read_offset(0,i), addr_width_iact));
-                    read_offset_psum(y,x) <= std_logic_vector(to_unsigned(input_read_offset(1,i), addr_width_psum));
-                    read_offset_wght(y,x) <= std_logic_vector(to_unsigned(input_read_offset(2,i), addr_width_wght));
+                    read_offset_iact(y,x) <= std_logic_vector(to_unsigned(input_read_offset(0 + x,i), addr_width_iact));
+                    read_offset_psum(y,x) <= std_logic_vector(to_unsigned(input_read_offset(3 + x,i), addr_width_psum));
+                    read_offset_wght(y,x) <= std_logic_vector(to_unsigned(input_read_offset(6 + x,i), addr_width_wght));
 
-                    update_offset_iact(y,x) <= std_logic_vector(to_unsigned(input_update_offset(0,i), addr_width_iact));
-                    update_offset_psum(y,x) <= std_logic_vector(to_unsigned(input_update_offset(1,i), addr_width_psum));
-                    update_offset_wght(y,x) <= std_logic_vector(to_unsigned(input_update_offset(2,i), addr_width_wght));
+                    update_offset_iact(y,x) <= std_logic_vector(to_unsigned(input_update_offset(0 + x,i), addr_width_iact));
+                    update_offset_psum(y,x) <= std_logic_vector(to_unsigned(input_update_offset(3 + x,i), addr_width_psum));
+                    update_offset_wght(y,x) <= std_logic_vector(to_unsigned(input_update_offset(6 + x,i), addr_width_wght));
 
                 end loop;
 
@@ -589,21 +575,21 @@ begin
 
             for x in 0 to size_x - 1 loop
 
-                command(0,x) <= output_pe_command(0,i);
-                command(1,x) <= output_pe_command(1,i);
-                command(2,x) <= output_pe_command(2,i);
+                command(0,x) <= output_pe_command(0 + x,i);
+                command(1,x) <= output_pe_command(3 + x,i);
+                command(2,x) <= output_pe_command(6 + x,i);
 
-                command_psum(0,x) <= output_command(0,i);
-                command_psum(1,x) <= output_command(1,i);
-                command_psum(2,x) <= output_command(2,i);
+                command_psum(0,x) <= output_command(0 + x,i);
+                command_psum(1,x) <= output_command(3 + x,i);
+                command_psum(2,x) <= output_command(6 + x,i);
 
-                read_offset_psum(0,x) <= std_logic_vector(to_unsigned(output_read_offset(0,i), addr_width_psum));
-                read_offset_psum(1,x) <= std_logic_vector(to_unsigned(output_read_offset(1,i), addr_width_psum));
-                read_offset_psum(2,x) <= std_logic_vector(to_unsigned(output_read_offset(2,i), addr_width_psum));
+                read_offset_psum(0,x) <= std_logic_vector(to_unsigned(output_read_offset(0 + x,i), addr_width_psum));
+                read_offset_psum(1,x) <= std_logic_vector(to_unsigned(output_read_offset(3 + x,i), addr_width_psum));
+                read_offset_psum(2,x) <= std_logic_vector(to_unsigned(output_read_offset(6 + x,i), addr_width_psum));
 
-                update_offset_psum(0,x) <= std_logic_vector(to_unsigned(output_update_offset(0,i), addr_width_psum));
-                update_offset_psum(1,x) <= std_logic_vector(to_unsigned(output_update_offset(1,i), addr_width_psum));
-                update_offset_psum(2,x) <= std_logic_vector(to_unsigned(output_update_offset(2,i), addr_width_psum));
+                update_offset_psum(0,x) <= std_logic_vector(to_unsigned(output_update_offset(0 + x,i), addr_width_psum));
+                update_offset_psum(1,x) <= std_logic_vector(to_unsigned(output_update_offset(3 + x,i), addr_width_psum));
+                update_offset_psum(2,x) <= std_logic_vector(to_unsigned(output_update_offset(6 + x,i), addr_width_psum));
 
             end loop;
 
@@ -623,16 +609,28 @@ begin
         report "Clear psums and fill with zeros";
 
         -- Shrink iact inputs by line_length_iact - kernel_size and thus clear the line buffer
-        read_offset_iact <= (others => (others => std_logic_vector(to_unsigned(line_length_iact - kernel_size, addr_width_iact))));
-        command_iact     <= (others => (others => c_lb_shrink));
+        for x in 0 to size_x - 1 loop
+
+            for y in 0 to size_y - 1 loop
+
+                read_offset_iact  <= (others => (others => std_logic_vector(to_unsigned(line_length_iact - kernel_size, addr_width_iact))));
+                command_iact(y,x) <= c_lb_shrink;
+
+            end loop;
+
+            wait until rising_edge(clk);
+
+            -- Stop shrinking --> set commands back to idle
+            read_offset_iact <= (others => (others => std_logic_vector(to_unsigned(0, addr_width_iact))));
+            command_iact     <= (others => (others => c_lb_idle));
+
+        end loop;
 
         -- Shrink psums to clear line buffer
         read_offset_psum <= (others => (others => std_logic_vector(to_unsigned(image_x - kernel_size + 1, addr_width_psum))));
         command_psum     <= (others => (others => c_lb_shrink));
 
-        s_reset_psum <= true;
         wait until rising_edge(clk);
-        s_reset_psum <= false;
 
         -- Stop shrinking --> set commands back to idle
         read_offset_iact <= (others => (others => std_logic_vector(to_unsigned(0, addr_width_iact))));
@@ -655,19 +653,19 @@ begin
 
                 for x in 0 to size_x - 1 loop
 
-                    command(y,x) <= input_pe_command(i);
+                    command(y,x) <= input_pe_command(x,i);
 
-                    command_iact(y,x) <= input_command(0,i);
-                    command_psum(y,x) <= input_command(1,i);
-                    command_wght(y,x) <= input_command(2,i);
+                    command_iact(y,x) <= input_command(0 + x,i);
+                    command_psum(y,x) <= input_command(3 + x,i);
+                    command_wght(y,x) <= input_command(6 + x,i);
 
-                    read_offset_iact(y,x) <= std_logic_vector(to_unsigned(input_read_offset(0,i), addr_width_iact));
-                    read_offset_psum(y,x) <= std_logic_vector(to_unsigned(input_read_offset(1,i), addr_width_psum));
-                    read_offset_wght(y,x) <= std_logic_vector(to_unsigned(input_read_offset(2,i), addr_width_wght));
+                    read_offset_iact(y,x) <= std_logic_vector(to_unsigned(input_read_offset(0 + x,i), addr_width_iact));
+                    read_offset_psum(y,x) <= std_logic_vector(to_unsigned(input_read_offset(3 + x,i), addr_width_psum));
+                    read_offset_wght(y,x) <= std_logic_vector(to_unsigned(input_read_offset(6 + x,i), addr_width_wght));
 
-                    update_offset_iact(y,x) <= std_logic_vector(to_unsigned(input_update_offset(0,i), addr_width_iact));
-                    update_offset_psum(y,x) <= std_logic_vector(to_unsigned(input_update_offset(1,i), addr_width_psum));
-                    update_offset_wght(y,x) <= std_logic_vector(to_unsigned(input_update_offset(2,i), addr_width_wght));
+                    update_offset_iact(y,x) <= std_logic_vector(to_unsigned(input_update_offset(0 + x,i), addr_width_iact));
+                    update_offset_psum(y,x) <= std_logic_vector(to_unsigned(input_update_offset(3 + x,i), addr_width_psum));
+                    update_offset_wght(y,x) <= std_logic_vector(to_unsigned(input_update_offset(6 + x,i), addr_width_wght));
 
                 end loop;
 
@@ -686,21 +684,21 @@ begin
 
             for x in 0 to size_x - 1 loop
 
-                command(0,x) <= output_pe_command(0,i);
-                command(1,x) <= output_pe_command(1,i);
-                command(2,x) <= output_pe_command(2,i);
+                command(0,x) <= output_pe_command(0 + x,i);
+                command(1,x) <= output_pe_command(3 + x,i);
+                command(2,x) <= output_pe_command(6 + x,i);
 
-                command_psum(0,x) <= output_command(0,i);
-                command_psum(1,x) <= output_command(1,i);
-                command_psum(2,x) <= output_command(2,i);
+                command_psum(0,x) <= output_command(0 + x,i);
+                command_psum(1,x) <= output_command(3 + x,i);
+                command_psum(2,x) <= output_command(6 + x,i);
 
-                read_offset_psum(0,x) <= std_logic_vector(to_unsigned(output_read_offset(0,i), addr_width_psum));
-                read_offset_psum(1,x) <= std_logic_vector(to_unsigned(output_read_offset(1,i), addr_width_psum));
-                read_offset_psum(2,x) <= std_logic_vector(to_unsigned(output_read_offset(2,i), addr_width_psum));
+                read_offset_psum(0,x) <= std_logic_vector(to_unsigned(output_read_offset(0 + x,i), addr_width_psum));
+                read_offset_psum(1,x) <= std_logic_vector(to_unsigned(output_read_offset(3 + x,i), addr_width_psum));
+                read_offset_psum(2,x) <= std_logic_vector(to_unsigned(output_read_offset(6 + x,i), addr_width_psum));
 
-                update_offset_psum(0,x) <= std_logic_vector(to_unsigned(output_update_offset(0,i), addr_width_psum));
-                update_offset_psum(1,x) <= std_logic_vector(to_unsigned(output_update_offset(1,i), addr_width_psum));
-                update_offset_psum(2,x) <= std_logic_vector(to_unsigned(output_update_offset(2,i), addr_width_psum));
+                update_offset_psum(0,x) <= std_logic_vector(to_unsigned(output_update_offset(0 + x,i), addr_width_psum));
+                update_offset_psum(1,x) <= std_logic_vector(to_unsigned(output_update_offset(3 + x,i), addr_width_psum));
+                update_offset_psum(2,x) <= std_logic_vector(to_unsigned(output_update_offset(6 + x,i), addr_width_psum));
 
             end loop;
 
@@ -730,11 +728,11 @@ begin
             wait until rising_edge(clk);
 
             -- If result is not valid, wait until next rising edge with valid results.
-            if or o_psums_valid = '0' then
-                wait until rising_edge(clk) and (or o_psums_valid= '1');
+            if o_psums_valid(0) = '0' then
+                wait until rising_edge(clk) and o_psums_valid(0) = '1';
             end if;
 
-            for y in 0 to size_y - 1 loop
+            for y in 0 to 0 loop
 
                 assert o_psums(y) = std_logic_vector(to_signed(s_expected_output(y,i), data_width_psum))
                     report "Output wrong. Result is " & integer'image(to_integer(signed(o_psums(y)))) & " - should be "
@@ -756,11 +754,11 @@ begin
             wait until rising_edge(clk);
 
             -- If result is not valid, wait until next rising edge with valid results.
-            if or o_psums_valid = '0' then
-                wait until rising_edge(clk) and (or o_psums_valid= '1');
+            if o_psums_valid(0) = '0' then
+                wait until rising_edge(clk) and o_psums_valid(0) = '1';
             end if;
 
-            for y in 0 to size_y - 1 loop
+            for y in 0 to 0 loop
 
                 assert o_psums(y) = std_logic_vector(to_signed(s_expected_output(y + kernel_size,i), data_width_psum))
                     report "Output wrong. Result is " & integer'image(to_integer(signed(o_psums(y)))) & " - should be "
@@ -782,11 +780,11 @@ begin
             wait until rising_edge(clk);
 
             -- If result is not valid, wait until next rising edge with valid results.
-            if or o_psums_valid = '0' then
-                wait until rising_edge(clk) and (or o_psums_valid= '1');
+            if o_psums_valid(0) = '0' then
+                wait until rising_edge(clk) and o_psums_valid(0) = '1';
             end if;
 
-            for y in 0 to size_y - 2 loop
+            for y in 0 to 0 loop
 
                 assert o_psums(y) = std_logic_vector(to_signed(s_expected_output(y + 2 * kernel_size, i), data_width_psum))
                     report "Output wrong. Result is " & integer'image(to_integer(signed(o_psums(y)))) & " - should be "
@@ -802,7 +800,7 @@ begin
         wait until rising_edge(clk);
 
         -- Check if result valid signal is set to zero afterwards
-        assert (or o_psums_valid = '0')
+        assert o_psums_valid(0) = '0'
             report "Result valid should be zero"
             severity failure;
 
@@ -813,5 +811,198 @@ begin
         wait for 8000 ns;
 
     end process output_check;
+
+    output_check_2 : process is
+    begin
+
+        report "OUTPUTS -----------------------------------------------------"
+            severity note;
+
+        output_loop : for i in 0 to image_x - kernel_size loop
+
+            wait until rising_edge(clk);
+
+            -- If result is not valid, wait until next rising edge with valid results.
+            if o_psums_valid(1) = '0' then
+                wait until rising_edge(clk) and o_psums_valid(1) = '1';
+            end if;
+
+            for y in 1 to 1 loop
+
+                assert o_psums(y) = std_logic_vector(to_signed(s_expected_output(y,i), data_width_psum))
+                    report "Output wrong. Result is " & integer'image(to_integer(signed(o_psums(y)))) & " - should be "
+                           & integer'image(s_expected_output(y,i))
+                    severity failure;
+
+                report "Got correct result " & integer'image(to_integer(signed(o_psums(y))));
+
+            end loop;
+
+        end loop;
+
+        wait until rising_edge(clk);
+
+        report "SECOND TURN";
+
+        output_loop_2 : for i in 0 to image_x - kernel_size loop
+
+            wait until rising_edge(clk);
+
+            -- If result is not valid, wait until next rising edge with valid results.
+            if o_psums_valid(1) = '0' then
+                wait until rising_edge(clk) and o_psums_valid(1) = '1';
+            end if;
+
+            for y in 1 to 1 loop
+
+                assert o_psums(y) = std_logic_vector(to_signed(s_expected_output(y + kernel_size,i), data_width_psum))
+                    report "Output wrong. Result is " & integer'image(to_integer(signed(o_psums(y)))) & " - should be "
+                           & integer'image(s_expected_output(y,i))
+                    severity failure;
+
+                report "Got correct result " & integer'image(to_integer(signed(o_psums(y))));
+
+            end loop;
+
+        end loop;
+
+        wait until rising_edge(clk);
+
+        report "THIRD TURN";
+
+        output_loop_3 : for i in 0 to image_x - kernel_size loop
+
+            wait until rising_edge(clk);
+
+            -- If result is not valid, wait until next rising edge with valid results.
+            if o_psums_valid(1) = '0' then
+                wait until rising_edge(clk) and o_psums_valid(1) = '1';
+            end if;
+
+            for y in 1 to 1 loop
+
+                assert o_psums(y) = std_logic_vector(to_signed(s_expected_output(y + 2 * kernel_size, i), data_width_psum))
+                    report "Output wrong. Result is " & integer'image(to_integer(signed(o_psums(y)))) & " - should be "
+                           & integer'image(s_expected_output(y,i))
+                    severity failure;
+
+                report "Got correct result " & integer'image(to_integer(signed(o_psums(y))));
+
+            end loop;
+
+        end loop;
+
+        wait until rising_edge(clk);
+
+        -- Check if result valid signal is set to zero afterwards
+        assert o_psums_valid(1) = '0'
+            report "Result valid should be zero"
+            severity failure;
+
+        report "Output check is finished."
+            severity note;
+        finish;
+
+        wait for 8000 ns;
+
+    end process output_check_2;
+
+    output_check_3 : process is
+    begin
+
+        report "OUTPUTS -----------------------------------------------------"
+            severity note;
+
+        output_loop : for i in 0 to image_x - kernel_size loop
+
+            wait until rising_edge(clk);
+
+            -- If result is not valid, wait until next rising edge with valid results.
+            if o_psums_valid(2) = '0' then
+                wait until rising_edge(clk) and o_psums_valid(2) = '1';
+            end if;
+
+            for y in 2 to 2 loop
+
+                assert o_psums(y) = std_logic_vector(to_signed(s_expected_output(y,i), data_width_psum))
+                    report "Output wrong. Result is " & integer'image(to_integer(signed(o_psums(y)))) & " - should be "
+                           & integer'image(s_expected_output(y,i))
+                    severity failure;
+
+                report "Got correct result " & integer'image(to_integer(signed(o_psums(y))));
+
+            end loop;
+
+        end loop;
+
+        wait until rising_edge(clk);
+
+        report "SECOND TURN";
+
+        output_loop_2 : for i in 0 to image_x - kernel_size loop
+
+            wait until rising_edge(clk);
+
+            -- If result is not valid, wait until next rising edge with valid results.
+            if o_psums_valid(2) = '0' then
+                wait until rising_edge(clk) and o_psums_valid(2) = '1';
+            end if;
+
+            for y in 2 to 2 loop
+
+                assert o_psums(y) = std_logic_vector(to_signed(s_expected_output(y + kernel_size,i), data_width_psum))
+                    report "Output wrong. Result is " & integer'image(to_integer(signed(o_psums(y)))) & " - should be "
+                           & integer'image(s_expected_output(y,i))
+                    severity failure;
+
+                report "Got correct result " & integer'image(to_integer(signed(o_psums(y))));
+
+            end loop;
+
+        end loop;
+
+        wait until rising_edge(clk);
+
+        report "THIRD TURN";
+
+        output_loop_3 : for i in 0 to image_x - kernel_size loop
+
+            wait until rising_edge(clk);
+
+            -- If result is not valid, wait until next rising edge with valid results.
+
+            -- No more check because only 8 output rows - not 9
+
+            /*if o_psums_valid(2) = '0' then
+                wait until rising_edge(clk) and o_psums_valid(2) = '1';
+            end if;
+
+            for y in 2 to 2 loop
+
+                assert o_psums(y) = std_logic_vector(to_signed(s_expected_output(y + 2 * kernel_size, i), data_width_psum))
+                    report "Output wrong. Result is " & integer'image(to_integer(signed(o_psums(y)))) & " - should be "
+                            & integer'image(s_expected_output(y,i))
+                    severity failure;
+
+                report "Got correct result " & integer'image(to_integer(signed(o_psums(y))));
+
+            end loop;*/
+
+        end loop;
+
+        wait until rising_edge(clk);
+
+        -- Check if result valid signal is set to zero afterwards
+        assert o_psums_valid(2) = '0'
+            report "Result valid should be zero"
+            severity failure;
+
+        report "Output check is finished."
+            severity note;
+        finish;
+
+        wait for 8000 ns;
+
+    end process output_check_3;
 
 end architecture imp;
