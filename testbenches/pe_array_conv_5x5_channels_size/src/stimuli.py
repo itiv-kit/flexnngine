@@ -1,8 +1,8 @@
 import numpy as np
 
 kernel_size = 5
-image_size = 9
-channels = 3
+image_size = 24
+channels = 30
 input_bits = 3
 
 np.random.seed(None)

@@ -15,7 +15,10 @@ entity pe is
 
         data_width_wght  : positive := 8;
         line_length_wght : positive := 7;
-        addr_width_wght  : positive := 3
+        addr_width_wght  : positive := 3;
+
+        pe_north : boolean := false;
+        pe_south : boolean := false
     );
     port (
         clk  : in    std_logic;
@@ -146,13 +149,14 @@ architecture behavioral of pe is
         );
     end component demux;
 
-    signal data_iact      : std_logic_vector(data_width_iact - 1 downto 0);
-    signal data_iact_wide : std_logic_vector(data_width_psum - 1 downto 0);
-    signal data_wght      : std_logic_vector(data_width_wght - 1 downto 0);
-    signal data_psum      : std_logic_vector(data_width_psum - 1 downto 0);
-    signal data_mult      : std_logic_vector(data_width_psum - 1 downto 0);
-    signal data_acc_in1   : std_logic_vector(data_width_psum - 1 downto 0);
-    signal data_acc_in2   : std_logic_vector(data_width_psum - 1 downto 0);
+    signal data_iact            : std_logic_vector(data_width_iact - 1 downto 0);
+    signal data_iact_wide       : std_logic_vector(data_width_psum - 1 downto 0);
+    signal data_iact_wide_valid : std_logic;
+    signal data_wght            : std_logic_vector(data_width_wght - 1 downto 0);
+    signal data_psum            : std_logic_vector(data_width_psum - 1 downto 0);
+    signal data_mult            : std_logic_vector(data_width_psum - 1 downto 0);
+    signal data_acc_in1         : std_logic_vector(data_width_psum - 1 downto 0);
+    signal data_acc_in2         : std_logic_vector(data_width_psum - 1 downto 0);
 
     signal data_acc_out : std_logic_vector(data_width_psum - 1 downto 0);
 
@@ -231,7 +235,8 @@ begin
     data_out_iact_valid <= data_in_iact_valid when rising_edge(clk);
     data_out_wght_valid <= data_in_wght_valid when rising_edge(clk);
 
-    data_iact_wide <= (data_width_psum - 1 downto data_width_iact => '0') & data_in_iact when rising_edge(clk);
+    data_iact_wide       <= demux_input_iact when rising_edge(clk);
+    data_iact_wide_valid <= demux_input_iact_valid when rising_edge(clk);
 
     -- data_out_valid  <= data_acc_out_valid;
     -- data_out        <= data_acc_out;
@@ -443,31 +448,42 @@ begin
             z_o(0)    => w_data_in_iact_valid
         );
 
-    mux_output : component mux
-        generic map (
-            input_width   => data_width_psum,
-            input_num     => 2,
-            address_width => 1
-        )
-        port map (
-            v_i(0) => data_psum,
-            v_i(1) => data_iact_wide,
-            sel(0) => sel_conv_gemm,
-            z_o    => data_out
-        );
+    pe_output : if pe_north = false generate
 
-    mux_output_valid : component mux
-        generic map (
-            input_width   => 1,
-            input_num     => 2,
-            address_width => 1
-        )
-        port map (
-            v_i(0)(0) => command_read_psum_delay,
-            v_i(1)(0) => data_out_iact_valid,
-            sel(0)    => sel_conv_gemm,
-            z_o(0)    => data_out_valid
-        );
+        mux_output : component mux
+            generic map (
+                input_width   => data_width_psum,
+                input_num     => 2,
+                address_width => 1
+            )
+            port map (
+                v_i(0) => data_psum,
+                v_i(1) => data_iact_wide,
+                sel(0) => sel_conv_gemm,
+                z_o    => data_out
+            );
+
+        mux_output_valid : component mux
+            generic map (
+                input_width   => 1,
+                input_num     => 2,
+                address_width => 1
+            )
+            port map (
+                v_i(0)(0) => command_read_psum_delay,
+                v_i(1)(0) => data_iact_wide_valid,
+                sel(0)    => sel_conv_gemm,
+                z_o(0)    => data_out_valid
+            );
+
+    end generate pe_output;
+
+    pe_output_psum : if pe_north = true generate
+
+        data_out_valid <= command_read_psum_delay;
+        data_out       <= data_psum;
+
+    end generate pe_output_psum;
 
     demux_input : component demux
         generic map (

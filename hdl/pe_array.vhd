@@ -77,7 +77,10 @@ architecture behavioral of pe_array is
 
             data_width_wght  : positive := 8;
             line_length_wght : positive := 7;
-            addr_width_wght  : positive := 3
+            addr_width_wght  : positive := 3;
+
+            pe_north : boolean := false;
+            pe_south : boolean := false
         );
         port (
             clk  : in    std_logic;
@@ -261,14 +264,23 @@ begin
 
     end generate psum_propagate;
 
+    -- Iact input also on data_in port for south PEs (for GEMM use case)
+
+    data_in_iact : for x in 0 to size_x - 1 generate
+
+        w_data_in(size_y - 1, x)       <= (data_width_psum - 1 downto data_width_iact => '0') & i_data_iact(size_y - 1 + x);
+        w_data_in_valid(size_y - 1, x) <= i_data_iact_valid(size_y - 1 + x);
+
+    end generate data_in_iact;
+
     -- Partial sums valid for south PEs
     /* TODO ADDED */
 
-    psum_valid : for x in 0 to size_x - 1 generate
+/*    psum_valid : for x in 0 to size_x - 1 generate
 
         w_data_in_valid(size_y - 1,x) <= '0';
 
-    end generate psum_valid;
+    end generate psum_valid;*/
 
     -- Partial sums output from north PE row. This is the actual output of the PE array.
 
@@ -299,52 +311,164 @@ begin
 
         pe_inst_x : for x in 0 to size_x - 1 generate
 
-            pe_inst : component pe
-                generic map (
-                    data_width_iact  => data_width_iact,
-                    line_length_iact => line_length_iact,
-                    addr_width_iact  => addr_width_iact,
-                    data_width_psum  => data_width_psum,
-                    line_length_psum => line_length_psum,
-                    addr_width_psum  => addr_width_psum,
-                    data_width_wght  => data_width_wght,
-                    line_length_wght => line_length_wght,
-                    addr_width_wght  => addr_width_wght
-                )
-                port map (
-                    clk                   => clk,
-                    rstn                  => rstn,
-                    command               => command(y,x),
-                    command_iact          => command_iact(y,x),
-                    command_psum          => command_psum(y,x),
-                    command_wght          => command_wght(y,x),
-                    data_in_iact          => w_data_in_iact(y,x),
-                    data_in_psum          => w_data_in_psum(y,x),
-                    data_in_wght          => w_data_in_wght(y,x),
-                    data_in_iact_valid    => w_data_in_iact_valid(y,x),
-                    data_in_psum_valid    => w_data_in_psum_valid(y,x),
-                    data_in_wght_valid    => w_data_in_wght_valid(y,x),
-                    buffer_full_iact      => w_buffer_full_iact(y,x),
-                    buffer_full_psum      => w_buffer_full_psum(y,x),
-                    buffer_full_wght      => w_buffer_full_wght(y,x),
-                    buffer_full_next_iact => w_buffer_full_next_iact(y,x),
-                    buffer_full_next_psum => w_buffer_full_next_psum(y,x),
-                    buffer_full_next_wght => w_buffer_full_next_wght(y,x),
-                    update_offset_iact    => update_offset_iact(y,x),
-                    update_offset_psum    => update_offset_psum(y,x),
-                    update_offset_wght    => update_offset_wght(y,x),
-                    read_offset_iact      => read_offset_iact(y,x),
-                    read_offset_psum      => read_offset_psum(y,x),
-                    read_offset_wght      => read_offset_wght(y,x),
-                    data_out              => w_data_out(y,x),
-                    data_out_valid        => w_data_out_valid(y,x),
-                    data_in               => w_data_in(y,x),
-                    data_in_valid         => w_data_in_valid(y,x),
-                    data_out_iact         => w_data_out_iact(y,x),
-                    data_out_wght         => w_data_out_wght(y,x),
-                    data_out_iact_valid   => w_data_out_iact_valid(y,x),
-                    data_out_wght_valid   => w_data_out_wght_valid(y,x)
-                );
+            pe_north : if y = 0 generate
+
+                pe_inst : component pe
+                    generic map (
+                        data_width_iact  => data_width_iact,
+                        line_length_iact => line_length_iact,
+                        addr_width_iact  => addr_width_iact,
+                        data_width_psum  => data_width_psum,
+                        line_length_psum => line_length_psum,
+                        addr_width_psum  => addr_width_psum,
+                        data_width_wght  => data_width_wght,
+                        line_length_wght => line_length_wght,
+                        addr_width_wght  => addr_width_wght,
+                        pe_north         => true,
+                        pe_south         => false
+                    )
+                    port map (
+                        clk                   => clk,
+                        rstn                  => rstn,
+                        command               => command(y,x),
+                        command_iact          => command_iact(y,x),
+                        command_psum          => command_psum(y,x),
+                        command_wght          => command_wght(y,x),
+                        data_in_iact          => w_data_in_iact(y,x),
+                        data_in_psum          => w_data_in_psum(y,x),
+                        data_in_wght          => w_data_in_wght(y,x),
+                        data_in_iact_valid    => w_data_in_iact_valid(y,x),
+                        data_in_psum_valid    => w_data_in_psum_valid(y,x),
+                        data_in_wght_valid    => w_data_in_wght_valid(y,x),
+                        buffer_full_iact      => w_buffer_full_iact(y,x),
+                        buffer_full_psum      => w_buffer_full_psum(y,x),
+                        buffer_full_wght      => w_buffer_full_wght(y,x),
+                        buffer_full_next_iact => w_buffer_full_next_iact(y,x),
+                        buffer_full_next_psum => w_buffer_full_next_psum(y,x),
+                        buffer_full_next_wght => w_buffer_full_next_wght(y,x),
+                        update_offset_iact    => update_offset_iact(y,x),
+                        update_offset_psum    => update_offset_psum(y,x),
+                        update_offset_wght    => update_offset_wght(y,x),
+                        read_offset_iact      => read_offset_iact(y,x),
+                        read_offset_psum      => read_offset_psum(y,x),
+                        read_offset_wght      => read_offset_wght(y,x),
+                        data_out              => w_data_out(y,x),
+                        data_out_valid        => w_data_out_valid(y,x),
+                        data_in               => w_data_in(y,x),
+                        data_in_valid         => w_data_in_valid(y,x),
+                        data_out_iact         => w_data_out_iact(y,x),
+                        data_out_wght         => w_data_out_wght(y,x),
+                        data_out_iact_valid   => w_data_out_iact_valid(y,x),
+                        data_out_wght_valid   => w_data_out_wght_valid(y,x)
+                    );
+
+            end generate pe_north;
+
+            pe_south : if y = size_y - 1 generate
+
+                pe_inst : component pe
+                    generic map (
+                        data_width_iact  => data_width_iact,
+                        line_length_iact => line_length_iact,
+                        addr_width_iact  => addr_width_iact,
+                        data_width_psum  => data_width_psum,
+                        line_length_psum => line_length_psum,
+                        addr_width_psum  => addr_width_psum,
+                        data_width_wght  => data_width_wght,
+                        line_length_wght => line_length_wght,
+                        addr_width_wght  => addr_width_wght,
+                        pe_north         => false,
+                        pe_south         => true
+                    )
+                    port map (
+                        clk                   => clk,
+                        rstn                  => rstn,
+                        command               => command(y,x),
+                        command_iact          => command_iact(y,x),
+                        command_psum          => command_psum(y,x),
+                        command_wght          => command_wght(y,x),
+                        data_in_iact          => w_data_in_iact(y,x),
+                        data_in_psum          => w_data_in_psum(y,x),
+                        data_in_wght          => w_data_in_wght(y,x),
+                        data_in_iact_valid    => w_data_in_iact_valid(y,x),
+                        data_in_psum_valid    => w_data_in_psum_valid(y,x),
+                        data_in_wght_valid    => w_data_in_wght_valid(y,x),
+                        buffer_full_iact      => w_buffer_full_iact(y,x),
+                        buffer_full_psum      => w_buffer_full_psum(y,x),
+                        buffer_full_wght      => w_buffer_full_wght(y,x),
+                        buffer_full_next_iact => w_buffer_full_next_iact(y,x),
+                        buffer_full_next_psum => w_buffer_full_next_psum(y,x),
+                        buffer_full_next_wght => w_buffer_full_next_wght(y,x),
+                        update_offset_iact    => update_offset_iact(y,x),
+                        update_offset_psum    => update_offset_psum(y,x),
+                        update_offset_wght    => update_offset_wght(y,x),
+                        read_offset_iact      => read_offset_iact(y,x),
+                        read_offset_psum      => read_offset_psum(y,x),
+                        read_offset_wght      => read_offset_wght(y,x),
+                        data_out              => w_data_out(y,x),
+                        data_out_valid        => w_data_out_valid(y,x),
+                        data_in               => w_data_in(y,x),
+                        data_in_valid         => w_data_in_valid(y,x),
+                        data_out_iact         => w_data_out_iact(y,x),
+                        data_out_wght         => w_data_out_wght(y,x),
+                        data_out_iact_valid   => w_data_out_iact_valid(y,x),
+                        data_out_wght_valid   => w_data_out_wght_valid(y,x)
+                    );
+
+            end generate pe_south;
+
+            pe_middle : if (y /= size_y - 1) and (y /= 0) generate
+
+                pe_inst : component pe
+                    generic map (
+                        data_width_iact  => data_width_iact,
+                        line_length_iact => line_length_iact,
+                        addr_width_iact  => addr_width_iact,
+                        data_width_psum  => data_width_psum,
+                        line_length_psum => line_length_psum,
+                        addr_width_psum  => addr_width_psum,
+                        data_width_wght  => data_width_wght,
+                        line_length_wght => line_length_wght,
+                        addr_width_wght  => addr_width_wght,
+                        pe_north         => false,
+                        pe_south         => true
+                    )
+                    port map (
+                        clk                   => clk,
+                        rstn                  => rstn,
+                        command               => command(y,x),
+                        command_iact          => command_iact(y,x),
+                        command_psum          => command_psum(y,x),
+                        command_wght          => command_wght(y,x),
+                        data_in_iact          => w_data_in_iact(y,x),
+                        data_in_psum          => w_data_in_psum(y,x),
+                        data_in_wght          => w_data_in_wght(y,x),
+                        data_in_iact_valid    => w_data_in_iact_valid(y,x),
+                        data_in_psum_valid    => w_data_in_psum_valid(y,x),
+                        data_in_wght_valid    => w_data_in_wght_valid(y,x),
+                        buffer_full_iact      => w_buffer_full_iact(y,x),
+                        buffer_full_psum      => w_buffer_full_psum(y,x),
+                        buffer_full_wght      => w_buffer_full_wght(y,x),
+                        buffer_full_next_iact => w_buffer_full_next_iact(y,x),
+                        buffer_full_next_psum => w_buffer_full_next_psum(y,x),
+                        buffer_full_next_wght => w_buffer_full_next_wght(y,x),
+                        update_offset_iact    => update_offset_iact(y,x),
+                        update_offset_psum    => update_offset_psum(y,x),
+                        update_offset_wght    => update_offset_wght(y,x),
+                        read_offset_iact      => read_offset_iact(y,x),
+                        read_offset_psum      => read_offset_psum(y,x),
+                        read_offset_wght      => read_offset_wght(y,x),
+                        data_out              => w_data_out(y,x),
+                        data_out_valid        => w_data_out_valid(y,x),
+                        data_in               => w_data_in(y,x),
+                        data_in_valid         => w_data_in_valid(y,x),
+                        data_out_iact         => w_data_out_iact(y,x),
+                        data_out_wght         => w_data_out_wght(y,x),
+                        data_out_iact_valid   => w_data_out_iact_valid(y,x),
+                        data_out_wght_valid   => w_data_out_wght_valid(y,x)
+                    );
+
+            end generate pe_middle;
 
         end generate pe_inst_x;
 
