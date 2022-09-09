@@ -406,21 +406,7 @@ begin
 
         wait until rstn = '1';
 
-        /* TODO MODIFIED */
-
-        for y in 0 to size_y - 1 loop
-
-            for x in 0 to size_x - 1 loop
-
-                if y = size_y - 1 then
-                    command(y,x) <= c_pe_gemm_mult;
-                else
-                    command(y,x) <= c_pe_gemm_mult; /* TODO SET SOUTH PEs to accept iact from outside (c_pe_conv_mult). Other should be c_pe_gemm_mult*/
-                end if;
-
-            end loop;
-
-        end loop;
+        command <= (others => (others => c_pe_gemm_mult));
 
         read_offset_iact <= (others => (others => (others => '0')));
         read_offset_psum <= (others => (others => (others => '0')));
@@ -461,8 +447,6 @@ begin
             wait until rising_edge(clk);
 
         end loop;
-
-        --         wait until rising_edge(clk);
 
         report "Start with partial sum accumulation and output results ...";
 
