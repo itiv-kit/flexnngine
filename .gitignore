@@ -21,3 +21,6 @@ cov*/
 transcript*
 sc_dpiheader.h
 vsim.dbg
+
+#ignore v4p
+*.v4p

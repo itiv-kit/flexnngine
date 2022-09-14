@@ -4,11 +4,11 @@ import copy
 
 np.set_printoptions(precision=1)
 
-channels = 30 # number of channels
+channels = 5 # number of channels
 kernel_size = 5 # 5x5 kernel
 size_x = 5 # PE array width
 size_y = 5 # PE array height
-image_size = 24 # image width and height
+image_size = 14 # image width and height
 
 output_file = "pe_array_conv_5x5_channels_tb.vhd"
 
