@@ -10,6 +10,7 @@ add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/cha
 add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/kernel_size
 
 add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/control_inst/r_tiles_y
+add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/control_inst/r_tiles_y_last_tile_rows
 add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/control_inst/r_tiles_x
 add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/control_inst/r_tiles_filter
 add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/control_inst/r_commands_per_tile

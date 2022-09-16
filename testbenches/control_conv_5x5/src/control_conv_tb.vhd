@@ -16,38 +16,38 @@ entity control_conv_tb is
         size_rows : positive := 9;
 
         data_width_iact  : positive := 8; -- Width of the input data (weights, iacts)
-        line_length_iact : positive := 50;
-        addr_width_iact  : positive := 6;
+        line_length_iact : positive := 15;
+        addr_width_iact  : positive := 4;
 
         data_width_psum  : positive := 16; -- or 17??
-        line_length_psum : positive := 15;
+        line_length_psum : positive := 10;
         addr_width_psum  : positive := 4;
 
         data_width_wght  : positive := 8;
-        line_length_wght : positive := 50;
-        addr_width_wght  : positive := 6;
+        line_length_wght : positive := 15;
+        addr_width_wght  : positive := 4;
 
-        g_channels : positive := 10;
-        g_image_y : positive := 18;
-        g_image_x : positive := 18;
+        g_channels    : positive := 3;
+        g_image_y     : positive := 14;
+        g_image_x     : positive := 14;
         g_kernel_size : positive := 5;
 
-        g_tiles : positive := 3 -- Only for output check - internally calculated within control module !!
+        g_tiles : positive := 2 -- Only for output check - internally calculated within control module !!
     );
 end entity control_conv_tb;
-    
+
 architecture imp of control_conv_tb is
 
     signal clk  : std_logic := '0';
     signal rstn : std_logic;
 
-    signal status : std_logic;
-    signal start : std_logic;
-    signal image_x : integer;
-    signal image_y : integer;
-    signal channels : integer;
-    signal kernel_size : integer;
-    signal command :      command_pe_row_col_t(0 to size_y - 1, 0 to size_x - 1);
+    signal status       : std_logic;
+    signal start        : std_logic;
+    signal image_x      : integer range 0 to 1023;
+    signal image_y      : integer range 0 to 1023;
+    signal channels     : integer range 0 to 4095;
+    signal kernel_size  : integer range 0 to 32;
+    signal command      : command_pe_row_col_t(0 to size_y - 1, 0 to size_x - 1);
     signal command_iact : command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
     signal command_psum : command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
     signal command_wght : command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
@@ -91,7 +91,7 @@ architecture imp of control_conv_tb is
     signal s_c    : integer;
     signal s_done : boolean;
 
-    signal s_tile_done  : boolean;
+    signal s_tile_done : boolean;
 
     signal i_data_psum_valid : std_logic;
     signal i_data_wght_valid : std_logic_vector(size_y - 1 downto 0);
@@ -101,7 +101,6 @@ architecture imp of control_conv_tb is
     signal s_input_image     : int_image3_t(0 to g_channels - 1, 0 to g_image_y - 1, 0 to g_image_x - 1);         -- int_image_t(0 to image_y - 1, 0 to image_x - 1);
     signal s_input_weights   : int_image3_t(0 to g_channels - 1, 0 to g_kernel_size - 1, 0 to g_kernel_size - 1); -- int_image_t(0 to kernel_size - 1, 0 to kernel_size - 1);
     signal s_expected_output : int_image_t(0 to g_image_y - g_kernel_size, 0 to g_image_x - g_kernel_size);
-
 
     procedure incr (signal pointer_y : inout integer; signal pointer_x : inout integer; signal pointer_c : inout integer) is
     begin
@@ -135,84 +134,84 @@ begin
 
     i_data_iact_valid_array <= i_data_iact_valid_delay(0)(8) & i_data_iact_valid_delay(1)(7) & i_data_iact_valid_delay(2)(6) & i_data_iact_valid_delay(3)(5) & i_data_iact_valid(4 downto 0);
 
-    control_inst: entity work.control
-    generic map (
-        size_x           => size_x,
-        size_y           => size_y,
-        size_rows        => size_rows,
-        line_length_iact => line_length_iact,
-        addr_width_iact  => addr_width_iact,
-        line_length_psum => line_length_psum,
-        addr_width_psum  => addr_width_psum,
-        line_length_wght => line_length_wght,
-        addr_width_wght  => addr_width_wght
-    )
-    port map (
-        clk                => clk,
-        rstn               => rstn,
-        status             => status,
-        start              => start,
-        image_x            => image_x,
-        image_y            => image_y,
-        channels           => channels,
-        kernel_size        => kernel_size,
-        command            => command,
-        command_iact       => command_iact,
-        command_psum       => command_psum,
-        command_wght       => command_wght,
-        update_offset_iact => update_offset_iact,
-        update_offset_psum => update_offset_psum,
-        update_offset_wght => update_offset_wght,
-        read_offset_iact   => read_offset_iact,
-        read_offset_psum   => read_offset_psum,
-        read_offset_wght   => read_offset_wght
-    );
+    control_inst : entity work.control
+        generic map (
+            size_x           => size_x,
+            size_y           => size_y,
+            size_rows        => size_rows,
+            line_length_iact => line_length_iact,
+            addr_width_iact  => addr_width_iact,
+            line_length_psum => line_length_psum,
+            addr_width_psum  => addr_width_psum,
+            line_length_wght => line_length_wght,
+            addr_width_wght  => addr_width_wght
+        )
+        port map (
+            clk                => clk,
+            rstn               => rstn,
+            status             => status,
+            start              => start,
+            image_x            => image_x,
+            image_y            => image_y,
+            channels           => channels,
+            kernel_size        => kernel_size,
+            command            => command,
+            command_iact       => command_iact,
+            command_psum       => command_psum,
+            command_wght       => command_wght,
+            update_offset_iact => update_offset_iact,
+            update_offset_psum => update_offset_psum,
+            update_offset_wght => update_offset_wght,
+            read_offset_iact   => read_offset_iact,
+            read_offset_psum   => read_offset_psum,
+            read_offset_wght   => read_offset_wght
+        );
 
-    pe_array_inst: entity work.pe_array
-    generic map (
-        size_x           => size_x,
-        size_y           => size_y,
-        size_rows        => size_rows,
-        data_width_iact  => data_width_iact,
-        line_length_iact => line_length_iact,
-        addr_width_iact  => addr_width_iact,
-        data_width_psum  => data_width_psum,
-        line_length_psum => line_length_psum,
-        addr_width_psum  => addr_width_psum,
-        data_width_wght  => data_width_wght,
-        line_length_wght => line_length_wght,
-        addr_width_wght  => addr_width_wght
-    )
-    port map (
-        clk                     => clk,
-        rstn                    => rstn,
-        i_preload_psum          => i_preload_psum,
-        i_preload_psum_valid    => i_preload_psum_valid,
-        command                 => command,
-        command_iact            => command_iact,
-        command_psum            => command_psum,
-        command_wght            => command_wght,
-        i_data_iact             => i_data_iact_array,
-        i_data_psum             => i_data_psum,
-        i_data_wght             => i_data_wght,
-        i_data_iact_valid       => i_data_iact_valid_array,
-        i_data_psum_valid       => i_data_psum_valid,
-        i_data_wght_valid       => i_data_wght_valid,
-        o_buffer_full_iact      => o_buffer_full_iact,
-        o_buffer_full_psum      => o_buffer_full_psum,
-        o_buffer_full_wght      => o_buffer_full_wght,
-        o_buffer_full_next_iact => o_buffer_full_next_iact,
-        o_buffer_full_next_psum => o_buffer_full_next_psum,
-        o_buffer_full_next_wght => o_buffer_full_next_wght,
-        update_offset_iact      => update_offset_iact,
-        update_offset_psum      => update_offset_psum,
-        update_offset_wght      => update_offset_wght,
-        read_offset_iact        => read_offset_iact,
-        read_offset_psum        => read_offset_psum,
-        read_offset_wght        => read_offset_wght,
-        o_psums                 => o_psums,
-        o_psums_valid           => o_psums_valid
-    );
+    pe_array_inst : entity work.pe_array
+        generic map (
+            size_x           => size_x,
+            size_y           => size_y,
+            size_rows        => size_rows,
+            data_width_iact  => data_width_iact,
+            line_length_iact => line_length_iact,
+            addr_width_iact  => addr_width_iact,
+            data_width_psum  => data_width_psum,
+            line_length_psum => line_length_psum,
+            addr_width_psum  => addr_width_psum,
+            data_width_wght  => data_width_wght,
+            line_length_wght => line_length_wght,
+            addr_width_wght  => addr_width_wght
+        )
+        port map (
+            clk                     => clk,
+            rstn                    => rstn,
+            i_preload_psum          => i_preload_psum,
+            i_preload_psum_valid    => i_preload_psum_valid,
+            command                 => command,
+            command_iact            => command_iact,
+            command_psum            => command_psum,
+            command_wght            => command_wght,
+            i_data_iact             => i_data_iact_array,
+            i_data_psum             => i_data_psum,
+            i_data_wght             => i_data_wght,
+            i_data_iact_valid       => i_data_iact_valid_array,
+            i_data_psum_valid       => i_data_psum_valid,
+            i_data_wght_valid       => i_data_wght_valid,
+            o_buffer_full_iact      => o_buffer_full_iact,
+            o_buffer_full_psum      => o_buffer_full_psum,
+            o_buffer_full_wght      => o_buffer_full_wght,
+            o_buffer_full_next_iact => o_buffer_full_next_iact,
+            o_buffer_full_next_psum => o_buffer_full_next_psum,
+            o_buffer_full_next_wght => o_buffer_full_next_wght,
+            update_offset_iact      => update_offset_iact,
+            update_offset_psum      => update_offset_psum,
+            update_offset_wght      => update_offset_wght,
+            read_offset_iact        => read_offset_iact,
+            read_offset_psum        => read_offset_psum,
+            read_offset_wght        => read_offset_wght,
+            o_psums                 => o_psums,
+            o_psums_valid           => o_psums_valid
+        );
 
     rstn_gen : process is
     begin
@@ -223,7 +222,7 @@ begin
         wait;
 
     end process rstn_gen;
-    
+
     clkgen : process (clk) is
     begin
 
@@ -239,9 +238,9 @@ begin
 
         start <= '0';
 
-        image_x <= g_image_x;
-        image_y <= g_image_y;
-        channels <= g_channels;
+        image_x     <= g_image_x;
+        image_y     <= g_image_y;
+        channels    <= g_channels;
         kernel_size <= g_kernel_size;
 
         wait for 50 ns;
@@ -371,7 +370,7 @@ begin
         end if;
 
     end process stimuli_data_iact;
-    
+
     output_check : for p in 0 to size_x - 1 generate
 
         output_check_last_row : if p = size_x - 1 generate
@@ -404,7 +403,7 @@ begin
 
                         assert o_psums(p) = std_logic_vector(to_signed(s_expected_output(p + j * g_kernel_size,i), data_width_psum))
                             report "Output wrong. Result is " & integer'image(to_integer(signed(o_psums(p)))) & " - should be "
-                                & integer'image(s_expected_output(p + j * g_kernel_size,i))
+                                   & integer'image(s_expected_output(p + j * g_kernel_size,i))
                             severity failure;
 
                         report "Got correct result " & integer'image(to_integer(signed(o_psums(p))));
@@ -462,7 +461,7 @@ begin
 
                         assert o_psums(p) = std_logic_vector(to_signed(s_expected_output(p + j * g_kernel_size,i), data_width_psum))
                             report "Output wrong. Result is " & integer'image(to_integer(signed(o_psums(p)))) & " - should be "
-                                & integer'image(s_expected_output(p + j * g_kernel_size,i))
+                                   & integer'image(s_expected_output(p + j * g_kernel_size,i))
                             severity failure;
 
                         report "Got correct result " & integer'image(to_integer(signed(o_psums(p))));

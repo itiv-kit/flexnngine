@@ -1,9 +1,9 @@
 import numpy as np
 
 kernel_size = 5
-image_size = 18
-channels = 10
-input_bits = 3
+image_size = 14
+channels = 3
+input_bits = 6
 
 np.random.seed(None)
 st = np.random.get_state()

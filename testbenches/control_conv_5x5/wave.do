@@ -10,10 +10,12 @@ add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/cha
 add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/kernel_size
 
 add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/control_inst/r_tiles_y
+add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/control_inst/r_tiles_y_last_tile_rows
 add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/control_inst/r_tiles_x
 add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/control_inst/r_tiles_filter
 add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/control_inst/r_commands_per_tile
 add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/control_inst/r_commands_last_tile_filter
+
 
 add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/control_inst/r_command_counter
 add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/control_inst/r_tile_filter_counter
@@ -124,6 +126,22 @@ add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix deci
 add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix decimal /control_conv_tb/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/line_buffer_psum/fill_count
 add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix decimal /control_conv_tb/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/line_buffer_iact/ram/ram_instance
 add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix unsigned /control_conv_tb/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/line_buffer_iact/fill_count
+
+
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix unsigned /control_conv_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/data_in_psum_valid
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix unsigned /control_conv_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/sel_mult_psum
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix unsigned /control_conv_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/update_offset_psum
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /control_conv_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/data_acc_out
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /control_conv_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/data_acc_in1
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /control_conv_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/data_acc_in2
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix unsigned /control_conv_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/data_acc_in1_valid
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix unsigned /control_conv_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/data_acc_in2_valid
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /control_conv_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_psum/update_val
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /control_conv_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_psum/update_offset
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /control_conv_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_psum/ram/ram_instance
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /control_conv_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_psum/fill_count
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /control_conv_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/data_in_iact
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /control_conv_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_iact/ram/ram_instance
 
 
 

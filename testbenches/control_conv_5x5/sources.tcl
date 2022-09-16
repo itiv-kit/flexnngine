@@ -13,6 +13,6 @@ vcom ../../hdl/pe_array.vhd
 # testbench
 vcom src/control_conv_tb.vhd
 
-set SIM_TIME "100 us"
+set SIM_TIME "10 ms"
 set SIM_TOP_LEVEL "control_conv_tb"
 
