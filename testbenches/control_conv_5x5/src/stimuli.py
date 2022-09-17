@@ -3,7 +3,7 @@ import numpy as np
 kernel_size = 5
 image_size = 14
 channels = 3
-input_bits = 6
+input_bits = 3
 
 np.random.seed(None)
 st = np.random.get_state()
@@ -32,11 +32,20 @@ def convolution2d(image, kernel, bias):
     return new_image
 
 # create array with random filter weights
-kernel = np.random.randint(-(2**(input_bits-1)), (2**(input_bits-1))-1, (kernel_size * channels, kernel_size))
+kernel = np.random.randint(-(2**(input_bits-1)), (2**(input_bits-1))-1, (kernel_size * int(channels/channels), kernel_size)) # TODO MODIFIED for channel test
+#kernel = np.random.randint(-(2**(input_bits-1)), (2**(input_bits-1))-1, (kernel_size * channels, kernel_size)) # TODO Original
+# concatenate channel times kernel
+kernel = np.concatenate([kernel]*channels, axis=0)# TODO ADDED for channel test
+
+
+print(kernel.shape)
 # kernel = np.array([[1,2,1],[2,3,2],[3,4,3]])
 
 # create array with random input activations ("image")
-image = np.random.randint(-(2**(input_bits-1)), (2**(input_bits-1))-1, (image_size * channels, image_size))
+image = np.random.randint(-(2**(input_bits-1)), (2**(input_bits-1))-1, (image_size * int(channels/channels), image_size)) # TODO MODIFIED for channel test
+#image = np.random.randint(-(2**(input_bits-1)), (2**(input_bits-1))-1, (image_size * channels, image_size)) # TODO Original
+# concatenate channel times image
+image = np.concatenate([image]*channels, axis=0) # TODO ADDED for channel test
 # size_x = 9
 # size_y = 10
 

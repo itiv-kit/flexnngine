@@ -16,23 +16,21 @@ entity control_conv_tb is
         size_rows : positive := 9;
 
         data_width_iact  : positive := 8; -- Width of the input data (weights, iacts)
-        line_length_iact : positive := 15;
-        addr_width_iact  : positive := 4;
+        line_length_iact : positive := 5;
+        addr_width_iact  : positive := 3;
 
         data_width_psum  : positive := 16; -- or 17??
         line_length_psum : positive := 10;
         addr_width_psum  : positive := 4;
 
         data_width_wght  : positive := 8;
-        line_length_wght : positive := 15;
-        addr_width_wght  : positive := 4;
+        line_length_wght : positive := 5;
+        addr_width_wght  : positive := 3;
 
         g_channels    : positive := 3;
         g_image_y     : positive := 14;
         g_image_x     : positive := 14;
-        g_kernel_size : positive := 5;
-
-        g_tiles : positive := 2 -- Only for output check - internally calculated within control module !!
+        g_kernel_size : positive := 5
     );
 end entity control_conv_tb;
 
@@ -86,15 +84,20 @@ architecture imp of control_conv_tb is
     signal o_psums       : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
     signal o_psums_valid : std_logic_vector(size_x - 1 downto 0);
 
-    signal s_x    : integer;
-    signal s_y    : integer;
-    signal s_c    : integer;
-    signal s_done : boolean;
+    signal s_x : integer;
+    signal s_y : integer;
+    signal s_c : integer;
 
-    signal s_tile_done : boolean;
+    signal s_wght_x : integer;
+    signal s_wght_y : integer;
+    signal s_wght_c : integer;
 
     signal i_data_psum_valid : std_logic;
     signal i_data_wght_valid : std_logic_vector(size_y - 1 downto 0);
+
+    signal tiles_c : integer range 0 to 1023;
+    signal tiles_x : integer range 0 to 1023;
+    signal tiles_y : integer range 0 to 1023;
 
     -- INPUT IMAGE, FILTER WEIGTHS AND EXPECTED OUTPUT
 
@@ -102,14 +105,16 @@ architecture imp of control_conv_tb is
     signal s_input_weights   : int_image3_t(0 to g_channels - 1, 0 to g_kernel_size - 1, 0 to g_kernel_size - 1); -- int_image_t(0 to kernel_size - 1, 0 to kernel_size - 1);
     signal s_expected_output : int_image_t(0 to g_image_y - g_kernel_size, 0 to g_image_x - g_kernel_size);
 
+    /* TODO not g_channels but tiled channel size */
+
     procedure incr (signal pointer_y : inout integer; signal pointer_x : inout integer; signal pointer_c : inout integer) is
     begin
 
-        if pointer_x = image_x - 1 and pointer_c = channels - 1 then
+        if pointer_x = g_image_x - 1 and pointer_c = g_channels - 1 then
             pointer_c <= 0;
             pointer_x <= 0;
-            pointer_y <= pointer_y + kernel_size;
-        elsif pointer_c = channels - 1 then
+            pointer_y <= pointer_y + g_kernel_size;
+        elsif pointer_c = g_channels - 1 then
             pointer_c <= 0;
             pointer_x <= pointer_x + 1;
         else
@@ -117,6 +122,62 @@ architecture imp of control_conv_tb is
         end if;
 
     end procedure;
+
+    /*procedure incr (signal pointer_y : inout integer; signal pointer_x : inout integer; signal pointer_c : inout integer) is
+    begin
+
+        if pointer_x = g_image_x - 1 and pointer_c = g_channels - 1 then
+            pointer_c <= 0;
+            pointer_x <= 0;
+            pointer_y <= pointer_y + g_kernel_size;
+        --elsif pointer_x = g_image_x - 1 then
+            --pointer_c <= pointer_c + 1;
+            --pointer_x <= 0;
+        elsif (pointer_x = g_kernel_size - 1 or pointer_x =2*g_kernel_size - 1) and pointer_c = g_channels - 1 then
+            pointer_c <= 0;
+            pointer_x <= pointer_x + 1;
+        elsif pointer_x = g_kernel_size - 1 or pointer_x =2*g_kernel_size - 1 then
+            pointer_c <= pointer_c + 1;
+            pointer_x <= pointer_x - g_kernel_size + 1;
+        else
+            pointer_x <= pointer_x + 1;
+        end if;
+
+    end procedure; */
+
+    /* TODO not g_channels but tiled channel size */
+
+    procedure incr_wght (signal pointer_y : inout integer; signal pointer_x : inout integer; signal pointer_c : inout integer) is
+    begin
+
+        if pointer_x = g_kernel_size - 1 and pointer_c = g_channels - 1 then
+            pointer_c <= 0;
+            pointer_x <= 0;
+            pointer_y <= pointer_y + g_kernel_size;
+        elsif pointer_c = g_channels - 1 then
+            pointer_c <= 0;
+            pointer_x <= pointer_x + 1;
+        else
+            pointer_c <= pointer_c + 1;
+        end if;
+
+    end procedure;
+
+    /*procedure incr_wght (signal pointer_y : inout integer; signal pointer_x : inout integer; signal pointer_c : inout integer) is
+    begin
+
+        if pointer_x = g_kernel_size - 1 and pointer_c = g_channels - 1 then
+            pointer_c <= 0;
+            pointer_x <= 0;
+            pointer_y <= pointer_y + g_kernel_size;
+        elsif pointer_x = g_kernel_size - 1 then
+            pointer_c <= pointer_c + 1;
+            pointer_x <= 0;
+        else
+            pointer_x <= pointer_x + 1;
+        end if;
+
+    end procedure; */
 
 begin
 
@@ -151,6 +212,9 @@ begin
             rstn               => rstn,
             status             => status,
             start              => start,
+            tiles_c            => tiles_c,
+            tiles_x            => tiles_x,
+            tiles_y            => tiles_y,
             image_x            => image_x,
             image_y            => image_y,
             channels           => channels,
@@ -295,7 +359,7 @@ begin
 
     end process p_constant_check;
 
-    stimuli_data_wght : process is
+    /*stimuli_data_wght : process is
     begin
 
         i_data_wght       <= (others => (others => '0'));
@@ -308,7 +372,7 @@ begin
 
         for i in 0 to size_x - 1 loop
 
-            for c in 0 to g_channels - 1 loop
+            for c in 0 to g_channels - 1 loop 
 
                 while o_buffer_full_wght = '1' loop
 
@@ -333,6 +397,40 @@ begin
 
         wait;
 
+    end process stimuli_data_wght;*/
+
+    stimuli_data_wght : process (rstn, clk) is
+
+        variable loop_max : integer;
+
+    begin
+
+        if not rstn then
+            i_data_wght       <= (others => (others => '0'));
+            i_data_wght_valid <= (others => '0');
+            s_wght_c          <= 0;
+            s_wght_x          <= 0;
+            s_wght_y          <= 0;
+            loop_max          := g_kernel_size;
+        elsif rising_edge(clk) then
+            if s_wght_y >= g_kernel_size then
+            -- Done
+            elsif o_buffer_full_wght = '0' then
+                if s_wght_y + size_y > g_kernel_size then
+                    loop_max := g_kernel_size - s_wght_y;
+                end if;
+
+                for i in 0 to loop_max - 1 loop
+
+                    i_data_wght_valid(i) <= '1';
+                    i_data_wght(i)       <= std_logic_vector(to_signed(s_input_weights(s_wght_c, i + s_wght_y, s_wght_x), data_width_wght));
+
+                end loop;
+
+                incr_wght(s_wght_y, s_wght_x, s_wght_c);
+            end if;
+        end if;
+
     end process stimuli_data_wght;
 
     stimuli_data_iact : process (rstn, clk) is
@@ -347,12 +445,10 @@ begin
             s_c               <= 0;
             s_x               <= 0;
             s_y               <= 0;
-            s_done            <= false;
             loop_max          := size_rows;
         elsif rising_edge(clk) then
             if s_y >= image_y then
-                s_done <= true;
-            -- data_in_valid <= '0';
+            -- Done
             elsif o_buffer_full_iact = '0' then
                 if s_y + size_rows > image_y then
                     loop_max := image_y - s_y;
@@ -365,7 +461,7 @@ begin
 
                 end loop;
 
-                incr(s_y,s_x, s_c);
+                incr(s_y, s_x, s_c);
             end if;
         end if;
 
@@ -381,10 +477,12 @@ begin
 
             begin
 
+                wait for 1000 ns;
+
                 report "OUTPUTS -----------------------------------------------------"
                     severity note;
 
-                for j in 0 to g_tiles - 1 loop /* TODO Adjust range based on image size */
+                for j in 0 to tiles_y - 1 loop /* TODO Adjust range based on image size */
 
                     output_loop : for i in 0 to g_image_x - g_kernel_size loop
 
@@ -410,9 +508,7 @@ begin
 
                     end loop;
 
-                    s_tile_done <= true;
                     wait until rising_edge(clk);
-                    s_tile_done <= false;
 
                 end loop;
 
@@ -439,10 +535,12 @@ begin
 
             begin
 
+                wait for 1000 ns;
+
                 report "OUTPUTS -----------------------------------------------------"
                     severity note;
 
-                for j in 0 to g_tiles - 1 loop /* TODO Adjust range based on image size */
+                for j in 0 to tiles_y - 1 loop /* TODO Adjust range based on image size */
 
                     output_loop : for i in 0 to g_image_x - g_kernel_size loop
 
@@ -468,9 +566,7 @@ begin
 
                     end loop;
 
-                    -- s_tile_done <= true;
                     wait until rising_edge(clk);
-                -- s_tile_done <= false;
 
                 end loop;
 
