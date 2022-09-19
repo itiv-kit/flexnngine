@@ -131,11 +131,28 @@ begin
     r_read_offset_psum_d   <= r_read_offset_psum when rising_edge(clk);
     r_update_offset_psum_d <= r_update_offset_psum when rising_edge(clk);
 
-    mux_read_offset_psum <= r_read_offset_psum_d when r_state = s_output else
-                            r_read_offset_psum   when r_state = s_calculate;
+    -- mux_read_offset_psum <= r_read_offset_psum_d when r_state = s_output else
+    --                         r_read_offset_psum   when r_state = s_calculate else
+    --                         r_read_offset_psum   when r_state = s_tile_c_change;
 
-    mux_update_offset_psum <= r_update_offset_psum_d when r_state = s_output else
-                              r_update_offset_psum   when r_state = s_calculate;
+    -- mux_update_offset_psum <= r_update_offset_psum_d when r_state = s_output else
+    --                           r_update_offset_psum   when r_state = s_calculate else
+    --                           r_update_offset_psum   when r_state = s_tile_c_change;
+
+    switch_state : process(all) is
+    begin
+        case r_state is
+            when s_output =>
+                mux_read_offset_psum   <= r_read_offset_psum_d;
+                mux_update_offset_psum <= r_update_offset_psum_d;
+            when s_calculate =>
+                mux_read_offset_psum   <= r_read_offset_psum;
+                mux_update_offset_psum <= r_update_offset_psum;
+            when s_tile_c_change =>
+                mux_read_offset_psum   <= r_read_offset_psum_d;
+                mux_update_offset_psum <= r_update_offset_psum_d;
+        end case;
+    end process switch_state;
 
     gen_delay_y : for y in 0 to size_y - 1 generate
 
