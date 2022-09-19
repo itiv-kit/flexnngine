@@ -187,7 +187,7 @@ begin
 
     end process write_val;
 
-    buffer_full_next <= '1' when fill_count = line_length - 1 else
+    buffer_full_next <= '1' when fill_count >= line_length - 1 else
                         '0';
     buffer_full      <= '1' when fill_count = line_length else
                         '0';

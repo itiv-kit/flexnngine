@@ -20,12 +20,16 @@ entity control is
         clk  : in    std_logic;
         rstn : in    std_logic;
 
-        status : out   std_logic;
-        start  : in    std_logic;
+        status     : out   std_logic;
+        start      : in    std_logic;
+        start_init : in    std_logic;
 
         tiles_c : out   integer range 0 to 1023;
         tiles_x : out   integer range 0 to 1023;
         tiles_y : out   integer range 0 to 1023;
+
+        c_per_tile  : out   integer range 0 to 1023;
+        c_last_tile : out   integer range 0 to 1023;
 
         image_x : in    integer range 0 to 1023; --! size of input image
         image_y : in    integer range 0 to 1023; --! size of input image
@@ -61,6 +65,9 @@ architecture rtl of control is
     signal r_commands_per_tile    : integer range 0 to 1023;
     signal r_commands_last_tile_c : integer range 0 to 1023;
 
+    signal r_c_per_tile  : integer range 0 to 1023;
+    signal r_c_last_tile : integer range 0 to 1023;
+
     signal r_tiles_y                : integer range 0 to 1023;
     signal r_tiles_y_last_tile_rows : integer range 0 to 1023;
 
@@ -79,7 +86,7 @@ architecture rtl of control is
 
     signal r_tile_change_c_delay : std_logic_vector(1 downto 0);
 
-    type   t_state_type is (s_calculate, s_output);
+    type   t_state_type is (s_calculate, s_output, s_tile_c_change);
     signal r_state : t_state_type;
 
     signal r_command_iact       : command_lb_array_t(0 to size_y);
@@ -110,6 +117,9 @@ architecture rtl of control is
     signal tmp3         : integer range 0 to 1023;
 
 begin
+
+    c_last_tile <= r_c_last_tile;
+    c_per_tile  <= r_c_per_tile;
 
     tiles_c <= r_tiles_c;
     tiles_x <= r_tiles_x;
@@ -226,12 +236,13 @@ begin
             r_commands_per_tile      <= 0;
             r_commands_per_tile_done <= '0';
         elsif rising_edge(clk) then
-            if start and not r_commands_per_tile_done then
+            if start_init and not r_commands_per_tile_done then
                 r_commands_per_tile <= r_commands_per_tile + kernel_size;
-
+                r_c_per_tile        <= r_c_per_tile + 1;
                 if r_commands_per_tile > line_length_wght then
                     -- Commands per tile determined
                     r_commands_per_tile      <= r_commands_per_tile - kernel_size;
+                    r_c_per_tile             <= r_c_per_tile - 1;
                     r_commands_per_tile_done <= '1';
                 else
                 end if;
@@ -260,6 +271,7 @@ begin
                     tmp2                   <= r_tiles_c - 1;
                     tmp3                   <= tmp2 * r_commands_per_tile;
                     r_commands_last_tile_c <= tmp1 - tmp3;
+                    r_c_last_tile          <= r_commands_last_tile_c / kernel_size;
                     -- r_commands_last_tile_c <= kernel_size * channels - ((r_tiles_c - 1) * r_commands_per_tile);
                     if r_delay_init = 5 then
                         r_tiling_c_done <= '1';
@@ -281,7 +293,7 @@ begin
             r_tiles_y_last_tile_rows <= 0;
             r_tiling_y_done          <= '0';
         elsif rising_edge(clk) then
-            if start and not r_tiling_y_done then
+            if start_init and not r_tiling_y_done then
                 r_tiles_y_tmp <= r_tiles_y_tmp + size_x;
 
                 if r_tiles_y_tmp >= (image_y - 2 * kernel_size + 2) then
@@ -298,6 +310,8 @@ begin
 
     r_startup_done <= '1' when r_tiling_c_done and r_tiling_y_done else
                       '0';
+
+    status <= r_startup_done;
 
     p_init : process (clk, rstn) is
     begin
@@ -320,6 +334,7 @@ begin
             r_tile_c_counter  <= 0;
             r_command_counter <= 0;
             r_tile_change_x   <= '0';
+            r_tile_change_c   <= '0';
             r_state           <= s_calculate;
         elsif rising_edge(clk) then
             if r_startup_done = '1' then
@@ -327,42 +342,57 @@ begin
                     r_tile_change_x <= '0';
                     r_tile_change_c <= '0';
                     if r_tile_y_counter /= r_tiles_y then
-                        if r_tile_x_counter /= r_tiles_x then
-                            if r_tile_c_counter /= r_tiles_c then
-                                if ((r_command_counter /= r_commands_per_tile - 1) and r_tile_c_counter /= r_tiles_c - 1) or ((r_command_counter /= r_commands_last_tile_c - 1) and r_tile_c_counter = r_tiles_c - 1) then
+                        if r_tile_c_counter /= r_tiles_c then
+                            if r_tile_x_counter /= r_tiles_x then
+                                if (r_command_counter /= r_commands_per_tile - 1) or (r_command_counter /= r_commands_last_tile_c - 1) then
                                     r_command_counter <= r_command_counter + 1;
+                                    r_tile_change_x   <= '0';
                                 else
-                                    if r_tile_change_c_delay(1) = '1' or (r_tile_c_counter = r_tiles_c - 1) then
-                                        r_tile_change_c   <= '0';
+                                    -- Tile change for tile_x
+                                    if r_tile_change_x = '1' then
+                                        r_tile_x_counter  <= r_tile_x_counter + 1;
                                         r_command_counter <= 0;
-                                        r_tile_c_counter  <= r_tile_c_counter + 1;
-                                        if r_tile_c_counter = r_tiles_c - 1 then
-                                            r_tile_change_x <= '1';
-                                        end if;
-                                    elsif r_tile_change_c_delay(0) = '1' then
-                                        r_tile_change_c <= '0';
+                                        r_tile_change_x   <= '0';
                                     else
-                                        r_tile_change_c <= '1';
+                                        r_tile_change_x <= '1';
                                     end if;
                                 end if;
                             else
-                                -- Tile change for tile_x
-                                r_tile_change_x  <= '0';
-                                r_tile_c_counter <= 0;
-                                r_tile_x_counter <= r_tile_x_counter + 1;
+                                -- Tile change for tile_c
+                                -- Don't reset psums, but remove values from iact & wght buffers
+                                r_tile_c_counter <= r_tile_c_counter + 1;
+                                r_tile_x_counter <= 0;
+
+                                if r_tile_c_counter /= r_tiles_c - 1 then
+                                    -- Only perform iact & wght shrink if not last tile_c done!
+                                    r_state <= s_tile_c_change;
+                                else
+                                    -- Last tile_c done
+                                    -- Tile change for tile_y
+                                    -- Output intermediate results. Reset Psum and Iact buffer. Wait.
+
+                                    r_state <= s_output;
+                                    -- r_tile_c_counter reset after output is done.
+                                    -- r_tile_c_counter <= 0;
+                                    r_tile_y_counter <= r_tile_y_counter + 1;
+                                end if;
                             end if;
                         else
-                            -- Tile change for tile_y
-                            -- Output intermediate results. Reset Psum and Iact buffer. Wait.
-                            r_state <= s_output;
-
-                            r_tile_x_counter <= 0;
-                            r_tile_y_counter <= r_tile_y_counter + 1;
                         end if;
                     else
                     -- DONE for now (not tiled for PSUM Line Buffer Length)
                     end if;
+                elsif r_state = s_tile_c_change then
+                    -- Delay counter after shrinking for new values to arrive in the buffer
+                    if r_tile_x_counter /= 1 then
+                        r_tile_x_counter <= r_tile_x_counter + 1;
+                    else
+                        r_tile_x_counter  <= 0;
+                        r_command_counter <= 0;
+                        r_state           <= s_calculate;
+                    end if;
                 elsif r_state = s_output then
+                    -- Command counter for output commands (psum accumulation and psum read)
                     if r_command_counter /= size_y then
                         if r_tile_x_counter /= r_tiles_x - 1 then
                             r_tile_x_counter <= r_tile_x_counter + 1;
@@ -371,10 +401,11 @@ begin
                             r_command_counter <= r_command_counter + 1;
                         end if;
                     else
-                        -- Delay counter
+                        -- Delay counter after shrinking for new values to arrive in the buffer
                         if r_tile_x_counter /= r_tiles_x - 1 then
                             r_tile_x_counter <= r_tile_x_counter + 1;
                         else
+                            r_tile_c_counter  <= 0;
                             r_tile_x_counter  <= 0;
                             r_command_counter <= 0;
                             r_state           <= s_calculate;
@@ -416,8 +447,12 @@ begin
                 if r_state = s_calculate then
                     if r_tile_change_x = '1' then
                         -- Tile x change
-                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned(channels, addr_width_iact)));
-                        r_command_iact     <= (others => c_lb_shrink);
+                        if r_tile_c_counter /= r_tiles_c then
+                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(r_c_per_tile, addr_width_iact)));
+                        else
+                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(r_c_last_tile, addr_width_iact)));
+                        end if;
+                        r_command_iact <= (others => c_lb_shrink);
                     elsif r_tile_change_c then
                         -- Tile c change
                         /* TODO FILTER TILES: IMPLEMENT AND TEST */
@@ -435,6 +470,14 @@ begin
                 -- command_iact <=
                 -- update_offset_iact <=
                 -- read_offset_iact <=
+                elsif r_state = s_tile_c_change then
+                    r_command_iact     <= (others => c_lb_idle);
+                    r_read_offset_iact <= (others => (others => '0'));
+
+                    if r_tile_x_counter = 0 then
+                        r_command_iact     <= (others => c_lb_shrink);
+                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned(kernel_size * r_c_per_tile - r_c_per_tile, addr_width_iact)));
+                    end if;
                 elsif r_state = s_output then
                     r_command_iact     <= (others => c_lb_idle);
                     r_read_offset_iact <= (others => (others => '0'));
@@ -479,6 +522,14 @@ begin
                         r_command_wght     <= (others => c_lb_read);
                         r_read_offset_wght <= (others => std_logic_vector(to_unsigned(r_command_counter, addr_width_wght)));
                     end if;
+                elsif r_state = s_tile_c_change then
+                    r_command_wght     <= (others => c_lb_idle);
+                    r_read_offset_wght <= (others => (others => '0'));
+
+                    if r_tile_x_counter = 0 then
+                        r_command_wght     <= (others => c_lb_shrink);
+                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(kernel_size * c_per_tile, addr_width_iact)));
+                    end if;
                 elsif r_state = s_output then
                     r_command_wght <= (others => c_lb_idle);
                 end if;
@@ -519,6 +570,10 @@ begin
                         r_read_offset_psum   <= (others => std_logic_vector(to_unsigned(r_tile_x_counter, addr_width_psum)));
                         r_update_offset_psum <= r_read_offset_psum;
                     end if;
+                elsif r_state = s_tile_c_change then
+                    r_command_psum       <= (others => c_lb_idle);
+                    r_read_offset_psum   <= (others => (others => '0'));
+                    r_update_offset_psum <= (others => (others => '0'));
                 elsif r_state = s_output then
                     r_command_psum       <= (others => c_lb_idle);
                     r_read_offset_psum   <= (others => (others => '0'));
