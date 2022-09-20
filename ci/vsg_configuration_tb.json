@@ -3929,7 +3929,7 @@
       "indentSize": 4,
       "method": "component",
       "phase": 1,
-      "severity": "Error"
+      "severity": "Warning"
     },
     "instantiation_035": {
       "disable": false,
