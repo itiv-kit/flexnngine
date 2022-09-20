@@ -16,21 +16,23 @@ entity control_conv_tb is
         size_rows : positive := 9;
 
         data_width_iact  : positive := 8; -- Width of the input data (weights, iacts)
-        line_length_iact : positive := 5;
-        addr_width_iact  : positive := 3;
+        line_length_iact : positive := 38;
+        addr_width_iact  : positive := 6;
 
         data_width_psum  : positive := 16; -- or 17??
-        line_length_psum : positive := 10;
-        addr_width_psum  : positive := 4;
+        line_length_psum : positive := 512;
+        addr_width_psum  : positive := 9;
 
         data_width_wght  : positive := 8;
-        line_length_wght : positive := 5;
-        addr_width_wght  : positive := 3;
+        line_length_wght : positive := 38;
+        addr_width_wght  : positive := 6;
 
         g_channels    : positive := 3;
-        g_image_y     : positive := 14;
-        g_image_x     : positive := 14;
-        g_kernel_size : positive := 5
+        g_image_y     : positive := 114;
+        g_image_x     : positive := 114;
+        g_kernel_size : positive := 5;
+
+        g_tiles_y : positive := positive(integer(ceil(real(g_image_x - g_kernel_size + 1) / real(g_kernel_size)))) -- Y tiles, determined in control module, but for input data loading required here
     );
 end entity control_conv_tb;
 
@@ -108,9 +110,9 @@ architecture imp of control_conv_tb is
     -- INPUT IMAGE, FILTER WEIGTHS AND EXPECTED OUTPUT
 
     /*signal s_input_image     : int_image3_t(0 to g_channels - 1, 0 to g_image_y - 1, 0 to g_image_x - 1);         
-    signal s_input_weights   : int_image3_t(0 to g_channels - 1, 0 to g_kernel_size - 1, 0 to g_kernel_size - 1);  */
-    signal s_input_image     : int_image_t(0 to size_rows - 1, 0 to g_image_x * g_channels * 2 - 1);               -- 2, because two tile_y
-    signal s_input_weights   : int_image_t(0 to g_kernel_size - 1, 0 to g_kernel_size * g_channels * 2 - 1);       -- not *2 because kernel stays the same across tile_y
+    signal s_input_weights   : int_image3_t(0 to g_channels - 1, 0 to g_kernel_size - 1, 0 to g_kernel_size - 1);     */
+    signal s_input_image     : int_image_t(0 to size_rows - 1, 0 to g_image_x * g_channels * g_tiles_y - 1);          -- 2, because two tile_y
+    signal s_input_weights   : int_image_t(0 to g_kernel_size - 1, 0 to g_kernel_size * g_channels * g_tiles_y - 1);  -- not *2 because kernel stays the same across tile_y
     signal s_expected_output : int_image_t(0 to g_image_y - g_kernel_size, 0 to g_image_x - g_kernel_size);
 
     /* TODO not g_channels but tiled channel size */
@@ -129,7 +131,7 @@ architecture imp of control_conv_tb is
             pointer_c <= pointer_c + 1;
         end if;
 
-    end procedure; */
+    end procedure;   */
 
     procedure incr (signal s_y : inout integer; signal s_x : inout integer; signal s_c : out integer; signal s_c0 : inout integer; variable s_tile_c : inout integer) is
     begin
@@ -169,7 +171,7 @@ architecture imp of control_conv_tb is
             pointer_c <= pointer_c + 1;
         end if;
 
-    end procedure; */
+    end procedure;   */
 
     procedure incr_wght (signal s_wght_y : inout integer; signal s_wght_x : inout integer; signal s_wght_c : out integer; signal s_wght_c0 : inout integer; variable s_wght_tile_c : inout integer) is
     begin
@@ -348,8 +350,8 @@ begin
     p_read_files : process is
     begin
 
-        s_input_image     <= read_file(file_name => "src/_image_reordered.txt", num_col => g_image_x * 3 * 2, num_row => size_rows);
-        s_input_weights   <= read_file(file_name => "src/_kernel_reordered.txt", num_col => g_kernel_size * 3 * 2, num_row => g_kernel_size);
+        s_input_image     <= read_file(file_name => "src/_image_reordered.txt", num_col => g_image_x * g_channels * g_tiles_y, num_row => size_rows);
+        s_input_weights   <= read_file(file_name => "src/_kernel_reordered.txt", num_col => g_kernel_size * g_channels * g_tiles_y, num_row => g_kernel_size);
         s_expected_output <= read_file(file_name => "src/_convolution.txt", num_col => g_image_x - g_kernel_size + 1, num_row => g_image_y - g_kernel_size + 1);
         wait;
 
@@ -358,19 +360,19 @@ begin
     p_constant_check : process is
     begin
 
-        assert line_length_iact >= kernel_size * channels
-            report "Line length to store input values must be greater or equal to the kernel size"
-            severity failure;
+        -- assert line_length_iact >= g_kernel_size * g_channels
+        --     report "Line length to store input values must be greater or equal to the kernel size"
+        --     severity failure;
 
-        assert size_y >= kernel_size
+        assert size_y >= g_kernel_size
             report "Y dimension of PE array has to be greater or equal to kernel size"
             severity failure;
 
-        assert line_length_wght >= kernel_size * channels
-            report "Length of wght buffer has to be greater or equal to kernel size, buffer has to store values of one kernel row at a time."
-            severity failure;
+        -- assert line_length_wght >= g_kernel_size * g_channels
+        --     report "Length of wght buffer has to be greater or equal to kernel size, buffer has to store values of one kernel row at a time."
+        --     severity failure;
 
-        assert line_length_psum >= image_x - kernel_size
+        assert line_length_psum >= g_image_x - g_kernel_size
             report "Psum buffer has to hold output values of one row, must not be smaller than output row size"
             severity failure; /* TODO To be changed by splitting the task and propagating as many psums that the buffer can hold through the array at once */
 
@@ -481,7 +483,7 @@ begin
             s_wght_x          <= 0;
         elsif rising_edge(clk) then
             if status then
-                if s_wght_x >= g_kernel_size * g_channels * 2 then
+                if s_wght_x >= g_kernel_size * g_channels * g_tiles_y then
                 -- Done
                 elsif o_buffer_full_wght = '0' then -- o_buffer_full_wght_write then
                     i_data_wght_valid <= (others => '1');
@@ -513,7 +515,7 @@ begin
             s_x               <= 0;
         elsif rising_edge(clk) then
             if status then
-                if s_x >= g_image_x * g_channels * 2 then
+                if s_x >= g_image_x * g_channels * g_tiles_y then
                 -- Done
                 elsif o_buffer_full_iact = '0' then -- o_buffer_full_iact_write then
                     i_data_iact_valid <= (others => '1');

@@ -1,13 +1,35 @@
 import numpy as np
+import math
 
 kernel_size = 5
-image_size = 14
+image_size = 114
 channels = 3
 input_bits = 3
 
-np.random.seed(None)
+line_length_wght = 38
+
+size_rows = 2 * kernel_size - 1
+tiles = math.ceil((image_size - kernel_size + 1) / kernel_size)
+
+C0 = math.floor(line_length_wght/kernel_size)
+if channels * kernel_size < line_length_wght:
+    C0 = channels
+
+tiles_c = math.ceil(channels / C0)
+
+C0_last = channels - (tiles_c - 1) * C0
+
+
+
+print("tiles_y = ", tiles)
+print("tiles_c = ", tiles_c)
+print("C0 = ", C0)
+print("C0_last = ", C0_last)
+
+
+np.random.seed(2)
 st = np.random.get_state()
-print(st)
+#print(st)
 
 #print range of input_bits signed numbers
 print("Input range: ", -(2**(input_bits-1)), " to ", (2**(input_bits-1))-1)
@@ -32,20 +54,20 @@ def convolution2d(image, kernel, bias):
     return new_image
 
 # create array with random filter weights
-kernel = np.random.randint(-(2**(input_bits-1)), (2**(input_bits-1))-1, (kernel_size * int(channels/channels), kernel_size)) # TODO MODIFIED for channel test
-#kernel = np.random.randint(-(2**(input_bits-1)), (2**(input_bits-1))-1, (kernel_size * channels, kernel_size)) # TODO Original
+#kernel = np.random.randint(-(2**(input_bits-1)), (2**(input_bits-1))-1, (kernel_size * int(channels/channels), kernel_size)) # TODO MODIFIED for channel test
+kernel = np.random.randint(-(2**(input_bits-1)), (2**(input_bits-1))-1, (kernel_size * channels, kernel_size)) # TODO Original
 # concatenate channel times kernel
-kernel = np.concatenate([kernel]*channels, axis=0)# TODO ADDED for channel test
+#kernel = np.concatenate([kernel]*channels, axis=0)# TODO ADDED for channel test
 
 
 print(kernel.shape)
 # kernel = np.array([[1,2,1],[2,3,2],[3,4,3]])
 
 # create array with random input activations ("image")
-image = np.random.randint(-(2**(input_bits-1)), (2**(input_bits-1))-1, (image_size * int(channels/channels), image_size)) # TODO MODIFIED for channel test
-#image = np.random.randint(-(2**(input_bits-1)), (2**(input_bits-1))-1, (image_size * channels, image_size)) # TODO Original
+#image = np.random.randint(-(2**(input_bits-1)), (2**(input_bits-1))-1, (image_size * int(channels/channels), image_size)) # TODO MODIFIED for channel test
+image = np.random.randint(-(2**(input_bits-1)), (2**(input_bits-1))-1, (image_size * channels, image_size)) # TODO Original
 # concatenate channel times image
-image = np.concatenate([image]*channels, axis=0) # TODO ADDED for channel test
+#image = np.concatenate([image]*channels, axis=0) # TODO ADDED for channel test
 # size_x = 9
 # size_y = 10
 
@@ -74,3 +96,64 @@ convolved_image = np.sum(convolved_channel, axis=0)
 np.savetxt('_image.txt', image, fmt='%d', delimiter=' ')
 np.savetxt('_kernel.txt', kernel, fmt='%d', delimiter=' ')
 np.savetxt('_convolution.txt', convolved_image, fmt='%d', delimiter=' ')
+
+# reorder kernel in slices of kernel_size x kernel_size
+kernel_tmp = kernel
+print(" Kernel TMP SHAPE", kernel_tmp.shape)
+
+kernel = np.zeros((kernel_size, kernel_size * channels))
+column=0
+print("Reordered shape : ",  kernel.shape)
+for tile_c in range(tiles_c):
+    if tile_c == tiles_c - 1:
+        c0 = C0_last
+    else:
+        c0 = C0
+    #print(c0)
+    for i in range(kernel_size):
+        for c in range(c0):
+            #print("c = ", c)
+            #print("tile_c = ", tile_c)
+            index = tile_c*kernel_size * C0 + c*kernel_size
+            #print("index 1 : ", index)
+            #print("index 2 : ", index + kernel_size - 1)
+            #print(kernel_tmp[index : index + kernel_size  , i])
+            kernel[:, column] = kernel_tmp[index : index + kernel_size  , i]
+            column += 1
+
+#kernel = np.concatenate((kernel, kernel_tmp[i*kernel_size:i*kernel_size+kernel_size,:]), axis=1)
+
+# concatenate tiles times kernel horizontally
+kernel = np.concatenate([kernel]*tiles, axis=1)
+
+# reorder image
+image_tmp = image
+print(" Image TMP SHAPE", image_tmp.shape)
+image = np.zeros((size_rows, image_size * channels * tiles))
+column=0
+print("Reordered shape : ",  image.shape)
+for tile_y in range(tiles):
+    #print("tile_y = ", tile_y)
+    #print("############################")
+    #print("############################")
+    #print("############################")
+    for tile_c in range(tiles_c):
+        if tile_c == tiles_c - 1:
+            c0 = C0_last
+        else:
+            c0 = C0
+        #print(c0)
+        for i in range(image_size):
+            for c in range(c0):
+                #print("c = ", c)
+                #print("tile_c = ", tile_c)
+                index = tile_c*image_size * C0 + c*image_size + tile_y * kernel_size
+                #print("index 1 : ", index)
+                #print("index 2 : ", index + size_rows - 1)
+                #if c0 == C0_last:
+                    #print("Image pixel --- : ", image_tmp[index, i])
+                image[:, column] = image_tmp[index : index + size_rows  , i]
+                column += 1
+
+np.savetxt('_kernel_reordered.txt', kernel, fmt='%d', delimiter=' ')
+np.savetxt('_image_reordered.txt', image, fmt='%d', delimiter=' ')

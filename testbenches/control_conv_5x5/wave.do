@@ -12,7 +12,7 @@ add wave -noupdate -expand -group Testbench -radix decimal /control_conv_tb/s_in
 add wave -noupdate -expand -group Testbench -radix decimal /control_conv_tb/s_input_weights
 
 add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/control_inst/r_tiles_y
-add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/control_inst/r_tiles_y_last_tile_rows
+#add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/control_inst/r_tiles_y_last_tile_rows
 add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/control_inst/r_tiles_x
 add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/control_inst/r_tiles_c
 add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/control_inst/r_commands_per_tile

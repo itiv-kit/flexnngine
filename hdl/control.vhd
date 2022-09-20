@@ -57,7 +57,7 @@ architecture rtl of control is
 
     signal r_startup_done : std_logic;
 
-    signal r_command_counter : integer range 0 to 511;
+    signal r_command_counter : integer; -- range 0 to 511
     signal r_tile_c_counter  : integer range 0 to 1023;
     signal r_tile_x_counter  : integer range 0 to 1023;
     signal r_tile_y_counter  : integer range 0 to 1023;
@@ -139,19 +139,28 @@ begin
     --                           r_update_offset_psum   when r_state = s_calculate else
     --                           r_update_offset_psum   when r_state = s_tile_c_change;
 
-    switch_state : process(all) is
+    switch_state : process (all) is
     begin
+
         case r_state is
+
             when s_output =>
+
                 mux_read_offset_psum   <= r_read_offset_psum_d;
                 mux_update_offset_psum <= r_update_offset_psum_d;
+
             when s_calculate =>
+
                 mux_read_offset_psum   <= r_read_offset_psum;
                 mux_update_offset_psum <= r_update_offset_psum;
+
             when s_tile_c_change =>
+
                 mux_read_offset_psum   <= r_read_offset_psum_d;
                 mux_update_offset_psum <= r_update_offset_psum_d;
+
         end case;
+
     end process switch_state;
 
     gen_delay_y : for y in 0 to size_y - 1 generate
@@ -361,7 +370,8 @@ begin
                     if r_tile_y_counter /= r_tiles_y then
                         if r_tile_c_counter /= r_tiles_c then
                             if r_tile_x_counter /= r_tiles_x then
-                                if (r_command_counter /= r_commands_per_tile - 1) or (r_command_counter /= r_commands_last_tile_c - 1) then
+                                -- if (r_command_counter /= r_commands_per_tile - 1) or (r_command_counter /= r_commands_last_tile_c - 1) then
+                                if not((r_command_counter = r_commands_per_tile - 1 and r_tile_c_counter /= r_tiles_c - 1) or (r_command_counter = r_commands_last_tile_c - 1 and r_tile_c_counter = r_tiles_c - 1)) then
                                     r_command_counter <= r_command_counter + 1;
                                     r_tile_change_x   <= '0';
                                 else
@@ -464,7 +474,7 @@ begin
                 if r_state = s_calculate then
                     if r_tile_change_x = '1' then
                         -- Tile x change
-                        if r_tile_c_counter /= r_tiles_c then
+                        if r_tile_c_counter /= r_tiles_c - 1 then
                             r_read_offset_iact <= (others => std_logic_vector(to_unsigned(r_c_per_tile, addr_width_iact)));
                         else
                             r_read_offset_iact <= (others => std_logic_vector(to_unsigned(r_c_last_tile, addr_width_iact)));
@@ -500,8 +510,13 @@ begin
                     r_read_offset_iact <= (others => (others => '0'));
 
                     if r_command_counter = size_y and r_tile_x_counter = 0 then
-                        r_command_iact     <= (others => c_lb_shrink);
-                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned(kernel_size * channels - channels, addr_width_iact)));
+                        if r_tiles_c > 1 then
+                            r_command_iact     <= (others => c_lb_shrink);
+                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(kernel_size * c_last_tile - c_last_tile, addr_width_iact)));
+                        else
+                            r_command_iact     <= (others => c_lb_shrink); /* TODO check if can be removed and also set to c_per_tile or c_last_tile as in if clause above*/
+                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(kernel_size * channels - channels, addr_width_iact)));
+                        end if;
                     end if;
                 end if;
             end if;
@@ -545,10 +560,17 @@ begin
 
                     if r_tile_x_counter = 0 then
                         r_command_wght     <= (others => c_lb_shrink);
-                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(kernel_size * c_per_tile, addr_width_iact)));
+                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(kernel_size * c_per_tile, addr_width_wght)));
                     end if;
                 elsif r_state = s_output then
                     r_command_wght <= (others => c_lb_idle);
+
+                    if r_tiles_c > 1 then
+                        if r_command_counter = size_y and r_tile_x_counter = 0 then
+                            r_command_wght     <= (others => c_lb_shrink);
+                            r_read_offset_wght <= (others => std_logic_vector(to_unsigned(kernel_size * c_last_tile, addr_width_wght)));
+                        end if;
+                    end if;
                 end if;
             end if;
         end if;
