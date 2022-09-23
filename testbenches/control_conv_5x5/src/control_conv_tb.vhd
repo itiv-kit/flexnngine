@@ -16,20 +16,20 @@ entity control_conv_tb is
         size_rows : positive := 9;
 
         data_width_iact  : positive := 8; -- Width of the input data (weights, iacts)
-        line_length_iact : positive := 38;
-        addr_width_iact  : positive := 6;
+        line_length_iact : positive := 32;
+        addr_width_iact  : positive := 5;
 
         data_width_psum  : positive := 16; -- or 17??
-        line_length_psum : positive := 512;
-        addr_width_psum  : positive := 9;
+        line_length_psum : positive := 127;
+        addr_width_psum  : positive := 7;
 
         data_width_wght  : positive := 8;
-        line_length_wght : positive := 38;
-        addr_width_wght  : positive := 6;
+        line_length_wght : positive := 32;
+        addr_width_wght  : positive := 5;
 
-        g_channels    : positive := 3;
-        g_image_y     : positive := 114;
-        g_image_x     : positive := 114;
+        g_channels    : positive := 28;
+        g_image_y     : positive := 14;
+        g_image_x     : positive := 14;
         g_kernel_size : positive := 5;
 
         g_tiles_y : positive := positive(integer(ceil(real(g_image_x - g_kernel_size + 1) / real(g_kernel_size)))) -- Y tiles, determined in control module, but for input data loading required here

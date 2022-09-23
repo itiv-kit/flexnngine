@@ -107,6 +107,7 @@ architecture rtl of control is
 
     signal mux_read_offset_psum   : array_t(0 to size_y)(addr_width_psum - 1 downto 0);
     signal mux_update_offset_psum : array_t(0 to size_y)(addr_width_psum - 1 downto 0);
+    signal mux_command_psum       : command_lb_array_t(0 to size_y);
 
     signal r_command : command_pe_array_t(0 to size_y);
 
@@ -148,16 +149,19 @@ begin
 
                 mux_read_offset_psum   <= r_read_offset_psum_d;
                 mux_update_offset_psum <= r_update_offset_psum_d;
+                mux_command_psum       <= r_command_psum_d;
 
             when s_calculate =>
 
                 mux_read_offset_psum   <= r_read_offset_psum;
                 mux_update_offset_psum <= r_update_offset_psum;
+                mux_command_psum       <= r_command_psum_d;
 
             when s_tile_c_change =>
 
                 mux_read_offset_psum   <= r_read_offset_psum_d;
                 mux_update_offset_psum <= r_update_offset_psum_d;
+                mux_command_psum       <= r_command_psum_d;
 
         end case;
 
@@ -173,7 +177,7 @@ begin
 
                 command_iact(y, 0) <= r_command_iact(y) when rising_edge(clk);
                 command_wght(y, 0) <= r_command_wght(y) when rising_edge(clk);
-                command_psum(y, 0) <= r_command_psum_d(y) when rising_edge(clk);
+                command_psum(y, 0) <= mux_command_psum(y) when rising_edge(clk);
 
                 update_offset_iact(y, 0) <= r_update_offset_iact(y) when rising_edge(clk);
                 update_offset_wght(y, 0) <= r_update_offset_wght(y) when rising_edge(clk);

@@ -2,11 +2,11 @@ import numpy as np
 import math
 
 kernel_size = 5
-image_size = 114
-channels = 3
+image_size = 14
+channels = 28
 input_bits = 3
 
-line_length_wght = 38
+line_length_wght = 32
 
 size_rows = 2 * kernel_size - 1
 tiles = math.ceil((image_size - kernel_size + 1) / kernel_size)
@@ -123,7 +123,7 @@ for tile_c in range(tiles_c):
 
 #kernel = np.concatenate((kernel, kernel_tmp[i*kernel_size:i*kernel_size+kernel_size,:]), axis=1)
 
-# concatenate tiles times kernel horizontally
+# concatenate tiles times kernel horizontally, TILE_Y 
 kernel = np.concatenate([kernel]*tiles, axis=1)
 
 # reorder image
@@ -147,7 +147,9 @@ for tile_y in range(tiles):
             for c in range(c0):
                 #print("c = ", c)
                 #print("tile_c = ", tile_c)
-                index = tile_c*image_size * C0 + c*image_size + tile_y * kernel_size
+                channel = c+tile_c*C0
+                index = channel * image_size + tile_y * kernel_size
+                print("Address : c=", c, " tile_c=", tile_c, " tile_y=", tile_y, " index=", index, " channel=",channel, " x=", i)
                 #print("index 1 : ", index)
                 #print("index 2 : ", index + size_rows - 1)
                 #if c0 == C0_last:
