@@ -12,6 +12,9 @@
 *.html
 *.bsf
 
+# ignore Vivado generated files
+reconfigurable-accelerator/*
+
 # ignore simulation output of ModelSim
 wlf*
 *.wlf

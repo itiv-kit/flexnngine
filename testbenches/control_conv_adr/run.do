@@ -7,17 +7,16 @@ transcript file "_run/transcript.txt"
 transcript on
 
 ###
-###
-###
-
-set axi_filter_dma_v1_00_a _run/work
-
-###
 ### create libraries
 ###
 
-vlib $axi_filter_dma_v1_00_a
-vmap axi_filter_dma_v1_00_a $axi_filter_dma_v1_00_a
+vlib questa_lib/work
+vlib questa_lib/msim
+
+vlib questa_lib/msim/xil_defaultlib
+
+vmap xil_defaultlib questa_lib/msim/xil_defaultlib
+
 
 ###
 ### compile sources
@@ -25,8 +24,16 @@ vmap axi_filter_dma_v1_00_a $axi_filter_dma_v1_00_a
 
 source sources.tcl
 
-# initialize and run simulation
-vsim -onfinish stop -voptargs="+acc" $SIM_TOP_LEVEL
+###
+### Optimize design
+###
+
+vopt -64 +acc -L xil_defaultlib -L secureip -work xil_defaultlib xil_defaultlib.$SIM_TOP_LEVEL -o design_optimized
+
+###
+### initialize and run simulation
+###
+vsim -onfinish stop xil_defaultlib.design_optimized
 source wave.do
 
 run $SIM_TIME

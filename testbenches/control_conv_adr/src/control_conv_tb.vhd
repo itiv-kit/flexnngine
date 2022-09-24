@@ -54,6 +54,16 @@ architecture imp of control_conv_tb is
     );
     END COMPONENT;
 
+    COMPONENT mult_gen_0
+    PORT (
+        CLK : IN STD_LOGIC;
+        A : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+        B : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+        CE : IN STD_LOGIC;
+        P : OUT STD_LOGIC_VECTOR(15 DOWNTO 0)
+    );
+    END COMPONENT;
+
     signal clk  : std_logic := '0';
     signal rstn : std_logic;
 
@@ -131,6 +141,8 @@ architecture imp of control_conv_tb is
     signal fifo_full : std_logic;
     signal fifo_empty : std_logic;
     signal fifo_valid : std_logic;
+
+    signal mult_out : std_logic_vector(15 downto 0);
 
     -- INPUT IMAGE, FILTER WEIGTHS AND EXPECTED OUTPUT
 
@@ -236,7 +248,10 @@ begin
 
     i_data_iact_valid_array <= i_data_iact_valid_delay(0)(8) & i_data_iact_valid_delay(1)(7) & i_data_iact_valid_delay(2)(6) & i_data_iact_valid_delay(3)(5) & i_data_iact_valid(4 downto 0);
 
-
+    fifo_din <= (15 downto 8 => '0') & i_data_iact(0);
+    fifo_wr_en <= '1';
+    fifo_rd_en <= '1';
+    
     fifo_inst : fifo_generator_0
     PORT MAP (
         rst => not rstn,
@@ -249,6 +264,15 @@ begin
         full => fifo_full,
         empty => fifo_empty,
         valid => fifo_valid
+    );
+
+    your_instance_name : mult_gen_0
+    PORT MAP (
+        CLK => CLK,
+        A => i_data_iact(0),
+        B => i_data_iact(0),
+        CE => '1',
+        P => mult_out
     );
 
     address_generator_inst: entity work.address_generator
@@ -278,8 +302,8 @@ begin
         image_y            => image_y,
         channels           => channels,
         kernel_size        => kernel_size,
-        o_buffer_full_iact => o_buffer_full_iact,
-        o_buffer_full_wght => o_buffer_full_wght
+        o_buffer_full_iact => '0', --o_buffer_full_iact,
+        o_buffer_full_wght => '0' --o_buffer_full_wght
       );
 
     
@@ -423,9 +447,9 @@ begin
     p_read_files : process is
     begin
 
-        s_input_image     <= read_file(file_name => "src/_image_reordered.txt", num_col => g_image_x * g_channels * g_tiles_y, num_row => size_rows);
-        s_input_weights   <= read_file(file_name => "src/_kernel_reordered.txt", num_col => g_kernel_size * g_channels * g_tiles_y, num_row => g_kernel_size);
-        s_expected_output <= read_file(file_name => "src/_convolution.txt", num_col => g_image_x - g_kernel_size + 1, num_row => g_image_y - g_kernel_size + 1);
+        s_input_image     <= read_file(file_name => "/home/uzedl/Documents/reconfigurable-accelerator/testbenches/control_conv_adr/src/_image_reordered.txt", num_col => g_image_x * g_channels * g_tiles_y, num_row => size_rows);
+        s_input_weights   <= read_file(file_name => "/home/uzedl/Documents/reconfigurable-accelerator/testbenches/control_conv_adr/src/_kernel_reordered.txt", num_col => g_kernel_size * g_channels * g_tiles_y, num_row => g_kernel_size);
+        s_expected_output <= read_file(file_name => "/home/uzedl/Documents/reconfigurable-accelerator/testbenches/control_conv_adr/src/_convolution.txt", num_col => g_image_x - g_kernel_size + 1, num_row => g_image_y - g_kernel_size + 1);
         wait;
 
     end process p_read_files;

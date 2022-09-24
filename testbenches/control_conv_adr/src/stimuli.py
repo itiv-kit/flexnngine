@@ -114,7 +114,9 @@ for tile_c in range(tiles_c):
         for c in range(c0):
             #print("c = ", c)
             #print("tile_c = ", tile_c)
-            index = tile_c*kernel_size * C0 + c*kernel_size
+            channel = c+tile_c*C0
+            index = channel * kernel_size
+            print("Address : c=", c, " tile_c=", tile_c, " channel=", channel, " index=", index, " x=", i)
             #print("index 1 : ", index)
             #print("index 2 : ", index + kernel_size - 1)
             #print(kernel_tmp[index : index + kernel_size  , i])
@@ -125,6 +127,10 @@ for tile_c in range(tiles_c):
 
 # concatenate tiles times kernel horizontally, TILE_Y 
 kernel = np.concatenate([kernel]*tiles, axis=1)
+
+print("############################")
+print("############################")
+print("############################")
 
 # reorder image
 image_tmp = image
