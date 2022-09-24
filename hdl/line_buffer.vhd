@@ -10,8 +10,8 @@ library ieee;
 
 entity line_buffer is
     generic (
-        line_length : positive := 7; --! Length of the lines in the image
-        addr_width  : positive := 3; --! Address width for the ram_dp subcomponent. ceil(log2(line_length))
+        line_length : positive := 32; --! Length of the lines in the image
+        addr_width  : positive := 5; --! Address width for the ram_dp subcomponent. ceil(log2(line_length))
         data_width  : positive := 8  --! Data width for the ram_dp subcomponent - should be the width of data to be stored (8 / 16 bit?)
     );
     port (
@@ -64,7 +64,7 @@ architecture rtl of line_buffer is
     -- process internal signals
     signal pointer_head_s : integer;
     signal pointer_tail_s : integer;
-    signal fill_count     : integer;
+    signal fill_count     : integer range 0 to line_length;
     -- signal fifo_filled_s    : std_logic;
     signal fifo_empty_s : std_logic;
     -- signal fifo_shrink_s    : std_logic;

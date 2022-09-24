@@ -4,6 +4,7 @@ quietly WaveActivateNextPane {} 0
 add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/clk
 add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/rstn
 add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/start
+add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/status
 add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/image_x
 add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/image_y
 add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/channels
@@ -19,6 +20,23 @@ add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_t
 add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/control_inst/r_commands_last_tile_c
 add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/c_per_tile
 add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/c_last_tile
+
+add wave -noupdate -expand -group ADR -radix unsigned /control_conv_tb/address_generator_inst/r_C0
+add wave -noupdate -expand -group ADR -radix unsigned /control_conv_tb/address_generator_inst/r_count_c0
+add wave -noupdate -expand -group ADR -radix unsigned /control_conv_tb/address_generator_inst/r_W1
+add wave -noupdate -expand -group ADR -radix unsigned /control_conv_tb/address_generator_inst/r_count_w1
+add wave -noupdate -expand -group ADR -radix unsigned /control_conv_tb/address_generator_inst/r_C1
+add wave -noupdate -expand -group ADR -radix unsigned /control_conv_tb/address_generator_inst/r_count_c1
+add wave -noupdate -expand -group ADR -radix unsigned /control_conv_tb/address_generator_inst/r_H2
+add wave -noupdate -expand -group ADR -radix unsigned /control_conv_tb/address_generator_inst/r_count_h2
+add wave -noupdate -expand -group ADR -radix unsigned /control_conv_tb/address_generator_inst/r_offset_c
+add wave -noupdate -expand -group ADR -radix unsigned /control_conv_tb/address_generator_inst/r_offset_c_last_c1
+add wave -noupdate -expand -group ADR -radix unsigned /control_conv_tb/address_generator_inst/r_offset_c_last_h2
+add wave -noupdate -expand -group ADR -radix unsigned /control_conv_tb/address_generator_inst/r_index_c
+add wave -noupdate -expand -group ADR -radix unsigned /control_conv_tb/address_generator_inst/r_index_c_last
+add wave -noupdate -expand -group ADR -radix unsigned /control_conv_tb/address_generator_inst/r_data_valid
+add wave -noupdate -expand -group ADR -radix unsigned /control_conv_tb/address_generator_inst/o_buffer_full_iact
+
 
 add wave -noupdate -expand -group WGHT_INPUT -radix decimal /control_conv_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_wght/ram/ram_instance
 add wave -noupdate -expand -group WGHT_INPUT -radix decimal /control_conv_tb/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/ram/ram_instance

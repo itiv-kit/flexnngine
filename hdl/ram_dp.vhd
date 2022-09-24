@@ -7,9 +7,6 @@ library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
 
-library axi_filter_dma_v1_00_a;
-    use axi_filter_dma_v1_00_a.all;
-
 --! This component encapsulates a dual ported BRAM.
 
 --! If the internal output register is used (#USE_OUTPUT_REG), the output

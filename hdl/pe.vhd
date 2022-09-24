@@ -6,16 +6,16 @@ library ieee;
 entity pe is
     generic (
         data_width_iact  : positive := 8; -- Width of the input data (weights, iacts)
-        line_length_iact : positive := 7;
-        addr_width_iact  : positive := 3;
+        line_length_iact : positive := 32;
+        addr_width_iact  : positive := 5;
 
         data_width_psum  : positive := 16; -- or 17??
-        line_length_psum : positive := 7;
-        addr_width_psum  : positive := 4;
+        line_length_psum : positive := 128;
+        addr_width_psum  : positive := 7;
 
         data_width_wght  : positive := 8;
-        line_length_wght : positive := 7;
-        addr_width_wght  : positive := 3;
+        line_length_wght : positive := 32;
+        addr_width_wght  : positive := 5;
 
         pe_north : boolean := false;
         pe_south : boolean := false

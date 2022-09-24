@@ -84,8 +84,6 @@ architecture rtl of control is
     signal r_tile_change_x : std_logic;
     signal r_tile_change_c : std_logic;
 
-    signal r_tile_change_c_delay : std_logic_vector(1 downto 0);
-
     type   t_state_type is (s_calculate, s_output, s_tile_c_change);
     signal r_state : t_state_type;
 
@@ -125,8 +123,6 @@ begin
     tiles_c <= r_tiles_c;
     tiles_x <= r_tiles_x;
     tiles_y <= r_tiles_y;
-
-    r_tile_change_c_delay <= r_tile_change_c_delay(0) & r_tile_change_c when rising_edge(clk);
 
     r_command_psum_d       <= r_command_psum when rising_edge(clk);
     r_read_offset_psum_d   <= r_read_offset_psum when rising_edge(clk);
