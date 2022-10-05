@@ -363,7 +363,7 @@ begin
             r_tile_change_c   <= '0';
             r_state           <= s_calculate;
         elsif rising_edge(clk) then
-            if r_startup_done = '1' then
+            if r_startup_done = '1' and start = '1' then
                 if r_state = s_calculate then
                     r_tile_change_x <= '0';
                     r_tile_change_c <= '0';
@@ -470,7 +470,7 @@ begin
         elsif rising_edge(clk) then
             r_update_offset_iact <= (others => (others => '0'));
 
-            if r_startup_done = '1' then
+            if r_startup_done = '1' and start = '1' then
                 if r_state = s_calculate then
                     if r_tile_change_x = '1' then
                         -- Tile x change
@@ -482,7 +482,6 @@ begin
                         r_command_iact <= (others => c_lb_shrink);
                     elsif r_tile_change_c then
                         -- Tile c change
-                        /* TODO FILTER TILES: IMPLEMENT AND TEST */
                         r_read_offset_iact <= (others => std_logic_vector(to_unsigned(0, addr_width_iact))); -- std_logic_vector(to_unsigned(111, addr_width_iact));
                         r_command_iact     <= (others => c_lb_idle);
                     elsif r_tile_x_counter = r_tiles_x then
@@ -514,7 +513,7 @@ begin
                             r_command_iact     <= (others => c_lb_shrink);
                             r_read_offset_iact <= (others => std_logic_vector(to_unsigned(kernel_size * c_last_tile - c_last_tile, addr_width_iact)));
                         else
-                            r_command_iact     <= (others => c_lb_shrink); /* TODO check if can be removed and also set to c_per_tile or c_last_tile as in if clause above*/
+                            r_command_iact     <= (others => c_lb_shrink);
                             r_read_offset_iact <= (others => std_logic_vector(to_unsigned(kernel_size * channels - channels, addr_width_iact)));
                         end if;
                     end if;
@@ -534,7 +533,7 @@ begin
         elsif rising_edge(clk) then
             r_update_offset_wght <= (others => (others => '0'));
 
-            if r_startup_done = '1'  then
+            if r_startup_done = '1' and start = '1' then
                 if r_state = s_calculate then
                     if r_tile_change_x = '1' then
                         -- Tile x change
@@ -542,7 +541,6 @@ begin
                         r_read_offset_wght <= (others => std_logic_vector(to_unsigned(0, addr_width_wght)));
                     elsif r_tile_change_c then
                         -- Tile c change
-                        /* TODO FILTER TILES: IMPLEMENT AND TEST */
                         r_command_wght     <= (others => c_lb_idle);
                         r_read_offset_wght <= (others => std_logic_vector(to_unsigned(channels, addr_width_wght))); -- std_logic_vector(to_unsigned(111, addr_width_iact));
                     elsif r_tile_x_counter = r_tiles_x then
@@ -585,7 +583,7 @@ begin
             r_read_offset_psum   <= (others => (others => '0'));
             r_update_offset_psum <= (others => (others => '0'));
         elsif rising_edge(clk) then
-            if r_startup_done = '1' then
+            if r_startup_done = '1' and start = '1' then
                 if r_state = s_calculate then
                     if r_tile_change_x = '1' then
                         -- Tile x change
@@ -594,7 +592,6 @@ begin
                         r_update_offset_psum <= r_read_offset_psum;
                     elsif r_tile_change_c then
                         -- Tile c change
-                        /* TODO FILTER TILES: IMPLEMENT AND TEST */
                         r_command_psum       <= (others => c_lb_idle);
                         r_read_offset_psum   <= (others => std_logic_vector(to_unsigned(r_tile_x_counter, addr_width_psum))); -- std_logic_vector(to_unsigned(111, addr_width_iact));
                         r_update_offset_psum <= r_read_offset_psum;

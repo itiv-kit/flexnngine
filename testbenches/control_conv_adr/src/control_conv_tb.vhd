@@ -9,7 +9,7 @@ library ieee;
     use std.env.stop;
     use ieee.math_real.ceil;
     use ieee.math_real.log2;
-    
+
 entity control_conv_tb is
     generic (
         size_x    : positive := 5;
@@ -39,30 +39,30 @@ end entity control_conv_tb;
 
 architecture imp of control_conv_tb is
 
-    COMPONENT fifo_generator_0
-    PORT (
-        rst : IN STD_LOGIC;
-        wr_clk : IN STD_LOGIC;
-        rd_clk : IN STD_LOGIC;
-        din : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
-        wr_en : IN STD_LOGIC;
-        rd_en : IN STD_LOGIC;
-        dout : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
-        full : OUT STD_LOGIC;
-        empty : OUT STD_LOGIC;
-        valid : OUT STD_LOGIC
-    );
-    END COMPONENT;
+    component fifo_generator_0 is
+        port (
+            rst    : in    std_logic;
+            wr_clk : in    std_logic;
+            rd_clk : in    std_logic;
+            din    : in    std_logic_vector(15 downto 0);
+            wr_en  : in    std_logic;
+            rd_en  : in    std_logic;
+            dout   : out   std_logic_vector(15 downto 0);
+            full   : out   std_logic;
+            empty  : out   std_logic;
+            valid  : out   std_logic
+        );
+    end component;
 
-    COMPONENT mult_gen_0
-    PORT (
-        CLK : IN STD_LOGIC;
-        A : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-        B : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-        CE : IN STD_LOGIC;
-        P : OUT STD_LOGIC_VECTOR(15 DOWNTO 0)
-    );
-    END COMPONENT;
+    component mult_gen_0 is
+        port (
+            clk : in    std_logic;
+            a   : in    std_logic_vector(7 downto 0);
+            b   : in    std_logic_vector(7 downto 0);
+            ce  : in    std_logic;
+            p   : out   std_logic_vector(15 downto 0)
+        );
+    end component;
 
     signal clk  : std_logic := '0';
     signal rstn : std_logic;
@@ -134,11 +134,11 @@ architecture imp of control_conv_tb is
     signal c_per_tile  : integer range 0 to 1023;
     signal c_last_tile : integer range 0 to 1023;
 
-    signal fifo_din : std_logic_vector(15 downto 0);
-    signal fifo_dout : std_logic_vector(15 downto 0);
+    signal fifo_din   : std_logic_vector(15 downto 0);
+    signal fifo_dout  : std_logic_vector(15 downto 0);
     signal fifo_wr_en : std_logic;
     signal fifo_rd_en : std_logic;
-    signal fifo_full : std_logic;
+    signal fifo_full  : std_logic;
     signal fifo_empty : std_logic;
     signal fifo_valid : std_logic;
 
@@ -147,9 +147,9 @@ architecture imp of control_conv_tb is
     -- INPUT IMAGE, FILTER WEIGTHS AND EXPECTED OUTPUT
 
     /*signal s_input_image     : int_image3_t(0 to g_channels - 1, 0 to g_image_y - 1, 0 to g_image_x - 1);         
-    signal s_input_weights   : int_image3_t(0 to g_channels - 1, 0 to g_kernel_size - 1, 0 to g_kernel_size - 1);     */
-    signal s_input_image     : int_image_t(0 to size_rows - 1, 0 to g_image_x * g_channels * g_tiles_y - 1);          -- 2, because two tile_y
-    signal s_input_weights   : int_image_t(0 to g_kernel_size - 1, 0 to g_kernel_size * g_channels * g_tiles_y - 1);  -- not *2 because kernel stays the same across tile_y
+    signal s_input_weights   : int_image3_t(0 to g_channels - 1, 0 to g_kernel_size - 1, 0 to g_kernel_size - 1);      */
+    signal s_input_image     : int_image_t(0 to size_rows - 1, 0 to g_image_x * g_channels * g_tiles_y - 1);           -- 2, because two tile_y
+    signal s_input_weights   : int_image_t(0 to g_kernel_size - 1, 0 to g_kernel_size * g_channels * g_tiles_y - 1);   -- not *2 because kernel stays the same across tile_y
     signal s_expected_output : int_image_t(0 to g_image_y - g_kernel_size, 0 to g_image_x - g_kernel_size);
 
     /* TODO not g_channels but tiled channel size */
@@ -168,7 +168,7 @@ architecture imp of control_conv_tb is
             pointer_c <= pointer_c + 1;
         end if;
 
-    end procedure;   */
+    end procedure;    */
 
     procedure incr (signal s_y : inout integer; signal s_x : inout integer; signal s_c : out integer; signal s_c0 : inout integer; variable s_tile_c : inout integer) is
     begin
@@ -208,7 +208,7 @@ architecture imp of control_conv_tb is
             pointer_c <= pointer_c + 1;
         end if;
 
-    end procedure;   */
+    end procedure;    */
 
     procedure incr_wght (signal s_wght_y : inout integer; signal s_wght_x : inout integer; signal s_wght_c : out integer; signal s_wght_c0 : inout integer; variable s_wght_tile_c : inout integer) is
     begin
@@ -248,65 +248,63 @@ begin
 
     i_data_iact_valid_array <= i_data_iact_valid_delay(0)(8) & i_data_iact_valid_delay(1)(7) & i_data_iact_valid_delay(2)(6) & i_data_iact_valid_delay(3)(5) & i_data_iact_valid(4 downto 0);
 
-    fifo_din <= (15 downto 8 => '0') & i_data_iact(0);
+    fifo_din   <= (15 downto 8 => '0') & i_data_iact(0);
     fifo_wr_en <= '1';
     fifo_rd_en <= '1';
-    
-    fifo_inst : fifo_generator_0
-    PORT MAP (
-        rst => not rstn,
-        wr_clk => clk,
-        rd_clk => clk,
-        din => fifo_din,
-        wr_en => fifo_wr_en,
-        rd_en => fifo_rd_en,
-        dout => fifo_dout,
-        full => fifo_full,
-        empty => fifo_empty,
-        valid => fifo_valid
-    );
 
-    your_instance_name : mult_gen_0
-    PORT MAP (
-        CLK => CLK,
-        A => i_data_iact(0),
-        B => i_data_iact(0),
-        CE => '1',
-        P => mult_out
-    );
+    fifo_inst : component fifo_generator_0
+        port map (
+            rst    => not rstn,
+            wr_clk => clk,
+            rd_clk => clk,
+            din    => fifo_din,
+            wr_en  => fifo_wr_en,
+            rd_en  => fifo_rd_en,
+            dout   => fifo_dout,
+            full   => fifo_full,
+            empty  => fifo_empty,
+            valid  => fifo_valid
+        );
 
-    address_generator_inst: entity work.address_generator
-      generic map (
-        size_x           => size_x,
-        size_y           => size_y,
-        size_rows        => size_rows,
-        line_length_iact => line_length_iact,
-        addr_width_iact  => addr_width_iact,
-        line_length_psum => line_length_psum,
-        addr_width_psum  => addr_width_psum,
-        line_length_wght => line_length_wght,
-        addr_width_wght  => addr_width_wght
-      )
-      port map (
-        clk                => clk,
-        rstn               => rstn,
-        status             => status_adr,
-        start              => status,
-        start_init         => start_init,
-        tiles_c            => tiles_c,
-        tiles_x            => tiles_x,
-        tiles_y            => tiles_y,
-        c_per_tile         => c_per_tile,
-        c_last_tile        => c_last_tile,
-        image_x            => image_x,
-        image_y            => image_y,
-        channels           => channels,
-        kernel_size        => kernel_size,
-        o_buffer_full_iact => '0', --o_buffer_full_iact,
-        o_buffer_full_wght => '0' --o_buffer_full_wght
-      );
+    your_instance_name : component mult_gen_0
+        port map (
+            clk => clk,
+            a   => i_data_iact(0),
+            b   => i_data_iact(0),
+            ce  => '1',
+            p   => mult_out
+        );
 
-    
+    address_generator_inst : entity work.address_generator
+        generic map (
+            size_x           => size_x,
+            size_y           => size_y,
+            size_rows        => size_rows,
+            line_length_iact => line_length_iact,
+            addr_width_iact  => addr_width_iact,
+            line_length_psum => line_length_psum,
+            addr_width_psum  => addr_width_psum,
+            line_length_wght => line_length_wght,
+            addr_width_wght  => addr_width_wght
+        )
+        port map (
+            clk            => clk,
+            rstn           => rstn,
+            status         => status_adr,
+            start          => status,
+            start_init     => start_init,
+            tiles_c        => tiles_c,
+            tiles_x        => tiles_x,
+            tiles_y        => tiles_y,
+            c_per_tile     => c_per_tile,
+            c_last_tile    => c_last_tile,
+            image_x        => image_x,
+            image_y        => image_y,
+            channels       => channels,
+            kernel_size    => kernel_size,
+            fifo_full_iact => '0',
+            fifo_full_wght => '0'
+        );
 
     control_inst : entity work.control
         generic map (

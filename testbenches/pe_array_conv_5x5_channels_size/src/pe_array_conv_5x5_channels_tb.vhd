@@ -164,7 +164,7 @@ architecture imp of pe_array_conv_5x5_channels_tb is
     signal s_c    : integer;
     signal s_done : boolean;
 
-    signal s_tile_done  : boolean;
+    signal s_tile_done : boolean;
 
     -- INPUT IMAGE, FILTER WEIGTHS AND EXPECTED OUTPUT
 
@@ -644,8 +644,8 @@ begin
 
             end loop;
 
-            --wait for 50 ns;
-            --wait until rising_edge(clk);
+            -- wait for 50 ns;
+            -- wait until rising_edge(clk);
 
             report "Start with partial sum accumulation and output results ...";
 

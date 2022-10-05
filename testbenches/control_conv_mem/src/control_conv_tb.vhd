@@ -4,6 +4,7 @@ library ieee;
     use work.utilities.all;
     use work.control;
     use work.pe_array;
+    use work.address_generator;
     use std.env.finish;
     use std.env.stop;
     use ieee.math_real.ceil;
@@ -15,17 +16,20 @@ entity control_conv_tb is
         size_y    : positive := 5;
         size_rows : positive := 9;
 
-        data_width_iact  : positive := 8; -- Width of the input data (weights, iacts)
-        line_length_iact : positive := 32;
-        addr_width_iact  : positive := 5;
+        data_width_iact     : positive := 8; -- Width of the input data (weights, iacts)
+        line_length_iact    : positive := 32;
+        addr_width_iact     : positive := 5;
+        addr_width_iact_mem : positive := 15;
 
-        data_width_psum  : positive := 16; -- or 17??
-        line_length_psum : positive := 127;
-        addr_width_psum  : positive := 7;
+        data_width_psum     : positive := 16; -- or 17??
+        line_length_psum    : positive := 127;
+        addr_width_psum     : positive := 7;
+        addr_width_psum_mem : positive := 15;
 
-        data_width_wght  : positive := 8;
-        line_length_wght : positive := 32;
-        addr_width_wght  : positive := 5;
+        data_width_wght     : positive := 8;
+        line_length_wght    : positive := 32;
+        addr_width_wght     : positive := 5;
+        addr_width_wght_mem : positive := 15;
 
         g_channels    : positive := 28;
         g_image_y     : positive := 14;
@@ -38,10 +42,36 @@ end entity control_conv_tb;
 
 architecture imp of control_conv_tb is
 
+    component fifo_generator_0 is
+        port (
+            rst    : in    std_logic;
+            wr_clk : in    std_logic;
+            rd_clk : in    std_logic;
+            din    : in    std_logic_vector(15 downto 0);
+            wr_en  : in    std_logic;
+            rd_en  : in    std_logic;
+            dout   : out   std_logic_vector(15 downto 0);
+            full   : out   std_logic;
+            empty  : out   std_logic;
+            valid  : out   std_logic
+        );
+    end component;
+
+    component mult_gen_0 is
+        port (
+            clk : in    std_logic;
+            a   : in    std_logic_vector(7 downto 0);
+            b   : in    std_logic_vector(7 downto 0);
+            ce  : in    std_logic;
+            p   : out   std_logic_vector(15 downto 0)
+        );
+    end component;
+
     signal clk  : std_logic := '0';
     signal rstn : std_logic;
 
     signal status       : std_logic;
+    signal status_adr   : std_logic;
     signal start        : std_logic;
     signal start_init   : std_logic;
     signal image_x      : integer range 0 to 1023;
@@ -107,6 +137,35 @@ architecture imp of control_conv_tb is
     signal c_per_tile  : integer range 0 to 1023;
     signal c_last_tile : integer range 0 to 1023;
 
+    signal fifo_din   : std_logic_vector(15 downto 0);
+    signal fifo_dout  : std_logic_vector(15 downto 0);
+    signal fifo_wr_en : std_logic;
+    signal fifo_rd_en : std_logic;
+    signal fifo_full  : std_logic;
+    signal fifo_empty : std_logic;
+    signal fifo_valid : std_logic;
+
+    signal mult_out : std_logic_vector(15 downto 0);
+
+    signal write_adr_iact : std_logic_vector(addr_width_iact_mem - 1 downto 0);
+    signal write_adr_psum : std_logic_vector(addr_width_psum_mem - 1 downto 0);
+    signal write_adr_wght : std_logic_vector(addr_width_wght_mem - 1 downto 0);
+    signal read_adr_iact  : std_logic_vector(addr_width_iact_mem - 1 downto 0);
+    signal read_adr_psum  : std_logic_vector(addr_width_psum_mem - 1 downto 0);
+    signal read_adr_wght  : std_logic_vector(addr_width_wght_mem - 1 downto 0);
+    signal write_en_iact  : std_logic;
+    signal write_en_psum  : std_logic;
+    signal write_en_wght  : std_logic;
+    signal read_en_iact   : std_logic;
+    signal read_en_psum   : std_logic;
+    signal read_en_wght   : std_logic;
+    signal din_iact       : std_logic_vector(data_width_iact - 1 downto 0);
+    signal din_psum       : std_logic_vector(data_width_psum - 1 downto 0);
+    signal din_wght       : std_logic_vector(data_width_wght - 1 downto 0);
+    signal dout_iact      : std_logic_vector(data_width_iact - 1 downto 0);
+    signal dout_psum      : std_logic_vector(data_width_psum - 1 downto 0);
+    signal dout_wght      : std_logic_vector(data_width_wght - 1 downto 0);
+
     -- INPUT IMAGE, FILTER WEIGTHS AND EXPECTED OUTPUT
 
     /*signal s_input_image     : int_image3_t(0 to g_channels - 1, 0 to g_image_y - 1, 0 to g_image_x - 1);         
@@ -114,86 +173,6 @@ architecture imp of control_conv_tb is
     signal s_input_image     : int_image_t(0 to size_rows - 1, 0 to g_image_x * g_channels * g_tiles_y - 1);           -- 2, because two tile_y
     signal s_input_weights   : int_image_t(0 to g_kernel_size - 1, 0 to g_kernel_size * g_channels * g_tiles_y - 1);   -- not *2 because kernel stays the same across tile_y
     signal s_expected_output : int_image_t(0 to g_image_y - g_kernel_size, 0 to g_image_x - g_kernel_size);
-
-    /* TODO not g_channels but tiled channel size */
-
-    /*procedure incr (signal pointer_y : inout integer; signal pointer_x : inout integer; signal pointer_c : inout integer) is
-    begin
-
-        if pointer_x = g_image_x - 1 and pointer_c = g_channels - 1 then
-            pointer_c <= 0;
-            pointer_x <= 0;
-            pointer_y <= pointer_y + g_kernel_size;
-        elsif pointer_c = g_channels - 1 then
-            pointer_c <= 0;
-            pointer_x <= pointer_x + 1;
-        else
-            pointer_c <= pointer_c + 1;
-        end if;
-
-    end procedure;    */
-
-    procedure incr (signal s_y : inout integer; signal s_x : inout integer; signal s_c : out integer; signal s_c0 : inout integer; variable s_tile_c : inout integer) is
-    begin
-
-        if s_tile_c = tiles_c - 1 and s_x = g_image_x - 1 and ((s_c0 = c_per_tile - 1 and s_tile_c /= tiles_c - 1) or (s_c0 = c_last_tile - 1 and s_tile_c = tiles_c - 1)) then
-            s_c0     <= 0;
-            s_x      <= 0;
-            s_tile_c := 0;
-            s_y      <= s_y + g_kernel_size;
-        elsif s_x = g_image_x - 1 and ((s_c0 = c_per_tile - 1 and s_tile_c /= tiles_c - 1) or (s_c0 = c_last_tile - 1 and s_tile_c = tiles_c - 1)) then
-            s_x      <= 0;
-            s_c0     <= 0;
-            s_tile_c := s_tile_c + 1;
-        elsif (s_c0 = c_per_tile - 1 and s_tile_c /= tiles_c - 1) or (s_c0 = c_last_tile - 1 and s_tile_c = tiles_c - 1) then
-            s_x <= s_x + 1;
-        else
-            s_c0 <= s_c0 + 1;
-        end if;
-
-        s_c <= s_tile_c * c_per_tile + s_c0;
-
-    end procedure;
-
-    /* TODO not g_channels but tiled channel size */
-
-    /*procedure incr_wght (signal pointer_y : inout integer; signal pointer_x : inout integer; signal pointer_c : inout integer) is
-    begin
-
-        if pointer_x = g_kernel_size - 1 and pointer_c = g_channels - 1 then
-            pointer_c <= 0;
-            pointer_x <= 0;
-            pointer_y <= pointer_y + g_kernel_size;
-        elsif pointer_c = g_channels - 1 then
-            pointer_c <= 0;
-            pointer_x <= pointer_x + 1;
-        else
-            pointer_c <= pointer_c + 1;
-        end if;
-
-    end procedure;    */
-
-    procedure incr_wght (signal s_wght_y : inout integer; signal s_wght_x : inout integer; signal s_wght_c : out integer; signal s_wght_c0 : inout integer; variable s_wght_tile_c : inout integer) is
-    begin
-
-        if s_wght_tile_c = tiles_c - 1 and s_wght_x = g_kernel_size - 1 and ((s_wght_c0 = c_per_tile - 1 and s_wght_tile_c /= tiles_c - 1) or (s_wght_c0 = c_last_tile - 1 and s_wght_tile_c = tiles_c - 1)) then
-            s_wght_c0     <= 0;
-            s_wght_x      <= 0;
-            s_wght_tile_c := 0;
-            s_wght_y      <= s_wght_y + g_kernel_size;
-        elsif s_wght_x = g_kernel_size - 1 and ((s_wght_c0 = c_per_tile - 1 and s_wght_tile_c /= tiles_c - 1) or (s_wght_c0 = c_last_tile - 1 and s_wght_tile_c = tiles_c - 1)) then
-            s_wght_x      <= 0;
-            s_wght_c0     <= 0;
-            s_wght_tile_c := s_wght_tile_c + 1;
-        elsif (s_wght_c0 = c_per_tile - 1 and s_wght_tile_c /= tiles_c - 1) or (s_wght_c0 = c_last_tile - 1 and s_wght_tile_c = tiles_c - 1) then
-            s_wght_x <= s_wght_x + 1;
-        else
-            s_wght_c0 <= s_wght_c0 + 1;
-        end if;
-
-        s_wght_c <= s_wght_tile_c * c_per_tile + s_wght_c0;
-
-    end procedure;
 
 begin
 
@@ -210,6 +189,96 @@ begin
     i_data_iact_valid_delay(0) <= i_data_iact_valid_delay(1) when rising_edge(clk);
 
     i_data_iact_valid_array <= i_data_iact_valid_delay(0)(8) & i_data_iact_valid_delay(1)(7) & i_data_iact_valid_delay(2)(6) & i_data_iact_valid_delay(3)(5) & i_data_iact_valid(4 downto 0);
+
+    fifo_din   <= (15 downto 8 => '0') & i_data_iact(0);
+    fifo_wr_en <= '1';
+    fifo_rd_en <= '1';
+
+    fifo_inst : component fifo_generator_0
+        port map (
+            rst    => not rstn,
+            wr_clk => clk,
+            rd_clk => clk,
+            din    => fifo_din,
+            wr_en  => fifo_wr_en,
+            rd_en  => fifo_rd_en,
+            dout   => fifo_dout,
+            full   => fifo_full,
+            empty  => fifo_empty,
+            valid  => fifo_valid
+        );
+
+    your_instance_name : component mult_gen_0
+        port map (
+            clk => clk,
+            a   => i_data_iact(0),
+            b   => i_data_iact(0),
+            ce  => '1',
+            p   => mult_out
+        );
+
+    address_generator_inst : entity work.address_generator
+        generic map (
+            size_x           => size_x,
+            size_y           => size_y,
+            size_rows        => size_rows,
+            line_length_iact => line_length_iact,
+            addr_width_iact  => addr_width_iact,
+            line_length_psum => line_length_psum,
+            addr_width_psum  => addr_width_psum,
+            line_length_wght => line_length_wght,
+            addr_width_wght  => addr_width_wght
+        )
+        port map (
+            clk            => clk,
+            rstn           => rstn,
+            status         => status_adr,
+            start          => status,
+            start_init     => start_init,
+            tiles_c        => tiles_c,
+            tiles_x        => tiles_x,
+            tiles_y        => tiles_y,
+            c_per_tile     => c_per_tile,
+            c_last_tile    => c_last_tile,
+            image_x        => image_x,
+            image_y        => image_y,
+            channels       => channels,
+            kernel_size    => kernel_size,
+            fifo_full_iact => '0',
+            fifo_full_wght => '0'
+        );
+
+    scratchpad_inst : entity work.scratchpad
+        generic map (
+            data_width_iact => data_width_iact,
+            addr_width_iact => addr_width_iact_mem,
+            data_width_psum => data_width_psum,
+            addr_width_psum => addr_width_psum_mem,
+            data_width_wght => data_width_wght,
+            addr_width_wght => addr_width_wght_mem
+        )
+        port map (
+            clk            => clk,
+            rstn           => rstn,
+            write_adr_iact => write_adr_iact,
+            write_adr_psum => write_adr_psum,
+            write_adr_wght => write_adr_wght,
+            read_adr_iact  => read_adr_iact,
+            read_adr_psum  => read_adr_psum,
+            read_adr_wght  => read_adr_wght,
+            write_en_iact  => write_en_iact,
+            write_en_psum  => write_en_psum,
+            write_en_wght  => write_en_wght,
+            read_en_iact   => read_en_iact,
+            read_en_psum   => read_en_psum,
+            read_en_wght   => read_en_wght,
+            din_iact       => din_iact,
+            din_psum       => din_psum,
+            din_wght       => din_wght,
+            dout_iact      => dout_iact,
+            dout_psum      => dout_psum,
+            dout_wght      => dout_wght
+        );
 
     control_inst : entity work.control
         generic map (
@@ -337,22 +406,12 @@ begin
 
     end process start_config;
 
-    /*p_read_files : process is
-    begin
-
-        s_input_image     <= read_file(file_name => "src/_image.txt", num_col => g_image_x, num_row => g_image_y, num_channels => g_channels);
-        s_input_weights   <= read_file(file_name => "src/_kernel.txt", num_col => g_kernel_size, num_row => g_kernel_size, num_channels => g_channels);
-        s_expected_output <= read_file(file_name => "src/_convolution.txt", num_col => g_image_x - g_kernel_size + 1, num_row => g_image_y - g_kernel_size + 1);
-        wait;
-
-    end process p_read_files;*/
-
     p_read_files : process is
     begin
 
-        s_input_image     <= read_file(file_name => "src/_image_reordered.txt", num_col => g_image_x * g_channels * g_tiles_y, num_row => size_rows);
-        s_input_weights   <= read_file(file_name => "src/_kernel_reordered.txt", num_col => g_kernel_size * g_channels * g_tiles_y, num_row => g_kernel_size);
-        s_expected_output <= read_file(file_name => "src/_convolution.txt", num_col => g_image_x - g_kernel_size + 1, num_row => g_image_y - g_kernel_size + 1);
+        s_input_image     <= read_file(file_name => "/home/uzedl/Documents/reconfigurable-accelerator/testbenches/control_conv_adr/src/_image_reordered.txt", num_col => g_image_x * g_channels * g_tiles_y, num_row => size_rows);
+        s_input_weights   <= read_file(file_name => "/home/uzedl/Documents/reconfigurable-accelerator/testbenches/control_conv_adr/src/_kernel_reordered.txt", num_col => g_kernel_size * g_channels * g_tiles_y, num_row => g_kernel_size);
+        s_expected_output <= read_file(file_name => "/home/uzedl/Documents/reconfigurable-accelerator/testbenches/control_conv_adr/src/_convolution.txt", num_col => g_image_x - g_kernel_size + 1, num_row => g_image_y - g_kernel_size + 1);
         wait;
 
     end process p_read_files;
@@ -391,84 +450,6 @@ begin
         wait;
 
     end process p_constant_check;
-
-    /*stimuli_data_wght : process is
-    begin
-
-        i_data_wght       <= (others => (others => '0'));
-        i_data_wght_valid <= (others => '0');
-
-        wait until rstn = '1';
-        wait until rising_edge(clk);
-
-        i_data_wght_valid <= (others => '1');
-
-        for i in 0 to size_x - 1 loop
-
-            for c in 0 to g_channels - 1 loop 
-
-                while o_buffer_full_wght = '1' loop
-
-                    wait until rising_edge(clk);
-
-                end loop;
-
-                for y in 0 to size_y - 1 loop
-
-                    -- data_in_wght <= std_logic_vector(to_signed(input_wght(i), data_width_iact_wght));
-                    i_data_wght(y) <= std_logic_vector(to_signed(s_input_weights(c,y,i), data_width_wght));
-
-                end loop;
-
-                wait until rising_edge(clk);
-
-            end loop;
-
-        end loop;
-
-        i_data_wght_valid <= (others => '0');
-
-        wait;
-
-    end process stimuli_data_wght;*/
-
-    /*stimuli_data_wght : process (rstn, clk) is
-
-        variable loop_max : integer;
-        variable s_wght_tile_c : integer;
-    begin
-
-        if not rstn then
-            i_data_wght       <= (others => (others => '0'));
-            i_data_wght_valid <= (others => '0');
-            s_wght_c          <= 0;
-            s_wght_x          <= 0;
-            s_wght_y          <= 0;
-            s_wght_c0         <= 0;
-            s_wght_tile_c     := 0;
-            loop_max          := g_kernel_size;
-        elsif rising_edge(clk) then
-            if status then
-                if s_wght_y >= g_kernel_size then
-                -- Done
-                elsif o_buffer_full_wght = '0' then
-                    if s_wght_y + size_y > g_kernel_size then
-                        loop_max := g_kernel_size - s_wght_y;
-                    end if;
-
-                    for i in 0 to loop_max - 1 loop
-
-                        i_data_wght_valid(i) <= '1';
-                        i_data_wght(i)       <= std_logic_vector(to_signed(s_input_weights(s_wght_c, i + s_wght_y), data_width_wght));
-
-                    end loop;
-
-                    incr_wght(s_wght_y, s_wght_x, s_wght_c, s_wght_c0, s_wght_tile_c);
-                end if;
-            end if;
-        end if;
-
-    end process stimuli_data_wght;*/
 
     stimuli_data_wght : process (rstn, clk) is
 
@@ -537,45 +518,6 @@ begin
         end if;
 
     end process stimuli_data_iact;
-
-    /*stimuli_data_iact : process (rstn, clk) is
-
-        variable loop_max : integer;
-        variable s_tile_c : integer;
-
-    begin
-
-        if not rstn then
-            i_data_iact       <= (others => (others => '0'));
-            i_data_iact_valid <= (others => '0');
-            s_c               <= 0;
-            s_x               <= 0;
-            s_y               <= 0;
-            s_tile_c          := 0;
-            s_c0              <= 0;
-            loop_max          := size_rows;
-        elsif rising_edge(clk) then
-            if status then
-                if s_y >= image_y then
-                -- Done
-                elsif o_buffer_full_iact = '0' then
-                    if s_y + size_rows > image_y then
-                        loop_max := image_y - s_y;
-                    end if;
-
-                    for i in 0 to loop_max - 1 loop
-
-                        i_data_iact_valid(i) <= '1';
-                        i_data_iact(i)       <= std_logic_vector(to_signed(s_input_image(s_c, i + s_y), data_width_iact));
-
-                    end loop;
-
-                    incr(s_y, s_x, s_c, s_c0, s_tile_c);
-                end if;
-            end if;
-        end if;
-
-    end process stimuli_data_iact;*/
 
     output_check : for p in 0 to size_x - 1 generate
 

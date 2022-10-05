@@ -7,7 +7,7 @@ entity demux is
     generic (
         output_width  : natural := 8; -- Bits in each input
         output_num    : natural := 2; -- Number of inputs
-        address_width : natural := 1 -- Number of address bits (ceil(log2(NUM)))
+        address_width : natural := 1  -- Number of address bits (ceil(log2(NUM)))
     );
     port (
         v_i : in    std_logic_vector(output_width - 1 downto 0);

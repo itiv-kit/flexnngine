@@ -42,13 +42,13 @@ entity pe_array is
         i_data_psum_valid : in    std_logic;
         i_data_wght_valid : in    std_logic_vector(size_y - 1 downto 0);
 
-        o_buffer_full_iact : out   std_logic;
+        o_buffer_full_iact : out   std_logic_vector(size_rows - 1 downto 0);
         o_buffer_full_psum : out   std_logic;
-        o_buffer_full_wght : out   std_logic;
+        o_buffer_full_wght : out   std_logic_vector(size_y - 1 downto 0);
 
-        o_buffer_full_next_iact : out   std_logic;
+        o_buffer_full_next_iact : out   std_logic_vector(size_rows - 1 downto 0);
         o_buffer_full_next_psum : out   std_logic;
-        o_buffer_full_next_wght : out   std_logic;
+        o_buffer_full_next_wght : out   std_logic_vector(size_y - 1 downto 0);
 
         update_offset_iact : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
         update_offset_psum : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
@@ -174,7 +174,6 @@ begin
     -- INPUT ACTIVATIONS ----------------------------------------------------------
     -- Input activations to PEs that are not directly connected to outside of array
     -- Diagonal blue connections in diagram
-    /* TODO MODIFIED */
 
     iact_wire_y : for y in 0 to size_y - 2 generate
 
@@ -187,30 +186,33 @@ begin
 
     end generate iact_wire_y;
 
-    -- Input activations to PEs interfaced on the west
+    -- Input activations and buffer full signals to and from PEs interfaced on the west
     -- Blue connections in the diagram on the west
 
     iact_input_y : for i in 0 to size_y - 1 generate
 
-        w_data_in_iact(i,0)       <= i_data_iact(i);       -- when rising_edge(clk);
-        w_data_in_iact_valid(i,0) <= i_data_iact_valid(i); -- when rising_edge(clk);
+        w_data_in_iact(i,0)        <= i_data_iact(i);       -- when rising_edge(clk);
+        w_data_in_iact_valid(i,0)  <= i_data_iact_valid(i); -- when rising_edge(clk);
+        o_buffer_full_iact(i)      <= w_buffer_full_iact(i, 0);
+        o_buffer_full_next_iact(i) <= w_buffer_full_next_iact(i, 0);
 
     end generate iact_input_y;
 
-    -- Input activations to PEs interfaced on the south
+    -- Input activations and buffer full signals to and from PEs interfaced on the south
     -- Blue connections in the diagram on the south
 
     iact_input_x : for i in 1 to size_x - 1 generate
 
-        w_data_in_iact(size_y - 1, i)       <= i_data_iact(size_y - 1 + i);       -- when rising_edge(clk);
-        w_data_in_iact_valid(size_y - 1, i) <= i_data_iact_valid(size_y - 1 + i); -- when rising_edge(clk);
+        w_data_in_iact(size_y - 1, i)           <= i_data_iact(size_y - 1 + i);       -- when rising_edge(clk);
+        w_data_in_iact_valid(size_y - 1, i)     <= i_data_iact_valid(size_y - 1 + i); -- when rising_edge(clk);
+        o_buffer_full_iact(size_y - 1 + i)      <= w_buffer_full_iact(size_y - 1, i);
+        o_buffer_full_next_iact(size_y - 1 + i) <= w_buffer_full_next_iact(size_y - 1, i);
 
     end generate iact_input_x;
 
     -- WEIGHTS ----------------------------------------------------------
     -- Weights to PEs that are not directly connected to outside of array
     -- Green arrows in the diagram
-    /* TODO MODIFIED */
 
     wght_wire_x : for x in 1 to size_x - 1 generate
 
@@ -223,13 +225,15 @@ begin
 
     end generate wght_wire_x;
 
-    -- Weights to PEs interface on the west
+    -- Weights and buffer full signals to and from PEs interface on the west
     -- Green arrows in the diagram on the west of the array
 
     wght_input : for i in 0 to size_y - 1 generate
 
-        w_data_in_wght(i,0)       <= i_data_wght(i);       -- when rising_edge(clk);
-        w_data_in_wght_valid(i,0) <= i_data_wght_valid(i); -- when rising_edge(clk);
+        w_data_in_wght(i,0)        <= i_data_wght(i);       -- when rising_edge(clk);
+        w_data_in_wght_valid(i,0)  <= i_data_wght_valid(i); -- when rising_edge(clk);
+        o_buffer_full_wght(i)      <= w_buffer_full_wght(i, 0);
+        o_buffer_full_next_wght(i) <= w_buffer_full_next_wght(i, 0);
 
     end generate wght_input;
 
@@ -237,7 +241,6 @@ begin
     -- Partial sums to PEs that are connected to south. Connect all PEs in the south to the same input (i_data_psum).
     -- Hereby all psums within the PEs in the south can only be filled with the same value (bias).
     /* TODO implement bias on north PEs ?? */
-    /* TODO MODIFIED */
 
     psum_input_x : for x in 0 to size_x - 1 generate
 
@@ -251,7 +254,6 @@ begin
     end generate psum_input_x;
 
     -- Partial sums propagating through PE array
-    /* TODO ADDED */
 
     psum_propagate : for y in 0 to size_y - 2 generate
 
@@ -274,7 +276,6 @@ begin
     end generate data_in_iact;
 
     -- Partial sums valid for south PEs
-    /* TODO ADDED */
 
 /*    psum_valid : for x in 0 to size_x - 1 generate
 
@@ -292,17 +293,15 @@ begin
     end generate psum_output;
 
     -- OUTPUT BUFFER FULL SIGNALS
-    /* TODO just concatenated and just for 3x3 atm*/
+    /* TODO just concatenated for 3x3 atm*/
 
-    -- o_buffer_full_iact <= and w_buffer_full_iact;
-
-    o_buffer_full_iact <= w_buffer_full_iact(0, 0); -- and w_buffer_full_iact(0, 1) and w_buffer_full_iact(0, 2) and w_buffer_full_iact(1, 0) and w_buffer_full_iact(1, 1) and w_buffer_full_iact(1, 2) and w_buffer_full_iact(2, 0) and w_buffer_full_iact(2, 1) and w_buffer_full_iact(2, 2);
+    -- o_buffer_full_iact <= w_buffer_full_iact(0, 0); -- and w_buffer_full_iact(0, 1) and w_buffer_full_iact(0, 2) and w_buffer_full_iact(1, 0) and w_buffer_full_iact(1, 1) and w_buffer_full_iact(1, 2) and w_buffer_full_iact(2, 0) and w_buffer_full_iact(2, 1) and w_buffer_full_iact(2, 2);
     o_buffer_full_psum <= w_buffer_full_psum(0, 0) and w_buffer_full_psum(0, 1) and w_buffer_full_psum(0, 2) and w_buffer_full_psum(1, 0) and w_buffer_full_psum(1, 1) and w_buffer_full_psum(1, 2) and w_buffer_full_psum(2, 0) and w_buffer_full_psum(2, 1) and w_buffer_full_psum(2, 2);
-    o_buffer_full_wght <= w_buffer_full_wght(0, 0); -- or w_buffer_full_wght(1, 0) or w_buffer_full_wght(2, 0) or w_buffer_full_wght(3, 0) or w_buffer_full_wght(4, 0); -- and w_buffer_full_wght(1, 2) and w_buffer_full_wght(2, 0) and w_buffer_full_wght(2, 1) and w_buffer_full_wght(2, 2);
+    -- o_buffer_full_wght <= w_buffer_full_wght(0, 0); -- or w_buffer_full_wght(1, 0) or w_buffer_full_wght(2, 0) or w_buffer_full_wght(3, 0) or w_buffer_full_wght(4, 0); -- and w_buffer_full_wght(1, 2) and w_buffer_full_wght(2, 0) and w_buffer_full_wght(2, 1) and w_buffer_full_wght(2, 2);
 
-    o_buffer_full_next_iact <= w_buffer_full_next_iact(0, 0); -- and w_buffer_full_next_iact(0, 1) and w_buffer_full_next_iact(0, 2) and w_buffer_full_next_iact(1, 0) and w_buffer_full_next_iact(1, 1) and w_buffer_full_next_iact(1, 2) and w_buffer_full_next_iact(2, 0) and w_buffer_full_next_iact(2, 1) and w_buffer_full_next_iact(2, 2);
+    -- o_buffer_full_next_iact <= w_buffer_full_next_iact(0, 0); -- and w_buffer_full_next_iact(0, 1) and w_buffer_full_next_iact(0, 2) and w_buffer_full_next_iact(1, 0) and w_buffer_full_next_iact(1, 1) and w_buffer_full_next_iact(1, 2) and w_buffer_full_next_iact(2, 0) and w_buffer_full_next_iact(2, 1) and w_buffer_full_next_iact(2, 2);
     o_buffer_full_next_psum <= w_buffer_full_next_psum(0, 0) and w_buffer_full_next_psum(0, 1) and w_buffer_full_next_psum(0, 2) and w_buffer_full_next_psum(1, 0) and w_buffer_full_next_psum(1, 1) and w_buffer_full_next_psum(1, 2) and w_buffer_full_next_psum(2, 0) and w_buffer_full_next_psum(2, 1) and w_buffer_full_next_psum(2, 2);
-    o_buffer_full_next_wght <= w_buffer_full_next_wght(0, 0); -- and w_buffer_full_next_wght(0, 1) and w_buffer_full_next_wght(0, 2) and w_buffer_full_next_wght(1, 0) and w_buffer_full_next_wght(1, 1) and w_buffer_full_next_wght(1, 2) and w_buffer_full_next_wght(2, 0) and w_buffer_full_next_wght(2, 1) and w_buffer_full_next_wght(2, 2);
+    -- <= w_buffer_full_next_wght(0, 0); -- and w_buffer_full_next_wght(0, 1) and w_buffer_full_next_wght(0, 2) and w_buffer_full_next_wght(1, 0) and w_buffer_full_next_wght(1, 1) and w_buffer_full_next_wght(1, 2) and w_buffer_full_next_wght(2, 0) and w_buffer_full_next_wght(2, 1) and w_buffer_full_next_wght(2, 2);
 
     -- GENERATE PE ---------
     -- Generate PE instances

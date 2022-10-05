@@ -191,9 +191,9 @@ architecture imp of pe_array_conv_3x3_tb is
     );
 
     constant output_command     : command_lb_row_col_t(0 to 2, 0 to output_command_length - 1) := (
-        (c_lb_idle, c_lb_idle, c_lb_idle, c_lb_read_update, c_lb_read_update,c_lb_read_update,c_lb_read,c_lb_read,c_lb_read,c_lb_idle),                             -- row 0
-        (c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle),                        -- row 1
-        (c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle,c_lb_idle, c_lb_idle)                                               -- row 2
+        (c_lb_idle, c_lb_idle, c_lb_idle, c_lb_read_update, c_lb_read_update,c_lb_read_update,c_lb_read,c_lb_read,c_lb_read,c_lb_idle),                                       -- row 0
+        (c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle),                                  -- row 1
+        (c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle,c_lb_idle, c_lb_idle)                                                         -- row 2
     );
     constant output_pe_command  : command_pe_row_col_t(0 to 2, 0 to output_command_length - 1) := (
         (c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum, c_pe_conv_psum , c_pe_conv_psum, c_pe_conv_psum ,c_pe_conv_psum,c_pe_conv_psum), -- row 0
@@ -201,9 +201,9 @@ architecture imp of pe_array_conv_3x3_tb is
         (c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum)      -- row 2
     );
     constant output_read_offset : int_image_t(0 to 2, 0 to output_command_length - 1) := (
-        (0,0,0,0,1,2,0,1,2,0),                                                                                                                                      -- row 0
-        (0,1,2,0,1,2,0,0,0,0),                                                                                                                                      -- row 1
-        (0,1,2,0,0,0,0,0,0,0)                                                                                                                                       -- row 2
+        (0,0,0,0,1,2,0,1,2,0),                                                                                                                                                -- row 0
+        (0,1,2,0,1,2,0,0,0,0),                                                                                                                                                -- row 1
+        (0,1,2,0,0,0,0,0,0,0)                                                                                                                                                 -- row 2
     );
 
     constant output_update_offset : int_image_t(0 to 2, 0 to output_command_length - 1) := (

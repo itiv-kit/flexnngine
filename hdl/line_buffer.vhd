@@ -11,8 +11,8 @@ library ieee;
 entity line_buffer is
     generic (
         line_length : positive := 32; --! Length of the lines in the image
-        addr_width  : positive := 5; --! Address width for the ram_dp subcomponent. ceil(log2(line_length))
-        data_width  : positive := 8  --! Data width for the ram_dp subcomponent - should be the width of data to be stored (8 / 16 bit?)
+        addr_width  : positive := 5;  --! Address width for the ram_dp subcomponent. ceil(log2(line_length))
+        data_width  : positive := 8   --! Data width for the ram_dp subcomponent - should be the width of data to be stored (8 / 16 bit?)
     );
     port (
         clk              : in    std_logic;                                 --! Clock input
@@ -127,6 +127,23 @@ architecture rtl of line_buffer is
     end procedure;
 
 begin
+
+    read_update_empty : process (clk) is
+    begin
+
+        if rising_edge(clk) then
+            if command = c_lb_read or command = c_lb_read_update then
+                assert to_integer(unsigned(read_offset)) < fill_count
+                    report "Error: reading from offset " & integer'image(to_integer(unsigned(read_offset))) & " ; Fill count only " & integer'image(fill_count)
+                    severity failure;
+
+                assert to_integer(unsigned(update_offset)) < fill_count
+                    report "Error: updating value at offset " & integer'image(to_integer(unsigned(read_offset))) & " ; Fill count only " & integer'image(fill_count)
+                    severity failure;
+            end if;
+        end if;
+
+    end process read_update_empty;
 
     ram : component ram_dp
         generic map (

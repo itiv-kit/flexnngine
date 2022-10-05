@@ -6468,7 +6468,7 @@
       "fixable": false,
       "indentSize": 4,
       "phase": 1,
-      "severity": "Error"
+      "severity": "Warning"
     },
     "variable_011": {
       "disable": false,
