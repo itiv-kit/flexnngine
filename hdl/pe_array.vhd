@@ -10,11 +10,11 @@ entity pe_array is
 
         size_rows : positive := 5;
 
-        data_width_iact  : positive := 8; -- Width of the input data (weights, iacts)
+        data_width_iact  : positive := 8;
         line_length_iact : positive := 32;
         addr_width_iact  : positive := 5;
 
-        data_width_psum  : positive := 16; -- or 17??
+        data_width_psum  : positive := 16;
         line_length_psum : positive := 2048;
         addr_width_psum  : positive := 11;
 

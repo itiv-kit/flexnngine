@@ -46,17 +46,17 @@ architecture imp of pe_array_conv_3x3_tb is
         generic (
             size_x : positive := 3;
             size_y : positive := 3;
-    
+
             size_rows : positive := 5;
-    
-            data_width_iact  : positive := 8; -- Width of the input data (weights, iacts)
+
+            data_width_iact  : positive := 8;
             line_length_iact : positive := 32;
             addr_width_iact  : positive := 5;
-    
-            data_width_psum  : positive := 16; -- or 17??
+
+            data_width_psum  : positive := 16;
             line_length_psum : positive := 2048;
             addr_width_psum  : positive := 11;
-    
+
             data_width_wght  : positive := 8;
             line_length_wght : positive := 32;
             addr_width_wght  : positive := 5
@@ -64,39 +64,39 @@ architecture imp of pe_array_conv_3x3_tb is
         port (
             clk  : in    std_logic;
             rstn : in    std_logic;
-    
+
             i_preload_psum       : in    std_logic_vector(data_width_psum - 1 downto 0);
             i_preload_psum_valid : in    std_logic;
-    
+
             command      : in    command_pe_row_col_t(0 to size_y - 1, 0 to size_x - 1);
             command_iact : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
             command_psum : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
             command_wght : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-    
+
             i_data_iact : in    array_t (0 to size_rows - 1)(data_width_iact - 1 downto 0);
             i_data_psum : in    std_logic_vector(data_width_psum - 1 downto 0);
             i_data_wght : in    array_t (0 to size_y - 1)(data_width_wght - 1 downto 0);
-    
+
             i_data_iact_valid : in    std_logic_vector(size_rows - 1 downto 0);
             i_data_psum_valid : in    std_logic;
             i_data_wght_valid : in    std_logic_vector(size_y - 1 downto 0);
-    
+
             o_buffer_full_iact : out   std_logic_vector(size_rows - 1 downto 0);
             o_buffer_full_psum : out   std_logic;
             o_buffer_full_wght : out   std_logic_vector(size_y - 1 downto 0);
-    
+
             o_buffer_full_next_iact : out   std_logic_vector(size_rows - 1 downto 0);
             o_buffer_full_next_psum : out   std_logic;
             o_buffer_full_next_wght : out   std_logic_vector(size_y - 1 downto 0);
-    
+
             update_offset_iact : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
             update_offset_psum : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
             update_offset_wght : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
-    
+
             read_offset_iact : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
             read_offset_psum : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
             read_offset_wght : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
-    
+
             o_psums       : out   array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
             o_psums_valid : out   std_logic_vector(size_x - 1 downto 0)
         );
