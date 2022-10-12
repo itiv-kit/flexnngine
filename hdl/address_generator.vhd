@@ -121,6 +121,11 @@ architecture rtl of address_generator is
     signal r_iact_done : std_logic;
     signal r_wght_done : std_logic;
 
+    signal r_address_psum : array_t(0 to size_x)(addr_width_psum_mem - 1 downto 0);
+    signal r_address_offsets_psum : array_t(0 to size_x - 1)(addr_width_psum_mem - 1 downto 0);
+    signal address_offsets_psum_done : std_logic;
+    signal address_offsets_count_x : integer range 0 to size_x;
+
 begin
 
     r_c1      <= tiles_c;
@@ -315,5 +320,44 @@ begin
         end if;
 
     end process p_wght_counter;
+
+    p_calc_psum_offsets : process(clk, rstn) is
+    begin
+
+        if not rstn then
+
+            r_address_offsets_psum <= (others => (others => '0'));
+            address_offsets_psum_done <= '0';
+            address_offsets_count_x <= 0;
+
+        elsif rising_edge(clk) then
+        
+            if start = '1' and not address_offsets_psum_done = '1' then
+
+                if address_offsets_count_x /= size_x - 1 then
+                    r_address_offsets_psum(address_offsets_count_x + 1) <= std_logic_vector(to_unsigned(to_integer(unsigned(r_address_offsets_psum(address_offsets_count_x)) + tiles_x), addr_width_psum_mem));
+                    address_offsets_count_x <= address_offsets_count_x + 1;
+                else
+                    address_offsets_psum_done <= '1';
+                end if;
+
+            end if;
+
+        end if;
+
+    end process p_calc_psum_offsets;
+
+    p_psum_counter : process(clk, rstn) is
+    begin
+
+        if not rstn then
+
+        elsif rising_edge(clk) then
+
+            -- tiles_x
+
+        end if;
+
+    end process p_psum_counter;
 
 end architecture rtl;

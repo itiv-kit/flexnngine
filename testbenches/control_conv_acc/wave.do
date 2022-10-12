@@ -99,6 +99,25 @@ add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/acce
 add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/accelerator_inst/o_buffer_full_wght
 add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/accelerator_inst/address_generator_inst/start
 
+add wave -noupdate -expand -group PSUM_OUTPUT -radix decimal  /control_conv_tb/accelerator_inst/scratchpad_interface_inst/i_psums
+add wave -noupdate -expand -group PSUM_OUTPUT -radix decimal  /control_conv_tb/accelerator_inst/scratchpad_interface_inst/i_psums_valid
+add wave -noupdate -expand -group PSUM_OUTPUT -radix decimal  /control_conv_tb/accelerator_inst/scratchpad_interface_inst/gnt_psum_binary
+add wave -noupdate -expand -group PSUM_OUTPUT -radix decimal  /control_conv_tb/accelerator_inst/scratchpad_interface_inst/gnt_psum
+add wave -noupdate -expand -group PSUM_OUTPUT -radix decimal  /control_conv_tb/accelerator_inst/scratchpad_interface_inst/empty_psum_out_f
+add wave -noupdate -expand -group PSUM_OUTPUT -radix decimal  /control_conv_tb/accelerator_inst/scratchpad_interface_inst/o_data_psum
+add wave -noupdate -expand -group PSUM_OUTPUT -radix decimal  /control_conv_tb/accelerator_inst/scratchpad_interface_inst/o_write_en_psum
+add wave -noupdate -expand -group PSUM_OUTPUT -radix decimal  /control_conv_tb/accelerator_inst/scratchpad_interface_inst/o_address_psum
+add wave -noupdate -expand -group PSUM_OUTPUT -radix decimal  /control_conv_tb/accelerator_inst/scratchpad_interface_inst/valid_psum_out_f
+add wave -noupdate -expand -group PSUM_OUTPUT -radix decimal  /control_conv_tb/accelerator_inst/scratchpad_interface_inst/valid_psum_out
+add wave -noupdate -expand -group PSUM_OUTPUT -radix decimal  /control_conv_tb/accelerator_inst/scratchpad_interface_inst/rd_en_psum_out_f
+add wave -noupdate -expand -group PSUM_OUTPUT -radix unsigned /control_conv_tb/accelerator_inst/address_generator_psum_inst/r_address_offsets_psum
+add wave -noupdate -expand -group PSUM_OUTPUT -radix unsigned /control_conv_tb/accelerator_inst/address_generator_psum_inst/r_address_psum
+add wave -noupdate -expand -group PSUM_OUTPUT -radix unsigned /control_conv_tb/accelerator_inst/address_generator_psum_inst/i_empty_psum_fifo
+add wave -noupdate -expand -group PSUM_OUTPUT -radix unsigned /control_conv_tb/accelerator_inst/address_generator_psum_inst/address_offsets_psum_done
+add wave -noupdate -expand -group PSUM_OUTPUT -radix unsigned /control_conv_tb/accelerator_inst/address_generator_psum_inst/address_offsets_count_x
+add wave -noupdate -expand -group PSUM_OUTPUT -radix unsigned /control_conv_tb/accelerator_inst/address_generator_psum_inst/start
+add wave -noupdate -expand -group PSUM_OUTPUT -radix unsigned /control_conv_tb/accelerator_inst/write_adr_psum
+#add wave -noupdate -expand -group PSUM_OUTPUT -radix unsigned /control_conv_tb/accelerator_inst/scratchpad_inst/ram_dp_psum/ram_instance
 
 add wave -noupdate -expand -group WGHT_INPUT -radix decimal /control_conv_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_wght/ram/ram_instance
 add wave -noupdate -expand -group WGHT_INPUT -radix decimal /control_conv_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/ram/ram_instance

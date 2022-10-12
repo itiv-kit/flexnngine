@@ -54,6 +54,10 @@ entity scratchpad_interface is
         o_fifo_iact_address_full : out   std_logic; -- to pause address generator
         o_fifo_wght_address_full : out   std_logic; -- to pause address generator
 
+        o_valid_psums_out   : out   std_logic_vector(size_x - 1 downto 0); -- to calculate psum address
+        o_gnt_psum_binary_d : out   std_logic_vector(addr_width_x - 1 downto 0);
+        o_empty_psum_fifo   : out   std_logic_vector(size_x - 1 downto 0);   
+
         -- Addresses to Scratchpad
         o_address_iact : out   std_logic_vector(addr_width_iact_mem - 1 downto 0);
         o_address_wght : out   std_logic_vector(addr_width_wght_mem - 1 downto 0);
@@ -61,7 +65,6 @@ entity scratchpad_interface is
         o_address_iact_valid : out   std_logic;
         o_address_wght_valid : out   std_logic;
 
-        o_address_psum  : out   std_logic_vector(addr_width_psum_mem - 1 downto 0);
         o_write_en_psum : out   std_logic;
         o_data_psum     : out   std_logic_vector(data_width_psum - 1 downto 0);
 
@@ -211,7 +214,8 @@ architecture rtl of scratchpad_interface is
     signal full_psum_out_f  : std_logic_vector(size_x - 1 downto 0);
     signal empty_psum_out_f : std_logic_vector(size_x - 1 downto 0);
     signal valid_psum_out_f : std_logic_vector(size_x - 1 downto 0);
-    signal valid_psum_in    : array_t(0 to size_x - 1)(0 downto 0);
+    signal valid_psum_out   : array_t(0 to size_x - 1)(0 downto 0);
+    signal psum_out         : array_t(0 to size_x - 1)(fifo_width - 1 downto 0);
 
     signal start_delay : std_logic_vector(fifo_width * 5 - 1 downto 0); /* TODO change start delay */
 
@@ -525,6 +529,14 @@ begin
 
     end generate fifo_psum_out;
 
+    g_psums_valid : for i in 0 to size_x - 1 generate
+
+        valid_psum_out(i)(0) <= valid_psum_out_f(i);
+        psum_out(i) <= dout_psum_out_f(i);
+        rd_en_psum_out_f(i) <= gnt_psum(i);
+
+    end generate g_psums_valid;
+
     mux_psum_out : component mux
         generic map (
             input_width   => data_width_psum,
@@ -532,20 +544,14 @@ begin
             address_width => addr_width_x
         )
         port map (
-            v_i => i_psums,
-            sel => gnt_psum_binary,
+            v_i => psum_out,
+            sel => gnt_psum_binary_d,
             z_o => o_data_psum
         );
 
-    /* TODO Address generator / incrementer for psum output */
-    o_address_psum <= (others => '0');
-
-    g_psums_valid : for i in 0 to size_x - 1 generate
-
-        valid_psum_in(i)(0) <= i_psums_valid(i);
-        rd_en_psum_out_f(i) <= gnt_psum(i);
-
-    end generate g_psums_valid;
+    o_valid_psums_out   <= valid_psum_out_f;
+    o_gnt_psum_binary_d <= gnt_psum_binary_d;
+    o_empty_psum_fifo   <= empty_psum_out_f;
 
     mux_psum_out_valid : component mux
         generic map (
@@ -554,8 +560,8 @@ begin
             address_width => addr_width_x
         )
         port map (
-            v_i    => valid_psum_in,
-            sel    => gnt_psum_binary,
+            v_i    => valid_psum_out,
+            sel    => gnt_psum_binary_d,
             z_o(0) => o_write_en_psum
         );
 
