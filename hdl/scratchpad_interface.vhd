@@ -56,7 +56,7 @@ entity scratchpad_interface is
 
         o_valid_psums_out   : out   std_logic_vector(size_x - 1 downto 0); -- to calculate psum address
         o_gnt_psum_binary_d : out   std_logic_vector(addr_width_x - 1 downto 0);
-        o_empty_psum_fifo   : out   std_logic_vector(size_x - 1 downto 0);   
+        o_empty_psum_fifo   : out   std_logic_vector(size_x - 1 downto 0);
 
         -- Addresses to Scratchpad
         o_address_iact : out   std_logic_vector(addr_width_iact_mem - 1 downto 0);
@@ -532,8 +532,8 @@ begin
     g_psums_valid : for i in 0 to size_x - 1 generate
 
         valid_psum_out(i)(0) <= valid_psum_out_f(i);
-        psum_out(i) <= dout_psum_out_f(i);
-        rd_en_psum_out_f(i) <= gnt_psum(i);
+        psum_out(i)          <= dout_psum_out_f(i);
+        rd_en_psum_out_f(i)  <= gnt_psum(i);
 
     end generate g_psums_valid;
 

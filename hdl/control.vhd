@@ -432,13 +432,11 @@ begin
                         if r_tile_x_counter /= r_tiles_x - 1 then
                             r_tile_x_counter <= r_tile_x_counter + 1;
                         elsif r_tile_y_counter = r_tiles_y then
-
                         else
                             r_tile_c_counter  <= 0;
                             r_tile_x_counter  <= 0;
                             r_command_counter <= 0;
                             r_state           <= s_calculate;
-                            
                         end if;
                     -- Output done, reset psum etc?
                     end if;

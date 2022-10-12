@@ -312,7 +312,7 @@ architecture rtl of accelerator is
 
             o_valid_psums_out   : out   std_logic_vector(size_x - 1 downto 0);
             o_gnt_psum_binary_d : out   std_logic_vector(addr_width_x - 1 downto 0);
-            o_empty_psum_fifo   : out   std_logic_vector(size_x - 1 downto 0);   
+            o_empty_psum_fifo   : out   std_logic_vector(size_x - 1 downto 0);
 
             -- Addresses to Scratchpad
             o_address_iact : out   std_logic_vector(addr_width_iact_mem - 1 downto 0);
@@ -353,15 +353,15 @@ architecture rtl of accelerator is
             size_x    : positive := 5;
             size_y    : positive := 5;
             size_rows : positive := 9;
-    
+
             line_length_iact    : positive := 512;
             addr_width_iact     : positive := 9;
             addr_width_iact_mem : positive := 15;
-    
+
             line_length_psum    : positive := 512;
             addr_width_psum     : positive := 9;
             addr_width_psum_mem : positive := 15;
-    
+
             line_length_wght    : positive := 512;
             addr_width_wght     : positive := 9;
             addr_width_wght_mem : positive := 15
@@ -369,17 +369,17 @@ architecture rtl of accelerator is
         port (
             clk  : in    std_logic;
             rstn : in    std_logic;
-    
+
             start : in    std_logic;
-    
+
             tiles_x : in    integer range 0 to 1023;
-    
+
             i_valid_psum_out    : in    std_logic_vector(size_x - 1 downto 0);
             i_gnt_psum_binary_d : in    std_logic_vector(addr_width_x - 1 downto 0);
             i_command_psum      : in    command_lb_t;
             i_empty_psum_fifo   : in    std_logic_vector(size_x - 1 downto 0);
 
-            o_address_psum : out  std_logic_vector(addr_width_psum_mem - 1 downto 0)
+            o_address_psum : out   std_logic_vector(addr_width_psum_mem - 1 downto 0)
         );
     end component address_generator_psum;
 
@@ -748,7 +748,7 @@ begin
             i_psums_valid            => o_psums_valid
         );
 
-        address_generator_psum_inst: component address_generator_psum
+    address_generator_psum_inst : component address_generator_psum
         generic map (
             size_x              => size_x,
             size_y              => size_y,
@@ -769,7 +769,7 @@ begin
             start               => start_adr,
             tiles_x             => tiles_x,
             i_valid_psum_out    => o_valid_psums_out,
-            i_gnt_psum_binary_d => o_gnt_psum_binary_d, 
+            i_gnt_psum_binary_d => o_gnt_psum_binary_d,
             i_command_psum      => command_psum(0,0),
             i_empty_psum_fifo   => o_empty_psum_fifo,
             o_address_psum      => write_adr_psum

@@ -73,27 +73,27 @@ architecture rtl of scratchpad is
         );
     end component ram_dp_init;
 
-    -- component ram_dp is
-    --     generic (
-    --         addr_width     : positive  := 2;  --! Width of the BRAM addresses
-    --         data_width     : positive  := 6;  --! Width of the data fields in the BRAM
-    --         use_output_reg : std_logic := '0' --! Specifies if the output is buffered in a separate register
-    --     );
-    --     port (
-    --         clk : in    std_logic; --! Clock input
+-- component ram_dp is
+--     generic (
+--         addr_width     : positive  := 2;  --! Width of the BRAM addresses
+--         data_width     : positive  := 6;  --! Width of the data fields in the BRAM
+--         use_output_reg : std_logic := '0' --! Specifies if the output is buffered in a separate register
+--     );
+--     port (
+--         clk : in    std_logic; --! Clock input
 
-    --         wena : in    std_logic;
-    --         --! Write enable for BRAM port A. If set to '1', the value on #dina will be written to position #addra in the RAM.
-    --         wenb : in    std_logic;
-    --         --! Write enable for BRAM port B. If set to '1', the value on #dinb will be written to position #addrb in the RAM.
-    --         addra : in    std_logic_vector(addr_width - 1 downto 0); --! Address input for reading/writing through port A.
-    --         addrb : in    std_logic_vector(addr_width - 1 downto 0); --! Address input for reading/writing through port B.
-    --         dina  : in    std_logic_vector(data_width - 1 downto 0); --! Data to write through port A.
-    --         dinb  : in    std_logic_vector(data_width - 1 downto 0); --! Data to write through port A.
-    --         douta : out   std_logic_vector(data_width - 1 downto 0); --! Outputs the data in the BRAM at #addra
-    --         doutb : out   std_logic_vector(data_width - 1 downto 0)  --! Outputs the data in the BRAM at #addrb
-    --     );
-    -- end component ram_dp;
+--         wena : in    std_logic;
+--         --! Write enable for BRAM port A. If set to '1', the value on #dina will be written to position #addra in the RAM.
+--         wenb : in    std_logic;
+--         --! Write enable for BRAM port B. If set to '1', the value on #dinb will be written to position #addrb in the RAM.
+--         addra : in    std_logic_vector(addr_width - 1 downto 0); --! Address input for reading/writing through port A.
+--         addrb : in    std_logic_vector(addr_width - 1 downto 0); --! Address input for reading/writing through port B.
+--         dina  : in    std_logic_vector(data_width - 1 downto 0); --! Data to write through port A.
+--         dinb  : in    std_logic_vector(data_width - 1 downto 0); --! Data to write through port A.
+--         douta : out   std_logic_vector(data_width - 1 downto 0); --! Outputs the data in the BRAM at #addra
+--         doutb : out   std_logic_vector(data_width - 1 downto 0)  --! Outputs the data in the BRAM at #addrb
+--     );
+-- end component ram_dp;
 
 begin
 
@@ -158,59 +158,58 @@ begin
             doutb => dout_wght
         );
 
-    -- ram_dp_iact: ram_dp
-    --     generic map (
-    --     addr_width     => addr_width_iact,
-    --     data_width     => data_width_iact,
-    --     use_output_reg => '0'
-    --     )
-    --     port map (
-    --     clk   => clk,
-    --     wena  => write_en_iact,
-    --     wenb  => '0',
-    --     addra => write_adr_iact,
-    --     addrb => read_adr_iact,
-    --     dina  => din_iact,
-    --     dinb  => (others => '0'),
-    --     douta => open,
-    --     doutb => dout_iact
-    -- );
+-- ram_dp_iact: ram_dp
+--     generic map (
+--     addr_width     => addr_width_iact,
+--     data_width     => data_width_iact,
+--     use_output_reg => '0'
+--     )
+--     port map (
+--     clk   => clk,
+--     wena  => write_en_iact,
+--     wenb  => '0',
+--     addra => write_adr_iact,
+--     addrb => read_adr_iact,
+--     dina  => din_iact,
+--     dinb  => (others => '0'),
+--     douta => open,
+--     doutb => dout_iact
+-- );
 
-    -- ram_dp_psum: ram_dp
-    --     generic map (
-    --     addr_width     => addr_width_psum,
-    --     data_width     => data_width_psum,
-    --     use_output_reg => '0'
-    --     )
-    --     port map (
-    --     clk   => clk,
-    --     wena  => write_en_psum,
-    --     wenb  => '0',
-    --     addra => write_adr_psum,
-    --     addrb => read_adr_psum,
-    --     dina  => din_psum,
-    --     dinb  => (others => '0'),
-    --     douta => open,
-    --     doutb => dout_psum
-    --     );
+-- ram_dp_psum: ram_dp
+--     generic map (
+--     addr_width     => addr_width_psum,
+--     data_width     => data_width_psum,
+--     use_output_reg => '0'
+--     )
+--     port map (
+--     clk   => clk,
+--     wena  => write_en_psum,
+--     wenb  => '0',
+--     addra => write_adr_psum,
+--     addrb => read_adr_psum,
+--     dina  => din_psum,
+--     dinb  => (others => '0'),
+--     douta => open,
+--     doutb => dout_psum
+--     );
 
-
-    -- ram_dp_wght: ram_dp
-    --     generic map (
-    --     addr_width     => addr_width_wght,
-    --     data_width     => data_width_wght,
-    --     use_output_reg => '0'
-    --     )
-    --     port map (
-    --     clk   => clk,
-    --     wena  => write_en_wght,
-    --     wenb  => '0',
-    --     addra => write_adr_wght,
-    --     addrb => read_adr_wght,
-    --     dina  => din_wght,
-    --     dinb  => (others => '0'),
-    --     douta => open,
-    --     doutb => dout_wght
-    -- );
+-- ram_dp_wght: ram_dp
+--     generic map (
+--     addr_width     => addr_width_wght,
+--     data_width     => data_width_wght,
+--     use_output_reg => '0'
+--     )
+--     port map (
+--     clk   => clk,
+--     wena  => write_en_wght,
+--     wenb  => '0',
+--     addra => write_adr_wght,
+--     addrb => read_adr_wght,
+--     dina  => din_wght,
+--     dinb  => (others => '0'),
+--     douta => open,
+--     doutb => dout_wght
+-- );
 
 end architecture rtl;
