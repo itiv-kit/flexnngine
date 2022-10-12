@@ -181,7 +181,7 @@ test-pe-array-conv-3x3-wide:
         - vsim -c -do "../../ci/simulate.tcl"
         - cd ../..
 
-test-pe-array-conv-5x5:
+pe_array_conv_5x5_channels_tb:
     stage: test_3
     tags:
         - modelsim
@@ -195,12 +195,13 @@ test-pe-array-conv-5x5:
             - hdl/ram_dp.vhd
             - hdl/pe_array.vhd
             - hdl/utilities.vhd
-            - testbenches/pe_array_conv_5x5/src/*
+            - testbenches/pe_array_conv_5x5_channels_size/src/*
             - .gitlab-ci.yml
     before_script:
         - pip3 install numpy
-        - cd ./testbenches/pe_array_conv_5x5/src
+        - cd ./testbenches/pe_array_conv_5x5_channels_size/src
         - python3 stimuli.py
+        - python3 program.py
     script:
         - cd ..
         - source /tools/mentor/set_modelsim_10.6b.sh

@@ -69,12 +69,12 @@ architecture imp of control_conv_tb is
     signal i_data_iact_valid_array : std_logic_vector(size_rows - 1 downto 0);
 
     signal o_buffer_full_psum : std_logic;
-    signal o_buffer_full_iact : std_logic;
-    signal o_buffer_full_wght : std_logic;
+    signal o_buffer_full_iact : std_logic_vector(size_rows - 1 downto 0);
+    signal o_buffer_full_wght : std_logic_vector(size_y - 1 downto 0);
 
-    signal o_buffer_full_next_iact : std_logic;
+    signal o_buffer_full_next_iact : std_logic_vector(size_rows - 1 downto 0);
     signal o_buffer_full_next_psum : std_logic;
-    signal o_buffer_full_next_wght : std_logic;
+    signal o_buffer_full_next_wght : std_logic_vector(size_y - 1 downto 0);
 
     signal update_offset_iact : array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
     signal update_offset_psum : array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
@@ -447,7 +447,7 @@ begin
             if status then
                 if s_wght_x >= g_kernel_size * g_channels * g_tiles_y then
                 -- Done
-                elsif o_buffer_full_wght = '0' then -- o_buffer_full_wght_write then
+                elsif o_buffer_full_wght(0) = '0' then -- o_buffer_full_wght_write then
                     i_data_wght_valid <= (others => '1');
                     i_data_wght(0)    <= std_logic_vector(to_signed(s_input_weights(0, s_wght_x), data_width_wght));
                     i_data_wght(1)    <= std_logic_vector(to_signed(s_input_weights(1, s_wght_x), data_width_wght));
@@ -479,7 +479,7 @@ begin
             if status then
                 if s_x >= g_image_x * g_channels * g_tiles_y then
                 -- Done
-                elsif o_buffer_full_iact = '0' then -- o_buffer_full_iact_write then
+                elsif o_buffer_full_iact(0) = '0' then -- o_buffer_full_iact_write then
                     i_data_iact_valid <= (others => '1');
                     i_data_iact(0)    <= std_logic_vector(to_signed(s_input_image(0, s_x), data_width_iact));
                     i_data_iact(1)    <= std_logic_vector(to_signed(s_input_image(1, s_x), data_width_iact));
