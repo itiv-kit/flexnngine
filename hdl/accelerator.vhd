@@ -14,18 +14,18 @@ entity accelerator is
         addr_width_x    : positive := 3;
 
         data_width_iact     : positive := 8; -- Width of the input data (weights, iacts)
-        line_length_iact    : positive := 32;
-        addr_width_iact     : positive := 5;
+        line_length_iact    : positive := 512;
+        addr_width_iact     : positive := 9;
         addr_width_iact_mem : positive := 15;
 
         data_width_psum     : positive := 16; -- or 17??
-        line_length_psum    : positive := 127;
-        addr_width_psum     : positive := 7;
+        line_length_psum    : positive := 1024;
+        addr_width_psum     : positive := 10;
         addr_width_psum_mem : positive := 15;
 
         data_width_wght     : positive := 8;
-        line_length_wght    : positive := 32;
-        addr_width_wght     : positive := 5;
+        line_length_wght    : positive := 512;
+        addr_width_wght     : positive := 9;
         addr_width_wght_mem : positive := 15;
 
         fifo_width : positive := 16;
@@ -310,6 +310,10 @@ architecture rtl of accelerator is
             o_fifo_iact_address_full : out   std_logic;
             o_fifo_wght_address_full : out   std_logic;
 
+            o_valid_psums_out   : out   std_logic_vector(size_x - 1 downto 0);
+            o_gnt_psum_binary_d : out   std_logic_vector(addr_width_x - 1 downto 0);
+            o_empty_psum_fifo   : out   std_logic_vector(size_x - 1 downto 0);   
+
             -- Addresses to Scratchpad
             o_address_iact : out   std_logic_vector(addr_width_iact_mem - 1 downto 0);
             o_address_wght : out   std_logic_vector(addr_width_wght_mem - 1 downto 0);
@@ -317,7 +321,6 @@ architecture rtl of accelerator is
             o_address_iact_valid : out   std_logic;
             o_address_wght_valid : out   std_logic;
 
-            o_address_psum  : out   std_logic_vector(addr_width_psum_mem - 1 downto 0);
             o_write_en_psum : out   std_logic;
             o_data_psum     : out   std_logic_vector(data_width_psum - 1 downto 0);
 
@@ -344,6 +347,41 @@ architecture rtl of accelerator is
             i_psums_valid : in    std_logic_vector(size_x - 1 downto 0)
         );
     end component scratchpad_interface;
+
+    component address_generator_psum is
+        generic (
+            size_x    : positive := 5;
+            size_y    : positive := 5;
+            size_rows : positive := 9;
+    
+            line_length_iact    : positive := 512;
+            addr_width_iact     : positive := 9;
+            addr_width_iact_mem : positive := 15;
+    
+            line_length_psum    : positive := 512;
+            addr_width_psum     : positive := 9;
+            addr_width_psum_mem : positive := 15;
+    
+            line_length_wght    : positive := 512;
+            addr_width_wght     : positive := 9;
+            addr_width_wght_mem : positive := 15
+        );
+        port (
+            clk  : in    std_logic;
+            rstn : in    std_logic;
+    
+            start : in    std_logic;
+    
+            tiles_x : in    integer range 0 to 1023;
+    
+            i_valid_psum_out    : in    std_logic_vector(size_x - 1 downto 0);
+            i_gnt_psum_binary_d : in    std_logic_vector(addr_width_x - 1 downto 0);
+            i_command_psum      : in    command_lb_t;
+            i_empty_psum_fifo   : in    std_logic_vector(size_x - 1 downto 0);
+
+            o_address_psum : out  std_logic_vector(addr_width_psum_mem - 1 downto 0)
+        );
+    end component address_generator_psum;
 
     signal i_preload_psum       : std_logic_vector(data_width_psum - 1 downto 0);
     signal i_preload_psum_valid : std_logic;
@@ -435,6 +473,10 @@ architecture rtl of accelerator is
 
     signal o_fifo_iact_address_full : std_logic;
     signal o_fifo_wght_address_full : std_logic;
+
+    signal o_valid_psums_out   : std_logic_vector(size_x - 1 downto 0);
+    signal o_gnt_psum_binary_d : std_logic_vector(addr_width_x - 1 downto 0);
+    signal o_empty_psum_fifo   : std_logic_vector(size_x - 1 downto 0);
 
     signal address_iact       : array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
     signal address_wght       : array_t(0 to size_y - 1)(addr_width_wght_mem - 1 downto 0);
@@ -683,11 +725,13 @@ begin
             i_address_wght_valid     => address_wght_valid,
             o_fifo_iact_address_full => o_fifo_iact_address_full,
             o_fifo_wght_address_full => o_fifo_wght_address_full,
+            o_valid_psums_out        => o_valid_psums_out,
+            o_gnt_psum_binary_d      => o_gnt_psum_binary_d,
+            o_empty_psum_fifo        => o_empty_psum_fifo,
             o_address_iact           => read_adr_iact,
             o_address_wght           => read_adr_wght,
             o_address_iact_valid     => read_en_iact,
             o_address_wght_valid     => read_en_wght,
-            o_address_psum           => write_adr_psum,
             o_write_en_psum          => write_en_psum,
             o_data_psum              => din_psum,
             i_data_iact              => dout_iact,
@@ -702,6 +746,33 @@ begin
             i_buffer_full_wght       => o_buffer_full_next_wght,
             i_psums                  => o_psums,
             i_psums_valid            => o_psums_valid
+        );
+
+        address_generator_psum_inst: component address_generator_psum
+        generic map (
+            size_x              => size_x,
+            size_y              => size_y,
+            size_rows           => size_rows,
+            line_length_iact    => line_length_iact,
+            addr_width_iact     => addr_width_iact,
+            addr_width_iact_mem => addr_width_iact_mem,
+            line_length_psum    => line_length_psum,
+            addr_width_psum     => addr_width_psum,
+            addr_width_psum_mem => addr_width_psum_mem,
+            line_length_wght    => line_length_wght,
+            addr_width_wght     => addr_width_wght,
+            addr_width_wght_mem => addr_width_wght_mem
+        )
+        port map (
+            clk                 => clk_sp,
+            rstn                => rstn,
+            start               => start_adr,
+            tiles_x             => tiles_x,
+            i_valid_psum_out    => o_valid_psums_out,
+            i_gnt_psum_binary_d => o_gnt_psum_binary_d, 
+            i_command_psum      => command_psum(0,0),
+            i_empty_psum_fifo   => o_empty_psum_fifo,
+            o_address_psum      => write_adr_psum
         );
 
 end architecture rtl;

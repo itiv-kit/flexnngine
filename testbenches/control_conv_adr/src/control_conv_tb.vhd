@@ -146,29 +146,9 @@ architecture imp of control_conv_tb is
 
     -- INPUT IMAGE, FILTER WEIGTHS AND EXPECTED OUTPUT
 
-    /*signal s_input_image     : int_image3_t(0 to g_channels - 1, 0 to g_image_y - 1, 0 to g_image_x - 1);         
-    signal s_input_weights   : int_image3_t(0 to g_channels - 1, 0 to g_kernel_size - 1, 0 to g_kernel_size - 1);      */
-    signal s_input_image     : int_image_t(0 to size_rows - 1, 0 to g_image_x * g_channels * g_tiles_y - 1);           -- 2, because two tile_y
-    signal s_input_weights   : int_image_t(0 to g_kernel_size - 1, 0 to g_kernel_size * g_channels * g_tiles_y - 1);   -- not *2 because kernel stays the same across tile_y
+    signal s_input_image     : int_image_t(0 to size_rows - 1, 0 to g_image_x * g_channels * g_tiles_y - 1);         -- 2, because two tile_y
+    signal s_input_weights   : int_image_t(0 to g_kernel_size - 1, 0 to g_kernel_size * g_channels * g_tiles_y - 1); -- not *2 because kernel stays the same across tile_y
     signal s_expected_output : int_image_t(0 to g_image_y - g_kernel_size, 0 to g_image_x - g_kernel_size);
-
-    /* TODO not g_channels but tiled channel size */
-
-    /*procedure incr (signal pointer_y : inout integer; signal pointer_x : inout integer; signal pointer_c : inout integer) is
-    begin
-
-        if pointer_x = g_image_x - 1 and pointer_c = g_channels - 1 then
-            pointer_c <= 0;
-            pointer_x <= 0;
-            pointer_y <= pointer_y + g_kernel_size;
-        elsif pointer_c = g_channels - 1 then
-            pointer_c <= 0;
-            pointer_x <= pointer_x + 1;
-        else
-            pointer_c <= pointer_c + 1;
-        end if;
-
-    end procedure;    */
 
     procedure incr (signal s_y : inout integer; signal s_x : inout integer; signal s_c : out integer; signal s_c0 : inout integer; variable s_tile_c : inout integer) is
     begin
@@ -191,24 +171,6 @@ architecture imp of control_conv_tb is
         s_c <= s_tile_c * c_per_tile + s_c0;
 
     end procedure;
-
-    /* TODO not g_channels but tiled channel size */
-
-    /*procedure incr_wght (signal pointer_y : inout integer; signal pointer_x : inout integer; signal pointer_c : inout integer) is
-    begin
-
-        if pointer_x = g_kernel_size - 1 and pointer_c = g_channels - 1 then
-            pointer_c <= 0;
-            pointer_x <= 0;
-            pointer_y <= pointer_y + g_kernel_size;
-        elsif pointer_c = g_channels - 1 then
-            pointer_c <= 0;
-            pointer_x <= pointer_x + 1;
-        else
-            pointer_c <= pointer_c + 1;
-        end if;
-
-    end procedure;    */
 
     procedure incr_wght (signal s_wght_y : inout integer; signal s_wght_x : inout integer; signal s_wght_c : out integer; signal s_wght_c0 : inout integer; variable s_wght_tile_c : inout integer) is
     begin

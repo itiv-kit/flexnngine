@@ -2139,7 +2139,7 @@
     "constant_012": {
       "align_left": "no",
       "align_paren": "yes",
-      "disable": false,
+      "disable": true,
       "fixable": false,
       "indentSize": 4,
       "phase": 5,
@@ -2174,7 +2174,7 @@
     "constant_016": {
       "assign_on_single_line": "yes",
       "close_paren_new_line": "yes",
-      "disable": false,
+      "disable": true,
       "first_paren_new_line": "yes",
       "fixable": false,
       "ignore_single_line": "yes",
@@ -6587,7 +6587,7 @@
       "severity": "Error"
     },
     "whitespace_004": {
-      "disable": false,
+      "disable": true,
       "fixable": false,
       "indentSize": 4,
       "phase": 2,
@@ -6608,7 +6608,7 @@
       "severity": "Error"
     },
     "whitespace_007": {
-      "disable": false,
+      "disable": true,
       "fixable": false,
       "indentSize": 4,
       "number_of_spaces": ">=1",

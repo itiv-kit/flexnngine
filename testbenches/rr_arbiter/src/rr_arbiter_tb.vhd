@@ -53,11 +53,11 @@ architecture imp of rr_arbiter_tb is
 
 begin
 
-    clk  <= not clk after PERIOD / 2;
-    rstn <= '1' after  PERIOD * 10;
+    clk  <= not clk after period / 2;
+    rstn <= '1' after  period * 10;
 
     -- Main simulation process
-    process is
+    stimuli : process is
     begin
 
         req <= "000000";
@@ -79,7 +79,7 @@ begin
         req <= "111111";
         wait until rising_edge(clk);
 
-        for I in 0 to 7 loop
+        for i in 0 to 7 loop
 
             wait until (rising_edge(clk));
 
@@ -87,7 +87,7 @@ begin
 
         req <= "111110";
 
-        for I in 0 to 3 loop
+        for i in 0 to 3 loop
 
             wait until (rising_edge(clk));
 
@@ -95,7 +95,7 @@ begin
 
         req <= "111111";
 
-        for I in 0 to 8 loop
+        for i in 0 to 8 loop
 
             wait until (rising_edge(clk));
 
@@ -103,7 +103,7 @@ begin
 
         req <= "000000";
 
-        for I in 0 to 3 loop
+        for i in 0 to 3 loop
 
             wait until (rising_edge(clk));
 
@@ -111,7 +111,7 @@ begin
 
         req <= "000001";
 
-        for I in 0 to 3 loop
+        for i in 0 to 3 loop
 
             wait until (rising_edge(clk));
 
@@ -119,7 +119,7 @@ begin
 
         req <= "110000";
 
-        for I in 0 to 3 loop
+        for i in 0 to 3 loop
 
             wait until (rising_edge(clk));
 
@@ -127,7 +127,7 @@ begin
 
         req <= "001100";
 
-        for I in 0 to 3 loop
+        for i in 0 to 3 loop
 
             wait until (rising_edge(clk));
 
@@ -135,7 +135,7 @@ begin
 
         req <= "110000";
 
-        for I in 0 to 10 loop
+        for i in 0 to 10 loop
 
             wait until (rising_edge(clk));
 
@@ -143,7 +143,7 @@ begin
 
         req <= "000000";
 
-        for I in 0 to 3 loop
+        for i in 0 to 3 loop
 
             wait until (rising_edge(clk));
 
@@ -151,7 +151,7 @@ begin
 
         req <= "111000";
 
-        for I in 0 to 15 loop
+        for i in 0 to 15 loop
 
             wait until (rising_edge(clk));
 
@@ -159,7 +159,7 @@ begin
 
         req <= "000000";
 
-        for I in 0 to 3 loop
+        for i in 0 to 3 loop
 
             wait until (rising_edge(clk));
 
@@ -167,7 +167,7 @@ begin
 
         req <= "100000";
 
-        for I in 0 to 15 loop
+        for i in 0 to 15 loop
 
             wait until (rising_edge(clk));
 
@@ -175,7 +175,7 @@ begin
 
         req <= "000000";
 
-        for I in 0 to 3 loop
+        for i in 0 to 3 loop
 
             wait until (rising_edge(clk));
 
@@ -183,10 +183,10 @@ begin
 
         endsim <= true;
 
-    end process;
+    end process stimuli;
 
     -- End the simulation
-    process is
+    end_sim : process is
     begin
 
         if endsim then
@@ -195,7 +195,7 @@ begin
 
         wait until (rising_edge(clk));
 
-    end process;
+    end process end_sim;
 
     rr_arbiter_inst : component rr_arbiter
         generic map (

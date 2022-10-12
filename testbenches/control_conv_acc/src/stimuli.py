@@ -3,7 +3,7 @@ import math
 
 kernel_size = 5
 image_size = 14
-channels = 5
+channels = 10
 input_bits = 3
 
 line_length_wght = 32

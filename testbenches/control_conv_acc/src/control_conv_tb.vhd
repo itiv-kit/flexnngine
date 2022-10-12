@@ -37,7 +37,7 @@ entity control_conv_tb is
 
         fifo_width : positive := 16;
 
-        g_channels    : positive := 5;
+        g_channels    : positive := 10;
         g_image_y     : positive := 14;
         g_image_x     : positive := 14;
         g_kernel_size : positive := 5;
