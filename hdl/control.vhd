@@ -20,42 +20,42 @@ entity control is
         clk  : in    std_logic;
         rstn : in    std_logic;
 
-        status     : out   std_logic;
-        start      : in    std_logic;
-        start_init : in    std_logic;
+        o_status     : out   std_logic;
+        i_start      : in    std_logic;
+        i_start_init : in    std_logic;
 
-        tiles_c : out   integer range 0 to 1023;
-        tiles_x : out   integer range 0 to 1023;
-        tiles_y : out   integer range 0 to 1023;
+        o_tiles_c : out   integer range 0 to 1023;
+        o_tiles_x : out   integer range 0 to 1023;
+        o_tiles_y : out   integer range 0 to 1023;
 
-        c_per_tile  : out   integer range 0 to 1023;
-        c_last_tile : out   integer range 0 to 1023;
+        o_c_per_tile  : out   integer range 0 to 1023;
+        o_c_last_tile : out   integer range 0 to 1023;
 
-        image_x : in    integer range 0 to 1023; --! size of input image
-        image_y : in    integer range 0 to 1023; --! size of input image
+        i_image_x : in    integer range 0 to 1023; --! size of input image
+        i_image_y : in    integer range 0 to 1023; --! size of input image
 
-        channels : in    integer range 0 to 4095; -- Number of input channels the image and kernels have
+        i_channels : in    integer range 0 to 4095; -- Number of input channels the image and kernels have
 
-        kernel_size : in    integer range 0 to 32;
+        i_kernel_size : in    integer range 0 to 32;
 
-        command      : out   command_pe_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-        command_iact : out   command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-        command_psum : out   command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-        command_wght : out   command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
+        o_command      : out   command_pe_row_col_t(0 to size_y - 1, 0 to size_x - 1);
+        o_command_iact : out   command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
+        o_command_psum : out   command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
+        o_command_wght : out   command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
 
-        update_offset_iact : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
-        update_offset_psum : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
-        update_offset_wght : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
+        o_update_offset_iact : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
+        o_update_offset_psum : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
+        o_update_offset_wght : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
 
-        read_offset_iact : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
-        read_offset_psum : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
-        read_offset_wght : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0)
+        o_read_offset_iact : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
+        o_read_offset_psum : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
+        o_read_offset_wght : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0)
     );
 end entity control;
 
 architecture rtl of control is
 
-    signal r_startup_done : std_logic;
+    signal w_startup_done : std_logic;
 
     signal r_command_counter : integer; -- range 0 to 511
     signal r_tile_c_counter  : integer range 0 to 1023;
@@ -103,26 +103,26 @@ architecture rtl of control is
     signal r_read_offset_psum   : array_t(0 to size_y)(addr_width_psum - 1 downto 0);
     signal r_update_offset_psum : array_t(0 to size_y)(addr_width_psum - 1 downto 0);
 
-    signal mux_read_offset_psum   : array_t(0 to size_y)(addr_width_psum - 1 downto 0);
-    signal mux_update_offset_psum : array_t(0 to size_y)(addr_width_psum - 1 downto 0);
-    signal mux_command_psum       : command_lb_array_t(0 to size_y);
+    signal w_mux_read_offset_psum   : array_t(0 to size_y)(addr_width_psum - 1 downto 0);
+    signal w_mux_update_offset_psum : array_t(0 to size_y)(addr_width_psum - 1 downto 0);
+    signal w_mux_command_psum       : command_lb_array_t(0 to size_y);
 
     signal r_command : command_pe_array_t(0 to size_y);
 
     -- delay and tmp values for calculation of init value: r_commands_last_tile_c
     signal r_delay_init : integer range 0 to 15;
-    signal tmp1         : integer range 0 to 1023;
-    signal tmp2         : integer range 0 to 1023;
-    signal tmp3         : integer range 0 to 1023;
+    signal r_tmp1       : integer range 0 to 1023;
+    signal r_tmp2       : integer range 0 to 1023;
+    signal r_tmp3       : integer range 0 to 1023;
 
 begin
 
-    c_last_tile <= r_c_last_tile;
-    c_per_tile  <= r_c_per_tile;
+    o_c_last_tile <= r_c_last_tile;
+    o_c_per_tile  <= r_c_per_tile;
 
-    tiles_c <= r_tiles_c;
-    tiles_x <= r_tiles_x;
-    tiles_y <= r_tiles_y;
+    o_tiles_c <= r_tiles_c;
+    o_tiles_x <= r_tiles_x;
+    o_tiles_y <= r_tiles_y;
 
     r_command_psum_d       <= r_command_psum when rising_edge(clk);
     r_read_offset_psum_d   <= r_read_offset_psum when rising_edge(clk);
@@ -143,21 +143,21 @@ begin
 
             when s_output =>
 
-                mux_read_offset_psum   <= r_read_offset_psum_d;
-                mux_update_offset_psum <= r_update_offset_psum_d;
-                mux_command_psum       <= r_command_psum_d;
+                w_mux_read_offset_psum   <= r_read_offset_psum_d;
+                w_mux_update_offset_psum <= r_update_offset_psum_d;
+                w_mux_command_psum       <= r_command_psum_d;
 
             when s_calculate =>
 
-                mux_read_offset_psum   <= r_read_offset_psum;
-                mux_update_offset_psum <= r_update_offset_psum;
-                mux_command_psum       <= r_command_psum_d;
+                w_mux_read_offset_psum   <= r_read_offset_psum;
+                w_mux_update_offset_psum <= r_update_offset_psum;
+                w_mux_command_psum       <= r_command_psum_d;
 
             when s_tile_c_change =>
 
-                mux_read_offset_psum   <= r_read_offset_psum_d;
-                mux_update_offset_psum <= r_update_offset_psum_d;
-                mux_command_psum       <= r_command_psum_d;
+                w_mux_read_offset_psum   <= r_read_offset_psum_d;
+                w_mux_update_offset_psum <= r_update_offset_psum_d;
+                w_mux_command_psum       <= r_command_psum_d;
 
         end case;
 
@@ -169,35 +169,35 @@ begin
 
             gen_00 : if x = 0 generate
 
-                command(y, 0) <= r_command(y) when rising_edge(clk);
+                o_command(y, 0) <= r_command(y) when rising_edge(clk);
 
-                command_iact(y, 0) <= r_command_iact(y) when rising_edge(clk);
-                command_wght(y, 0) <= r_command_wght(y) when rising_edge(clk);
-                command_psum(y, 0) <= mux_command_psum(y) when rising_edge(clk);
+                o_command_iact(y, 0) <= r_command_iact(y) when rising_edge(clk);
+                o_command_wght(y, 0) <= r_command_wght(y) when rising_edge(clk);
+                o_command_psum(y, 0) <= w_mux_command_psum(y) when rising_edge(clk);
 
-                update_offset_iact(y, 0) <= r_update_offset_iact(y) when rising_edge(clk);
-                update_offset_wght(y, 0) <= r_update_offset_wght(y) when rising_edge(clk);
-                update_offset_psum(y, 0) <= mux_update_offset_psum(y) when rising_edge(clk);
+                o_update_offset_iact(y, 0) <= r_update_offset_iact(y) when rising_edge(clk);
+                o_update_offset_wght(y, 0) <= r_update_offset_wght(y) when rising_edge(clk);
+                o_update_offset_psum(y, 0) <= w_mux_update_offset_psum(y) when rising_edge(clk);
 
-                read_offset_iact(y, 0) <= r_read_offset_iact(y) when rising_edge(clk);
-                read_offset_wght(y, 0) <= r_read_offset_wght(y) when rising_edge(clk);
-                read_offset_psum(y, 0) <= mux_read_offset_psum(y) when rising_edge(clk);
+                o_read_offset_iact(y, 0) <= r_read_offset_iact(y) when rising_edge(clk);
+                o_read_offset_wght(y, 0) <= r_read_offset_wght(y) when rising_edge(clk);
+                o_read_offset_psum(y, 0) <= w_mux_read_offset_psum(y) when rising_edge(clk);
 
             end generate gen_00;
 
-            command(y, x + 1) <= command(y, x) when rising_edge(clk);
+            o_command(y, x + 1) <= o_command(y, x) when rising_edge(clk);
 
-            command_iact(y, x + 1) <= command_iact(y, x) when rising_edge(clk);
-            command_psum(y, x + 1) <= command_psum(y, x) when rising_edge(clk);
-            command_wght(y, x + 1) <= command_wght(y, x) when rising_edge(clk);
+            o_command_iact(y, x + 1) <= o_command_iact(y, x) when rising_edge(clk);
+            o_command_psum(y, x + 1) <= o_command_psum(y, x) when rising_edge(clk);
+            o_command_wght(y, x + 1) <= o_command_wght(y, x) when rising_edge(clk);
 
-            update_offset_iact(y, x + 1) <= update_offset_iact(y, x) when rising_edge(clk);
-            update_offset_wght(y, x + 1) <= update_offset_wght(y, x) when rising_edge(clk);
-            update_offset_psum(y, x + 1) <= update_offset_psum(y, x) when rising_edge(clk);
+            o_update_offset_iact(y, x + 1) <= o_update_offset_iact(y, x) when rising_edge(clk);
+            o_update_offset_wght(y, x + 1) <= o_update_offset_wght(y, x) when rising_edge(clk);
+            o_update_offset_psum(y, x + 1) <= o_update_offset_psum(y, x) when rising_edge(clk);
 
-            read_offset_iact(y, x + 1) <= read_offset_iact(y, x) when rising_edge(clk);
-            read_offset_wght(y, x + 1) <= read_offset_wght(y, x) when rising_edge(clk);
-            read_offset_psum(y, x + 1) <= read_offset_psum(y, x) when rising_edge(clk);
+            o_read_offset_iact(y, x + 1) <= o_read_offset_iact(y, x) when rising_edge(clk);
+            o_read_offset_wght(y, x + 1) <= o_read_offset_wght(y, x) when rising_edge(clk);
+            o_read_offset_psum(y, x + 1) <= o_read_offset_psum(y, x) when rising_edge(clk);
 
         end generate gen_delay_x;
 
@@ -262,12 +262,12 @@ begin
             r_commands_per_tile      <= 0;
             r_commands_per_tile_done <= '0';
         elsif rising_edge(clk) then
-            if start_init and not r_commands_per_tile_done then
-                r_commands_per_tile <= r_commands_per_tile + kernel_size;
+            if i_start_init and not r_commands_per_tile_done then
+                r_commands_per_tile <= r_commands_per_tile + i_kernel_size;
                 r_c_per_tile        <= r_c_per_tile + 1;
                 if r_commands_per_tile > line_length_wght then
                     -- Commands per tile determined
-                    r_commands_per_tile      <= r_commands_per_tile - kernel_size;
+                    r_commands_per_tile      <= r_commands_per_tile - i_kernel_size;
                     r_c_per_tile             <= r_c_per_tile - 1;
                     r_commands_per_tile_done <= '1';
                 else
@@ -290,14 +290,14 @@ begin
             if r_commands_per_tile_done and not r_tiling_c_done then
                 r_tiles_c_tmp <= r_tiles_c_tmp + r_commands_per_tile;
 
-                if r_tiles_c_tmp >= kernel_size * channels then
+                if r_tiles_c_tmp >= i_kernel_size * i_channels then
                     -- Tiling done
                     r_delay_init           <= r_delay_init + 1;
-                    tmp1                   <= kernel_size * channels;
-                    tmp2                   <= r_tiles_c - 1;
-                    tmp3                   <= tmp2 * r_commands_per_tile;
-                    r_commands_last_tile_c <= tmp1 - tmp3;
-                    r_c_last_tile          <= r_commands_last_tile_c / kernel_size;
+                    r_tmp1                 <= i_kernel_size * i_channels;
+                    r_tmp2                 <= r_tiles_c - 1;
+                    r_tmp3                 <= r_tmp2 * r_commands_per_tile;
+                    r_commands_last_tile_c <= r_tmp1 - r_tmp3;
+                    r_c_last_tile          <= r_commands_last_tile_c / i_kernel_size;
                     -- r_commands_last_tile_c <= kernel_size * channels - ((r_tiles_c - 1) * r_commands_per_tile);
                     if r_delay_init = 5 then
                         r_tiling_c_done <= '1';
@@ -319,12 +319,12 @@ begin
             r_tiles_y_last_tile_rows <= 0;
             r_tiling_y_done          <= '0';
         elsif rising_edge(clk) then
-            if start_init and not r_tiling_y_done then
+            if i_start_init and not r_tiling_y_done then
                 r_tiles_y_tmp <= r_tiles_y_tmp + size_x;
 
-                if r_tiles_y_tmp >= (image_y - 2 * kernel_size + 2) then
+                if r_tiles_y_tmp >= (i_image_y - 2 * i_kernel_size + 2) then
                     -- Tiling done
-                    r_tiles_y_last_tile_rows <= r_tiles_y_tmp - (image_y - 2 * kernel_size + 1);
+                    r_tiles_y_last_tile_rows <= r_tiles_y_tmp - (i_image_y - 2 * i_kernel_size + 1);
                     r_tiling_y_done          <= '1';
                 else
                     r_tiles_y <= r_tiles_y + 1;
@@ -334,10 +334,10 @@ begin
 
     end process p_init_tiles_y;
 
-    r_startup_done <= '1' when r_tiling_c_done and r_tiling_y_done else
+    w_startup_done <= '1' when r_tiling_c_done and r_tiling_y_done else
                       '0';
 
-    status <= r_startup_done;
+    o_status <= w_startup_done;
 
     p_init : process (clk, rstn) is
     begin
@@ -345,7 +345,7 @@ begin
         if not rstn then
             r_tiles_x <= 0;
         elsif rising_edge(clk) then
-            r_tiles_x <= image_x - kernel_size + 1;
+            r_tiles_x <= i_image_x - i_kernel_size + 1;
         end if;
 
     end process p_init;
@@ -363,7 +363,7 @@ begin
             r_tile_change_c   <= '0';
             r_state           <= s_calculate;
         elsif rising_edge(clk) then
-            if r_startup_done = '1' and start = '1' then
+            if w_startup_done = '1' and i_start = '1' then
                 if r_state = s_calculate then
                     r_tile_change_x <= '0';
                     r_tile_change_c <= '0';
@@ -471,7 +471,7 @@ begin
         elsif rising_edge(clk) then
             r_update_offset_iact <= (others => (others => '0'));
 
-            if r_startup_done = '1' and start = '1' then
+            if w_startup_done = '1' and i_start = '1' then
                 if r_state = s_calculate then
                     if r_tile_change_x = '1' then
                         -- Tile x change
@@ -503,7 +503,7 @@ begin
 
                     if r_tile_x_counter = 0 then
                         r_command_iact     <= (others => c_lb_shrink);
-                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned(kernel_size * r_c_per_tile - r_c_per_tile, addr_width_iact)));
+                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * r_c_per_tile - r_c_per_tile, addr_width_iact)));
                     end if;
                 elsif r_state = s_output then
                     r_command_iact     <= (others => c_lb_idle);
@@ -512,10 +512,10 @@ begin
                     if r_command_counter = size_y and r_tile_x_counter = 0 then
                         if r_tiles_c > 1 then
                             r_command_iact     <= (others => c_lb_shrink);
-                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(kernel_size * c_last_tile - c_last_tile, addr_width_iact)));
+                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * o_c_last_tile - o_c_last_tile, addr_width_iact)));
                         else
                             r_command_iact     <= (others => c_lb_shrink);
-                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(kernel_size * channels - channels, addr_width_iact)));
+                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * i_channels - i_channels, addr_width_iact)));
                         end if;
                     end if;
                 end if;
@@ -534,7 +534,7 @@ begin
         elsif rising_edge(clk) then
             r_update_offset_wght <= (others => (others => '0'));
 
-            if r_startup_done = '1' and start = '1' then
+            if w_startup_done = '1' and i_start = '1' then
                 if r_state = s_calculate then
                     if r_tile_change_x = '1' then
                         -- Tile x change
@@ -543,7 +543,7 @@ begin
                     elsif r_tile_change_c then
                         -- Tile c change
                         r_command_wght     <= (others => c_lb_idle);
-                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(channels, addr_width_wght))); -- std_logic_vector(to_unsigned(111, addr_width_iact));
+                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_channels, addr_width_wght))); -- std_logic_vector(to_unsigned(111, addr_width_iact));
                     elsif r_tile_x_counter = r_tiles_x then
                         -- Tile y change
 
@@ -559,7 +559,7 @@ begin
 
                     if r_tile_x_counter = 0 then
                         r_command_wght     <= (others => c_lb_shrink);
-                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(kernel_size * c_per_tile, addr_width_wght)));
+                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_kernel_size * o_c_per_tile, addr_width_wght)));
                     end if;
                 elsif r_state = s_output then
                     r_command_wght <= (others => c_lb_idle);
@@ -567,7 +567,7 @@ begin
                     if r_tiles_c > 1 then
                         if r_command_counter = size_y and r_tile_x_counter = 0 then
                             r_command_wght     <= (others => c_lb_shrink);
-                            r_read_offset_wght <= (others => std_logic_vector(to_unsigned(kernel_size * c_last_tile, addr_width_wght)));
+                            r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_kernel_size * o_c_last_tile, addr_width_wght)));
                         end if;
                     end if;
                 end if;
@@ -584,7 +584,7 @@ begin
             r_read_offset_psum   <= (others => (others => '0'));
             r_update_offset_psum <= (others => (others => '0'));
         elsif rising_edge(clk) then
-            if r_startup_done = '1' and start = '1' then
+            if w_startup_done = '1' and i_start = '1' then
                 if r_state = s_calculate then
                     if r_tile_change_x = '1' then
                         -- Tile x change
@@ -620,7 +620,7 @@ begin
                         -- Remove all stored psums, new tile
                         if r_tile_x_counter = 0 then
                             r_command_psum     <= (others => c_lb_shrink);
-                            r_read_offset_psum <= (others => std_logic_vector(to_unsigned(image_x - kernel_size + 1, addr_width_psum)));
+                            r_read_offset_psum <= (others => std_logic_vector(to_unsigned(i_image_x - i_kernel_size + 1, addr_width_psum)));
                         end if;
                     else
                         r_command_psum(size_y - r_command_counter - 1) <= c_lb_read;

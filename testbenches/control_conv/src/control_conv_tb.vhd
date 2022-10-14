@@ -55,18 +55,18 @@ begin
             addr_width_wght  => addr_width_wght
         )
         port map (
-            clk          => clk,
-            rstn         => rstn,
-            status       => status,
-            start        => start,
-            image_x      => image_x,
-            image_y      => image_y,
-            channels     => channels,
-            kernel_size  => kernel_size,
-            command      => command,
-            command_iact => command_iact,
-            command_psum => command_psum,
-            command_wght => command_wght
+            clk            => clk,
+            rstn           => rstn,
+            o_status       => status,
+            i_start        => start,
+            i_image_x      => image_x,
+            i_image_y      => image_y,
+            i_channels     => channels,
+            i_kernel_size  => kernel_size,
+            o_command      => command,
+            o_command_iact => command_iact,
+            o_command_psum => command_psum,
+            o_command_wght => command_wght
         );
 
     rstn_gen : process is

@@ -21,14 +21,14 @@ architecture rtl of mac_tb is
             output_width : positive := output_width
         );
         port (
-            clk          : in    std_logic;
-            en           : in    std_logic;
-            rstn         : in    std_logic;
-            data_in_a    : in    std_logic_vector(input_width - 1 downto 0);
-            data_in_w    : in    std_logic_vector(input_width - 1 downto 0);
-            data_in_acc  : in    std_logic_vector(acc_width - 1 downto 0);
-            result       : out   std_logic_vector(output_width - 1 downto 0);
-            result_valid : out   std_logic
+            clk            : in    std_logic;
+            rstn           : in    std_logic;
+            i_en           : in    std_logic;
+            i_data_a       : in    std_logic_vector(input_width - 1 downto 0);
+            i_data_w       : in    std_logic_vector(input_width - 1 downto 0);
+            i_data_acc     : in    std_logic_vector(acc_width - 1 downto 0);
+            o_result       : out   std_logic_vector(output_width - 1 downto 0);
+            o_result_valid : out   std_logic
         );
     end component;
 
@@ -101,14 +101,14 @@ begin
             output_width => output_width
         )
         port map (
-            clk          => clk,
-            en           => en,
-            rstn         => rstn,
-            data_in_a    => data_in_a,
-            data_in_w    => data_in_w,
-            data_in_acc  => data_in_acc,
-            result       => result,
-            result_valid => result_valid
+            clk            => clk,
+            rstn           => rstn,
+            i_en           => en,
+            i_data_a       => data_in_a,
+            i_data_w       => data_in_w,
+            i_data_acc     => data_in_acc,
+            o_result       => result,
+            o_result_valid => result_valid
         );
 
     -- Clock generation

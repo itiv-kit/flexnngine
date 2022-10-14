@@ -31,17 +31,17 @@ architecture imp of line_buffer_wght_tb is
             data_width  : positive := 8
         );
         port (
-            clk            : in    std_logic;
-            rstn           : in    std_logic;
-            data_in        : in    std_logic_vector(data_width - 1 downto 0);
-            data_in_valid  : in    std_logic;
-            data_out       : out   std_logic_vector(data_width - 1 downto 0);
-            data_out_valid : out   std_logic;
-            buffer_full    : out   std_logic;
-            update_val     : in    std_logic_vector(data_width - 1 downto 0);
-            update_offset  : in    std_logic_vector(addr_width - 1 downto 0);
-            read_offset    : in    std_logic_vector(addr_width - 1 downto 0);
-            command        : in    command_lb_t
+            clk             : in    std_logic;
+            rstn            : in    std_logic;
+            i_data          : in    std_logic_vector(data_width - 1 downto 0);
+            i_data_valid    : in    std_logic;
+            o_data          : out   std_logic_vector(data_width - 1 downto 0);
+            o_data_valid    : out   std_logic;
+            o_buffer_full   : out   std_logic;
+            i_update_val    : in    std_logic_vector(data_width - 1 downto 0);
+            i_update_offset : in    std_logic_vector(addr_width - 1 downto 0);
+            i_read_offset   : in    std_logic_vector(addr_width - 1 downto 0);
+            i_command       : in    command_lb_t
         );
     end component;
 
@@ -97,17 +97,17 @@ begin
             data_width  => data_width
         )
         port map (
-            clk            => clk,
-            rstn           => rstn,
-            data_in        => data_in,
-            data_in_valid  => data_in_valid,
-            data_out       => data_out,
-            data_out_valid => data_out_valid,
-            buffer_full    => buffer_full,
-            update_val     => update_val,
-            update_offset  => update_offset,
-            read_offset    => read_offset,
-            command        => command
+            clk             => clk,
+            rstn            => rstn,
+            i_data          => data_in,
+            i_data_valid    => data_in_valid,
+            o_data          => data_out,
+            o_data_valid    => data_out_valid,
+            o_buffer_full   => buffer_full,
+            i_update_val    => update_val,
+            i_update_offset => update_offset,
+            i_read_offset   => read_offset,
+            i_command       => command
         );
 
     adder : process is

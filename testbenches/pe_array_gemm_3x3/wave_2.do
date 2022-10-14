@@ -16,14 +16,14 @@ add wave -noupdate -expand -group {Line_Buffer Command in} -radix symbolic /pe_a
 add wave -noupdate -expand -group {Line_Buffer Command in} -radix symbolic /pe_array_gemm_3x3_tb/command_wght
 add wave -noupdate -expand -group {Line_Buffer Command in} -radix symbolic /pe_array_gemm_3x3_tb/command_iact
 
-add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_array_gemm_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_psum/data_out
-add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_array_gemm_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_psum/data_out_valid
+add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_array_gemm_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_psum/o_data
+add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_array_gemm_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_psum/o_data_valid
 
 add wave -noupdate -expand -group Pe_output -radix unsigned /pe_array_gemm_3x3_tb/o_psums
 add wave -noupdate -expand -group Pe_output -radix unsigned /pe_array_gemm_3x3_tb/o_psums_valid
 
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /pe_array_gemm_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/data_in_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /pe_array_gemm_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/data_in
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /pe_array_gemm_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/i_data_in_valid
+add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /pe_array_gemm_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/i_data_in
 add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /pe_array_gemm_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/data_in_iact_valid
 add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /pe_array_gemm_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/data_in_iact
 add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /pe_array_gemm_3x3_tb/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/sel_conv_gemm

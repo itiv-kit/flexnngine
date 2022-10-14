@@ -9,8 +9,8 @@ entity onehot_binary is
         binary_width : positive := 4
     );
     port (
-        onehot : in    std_logic_vector(onehot_width - 1 downto 0);
-        binary : out   std_logic_vector(binary_width - 1 downto 0)
+        i_onehot : in    std_logic_vector(onehot_width - 1 downto 0);
+        o_binary : out   std_logic_vector(binary_width - 1 downto 0)
     );
 end entity onehot_binary;
 
@@ -18,7 +18,7 @@ architecture rtl of onehot_binary is
 
 begin
 
-    p_onehot : process (onehot) is
+    p_onehot : process (i_onehot) is
 
         variable v_binary : std_logic_vector(binary_width - 1 downto 0);
 
@@ -28,13 +28,13 @@ begin
 
         for i in 0 to onehot_width - 1 loop
 
-            if onehot(i) = '1' then
+            if i_onehot(i) = '1' then
                 v_binary := v_binary or std_logic_vector(to_unsigned(i, binary_width));
             end if;
 
         end loop;
 
-        binary <= v_binary;
+        o_binary <= v_binary;
 
     end process p_onehot;
 

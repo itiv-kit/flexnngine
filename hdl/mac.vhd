@@ -10,14 +10,14 @@ entity mac is
         output_width : positive := 17
     );
     port (
-        clk          : in    std_logic;
-        en           : in    std_logic;
-        rstn         : in    std_logic;
-        data_in_a    : in    std_logic_vector(input_width - 1 downto 0);
-        data_in_w    : in    std_logic_vector(input_width - 1 downto 0);
-        data_in_acc  : in    std_logic_vector(acc_width - 1 downto 0);
-        result       : out   std_logic_vector(output_width - 1 downto 0);
-        result_valid : out   std_logic
+        clk            : in    std_logic;
+        rstn           : in    std_logic;
+        i_en           : in    std_logic;
+        i_data_a       : in    std_logic_vector(input_width - 1 downto 0);
+        i_data_w       : in    std_logic_vector(input_width - 1 downto 0);
+        i_data_acc     : in    std_logic_vector(acc_width - 1 downto 0);
+        o_result       : out   std_logic_vector(output_width - 1 downto 0);
+        o_result_valid : out   std_logic
     );
 end entity mac;
 
@@ -27,24 +27,24 @@ begin
 
     calc : process (clk, rstn) is
 
-        variable mult_result_v : std_logic_vector(2 * input_width - 1 downto 0);
-        variable acc_result_v  : integer;
+        variable v_mult_result : std_logic_vector(2 * input_width - 1 downto 0);
+        variable v_acc_result  : integer;
 
     begin
 
         if not rstn then
-            result        <= (others => '0');
-            result_valid  <= '0';
-            mult_result_v := (others => '0');
-            acc_result_v  := 0;
+            o_result       <= (others => '0');
+            o_result_valid <= '0';
+            v_mult_result  := (others => '0');
+            v_acc_result   := 0;
         elsif rising_edge(clk) then
-            mult_result_v := std_logic_vector(signed(data_in_a) * signed(data_in_w));
-            acc_result_v  := to_integer(signed(mult_result_v)) + to_integer(signed(data_in_acc));
-            result        <= std_logic_vector(to_signed(acc_result_v, output_width));
-            if en = '0' then
-                result_valid <= '0';
+            v_mult_result := std_logic_vector(signed(i_data_a) * signed(i_data_w));
+            v_acc_result  := to_integer(signed(v_mult_result)) + to_integer(signed(i_data_acc));
+            o_result      <= std_logic_vector(to_signed(v_acc_result, output_width));
+            if i_en = '0' then
+                o_result_valid <= '0';
             else
-                result_valid <= '1';
+                o_result_valid <= '1';
             end if;
         end if;
 

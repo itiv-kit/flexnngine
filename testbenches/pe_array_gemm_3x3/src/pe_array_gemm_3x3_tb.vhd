@@ -64,10 +64,10 @@ architecture imp of pe_array_gemm_3x3_tb is
             i_preload_psum       : in    std_logic_vector(data_width_psum - 1 downto 0);
             i_preload_psum_valid : in    std_logic;
 
-            command      : in    command_pe_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-            command_iact : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-            command_psum : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-            command_wght : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
+            i_command      : in    command_pe_row_col_t(0 to size_y - 1, 0 to size_x - 1);
+            i_command_iact : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
+            i_command_psum : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
+            i_command_wght : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
 
             i_data_iact : in    array_t (0 to size_rows - 1)(data_width_iact - 1 downto 0);
             i_data_psum : in    std_logic_vector(data_width_psum - 1 downto 0);
@@ -77,21 +77,21 @@ architecture imp of pe_array_gemm_3x3_tb is
             i_data_psum_valid : in    std_logic;
             i_data_wght_valid : in    std_logic_vector(size_y - 1 downto 0);
 
-            o_buffer_full_iact : out   std_logic;
+            o_buffer_full_iact : out   std_logic_vector(size_rows - 1 downto 0);
             o_buffer_full_psum : out   std_logic;
-            o_buffer_full_wght : out   std_logic;
+            o_buffer_full_wght : out   std_logic_vector(size_y - 1 downto 0);
 
-            o_buffer_full_next_iact : out   std_logic;
+            o_buffer_full_next_iact : out   std_logic_vector(size_rows - 1 downto 0);
             o_buffer_full_next_psum : out   std_logic;
-            o_buffer_full_next_wght : out   std_logic;
+            o_buffer_full_next_wght : out   std_logic_vector(size_y - 1 downto 0);
 
-            update_offset_iact : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
-            update_offset_psum : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
-            update_offset_wght : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
+            i_update_offset_iact : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
+            i_update_offset_psum : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
+            i_update_offset_wght : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
 
-            read_offset_iact : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
-            read_offset_psum : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
-            read_offset_wght : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
+            i_read_offset_iact : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
+            i_read_offset_psum : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
+            i_read_offset_wght : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
 
             o_psums       : out   array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
             o_psums_valid : out   std_logic_vector(size_x - 1 downto 0)
@@ -117,13 +117,13 @@ architecture imp of pe_array_gemm_3x3_tb is
     signal i_data_psum_valid : std_logic;
     signal i_data_wght_valid : std_logic_vector(size_y - 1 downto 0);
 
-    signal o_buffer_full_iact : std_logic;
+    signal o_buffer_full_iact : std_logic_vector(size_rows - 1 downto 0);
     signal o_buffer_full_psum : std_logic;
-    signal o_buffer_full_wght : std_logic;
+    signal o_buffer_full_wght : std_logic_vector(size_y - 1 downto 0);
 
-    signal o_buffer_full_next_iact : std_logic;
+    signal o_buffer_full_next_iact : std_logic_vector(size_rows - 1 downto 0);
     signal o_buffer_full_next_psum : std_logic;
-    signal o_buffer_full_next_wght : std_logic;
+    signal o_buffer_full_next_wght : std_logic_vector(size_y - 1 downto 0);
 
     signal update_offset_iact : array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
     signal update_offset_psum : array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
@@ -258,10 +258,10 @@ begin
             rstn                    => rstn,
             i_preload_psum          => i_preload_psum,
             i_preload_psum_valid    => i_preload_psum_valid,
-            command                 => command,
-            command_iact            => command_iact,
-            command_psum            => command_psum,
-            command_wght            => command_wght,
+            i_command               => command,
+            i_command_iact          => command_iact,
+            i_command_psum          => command_psum,
+            i_command_wght          => command_wght,
             i_data_iact             => i_data_iact,
             i_data_psum             => i_data_psum,
             i_data_wght             => i_data_wght,
@@ -274,12 +274,12 @@ begin
             o_buffer_full_next_iact => o_buffer_full_next_iact,
             o_buffer_full_next_psum => o_buffer_full_next_psum,
             o_buffer_full_next_wght => o_buffer_full_next_wght,
-            update_offset_iact      => update_offset_iact,
-            update_offset_psum      => update_offset_psum,
-            update_offset_wght      => update_offset_wght,
-            read_offset_iact        => read_offset_iact,
-            read_offset_psum        => read_offset_psum,
-            read_offset_wght        => read_offset_wght,
+            i_update_offset_iact    => update_offset_iact,
+            i_update_offset_psum    => update_offset_psum,
+            i_update_offset_wght    => update_offset_wght,
+            i_read_offset_iact      => read_offset_iact,
+            i_read_offset_psum      => read_offset_psum,
+            i_read_offset_wght      => read_offset_wght,
             o_psums                 => o_psums,
             o_psums_valid           => o_psums_valid
         );
@@ -314,7 +314,7 @@ begin
 
         for i in 0 to size_x - 1 loop
 
-            while o_buffer_full_wght = '1' loop
+            while o_buffer_full_wght(0) = '1' loop
 
                 wait until rising_edge(clk);
 
@@ -350,7 +350,7 @@ begin
             if s_y = image_y then
                 s_done <= true;
             -- data_in_valid <= '0';
-            elsif o_buffer_full_iact = '0' then
+            elsif o_buffer_full_iact(0) = '0' then
 
                 for i in size_y - 1 to size_rows - 1 loop
 

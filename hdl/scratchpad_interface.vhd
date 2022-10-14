@@ -41,8 +41,8 @@ entity scratchpad_interface is
 
         clk_sp : in    std_logic;
 
-        start  : in    std_logic;
-        status : out   std_logic;
+        i_start  : in    std_logic;
+        o_status : out   std_logic;
 
         -- Data to and from Address generator
         i_address_iact : in    array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
@@ -141,10 +141,10 @@ architecture rtl of scratchpad_interface is
             arbiter_width : positive := 9
         );
         port (
-            clk  : in    std_logic;
-            rstn : in    std_logic;
-            req  : in    std_logic_vector(arbiter_width - 1 downto 0);
-            gnt  : out   std_logic_vector(arbiter_width - 1 downto 0)
+            clk   : in    std_logic;
+            rstn  : in    std_logic;
+            i_req : in    std_logic_vector(arbiter_width - 1 downto 0);
+            o_gnt : out   std_logic_vector(arbiter_width - 1 downto 0)
         );
     end component rr_arbiter;
 
@@ -155,111 +155,89 @@ architecture rtl of scratchpad_interface is
             binary_width : positive := 4
         );
         port (
-            onehot : in    std_logic_vector(onehot_width - 1 downto 0);
-            binary : out   std_logic_vector(binary_width - 1 downto 0)
+            i_onehot : in    std_logic_vector(onehot_width - 1 downto 0);
+            o_binary : out   std_logic_vector(binary_width - 1 downto 0)
         );
     end component onehot_binary;
 
-    signal sel_iact_fifo : std_logic_vector(addr_width_rows - 1 downto 0);
-    signal sel_wght_fifo : std_logic_vector(addr_width_y - 1 downto 0);
+    signal r_sel_iact_fifo : std_logic_vector(addr_width_rows - 1 downto 0);
+    signal r_sel_wght_fifo : std_logic_vector(addr_width_y - 1 downto 0);
 
-    signal demux_iact_out       : array_t(0 to size_rows - 1)(data_width_iact - 1 downto 0);
-    signal demux_wght_out       : array_t(0 to size_y - 1)(data_width_wght - 1 downto 0);
-    signal demux_iact_out_valid : array_t(0 to size_rows - 1)(0 downto 0);
-    signal demux_wght_out_valid : array_t(0 to size_y - 1)(0 downto 0);
+    signal w_demux_iact_out       : array_t(0 to size_rows - 1)(data_width_iact - 1 downto 0);
+    signal w_demux_wght_out       : array_t(0 to size_y - 1)(data_width_wght - 1 downto 0);
+    signal w_demux_iact_out_valid : array_t(0 to size_rows - 1)(0 downto 0);
+    signal w_demux_wght_out_valid : array_t(0 to size_y - 1)(0 downto 0);
 
-    signal rd_en_iact_f       : std_logic_vector(size_rows - 1 downto 0);
-    signal dout_iact_f        : array_t(0 to size_rows - 1)(data_width_psum - 1 downto 0);
-    signal full_iact_f        : std_logic_vector(size_rows - 1 downto 0);
-    signal almost_full_iact_f : std_logic_vector(size_rows - 1 downto 0);
-    signal empty_iact_f       : std_logic_vector(size_rows - 1 downto 0);
-    signal valid_iact_f       : std_logic_vector(size_rows - 1 downto 0);
+    signal w_rd_en_iact_f       : std_logic_vector(size_rows - 1 downto 0);
+    signal w_dout_iact_f        : array_t(0 to size_rows - 1)(data_width_psum - 1 downto 0);
+    signal w_full_iact_f        : std_logic_vector(size_rows - 1 downto 0);
+    signal w_almost_full_iact_f : std_logic_vector(size_rows - 1 downto 0);
+    signal w_empty_iact_f       : std_logic_vector(size_rows - 1 downto 0);
+    signal w_valid_iact_f       : std_logic_vector(size_rows - 1 downto 0);
 
-    signal rd_en_wght_f       : std_logic_vector(size_y - 1 downto 0);
-    signal dout_wght_f        : array_t(0 to size_y - 1)(data_width_psum - 1 downto 0);
-    signal full_wght_f        : std_logic_vector(size_y - 1 downto 0);
-    signal almost_full_wght_f : std_logic_vector(size_y - 1 downto 0);
-    signal empty_wght_f       : std_logic_vector(size_y - 1 downto 0);
-    signal valid_wght_f       : std_logic_vector(size_y - 1 downto 0);
+    signal w_rd_en_wght_f       : std_logic_vector(size_y - 1 downto 0);
+    signal w_dout_wght_f        : array_t(0 to size_y - 1)(data_width_psum - 1 downto 0);
+    signal w_full_wght_f        : std_logic_vector(size_y - 1 downto 0);
+    signal w_almost_full_wght_f : std_logic_vector(size_y - 1 downto 0);
+    signal w_empty_wght_f       : std_logic_vector(size_y - 1 downto 0);
+    signal w_valid_wght_f       : std_logic_vector(size_y - 1 downto 0);
 
-    signal rd_en_iact_address_f : std_logic_vector(size_rows - 1 downto 0);
-    signal dout_iact_address_f  : array_t(0 to size_rows - 1)(fifo_width - 1 downto 0);
-    signal full_iact_address_f  : std_logic_vector(size_rows - 1 downto 0);
-    signal empty_iact_address_f : std_logic_vector(size_rows - 1 downto 0);
-    signal valid_iact_address_f : array_t(0 to size_rows - 1)(0 downto 0);
+    signal w_rd_en_iact_address_f : std_logic_vector(size_rows - 1 downto 0);
+    signal w_dout_iact_address_f  : array_t(0 to size_rows - 1)(fifo_width - 1 downto 0);
+    signal w_full_iact_address_f  : std_logic_vector(size_rows - 1 downto 0);
+    signal w_empty_iact_address_f : std_logic_vector(size_rows - 1 downto 0);
+    signal w_valid_iact_address_f : array_t(0 to size_rows - 1)(0 downto 0);
 
-    signal rd_en_wght_address_f : std_logic_vector(size_y - 1 downto 0);
-    signal dout_wght_address_f  : array_t(0 to size_y - 1)(fifo_width - 1 downto 0);
-    signal full_wght_address_f  : std_logic_vector(size_y - 1 downto 0);
-    signal empty_wght_address_f : std_logic_vector(size_y - 1 downto 0);
-    signal valid_wght_address_f : array_t(0 to size_y - 1)(0 downto 0);
+    signal w_rd_en_wght_address_f : std_logic_vector(size_y - 1 downto 0);
+    signal w_dout_wght_address_f  : array_t(0 to size_y - 1)(fifo_width - 1 downto 0);
+    signal w_full_wght_address_f  : std_logic_vector(size_y - 1 downto 0);
+    signal w_empty_wght_address_f : std_logic_vector(size_y - 1 downto 0);
+    signal w_valid_wght_address_f : array_t(0 to size_y - 1)(0 downto 0);
 
-    signal gnt_iact          : std_logic_vector(size_rows - 1 downto 0);
-    signal gnt_iact_binary   : std_logic_vector(addr_width_rows - 1 downto 0);
-    signal gnt_iact_binary_d : std_logic_vector(addr_width_rows - 1 downto 0);
+    signal w_gnt_iact          : std_logic_vector(size_rows - 1 downto 0);
+    signal w_gnt_iact_binary   : std_logic_vector(addr_width_rows - 1 downto 0);
+    signal r_gnt_iact_binary_d : std_logic_vector(addr_width_rows - 1 downto 0);
 
-    signal gnt_wght          : std_logic_vector(size_y - 1 downto 0);
-    signal gnt_wght_binary   : std_logic_vector(addr_width_y - 1 downto 0);
-    signal gnt_wght_binary_d : std_logic_vector(addr_width_y - 1 downto 0);
+    signal w_gnt_wght          : std_logic_vector(size_y - 1 downto 0);
+    signal w_gnt_wght_binary   : std_logic_vector(addr_width_y - 1 downto 0);
+    signal r_gnt_wght_binary_d : std_logic_vector(addr_width_y - 1 downto 0);
 
-    signal gnt_psum          : std_logic_vector(size_x - 1 downto 0);
-    signal gnt_psum_binary   : std_logic_vector(addr_width_x - 1 downto 0);
-    signal gnt_psum_binary_d : std_logic_vector(addr_width_x - 1 downto 0);
+    signal w_gnt_psum          : std_logic_vector(size_x - 1 downto 0);
+    signal w_gnt_psum_binary   : std_logic_vector(addr_width_x - 1 downto 0);
+    signal r_gnt_psum_binary_d : std_logic_vector(addr_width_x - 1 downto 0);
 
-    signal address_iact_wide : std_logic_vector(fifo_width - 1 downto 0);
-    signal address_wght_wide : std_logic_vector(fifo_width - 1 downto 0);
+    signal w_address_iact_wide : std_logic_vector(fifo_width - 1 downto 0);
+    signal w_address_wght_wide : std_logic_vector(fifo_width - 1 downto 0);
 
-    signal rd_en_psum_out_f : std_logic_vector(size_x - 1 downto 0);
-    signal dout_psum_out_f  : array_t(0 to size_x - 1)(fifo_width - 1 downto 0);
-    signal full_psum_out_f  : std_logic_vector(size_x - 1 downto 0);
-    signal empty_psum_out_f : std_logic_vector(size_x - 1 downto 0);
-    signal valid_psum_out_f : std_logic_vector(size_x - 1 downto 0);
-    signal valid_psum_out   : array_t(0 to size_x - 1)(0 downto 0);
-    signal psum_out         : array_t(0 to size_x - 1)(fifo_width - 1 downto 0);
+    signal w_rd_en_psum_out_f : std_logic_vector(size_x - 1 downto 0);
+    signal w_dout_psum_out_f  : array_t(0 to size_x - 1)(fifo_width - 1 downto 0);
+    signal w_full_psum_out_f  : std_logic_vector(size_x - 1 downto 0);
+    signal w_empty_psum_out_f : std_logic_vector(size_x - 1 downto 0);
+    signal w_valid_psum_out_f : std_logic_vector(size_x - 1 downto 0);
+    signal w_valid_psum_out   : array_t(0 to size_x - 1)(0 downto 0);
+    signal w_psum_out         : array_t(0 to size_x - 1)(fifo_width - 1 downto 0);
 
-    signal start_delay : std_logic_vector(fifo_width * 5 - 1 downto 0); /* TODO change start delay */
-
-    procedure incr_iact (variable counter : inout integer) is
-    begin
-
-        if counter = size_rows - 1 then
-            counter := 0;
-        else
-            counter := counter + 1;
-        end if;
-
-    end procedure;
-
-    procedure incr_wght (variable counter : inout integer) is
-    begin
-
-        if counter = size_y - 1 then
-            counter := 0;
-        else
-            counter := counter + 1;
-        end if;
-
-    end procedure;
+    signal r_start_delay : std_logic_vector(fifo_width * 5 - 1 downto 0); /* TODO change start delay */
 
 begin
 
-    status <= '1' when start_delay(fifo_width * 5 - 1) = '1' else
-              '0'; /* TODO change start delay */
+    o_status <= '1' when r_start_delay(fifo_width * 5 - 1) = '1' else
+                '0'; /* TODO change start delay */
 
-    o_address_iact <= address_iact_wide(addr_width_iact_mem - 1 downto 0);
-    o_address_wght <= address_wght_wide(addr_width_wght_mem - 1 downto 0);
+    o_address_iact <= w_address_iact_wide(addr_width_iact_mem - 1 downto 0);
+    o_address_wght <= w_address_wght_wide(addr_width_wght_mem - 1 downto 0);
 
-    o_data_iact_valid <= valid_iact_f;
-    o_data_wght_valid <= valid_wght_f;
+    o_data_iact_valid <= w_valid_iact_f;
+    o_data_wght_valid <= w_valid_wght_f;
 
     p_start_delay : process (clk, rstn) is
     begin
 
         if not rstn then
-            start_delay <= (others => '0');
+            r_start_delay <= (others => '0');
         elsif rising_edge(clk) then
-            if start then
-                start_delay <= start_delay(fifo_width * 5 - 2 downto 0) & '1'; /* TODO change start delay */
+            if i_start then
+                r_start_delay <= r_start_delay(fifo_width * 5 - 2 downto 0) & '1'; /* TODO change start delay */
             end if;
         end if;
 
@@ -267,37 +245,37 @@ begin
 
     pe_arr_iact : for i in 0 to size_rows - 1 generate
 
-        o_data_iact(i) <= dout_iact_f(i)(data_width_iact - 1 downto 0);
+        o_data_iact(i) <= w_dout_iact_f(i)(data_width_iact - 1 downto 0);
 
-        rd_en_iact_f(i) <= '1' when start = '1' and i_buffer_full_iact(i) = '0' and empty_iact_f(i) <= '0' else
-                           '0';
+        w_rd_en_iact_f(i) <= '1' when i_start = '1' and i_buffer_full_iact(i) = '0' and w_empty_iact_f(i) <= '0' else
+                             '0';
 
     end generate pe_arr_iact;
 
     pe_arr_wght : for i in 0 to size_y - 1 generate
 
-        o_data_wght(i) <= dout_wght_f(i)(data_width_wght - 1 downto 0);
+        o_data_wght(i) <= w_dout_wght_f(i)(data_width_wght - 1 downto 0);
 
-        rd_en_wght_f(i) <= '1' when start = '1' and i_buffer_full_wght(i) = '0' and empty_wght_f(i) <= '0' else
-                           '0';
+        w_rd_en_wght_f(i) <= '1' when i_start = '1' and i_buffer_full_wght(i) = '0' and w_empty_wght_f(i) <= '0' else
+                             '0';
 
     end generate pe_arr_wght;
 
-    rd_en_iact_address_f <= gnt_iact when not empty_iact_address_f(to_integer(unsigned(gnt_iact_binary))) else -- Selected with arbiter
-                            (others => '0');
+    w_rd_en_iact_address_f <= w_gnt_iact when not w_empty_iact_address_f(to_integer(unsigned(w_gnt_iact_binary))) else -- Selected with arbiter
+                              (others => '0');
 
-    rd_en_wght_address_f <= gnt_wght when not empty_wght_address_f(to_integer(unsigned(gnt_wght_binary))) else -- Selected with arbiter
-                            (others => '0');
+    w_rd_en_wght_address_f <= w_gnt_wght when not w_empty_wght_address_f(to_integer(unsigned(w_gnt_wght_binary))) else -- Selected with arbiter
+                              (others => '0');
 
-    sel_iact_fifo <= gnt_iact_binary_d when rising_edge(clk_sp);
-    sel_wght_fifo <= gnt_wght_binary_d when rising_edge(clk_sp);
+    r_sel_iact_fifo <= r_gnt_iact_binary_d when rising_edge(clk_sp);
+    r_sel_wght_fifo <= r_gnt_wght_binary_d when rising_edge(clk_sp);
 
-    gnt_iact_binary_d <= gnt_iact_binary when rising_edge(clk_sp);
-    gnt_wght_binary_d <= gnt_wght_binary when rising_edge(clk_sp);
-    gnt_psum_binary_d <= gnt_psum_binary when rising_edge(clk_sp);
+    r_gnt_iact_binary_d <= w_gnt_iact_binary when rising_edge(clk_sp);
+    r_gnt_wght_binary_d <= w_gnt_wght_binary when rising_edge(clk_sp);
+    r_gnt_psum_binary_d <= w_gnt_psum_binary when rising_edge(clk_sp);
 
-    o_fifo_iact_address_full <= or full_iact_address_f;
-    o_fifo_wght_address_full <= or full_wght_address_f;
+    o_fifo_iact_address_full <= or w_full_iact_address_f;
+    o_fifo_wght_address_full <= or w_full_wght_address_f;
 
     mux_iact_address : component mux
         generic map (
@@ -306,9 +284,9 @@ begin
             address_width => addr_width_rows
         )
         port map (
-            v_i => dout_iact_address_f,
-            sel => gnt_iact_binary_d,
-            z_o => address_iact_wide
+            v_i => w_dout_iact_address_f,
+            sel => r_gnt_iact_binary_d,
+            z_o => w_address_iact_wide
         );
 
     mux_wght_address : component mux
@@ -318,9 +296,9 @@ begin
             address_width => addr_width_y
         )
         port map (
-            v_i => dout_wght_address_f,
-            sel => gnt_wght_binary_d,
-            z_o => address_wght_wide
+            v_i => w_dout_wght_address_f,
+            sel => r_gnt_wght_binary_d,
+            z_o => w_address_wght_wide
         );
 
     mux_iact_address_valid : component mux
@@ -330,8 +308,8 @@ begin
             address_width => addr_width_rows
         )
         port map (
-            v_i    => valid_iact_address_f,
-            sel    => gnt_iact_binary_d,
+            v_i    => w_valid_iact_address_f,
+            sel    => r_gnt_iact_binary_d,
             z_o(0) => o_address_iact_valid
         );
 
@@ -342,8 +320,8 @@ begin
             address_width => addr_width_y
         )
         port map (
-            v_i    => valid_wght_address_f,
-            sel    => gnt_wght_binary_d,
+            v_i    => w_valid_wght_address_f,
+            sel    => r_gnt_wght_binary_d,
             z_o(0) => o_address_wght_valid
         );
 
@@ -352,10 +330,10 @@ begin
             arbiter_width => size_rows
         )
         port map (
-            clk  => clk_sp,
-            rstn => rstn,
-            req  => not almost_full_iact_f,
-            gnt  => gnt_iact
+            clk   => clk_sp,
+            rstn  => rstn,
+            i_req => not w_almost_full_iact_f,
+            o_gnt => w_gnt_iact
         );
 
     rr_arbiter_iact_binary : component onehot_binary
@@ -364,8 +342,8 @@ begin
             binary_width => addr_width_rows
         )
         port map (
-            onehot => gnt_iact,
-            binary => gnt_iact_binary
+            i_onehot => w_gnt_iact,
+            o_binary => w_gnt_iact_binary
         );
 
     rr_arbiter_wght : component rr_arbiter
@@ -373,10 +351,10 @@ begin
             arbiter_width => size_y
         )
         port map (
-            clk  => clk_sp,
-            rstn => rstn,
-            req  => not almost_full_wght_f,
-            gnt  => gnt_wght
+            clk   => clk_sp,
+            rstn  => rstn,
+            i_req => not w_almost_full_wght_f,
+            o_gnt => w_gnt_wght
         );
 
     rr_arbiter_wght_binary : component onehot_binary
@@ -385,8 +363,8 @@ begin
             binary_width => addr_width_y
         )
         port map (
-            onehot => gnt_wght,
-            binary => gnt_wght_binary
+            i_onehot => w_gnt_wght,
+            o_binary => w_gnt_wght_binary
         );
 
     demux_iact : component demux
@@ -397,8 +375,8 @@ begin
         )
         port map (
             v_i => i_data_iact,
-            sel => sel_iact_fifo,
-            z_o => demux_iact_out
+            sel => r_sel_iact_fifo,
+            z_o => w_demux_iact_out
         );
 
     demux_iact_valid : component demux
@@ -409,8 +387,8 @@ begin
         )
         port map (
             v_i(0) => i_data_iact_valid,
-            sel    => sel_iact_fifo,
-            z_o    => demux_iact_out_valid
+            sel    => r_sel_iact_fifo,
+            z_o    => w_demux_iact_out_valid
         );
 
     demux_wght : component demux
@@ -421,8 +399,8 @@ begin
         )
         port map (
             v_i => i_data_wght,
-            sel => sel_wght_fifo,
-            z_o => demux_wght_out
+            sel => r_sel_wght_fifo,
+            z_o => w_demux_wght_out
         );
 
     demux_wght_valid : component demux
@@ -433,8 +411,8 @@ begin
         )
         port map (
             v_i(0) => i_data_wght_valid,
-            sel    => sel_wght_fifo,
-            z_o    => demux_wght_out_valid
+            sel    => r_sel_wght_fifo,
+            z_o    => w_demux_wght_out_valid
         );
 
     fifo_iact : for y in 0 to size_rows - 1 generate
@@ -444,14 +422,14 @@ begin
                 rst         => not rstn,
                 wr_clk      => clk_sp,
                 rd_clk      => clk,
-                din         => (data_width_psum - 1 downto data_width_iact => '0') & demux_iact_out(y),
-                wr_en       => demux_iact_out_valid(y)(0),
-                rd_en       => rd_en_iact_f(y),
-                dout        => dout_iact_f(y),
-                full        => full_iact_f(y),
-                almost_full => almost_full_iact_f(y),
-                empty       => empty_iact_f(y),
-                valid       => valid_iact_f(y)
+                din         => (data_width_psum - 1 downto data_width_iact => '0') & w_demux_iact_out(y),
+                wr_en       => w_demux_iact_out_valid(y)(0),
+                rd_en       => w_rd_en_iact_f(y),
+                dout        => w_dout_iact_f(y),
+                full        => w_full_iact_f(y),
+                almost_full => w_almost_full_iact_f(y),
+                empty       => w_empty_iact_f(y),
+                valid       => w_valid_iact_f(y)
             );
 
     end generate fifo_iact;
@@ -463,14 +441,14 @@ begin
                 rst         => not rstn,
                 wr_clk      => clk_sp,
                 rd_clk      => clk,
-                din         => (data_width_psum - 1 downto data_width_wght => '0') & demux_wght_out(y),
-                wr_en       => demux_wght_out_valid(y)(0),
-                rd_en       => rd_en_wght_f(y),
-                dout        => dout_wght_f(y),
-                full        => full_wght_f(y),
-                almost_full => almost_full_wght_f(y),
-                empty       => empty_wght_f(y),
-                valid       => valid_wght_f(y)
+                din         => (data_width_psum - 1 downto data_width_wght => '0') & w_demux_wght_out(y),
+                wr_en       => w_demux_wght_out_valid(y)(0),
+                rd_en       => w_rd_en_wght_f(y),
+                dout        => w_dout_wght_f(y),
+                full        => w_full_wght_f(y),
+                almost_full => w_almost_full_wght_f(y),
+                empty       => w_empty_wght_f(y),
+                valid       => w_valid_wght_f(y)
             );
 
     end generate fifo_wght;
@@ -484,11 +462,11 @@ begin
                 rd_clk => clk_sp,
                 din    => (fifo_width - 1 downto addr_width_iact_mem => '0') & i_address_iact(y),
                 wr_en  => i_address_iact_valid(y),
-                rd_en  => rd_en_iact_address_f(y),
-                dout   => dout_iact_address_f(y),
-                full   => full_iact_address_f(y),
-                empty  => empty_iact_address_f(y),
-                valid  => valid_iact_address_f(y)(0)
+                rd_en  => w_rd_en_iact_address_f(y),
+                dout   => w_dout_iact_address_f(y),
+                full   => w_full_iact_address_f(y),
+                empty  => w_empty_iact_address_f(y),
+                valid  => w_valid_iact_address_f(y)(0)
             );
 
     end generate fifo_iact_address;
@@ -502,11 +480,11 @@ begin
                 rd_clk => clk_sp,
                 din    => (fifo_width - 1 downto addr_width_wght_mem => '0') & i_address_wght(y),
                 wr_en  => i_address_wght_valid(y),
-                rd_en  => rd_en_wght_address_f(y),
-                dout   => dout_wght_address_f(y),
-                full   => full_wght_address_f(y),
-                empty  => empty_wght_address_f(y),
-                valid  => valid_wght_address_f(y)(0)
+                rd_en  => w_rd_en_wght_address_f(y),
+                dout   => w_dout_wght_address_f(y),
+                full   => w_full_wght_address_f(y),
+                empty  => w_empty_wght_address_f(y),
+                valid  => w_valid_wght_address_f(y)(0)
             );
 
     end generate fifo_wght_address;
@@ -520,20 +498,20 @@ begin
                 rd_clk => clk_sp,
                 din    => i_psums(x),
                 wr_en  => i_psums_valid(x),
-                rd_en  => rd_en_psum_out_f(x),
-                dout   => dout_psum_out_f(x),
-                full   => full_psum_out_f(x),
-                empty  => empty_psum_out_f(x),
-                valid  => valid_psum_out_f(x)
+                rd_en  => w_rd_en_psum_out_f(x),
+                dout   => w_dout_psum_out_f(x),
+                full   => w_full_psum_out_f(x),
+                empty  => w_empty_psum_out_f(x),
+                valid  => w_valid_psum_out_f(x)
             );
 
     end generate fifo_psum_out;
 
     g_psums_valid : for i in 0 to size_x - 1 generate
 
-        valid_psum_out(i)(0) <= valid_psum_out_f(i);
-        psum_out(i)          <= dout_psum_out_f(i);
-        rd_en_psum_out_f(i)  <= gnt_psum(i);
+        w_valid_psum_out(i)(0) <= w_valid_psum_out_f(i);
+        w_psum_out(i)          <= w_dout_psum_out_f(i);
+        w_rd_en_psum_out_f(i)  <= w_gnt_psum(i);
 
     end generate g_psums_valid;
 
@@ -544,14 +522,14 @@ begin
             address_width => addr_width_x
         )
         port map (
-            v_i => psum_out,
-            sel => gnt_psum_binary_d,
+            v_i => w_psum_out,
+            sel => r_gnt_psum_binary_d,
             z_o => o_data_psum
         );
 
-    o_valid_psums_out   <= valid_psum_out_f;
-    o_gnt_psum_binary_d <= gnt_psum_binary_d;
-    o_empty_psum_fifo   <= empty_psum_out_f;
+    o_valid_psums_out   <= w_valid_psum_out_f;
+    o_gnt_psum_binary_d <= r_gnt_psum_binary_d;
+    o_empty_psum_fifo   <= w_empty_psum_out_f;
 
     mux_psum_out_valid : component mux
         generic map (
@@ -560,8 +538,8 @@ begin
             address_width => addr_width_x
         )
         port map (
-            v_i    => valid_psum_out,
-            sel    => gnt_psum_binary_d,
+            v_i    => w_valid_psum_out,
+            sel    => r_gnt_psum_binary_d,
             z_o(0) => o_write_en_psum
         );
 
@@ -570,10 +548,10 @@ begin
             arbiter_width => size_x
         )
         port map (
-            clk  => clk_sp,
-            rstn => rstn,
-            req  => not empty_psum_out_f,
-            gnt  => gnt_psum
+            clk   => clk_sp,
+            rstn  => rstn,
+            i_req => not w_empty_psum_out_f,
+            o_gnt => w_gnt_psum
         );
 
     rr_arbiter_psum_binary : component onehot_binary
@@ -582,8 +560,8 @@ begin
             binary_width => addr_width_x
         )
         port map (
-            onehot => gnt_psum,
-            binary => gnt_psum_binary
+            i_onehot => w_gnt_psum,
+            o_binary => w_gnt_psum_binary
         );
 
 end architecture rtl;
