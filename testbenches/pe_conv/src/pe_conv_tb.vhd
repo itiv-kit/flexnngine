@@ -44,6 +44,7 @@ architecture imp of pe_conv_tb is
             clk  : in    std_logic;
             rstn : in    std_logic;
 
+            i_enable       : in    std_logic;
             i_command      : in    command_pe_t;
             i_command_iact : in    command_lb_t;
             i_command_psum : in    command_lb_t;
@@ -190,6 +191,7 @@ begin
         port map (
             clk                   => clk,
             rstn                  => rstn,
+            i_enable              => '1',
             i_command             => command,
             i_command_iact        => command_iact,
             i_command_psum        => command_psum,
