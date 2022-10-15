@@ -23,14 +23,14 @@ add wave -noupdate -expand -group Start -radix unsigned /control_conv_tb/acceler
 add wave -noupdate -expand -group Start -radix unsigned /control_conv_tb/accelerator_inst/scratchpad_interface_inst/w_empty_wght_address_f
 add wave -noupdate -expand -group Start -radix unsigned /control_conv_tb/accelerator_inst/scratchpad_interface_inst/w_full_wght_address_f
 
-add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/control_inst/r_tiles_y
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/control_inst/r_h2
 #add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_tiles_y_last_tile_rows
-add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/control_inst/r_tiles_x
-add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/control_inst/r_tiles_c
-add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/control_inst/r_commands_per_tile
-add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/control_inst/r_commands_last_tile_c
-add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/w_c_per_tile
-add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/w_c_last_tile
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/control_inst/r_w1
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/control_inst/r_c1
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/control_inst/r_c0w0
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/control_inst/r_c0w0_last_c1
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/w_c0
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/w_c0_last_c1
 
 add wave -noupdate -expand -group Scratchpad -radix unsigned  /control_conv_tb/accelerator_inst/w_dout_iact
 add wave -noupdate -expand -group Scratchpad -radix unsigned  /control_conv_tb/accelerator_inst/w_dout_iact_valid
@@ -177,12 +177,11 @@ add wave -noupdate -expand -group IACT_INPUT -radix decimal  /control_conv_tb/ac
 add wave -noupdate -expand -group IACT_INPUT -radix decimal  /control_conv_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_iact/i_update_offset
 add wave -noupdate -expand -group IACT_INPUT -radix decimal  /control_conv_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_iact/ram/ram_instance
 
-add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_command_counter
-add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_tile_c_counter
-add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_tile_x_counter
-add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_tile_y_counter
-add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_tile_change_x
-add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_tile_change_c
+add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_count_c0w0
+add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_count_c1
+add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_count_w1
+add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_count_h2
+add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_incr_w1
 add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_state
 
 add wave -noupdate -expand -group {iact commands} -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_command_iact(0)

@@ -139,12 +139,12 @@ architecture rtl of accelerator is
             i_start      : in    std_logic;
             i_start_init : in    std_logic;
 
-            o_tiles_c : out   integer range 0 to 1023;
-            o_tiles_x : out   integer range 0 to 1023;
-            o_tiles_y : out   integer range 0 to 1023;
+            o_c1 : out   integer range 0 to 1023;
+            o_w1 : out   integer range 0 to 1023;
+            o_h2 : out   integer range 0 to 1023;
 
-            o_c_per_tile  : out   integer range 0 to 1023;
-            o_c_last_tile : out   integer range 0 to 1023;
+            o_c0         : out   integer range 0 to 1023;
+            o_c0_last_c1 : out   integer range 0 to 1023;
 
             i_image_x : in    integer range 0 to 1023;
             i_image_y : in    integer range 0 to 1023;
@@ -192,12 +192,12 @@ architecture rtl of accelerator is
 
             i_start : in    std_logic;
 
-            i_tiles_c : in    integer range 0 to 1023;
-            i_tiles_x : in    integer range 0 to 1023;
-            i_tiles_y : in    integer range 0 to 1023;
+            i_c1 : in    integer range 0 to 1023;
+            i_w1 : in    integer range 0 to 1023;
+            i_h2 : in    integer range 0 to 1023;
 
-            i_c_per_tile  : in    integer range 0 to 1023;
-            i_c_last_tile : in    integer range 0 to 1023;
+            i_c0         : in    integer range 0 to 1023;
+            i_c0_last_c1 : in    integer range 0 to 1023;
 
             i_image_x     : in    integer range 0 to 1023;
             i_image_y     : in    integer range 0 to 1023;
@@ -215,7 +215,7 @@ architecture rtl of accelerator is
         );
     end component address_generator;
 
-    component scratchpad is
+    component scratchpad_init is
         generic (
             data_width_iact : positive := 8;
             addr_width_iact : positive := 15;
@@ -258,7 +258,7 @@ architecture rtl of accelerator is
             dout_psum_valid : out   std_logic;
             dout_wght_valid : out   std_logic
         );
-    end component scratchpad;
+    end component scratchpad_init;
 
     component scratchpad_interface is
         generic (
@@ -461,12 +461,12 @@ architecture rtl of accelerator is
     signal r_start_adr      : std_logic;
     signal w_start_init_adr : std_logic;
 
-    signal w_tiles_c : integer range 0 to 1023; /* TODO change range to sth. useful */
-    signal w_tiles_x : integer range 0 to 1023; /* TODO change range to sth. useful */
-    signal w_tiles_y : integer range 0 to 1023; /* TODO change range to sth. useful */
+    signal w_c1 : integer range 0 to 1023; /* TODO change range to sth. useful */
+    signal w_w1 : integer range 0 to 1023; /* TODO change range to sth. useful */
+    signal w_h2 : integer range 0 to 1023; /* TODO change range to sth. useful */
 
-    signal w_c_per_tile  : integer range 0 to 1023; /* TODO change range to sth. useful */
-    signal w_c_last_tile : integer range 0 to 1023; /* TODO change range to sth. useful */
+    signal w_c0          : integer range 0 to 1023; /* TODO change range to sth. useful */
+    signal w_c0_last_c1  : integer range 0 to 1023; /* TODO change range to sth. useful */
     signal r_image_x     : integer range 0 to 1023; /* TODO change range to sth. useful */
     signal r_image_y     : integer range 0 to 1023; /* TODO change range to sth. useful */
     signal r_channels    : integer range 0 to 4095; /* TODO change range to sth. useful */
@@ -601,11 +601,11 @@ begin
             o_status             => w_status_control,
             i_start              => w_enable,
             i_start_init         => r_start_init_control,
-            o_tiles_c            => w_tiles_c,
-            o_tiles_x            => w_tiles_x,
-            o_tiles_y            => w_tiles_y,
-            o_c_per_tile         => w_c_per_tile,
-            o_c_last_tile        => w_c_last_tile,
+            o_c1                 => w_c1,
+            o_w1                 => w_w1,
+            o_h2                 => w_h2,
+            o_c0                 => w_c0,
+            o_c0_last_c1         => w_c0_last_c1,
             i_image_x            => r_image_x,
             i_image_y            => r_image_y,
             i_channels           => r_channels,
@@ -622,7 +622,7 @@ begin
             o_read_offset_wght   => w_read_offset_wght
         );
 
-    scratchpad_inst : component scratchpad
+    scratchpad_inst : component scratchpad_init
         generic map (
             data_width_iact => data_width_iact,
             addr_width_iact => addr_width_iact_mem,
@@ -676,11 +676,11 @@ begin
             clk                  => clk,
             rstn                 => rstn,
             i_start              => r_start_adr,
-            i_tiles_c            => w_tiles_c,
-            i_tiles_x            => w_tiles_x,
-            i_tiles_y            => w_tiles_y,
-            i_c_per_tile         => w_c_per_tile,
-            i_c_last_tile        => w_c_last_tile,
+            i_c1                 => w_c1,
+            i_w1                 => w_w1,
+            i_h2                 => w_h2,
+            i_c0                 => w_c0,
+            i_c0_last_c1         => w_c0_last_c1,
             i_image_x            => r_image_x,
             i_image_y            => r_image_y,
             i_channels           => r_channels,
@@ -775,7 +775,7 @@ begin
             clk                 => clk_sp,
             rstn                => rstn,
             i_start             => r_start_adr,
-            i_tiles_x           => w_tiles_x,
+            i_tiles_x           => w_w1,
             i_valid_psum_out    => w_valid_psums_out,
             i_gnt_psum_binary_d => w_gnt_psum_binary_d,
             i_command_psum      => w_command_psum(0,0),

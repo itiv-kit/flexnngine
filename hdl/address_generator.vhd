@@ -27,12 +27,12 @@ entity address_generator is
 
         i_start : in    std_logic;
 
-        i_tiles_c : in    integer range 0 to 1023;
-        i_tiles_x : in    integer range 0 to 1023;
-        i_tiles_y : in    integer range 0 to 1023;
+        i_c1 : in    integer range 0 to 1023;
+        i_w1 : in    integer range 0 to 1023;
+        i_h2 : in    integer range 0 to 1023;
 
-        i_c_per_tile  : in    integer range 0 to 1023;
-        i_c_last_tile : in    integer range 0 to 1023;
+        i_c0         : in    integer range 0 to 1023;
+        i_c0_last_c1 : in    integer range 0 to 1023;
 
         i_image_x     : in    integer range 0 to 1023; --! size of input image
         i_image_y     : in    integer range 0 to 1023; --! size of input image
@@ -128,16 +128,16 @@ architecture rtl of address_generator is
 
 begin
 
-    w_c1      <= i_tiles_c;
+    w_c1      <= i_c1;
     w_w1      <= i_image_x;
-    w_h2      <= i_tiles_y;
+    w_h2      <= i_h2;
     w_w1_wght <= i_kernel_size;
 
-    w_c0_iact <= i_c_per_tile when r_count_c1_iact /= w_c1 - 1 else
-                 i_c_last_tile;
+    w_c0_iact <= i_c0 when r_count_c1_iact /= w_c1 - 1 else
+                 i_c0_last_c1;
 
-    w_c0_wght <= i_c_per_tile when r_count_c1_wght /= w_c1 - 1 else
-                 i_c_last_tile;
+    w_c0_wght <= i_c0 when r_count_c1_wght /= w_c1 - 1 else
+                 i_c0_last_c1;
 
     w_offset_mem_iact <= r_offset_c_iact * i_image_x + r_count_w1_iact;
     w_offset_mem_wght <= r_offset_c_wght * i_kernel_size + r_count_w1_wght;
@@ -331,7 +331,7 @@ begin
         elsif rising_edge(clk) then
             if i_start = '1' and not r_address_offsets_psum_done = '1' then
                 if r_address_offsets_count_x /= size_x - 1 then
-                    r_address_offsets_psum(r_address_offsets_count_x + 1) <= std_logic_vector(to_unsigned(to_integer(unsigned(r_address_offsets_psum(r_address_offsets_count_x)) + i_tiles_x), addr_width_psum_mem));
+                    r_address_offsets_psum(r_address_offsets_count_x + 1) <= std_logic_vector(to_unsigned(to_integer(unsigned(r_address_offsets_psum(r_address_offsets_count_x)) + i_w1), addr_width_psum_mem));
                     r_address_offsets_count_x                             <= r_address_offsets_count_x + 1;
                 else
                     r_address_offsets_psum_done <= '1';

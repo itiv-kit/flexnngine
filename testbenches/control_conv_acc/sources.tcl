@@ -10,6 +10,7 @@ vcom -64 -2008 -work xil_defaultlib  \
 "../../hdl/address_generator.vhd" \
 "../../hdl/address_generator_psum.vhd" \
 "../../hdl/control.vhd" \
+"../../hdl/control_init.vhd" \
 "../../hdl/pe_array.vhd" \
 "../../hdl/demux.vhd" \
 "../../hdl/line_buffer.vhd" \
@@ -20,6 +21,7 @@ vcom -64 -2008 -work xil_defaultlib  \
 "../../hdl/ram_dp_init.vhd" \
 "../../hdl/accelerator.vhd" \
 "../../hdl/scratchpad.vhd" \
+"../../hdl/scratchpad_init.vhd" \
 "../../hdl/scratchpad_interface.vhd" \
 "../../hdl/rr_arbiter.vhd" \
 "../../hdl/onehot_binary.vhd" \

@@ -285,7 +285,7 @@ begin
             rstn                 => rstn,
             o_status             => status,
             i_start              => start,
-            i_start_init         => start_init,
+            i_start              => start_init,
             o_tiles_c            => tiles_c,
             o_tiles_x            => tiles_x,
             o_tiles_y            => tiles_y,
