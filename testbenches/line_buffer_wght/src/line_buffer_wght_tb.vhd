@@ -33,6 +33,7 @@ architecture imp of line_buffer_wght_tb is
         port (
             clk             : in    std_logic;
             rstn            : in    std_logic;
+            i_enable        : in    std_logic;
             i_data          : in    std_logic_vector(data_width - 1 downto 0);
             i_data_valid    : in    std_logic;
             o_data          : out   std_logic_vector(data_width - 1 downto 0);
@@ -99,6 +100,7 @@ begin
         port map (
             clk             => clk,
             rstn            => rstn,
+            i_enable        => '1',
             i_data          => data_in,
             i_data_valid    => data_in_valid,
             o_data          => data_out,

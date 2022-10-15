@@ -80,6 +80,7 @@ architecture imp of pe_array_conv_5x5_channels_tb is
             i_preload_psum       : in    std_logic_vector(data_width_psum - 1 downto 0);
             i_preload_psum_valid : in    std_logic;
 
+            i_enable       : in    std_logic;
             i_command      : in    command_pe_row_col_t(0 to size_y - 1, 0 to size_x - 1);
             i_command_iact : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
             i_command_psum : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
@@ -432,6 +433,7 @@ begin
             rstn                    => rstn,
             i_preload_psum          => i_preload_psum,
             i_preload_psum_valid    => i_preload_psum_valid,
+            i_enable                => '1',
             i_command               => command,
             i_command_iact          => command_iact,
             i_command_psum          => command_psum,
