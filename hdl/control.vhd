@@ -84,8 +84,8 @@ architecture rtl of control is
     signal r_tile_change_x : std_logic;
     signal r_tile_change_c : std_logic;
 
-    type   t_state_type is (s_calculate, s_output, s_tile_c_change);
-    signal r_state : t_state_type;
+    type   t_state is (s_calculate, s_output, s_tile_c_change);
+    signal r_state : t_state;
 
     signal r_command_iact       : command_lb_array_t(0 to size_y);
     signal r_read_offset_iact   : array_t(0 to size_y)(addr_width_iact - 1 downto 0);

@@ -38,8 +38,8 @@ entity control_conv_tb is
         fifo_width : positive := 16;
 
         g_channels    : positive := 10;
-        g_image_y     : positive := 14;
-        g_image_x     : positive := 14;
+        g_image_y     : positive := 29;
+        g_image_x     : positive := 29;
         g_kernel_size : positive := 5;
 
         g_tiles_y : positive := positive(integer(ceil(real(g_image_x - g_kernel_size + 1) / real(g_kernel_size)))) -- Y tiles, determined in control module, but for input data loading required here
@@ -150,7 +150,7 @@ begin
     clk_sp_gen : process (clk_sp) is
     begin
 
-        clk_sp <= not clk_sp after 3 ns;
+        clk_sp <= not clk_sp after 4 ns;
 
     end process clk_sp_gen;
 
@@ -183,6 +183,18 @@ begin
 
         assert addr_width_wght = integer(ceil(log2(real(line_length_wght))))
             report "Check wght address width!"
+            severity failure;
+
+        assert addr_width_x = integer(ceil(log2(real(size_x))))
+            report "Check address width x!"
+            severity failure;
+
+        assert addr_width_y = integer(ceil(log2(real(size_y))))
+            report "Check address width y!"
+            severity failure;
+
+        assert addr_width_rows = integer(ceil(log2(real(size_rows))))
+            report "Check address width rows!"
             severity failure;
 
         wait;

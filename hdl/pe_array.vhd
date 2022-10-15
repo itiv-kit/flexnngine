@@ -29,6 +29,7 @@ entity pe_array is
         i_preload_psum       : in    std_logic_vector(data_width_psum - 1 downto 0);
         i_preload_psum_valid : in    std_logic;
 
+        i_enable       : in    std_logic;
         i_command      : in    command_pe_row_col_t(0 to size_y - 1, 0 to size_x - 1);
         i_command_iact : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
         i_command_psum : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
@@ -86,6 +87,7 @@ architecture behavioral of pe_array is
             clk  : in    std_logic;
             rstn : in    std_logic;
 
+            i_enable       : in    std_logic;
             i_command      : in    command_pe_t;
             i_command_iact : in    command_lb_t;
             i_command_psum : in    command_lb_t;
@@ -169,7 +171,18 @@ architecture behavioral of pe_array is
     signal w_data_out_iact_valid : std_logic_row_col_t(0 to size_y - 1, 0 to size_x - 1);
     signal w_data_out_wght_valid : std_logic_row_col_t(0 to size_y - 1, 0 to size_x - 1);
 
+    signal r_enable : std_logic_vector(size_x - 1 downto 0);
+
 begin
+
+    -- Enable / stall signals. Propagate through array in x-direction
+    r_enable(0) <= i_enable when rising_edge(clk);
+
+    enable : for x in 1 to size_x - 1 generate
+
+        r_enable(x) <= r_enable(x - 1) when rising_edge(clk);
+
+    end generate enable;
 
     -- INPUT ACTIVATIONS ----------------------------------------------------------
     -- Input activations to PEs that are not directly connected to outside of array
@@ -329,6 +342,7 @@ begin
                     port map (
                         clk                     => clk,
                         rstn                    => rstn,
+                        i_enable                => r_enable(x),
                         i_command               => i_command(y,x),
                         i_command_iact          => i_command_iact(y,x),
                         i_command_psum          => i_command_psum(y,x),
@@ -382,6 +396,7 @@ begin
                     port map (
                         clk                     => clk,
                         rstn                    => rstn,
+                        i_enable                => r_enable(x),
                         i_command               => i_command(y,x),
                         i_command_iact          => i_command_iact(y,x),
                         i_command_psum          => i_command_psum(y,x),
@@ -435,6 +450,7 @@ begin
                     port map (
                         clk                     => clk,
                         rstn                    => rstn,
+                        i_enable                => r_enable(x),
                         i_command               => i_command(y,x),
                         i_command_iact          => i_command_iact(y,x),
                         i_command_psum          => i_command_psum(y,x),

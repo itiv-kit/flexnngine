@@ -2,7 +2,7 @@ import numpy as np
 import math
 
 kernel_size = 5
-image_size = 14
+image_size = 29
 channels = 10
 input_bits = 3
 

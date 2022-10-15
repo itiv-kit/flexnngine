@@ -83,6 +83,7 @@ architecture rtl of accelerator is
             i_preload_psum       : in    std_logic_vector(data_width_psum - 1 downto 0);
             i_preload_psum_valid : in    std_logic;
 
+            i_enable       : in    std_logic;
             i_command      : in    command_pe_row_col_t(0 to size_y - 1, 0 to size_x - 1);
             i_command_iact : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
             i_command_psum : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
@@ -299,6 +300,7 @@ architecture rtl of accelerator is
 
             i_start  : in    std_logic;
             o_status : out   std_logic;
+            o_enable : out   std_logic;
 
             -- Data to and from Address generator
             i_address_iact : in    array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
@@ -353,6 +355,8 @@ architecture rtl of accelerator is
             size_x    : positive := 5;
             size_y    : positive := 5;
             size_rows : positive := 9;
+
+            addr_width_x : positive := 3;
 
             line_length_iact    : positive := 512;
             addr_width_iact     : positive := 9;
@@ -451,6 +455,7 @@ architecture rtl of accelerator is
     signal r_start_init_control : std_logic;
 
     signal w_status_if : std_logic;
+    signal w_enable    : std_logic;
 
     signal w_status_adr     : std_logic;
     signal r_start_adr      : std_logic;
@@ -551,6 +556,7 @@ begin
             rstn                    => rstn,
             i_preload_psum          => w_preload_psum,
             i_preload_psum_valid    => w_preload_psum_valid,
+            i_enable                => w_enable,
             i_command               => w_command,
             i_command_iact          => w_command_iact,
             i_command_psum          => w_command_psum,
@@ -593,7 +599,7 @@ begin
             clk                  => clk,
             rstn                 => rstn,
             o_status             => w_status_control,
-            i_start              => r_start_control,
+            i_start              => w_enable,
             i_start_init         => r_start_init_control,
             o_tiles_c            => w_tiles_c,
             o_tiles_x            => w_tiles_x,
@@ -719,6 +725,7 @@ begin
             clk_sp                   => clk_sp,
             i_start                  => r_start_adr,
             o_status                 => w_status_if,
+            o_enable                 => w_enable,
             i_address_iact           => w_address_iact,
             i_address_wght           => w_address_wght,
             i_address_iact_valid     => w_address_iact_valid,
@@ -756,6 +763,7 @@ begin
             line_length_iact    => line_length_iact,
             addr_width_iact     => addr_width_iact,
             addr_width_iact_mem => addr_width_iact_mem,
+            addr_width_x        => addr_width_x,
             line_length_psum    => line_length_psum,
             addr_width_psum     => addr_width_psum,
             addr_width_psum_mem => addr_width_psum_mem,

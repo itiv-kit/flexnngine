@@ -24,6 +24,7 @@ entity pe is
         clk  : in    std_logic;
         rstn : in    std_logic;
 
+        i_enable       : in    std_logic;
         i_command      : in    command_pe_t;
         i_command_iact : in    command_lb_t;
         i_command_psum : in    command_lb_t;
@@ -73,11 +74,13 @@ architecture behavioral of pe is
         generic (
             line_length : positive := 7;
             addr_width  : positive := 3;
-            data_width  : positive := 8
+            data_width  : positive := 8;
+            psum_type   : boolean  := false
         );
         port (
             clk                : in    std_logic;
             rstn               : in    std_logic;
+            i_enable           : in    std_logic;
             i_data             : in    std_logic_vector(data_width - 1 downto 0);
             i_data_valid       : in    std_logic;
             o_data             : out   std_logic_vector(data_width - 1 downto 0);
@@ -191,6 +194,12 @@ architecture behavioral of pe is
     signal w_data_in_iact_valid : std_logic;
     signal w_data_in_iact       : std_logic_vector(data_width_iact - 1 downto 0);
 
+    signal i_data_in_valid_chg : std_logic;
+    signal r_enable            : std_logic;
+    signal r_enable_d          : std_logic;
+    signal r_enable_dd         : std_logic;
+    signal r_enable_ddd        : std_logic;
+
 begin
 
     w_data_acc_in2       <= w_data_psum;
@@ -203,16 +212,18 @@ begin
             r_sel_mult_psum <= '0';
             r_sel_conv_gemm <= '0';
         elsif rising_edge(clk) then
-            if i_command = c_pe_conv_mult or i_command = c_pe_gemm_mult then
-                r_sel_mult_psum <= '0';
-            else
-                r_sel_mult_psum <= '1';
-            end if;
+            if i_enable then
+                if i_command = c_pe_conv_mult or i_command = c_pe_gemm_mult then
+                    r_sel_mult_psum <= '0';
+                else
+                    r_sel_mult_psum <= '1';
+                end if;
 
-            if i_command = c_pe_conv_mult or i_command = c_pe_conv_psum then
-                r_sel_conv_gemm <= '0';
-            else
-                r_sel_conv_gemm <= '1';
+                if i_command = c_pe_conv_mult or i_command = c_pe_conv_psum then
+                    r_sel_conv_gemm <= '0';
+                else
+                    r_sel_conv_gemm <= '1';
+                end if;
             end if;
         end if;
 
@@ -224,17 +235,17 @@ begin
     sel_conv_gemm <= '0' when (command = c_pe_conv_mult or command = c_pe_conv_psum) and rising_edge(clk) else
                      '1' when (command = c_pe_gemm_mult or command = c_pe_gemm_psum) and rising_edge(clk);*/
 
-    w_data_acc_valid  <= (w_data_acc_in1_valid and w_data_acc_in2_valid) or w_data_acc_in2_valid;
+    w_data_acc_valid  <= (w_data_acc_in1_valid and w_data_acc_in2_valid);
     w_iact_wght_valid <= w_data_iact_valid and w_data_wght_valid;
 
-    o_data_out_iact <= i_data_in_iact when rising_edge(clk);
+    /*o_data_out_iact <= i_data_in_iact when rising_edge(clk);
     o_data_out_wght <= i_data_in_wght when rising_edge(clk);
 
     o_data_out_iact_valid <= i_data_in_iact_valid when rising_edge(clk);
     o_data_out_wght_valid <= i_data_in_wght_valid when rising_edge(clk);
 
     r_data_iact_wide       <= w_demux_input_iact when rising_edge(clk);
-    r_data_iact_wide_valid <= w_demux_input_iact_valid when rising_edge(clk);
+    r_data_iact_wide_valid <= w_demux_input_iact_valid when rising_edge(clk);*/
 
     -- data_out_valid  <= data_acc_out_valid;
     -- data_out        <= data_acc_out;
@@ -247,10 +258,12 @@ begin
         if not rstn then
             r_command_read_psum <= '0';
         elsif rising_edge(clk) then
-            if i_command_psum = c_lb_read then
-                r_command_read_psum <= '1';
-            else
-                r_command_read_psum <= '0';
+            if i_enable then
+                if i_command_psum = c_lb_read then
+                    r_command_read_psum <= '1';
+                else
+                    r_command_read_psum <= '0';
+                end if;
             end if;
         end if;
 
@@ -262,10 +275,12 @@ begin
         if not rstn then
             r_command_read_iact <= '0';
         elsif rising_edge(clk) then
-            if i_command_iact = c_lb_read then
-                r_command_read_iact <= '1';
-            else
-                r_command_read_iact <= '0';
+            if i_enable then
+                if i_command_iact = c_lb_read then
+                    r_command_read_iact <= '1';
+                else
+                    r_command_read_iact <= '0';
+                end if;
             end if;
         end if;
 
@@ -277,10 +292,12 @@ begin
         if not rstn then
             r_command_read_wght <= '0';
         elsif rising_edge(clk) then
-            if i_command_wght = c_lb_read then
-                r_command_read_wght <= '1';
-            else
-                r_command_read_wght <= '0';
+            if i_enable then
+                if i_command_wght = c_lb_read then
+                    r_command_read_wght <= '1';
+                else
+                    r_command_read_wght <= '0';
+                end if;
             end if;
         end if;
 
@@ -294,22 +311,47 @@ begin
             r_command_read_iact_delay <= '0';
             r_command_read_wght_delay <= '0';
         elsif rising_edge(clk) then
-            r_command_read_psum_delay <= r_command_read_psum;
-            r_command_read_iact_delay <= r_command_read_iact;
-            r_command_read_wght_delay <= r_command_read_wght;
+            if i_enable then
+                r_command_read_psum_delay <= r_command_read_psum;
+                r_command_read_iact_delay <= r_command_read_iact;
+                r_command_read_wght_delay <= r_command_read_wght;
+            end if;
         end if;
 
     end process delays;
+
+    data_delays : process (clk, rstn) is
+    begin
+
+        if not rstn then
+            o_data_out_iact        <= (others => '0');
+            o_data_out_wght        <= (others => '0');
+            o_data_out_iact_valid  <= '0';
+            o_data_out_wght_valid  <= '0';
+            r_data_iact_wide       <= (others => '0');
+            r_data_iact_wide_valid <= '0';
+        elsif rising_edge(clk) then
+            o_data_out_iact        <= i_data_in_iact;
+            o_data_out_wght        <= i_data_in_wght;
+            o_data_out_iact_valid  <= i_data_in_iact_valid;
+            o_data_out_wght_valid  <= i_data_in_wght_valid;
+            r_data_iact_wide       <= w_demux_input_iact;
+            r_data_iact_wide_valid <= w_demux_input_iact_valid;
+        end if;
+
+    end process data_delays;
 
     line_buffer_iact : component line_buffer
         generic map (
             line_length => line_length_iact,
             addr_width  => addr_width_iact,
-            data_width  => data_width_iact
+            data_width  => data_width_iact,
+            psum_type   => false
         )
         port map (
             clk                => clk,
             rstn               => rstn,
+            i_enable           => i_enable,
             i_data             => w_data_in_iact,
             i_data_valid       => w_data_in_iact_valid,
             o_data             => w_data_iact,
@@ -326,11 +368,13 @@ begin
         generic map (
             line_length => line_length_psum,
             addr_width  => addr_width_psum,
-            data_width  => data_width_psum
+            data_width  => data_width_psum,
+            psum_type   => true
         )
         port map (
             clk                => clk,
             rstn               => rstn,
+            i_enable           => i_enable,
             i_data             => i_data_in_psum,
             i_data_valid       => i_data_in_psum_valid,
             o_data             => w_data_psum,
@@ -347,11 +391,13 @@ begin
         generic map (
             line_length => line_length_wght,
             addr_width  => addr_width_wght,
-            data_width  => data_width_wght
+            data_width  => data_width_wght,
+            psum_type   => false
         )
         port map (
             clk                => clk,
             rstn               => rstn,
+            i_enable           => i_enable,
             i_data             => i_data_in_wght,
             i_data_valid       => i_data_in_wght_valid,
             o_data             => w_data_wght,
@@ -503,10 +549,17 @@ begin
             address_width => 1
         )
         port map (
-            v_i(0)    => i_data_in_valid,
+            v_i(0)    => i_data_in_valid_chg,
             sel(0)    => r_sel_conv_gemm,
             z_o(0)(0) => w_demux_input_psum_valid,
             z_o(1)(0) => w_demux_input_iact_valid
         );
+
+    r_enable            <= i_enable when rising_edge(clk);
+    r_enable_d          <= r_enable when rising_edge(clk);
+    r_enable_dd         <= r_enable_d when rising_edge(clk);
+    r_enable_ddd        <= r_enable_dd when rising_edge(clk);
+    i_data_in_valid_chg <= '0' when r_sel_mult_psum = '1' and r_enable_ddd = '0' else
+                           i_data_in_valid; -- 0 wenn enable off und psum pfad aktiv
 
 end architecture behavioral;

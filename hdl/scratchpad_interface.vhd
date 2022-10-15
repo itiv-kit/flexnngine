@@ -43,6 +43,7 @@ entity scratchpad_interface is
 
         i_start  : in    std_logic;
         o_status : out   std_logic;
+        o_enable : out   std_logic;
 
         -- Data to and from Address generator
         i_address_iact : in    array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
@@ -219,29 +220,71 @@ architecture rtl of scratchpad_interface is
 
     signal r_start_delay : std_logic_vector(fifo_width * 5 - 1 downto 0); /* TODO change start delay */
 
+    signal r_done_wght : std_logic;
+    signal r_done_iact : std_logic;
+
 begin
 
-    o_status <= '1' when r_start_delay(fifo_width * 5 - 1) = '1' else
-                '0'; /* TODO change start delay */
+    -- Create enable signal for PEs. Enable if first values in buffer (o_status) and one of three conditions fulfilled:
+    -- 1. Input activations "done" and all wght FIFOs not empty
+    -- 2. Weights "done" and all iact FIFOs not empty
+    -- 3. All wght and iact FIFOs not empty
+    p_enable : process (clk, rstn) is
+    begin
+
+        if not rstn then
+            o_enable    <= '0';
+            r_done_wght <= '0';
+            r_done_iact <= '0';
+        elsif rising_edge(clk) then
+            if o_status = '1' then
+                if (and w_empty_wght_address_f) and (and w_empty_wght_f) then
+                    r_done_wght <= '1';
+                else
+                    r_done_wght <= '0';
+                end if;
+
+                if (and w_empty_iact_address_f) and (and w_empty_iact_f) then
+                    r_done_iact <= '1';
+                else
+                    r_done_iact <= '0';
+                end if;
+
+                if (or w_empty_iact_f = '1') and r_done_iact = '1' and (or w_empty_wght_f = '0') then
+                    o_enable <= '1';
+                elsif (or w_empty_wght_f = '1') and r_done_wght = '1' and (or w_empty_iact_f = '0') then
+                    o_enable <= '1';
+                elsif (or w_empty_iact_f = '0') and  (or w_empty_wght_f = '0') then
+                    o_enable <= '1';
+                elsif r_done_iact = '1' and r_done_wght = '1' then
+                    o_enable <= '1';
+                else
+                    o_enable <= '0';
+                end if;
+            end if;
+        end if;
+
+    end process p_enable;
+
+    -- Status signal indicates that the first values are in the buffers. Set to '1' once all address FIFOs not empty.
+    p_startup : process (clk, rstn) is
+    begin
+
+        if not rstn then
+            o_status <= '0';
+        elsif rising_edge(clk) then
+            if or w_empty_iact_address_f = '0' and or w_empty_wght_address_f = '0' then
+                o_status <= '1';
+            end if;
+        end if;
+
+    end process p_startup;
 
     o_address_iact <= w_address_iact_wide(addr_width_iact_mem - 1 downto 0);
     o_address_wght <= w_address_wght_wide(addr_width_wght_mem - 1 downto 0);
 
     o_data_iact_valid <= w_valid_iact_f;
     o_data_wght_valid <= w_valid_wght_f;
-
-    p_start_delay : process (clk, rstn) is
-    begin
-
-        if not rstn then
-            r_start_delay <= (others => '0');
-        elsif rising_edge(clk) then
-            if i_start then
-                r_start_delay <= r_start_delay(fifo_width * 5 - 2 downto 0) & '1'; /* TODO change start delay */
-            end if;
-        end if;
-
-    end process p_start_delay;
 
     pe_arr_iact : for i in 0 to size_rows - 1 generate
 

@@ -12,11 +12,13 @@ entity line_buffer is
     generic (
         line_length : positive := 32; --! Length of the lines in the image
         addr_width  : positive := 5;  --! Address width for the ram_dp subcomponent. ceil(log2(line_length))
-        data_width  : positive := 8   --! Data width for the ram_dp subcomponent - should be the width of data to be stored (8 / 16 bit?)
+        data_width  : positive := 8;  --! Data width for the ram_dp subcomponent - should be the width of data to be stored (8 / 16 bit?)
+        psum_type   : boolean  := false
     );
     port (
         clk                : in    std_logic;                                 --! Clock input
         rstn               : in    std_logic;                                 --! Negated asynchronous reset
+        i_enable           : in    std_logic;
         i_data             : in    std_logic_vector(data_width - 1 downto 0); --! Input to be pushed to the FIFO
         i_data_valid       : in    std_logic;                                 --! Data only read if valid = '1'
         o_data             : out   std_logic_vector(data_width - 1 downto 0); --! Outputs the element read_offset away from the head of the FIFO
@@ -132,14 +134,16 @@ begin
     begin
 
         if rising_edge(clk) then
-            if i_command = c_lb_read or i_command = c_lb_read_update then
-                assert to_integer(unsigned(i_read_offset)) < r_fill_count
-                    report "Error: reading from offset " & integer'image(to_integer(unsigned(i_read_offset))) & " ; Fill count only " & integer'image(r_fill_count)
-                    severity failure;
+            if i_enable = '1' or psum_type = true then
+                if i_command = c_lb_read or i_command = c_lb_read_update then
+                    assert to_integer(unsigned(i_read_offset)) < r_fill_count
+                        report "Error: reading from offset " & integer'image(to_integer(unsigned(i_read_offset))) & " ; Fill count only " & integer'image(r_fill_count)
+                        severity failure;
 
-                assert to_integer(unsigned(i_update_offset)) < r_fill_count
-                    report "Error: updating value at offset " & integer'image(to_integer(unsigned(i_read_offset))) & " ; Fill count only " & integer'image(r_fill_count)
-                    severity failure;
+                    assert to_integer(unsigned(i_update_offset)) < r_fill_count
+                        report "Error: updating value at offset " & integer'image(to_integer(unsigned(i_read_offset))) & " ; Fill count only " & integer'image(r_fill_count)
+                        severity failure;
+                end if;
             end if;
         end if;
 
@@ -270,9 +274,11 @@ begin
             r_command_delay        <= (others => c_lb_idle);
             r_update_offset_delay  <= (others => (others => '0'));
         elsif rising_edge(clk) then
-            r_forward_update_delay <= r_forward_update_delay(0) & w_forward_update;
-            r_command_delay        <= (i_command, r_command_delay(0), r_command_delay(1));
-            r_update_offset_delay  <= (i_update_offset, r_update_offset_delay(0), r_update_offset_delay(1));
+            if i_enable = '1' or psum_type = true then
+                r_forward_update_delay <= r_forward_update_delay(0) & w_forward_update;
+                r_command_delay        <= (i_command, r_command_delay(0), r_command_delay(1));
+                r_update_offset_delay  <= (i_update_offset, r_update_offset_delay(0), r_update_offset_delay(1));
+            end if;
         end if;
 
     end process delays;
@@ -294,59 +300,64 @@ begin
             o_data_valid     <= '0';
             r_data_out_valid <= '0';
         elsif rising_edge(clk) then
-            o_data_valid <= r_data_out_valid;
-            -- fifo_shrink_s  <= '0';
-            r_wenb  <= '0';
-            r_addrb <= (others => '0');
-            r_dinb  <= (others => '0');
+            if i_enable = '1' or psum_type = true then
+                o_data_valid <= r_data_out_valid;
+                -- fifo_shrink_s  <= '0';
+                r_wenb  <= '0';
+                r_addrb <= (others => '0');
+                r_dinb  <= (others => '0');
 
-            case i_command is
+                case i_command is
 
-                -- idle
-                when c_lb_idle =>
+                    -- idle
+                    when c_lb_idle =>
 
-                    r_data_out_valid <= '0';
+                        r_data_out_valid <= '0';
 
-                -- read
-                when c_lb_read =>
+                    -- read
+                    when c_lb_read =>
 
-                    v_pointer_read := r_pointer_head;
-                    -- only calculate offset if read_offset not zero
-                    if or i_read_offset /= '0' then
-                        v_offset := to_integer(unsigned(i_read_offset));
-                        incr_offset_v(v_pointer_read, v_offset);
-                    end if;
-                    -- read at pointer_read_v that was offset from pointer_head_s by read_offset
-                    r_addrb          <= std_logic_vector(to_unsigned(v_pointer_read, addr_width));
-                    r_data_out_valid <= '1';
+                        v_pointer_read := r_pointer_head;
+                        -- only calculate offset if read_offset not zero
+                        if or i_read_offset /= '0' then
+                            v_offset := to_integer(unsigned(i_read_offset));
+                            incr_offset_v(v_pointer_read, v_offset);
+                        end if;
+                        -- read at pointer_read_v that was offset from pointer_head_s by read_offset
+                        r_addrb          <= std_logic_vector(to_unsigned(v_pointer_read, addr_width));
+                        r_data_out_valid <= '1';
 
-                -- read / update
-                when c_lb_read_update =>
+                    -- read / update
+                    when c_lb_read_update =>
 
-                    v_pointer_read := r_pointer_head;
-                    -- only calculate offset if read_offset not zero
-                    if or i_read_offset /= '0' then
-                        v_offset := to_integer(unsigned(i_read_offset));
-                        incr_offset_v(v_pointer_read, v_offset);
-                    end if;
-                    -- read at pointer_read_v that was offset from pointer_head_s by read_offset
-                    r_addrb          <= std_logic_vector(to_unsigned(v_pointer_read, addr_width));
-                    r_data_out_valid <= '1';
+                        v_pointer_read := r_pointer_head;
+                        -- only calculate offset if read_offset not zero
+                        if or i_read_offset /= '0' then
+                            v_offset := to_integer(unsigned(i_read_offset));
+                            incr_offset_v(v_pointer_read, v_offset);
+                        end if;
+                        -- read at pointer_read_v that was offset from pointer_head_s by read_offset
+                        r_addrb          <= std_logic_vector(to_unsigned(v_pointer_read, addr_width));
+                        r_data_out_valid <= '1';
 
-                -- shrink
-                when c_lb_shrink =>
+                    -- shrink
+                    when c_lb_shrink =>
 
-                    r_data_out_valid <= '0';
-                    -- incr(pointer_head_s);
-                    incr_offset(r_pointer_head,  w_read_offset);
-                -- fifo_shrink_s <= '1';
+                        r_data_out_valid <= '0';
+                        -- incr(pointer_head_s);
+                        incr_offset(r_pointer_head,  w_read_offset);
+                    -- fifo_shrink_s <= '1';
 
-                when others =>
+                    when others =>
 
-                    r_data_out_valid <= '0';
+                        r_data_out_valid <= '0';
 
-            end case;
+                end case;
 
+            else
+                r_data_out_valid <= '0';
+                o_data_valid     <= r_data_out_valid;
+            end if;
         end if;
 
     end process read_command;
