@@ -149,7 +149,7 @@ begin
             if i_start and not r_init_h2_done then
                 r_h2_tmp <= r_h2_tmp + size_x;
 
-                if r_h2_tmp > (i_image_y - 2 * i_kernel_size + 2) then
+                if r_h2_tmp > (i_image_y - i_kernel_size + 1) then
                     -- Tiling done
                     r_rows_last_h2 <= r_h2_tmp - (i_image_y - 2 * i_kernel_size + 1);
                     r_init_h2_done <= '1';
