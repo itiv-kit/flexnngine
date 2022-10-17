@@ -27,3 +27,6 @@ vsim.dbg
 
 #ignore v4p
 *.v4p
+
+#ignore nfs files
+.nfs*

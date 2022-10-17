@@ -213,12 +213,12 @@ begin
                                     r_count_c1_iact     <= 0;
                                     r_index_c_iact      <= 0;
                                     r_index_c_last_iact <= 0;
-                                    r_offset_c_iact     <= r_offset_c_last_h2_iact + i_kernel_size;
+                                    r_offset_c_iact     <= r_offset_c_last_h2_iact + size_x;
 
                                     if r_count_h2_iact /= w_h2 then
                                         r_count_h2_iact         <= r_count_h2_iact + 1;
-                                        r_offset_c_last_h2_iact <= r_offset_c_last_h2_iact + i_kernel_size;
-                                        r_offset_c_last_c1_iact <= r_offset_c_last_h2_iact + i_kernel_size;
+                                        r_offset_c_last_h2_iact <= r_offset_c_last_h2_iact + size_x;
+                                        r_offset_c_last_c1_iact <= r_offset_c_last_h2_iact + size_x;
                                     else
                                         r_data_valid_iact <= '0';
                                         r_iact_done       <= '1';
