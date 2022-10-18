@@ -11,14 +11,16 @@ add wave -noupdate -expand -group Start -radix unsigned /control_conv_tb/acceler
 add wave -noupdate -expand -group Start -radix unsigned /control_conv_tb/accelerator_inst/r_start_control
 add wave -noupdate -expand -group Start -radix unsigned /control_conv_tb/accelerator_inst/pe_array_inst/i_enable
 
-add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/control_inst/r_h2
-#add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_tiles_y_last_tile_rows
-add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/control_inst/r_w1
-add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/control_inst/r_c1
-add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/control_inst/r_c0w0
-add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/control_inst/r_c0w0_last_c1
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/control_inst/w_h2
+#add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/accelerator_inst/control_inst/w_tiles_y_last_tile_rows
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/control_inst/w_w1
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/control_inst/w_c1
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/control_inst/w_c0w0
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/control_inst/w_c0w0_last_c1
 add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/w_c0
 add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/w_c0_last_c1
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/control_inst/control_init_inst/r_m0
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/accelerator_inst/control_inst/control_init_inst/r_rows_last_h2
 
 add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_count_c0w0
 add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_count_c1
@@ -110,6 +112,13 @@ add wave -noupdate -expand -group WGHT_INPUT -radix decimal  /control_conv_tb/ac
 add wave -noupdate -expand -group WGHT_INPUT -radix decimal  /control_conv_tb/accelerator_inst/w_data_wght_valid
 
 add wave -noupdate -expand -group IACT_INPUT -radix decimal  /control_conv_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_iact/ram/ram_instance
+add wave -noupdate -expand -group IACT_INPUT -radix decimal  /control_conv_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/line_buffer_iact/ram/ram_instance
+add wave -noupdate -expand -group IACT_INPUT -radix decimal  /control_conv_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(1)/pe_south/pe_inst/line_buffer_iact/ram/ram_instance
+add wave -noupdate -expand -group IACT_INPUT -radix decimal  /control_conv_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(2)/pe_south/pe_inst/line_buffer_iact/ram/ram_instance
+add wave -noupdate -expand -group IACT_INPUT -radix decimal  /control_conv_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(3)/pe_south/pe_inst/line_buffer_iact/ram/ram_instance
+add wave -noupdate -expand -group IACT_INPUT -radix decimal  /control_conv_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(6)/pe_south/pe_inst/line_buffer_iact/ram/ram_instance
+add wave -noupdate -expand -group IACT_INPUT -radix decimal  /control_conv_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(9)/pe_south/pe_inst/line_buffer_iact/ram/ram_instance
+
 add wave -noupdate -expand -group IACT_INPUT -radix decimal  /control_conv_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/w_data_iact
 add wave -noupdate -expand -group IACT_INPUT -radix unsigned /control_conv_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/w_data_iact_valid
 add wave -noupdate -expand -group IACT_INPUT -radix decimal  /control_conv_tb/accelerator_inst/w_data_iact(0)

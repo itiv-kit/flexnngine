@@ -2,7 +2,7 @@ import numpy as np
 import math
 
 kernel_size = 5
-image_size = 29
+image_size = 16
 channels = 10
 input_bits = 3
 
@@ -12,7 +12,7 @@ mem_size_iact = 15
 mem_size_wght = 15
 mem_size_psum = 15
 
-size_x = 7
+size_x = 10
 size_y = 5
 
 M0 = math.floor(size_y/kernel_size)
@@ -236,7 +236,13 @@ for tile_y in range(H2):
                 #print("index 2 : ", index + size_rows - 1)
                 #if c0 == C0_last:
                     #print("Image pixel --- : ", image_tmp[index, i])
-                image[:, column] = image_tmp[index : index + size_rows  , i]
+                if image_tmp[index : index + size_rows, i].shape[0] < size_rows :
+                    tmp = np.zeros((size_rows, 1))
+                    tmp[0:image_tmp[index : index + size_rows, i].shape[0], 0] = image_tmp[index : index + size_rows, i]
+                    image[:, column] = tmp[:, 0]
+                    print(" ---")
+                else:
+                    image[:, column] = image_tmp[index : index + size_rows, i]
                 column += 1
 
 np.savetxt('_kernel_reordered.txt', kernel, fmt='%d', delimiter=' ')

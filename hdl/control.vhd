@@ -27,6 +27,7 @@ entity control is
         o_c1 : out   integer range 0 to 1023;
         o_w1 : out   integer range 0 to 1023;
         o_h2 : out   integer range 0 to 1023;
+        o_m0 : out   integer range 0 to 1023;
 
         o_c0         : out   integer range 0 to 1023;
         o_c0_last_c1 : out   integer range 0 to 1023;
@@ -75,6 +76,7 @@ architecture rtl of control is
             o_c1           : out   integer range 0 to 1023;
             o_w1           : out   integer range 0 to 1023;
             o_h2           : out   integer range 0 to 1023;
+            o_m0           : out   integer range 0 to 1023;
             o_rows_last_h2 : out   integer range 0 to 1023;
             o_c0           : out   integer range 0 to 1023;
             o_c0_last_c1   : out   integer range 0 to 1023;
@@ -98,19 +100,21 @@ architecture rtl of control is
     signal r_count_w1   : integer range 0 to 1023;
     signal r_count_h2   : integer range 0 to 1023;
 
-    signal r_c0w0         : integer range 0 to 1023;
-    signal r_c0w0_last_c1 : integer range 0 to 1023;
+    signal w_c0w0         : integer range 0 to 1023;
+    signal w_c0w0_last_c1 : integer range 0 to 1023;
 
-    signal r_c0         : integer range 0 to 1023;
-    signal r_c0_last_c1 : integer range 0 to 1023;
+    signal w_c0         : integer range 0 to 1023;
+    signal w_c0_last_c1 : integer range 0 to 1023;
 
-    signal r_h2           : integer range 0 to 1023;
-    signal r_rows_last_h2 : integer range 0 to 1023;
+    signal w_h2           : integer range 0 to 1023;
+    signal w_rows_last_h2 : integer range 0 to 1023;
 
-    signal r_w1 : integer range 0 to 1023;
-    signal r_c1 : integer range 0 to 1023;
+    signal w_w1 : integer range 0 to 1023;
+    signal w_c1 : integer range 0 to 1023;
 
     signal r_incr_w1 : std_logic;
+
+    signal w_m0 : integer range 0 to 1023;
 
     type   t_state is (s_calculate, s_output, s_incr_c1);
     signal r_state : t_state;
@@ -145,12 +149,13 @@ begin
 
     o_status <= w_init_done;
 
-    o_c0_last_c1 <= r_c0_last_c1;
-    o_c0         <= r_c0;
+    o_c0_last_c1 <= w_c0_last_c1;
+    o_c0         <= w_c0;
 
-    o_c1 <= r_c1;
-    o_w1 <= r_w1;
-    o_h2 <= r_h2;
+    o_c1 <= w_c1;
+    o_w1 <= w_w1;
+    o_h2 <= w_h2;
+    o_m0 <= w_m0;
 
     gen_delay_y : for y in 0 to size_y - 1 generate
 
@@ -234,11 +239,11 @@ begin
             if w_init_done = '1' and i_start = '1' then
                 if r_state = s_calculate then
                     r_incr_w1 <= '0';
-                    if r_count_h2 /= r_h2 then
-                        if r_count_c1 /= r_c1 then
-                            if r_count_w1 /= r_w1 then
+                    if r_count_h2 /= w_h2 then
+                        if r_count_c1 /= w_c1 then
+                            if r_count_w1 /= w_w1 then
                                 -- if (r_command_counter /= r_commands_per_tile - 1) or (r_command_counter /= r_commands_last_tile_c - 1) then
-                                if not((r_count_c0w0 = r_c0w0 - 1 and r_count_c1 /= r_c1 - 1) or (r_count_c0w0 = r_c0w0_last_c1 - 1 and r_count_c1 = r_c1 - 1)) then
+                                if not((r_count_c0w0 = w_c0w0 - 1 and r_count_c1 /= w_c1 - 1) or (r_count_c0w0 = w_c0w0_last_c1 - 1 and r_count_c1 = w_c1 - 1)) then
                                     r_count_c0w0 <= r_count_c0w0 + 1;
                                     r_incr_w1    <= '0';
                                 else
@@ -257,7 +262,7 @@ begin
                                 r_count_c1 <= r_count_c1 + 1;
                                 r_count_w1 <= 0;
 
-                                if r_count_c1 /= r_c1 - 1 then
+                                if r_count_c1 /= w_c1 - 1 then
                                     -- Only perform iact & wght shrink if not last c1 done!
                                     r_state <= s_incr_c1;
                                 else
@@ -286,7 +291,7 @@ begin
                 elsif r_state = s_output then
                     -- Command counter for output commands (psum accumulation and psum read)
                     if r_count_c0w0 /= size_y then
-                        if r_count_w1 /= r_w1 - 1 then
+                        if r_count_w1 /= w_w1 - 1 then
                             r_count_w1 <= r_count_w1 + 1;
                         else
                             r_count_w1   <= 0;
@@ -296,7 +301,7 @@ begin
                         -- Delay counter after shrinking for new values to arrive in the buffer
                         if r_count_w1 /= 2 then -- r_W1 - 1 then /* TODO changed - check! */
                             r_count_w1 <= r_count_w1 + 1;
-                        elsif r_count_h2 = r_h2 then
+                        elsif r_count_h2 = w_h2 then
                         else
                             r_count_c1   <= 0;
                             r_count_w1   <= 0;
@@ -341,13 +346,13 @@ begin
                 if r_state = s_calculate then
                     if r_incr_w1 = '1' then
                         -- shift kernel - increment w1
-                        if r_count_c1 /= r_c1 - 1 then
-                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(r_c0, addr_width_iact)));
+                        if r_count_c1 /= w_c1 - 1 then
+                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(w_c0, addr_width_iact)));
                         else
-                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(r_c0_last_c1, addr_width_iact)));
+                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(w_c0_last_c1, addr_width_iact)));
                         end if;
                         r_command_iact <= (others => c_lb_shrink);
-                    elsif r_count_w1 = r_w1 then
+                    elsif r_count_w1 = w_w1 then
                         -- Tile y change
 
                         r_command_iact     <= (others => c_lb_idle);
@@ -365,14 +370,14 @@ begin
 
                     if r_count_w1 = 0 then
                         r_command_iact     <= (others => c_lb_shrink);
-                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * r_c0 - r_c0, addr_width_iact)));
+                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * w_c0 - w_c0, addr_width_iact)));
                     end if;
                 elsif r_state = s_output then
                     r_command_iact     <= (others => c_lb_idle);
                     r_read_offset_iact <= (others => (others => '0'));
 
                     if r_count_c0w0 = size_y and r_count_w1 = 0 then
-                        if r_c1 > 1 then
+                        if w_c1 > 1 then
                             r_command_iact     <= (others => c_lb_shrink);
                             r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * o_c0_last_c1 - o_c0_last_c1, addr_width_iact)));
                         else
@@ -402,7 +407,7 @@ begin
                         -- shift kernel - increment w1
                         r_command_wght     <= (others => c_lb_idle);
                         r_read_offset_wght <= (others => std_logic_vector(to_unsigned(0, addr_width_wght)));
-                    elsif r_count_w1 = r_w1 then
+                    elsif r_count_w1 = w_w1 then
                         -- Tile y change
 
                         r_command_wght     <= (others => c_lb_idle);
@@ -422,7 +427,7 @@ begin
                 elsif r_state = s_output then
                     r_command_wght <= (others => c_lb_idle);
 
-                    if r_c1 > 1 then
+                    if w_c1 > 1 then
                         if r_count_c0w0 = size_y and r_count_w1 = 0 then
                             r_command_wght     <= (others => c_lb_shrink);
                             r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_kernel_size * o_c0_last_c1, addr_width_wght)));
@@ -449,7 +454,7 @@ begin
                         r_command_psum       <= (others => c_lb_idle);
                         r_read_offset_psum   <= (others => std_logic_vector(to_unsigned(0, addr_width_psum)));
                         r_update_offset_psum <= r_read_offset_psum;
-                    elsif r_count_w1 = r_w1 then
+                    elsif r_count_w1 = w_w1 then
                         -- Tile y change
                         r_command_psum       <= (others => c_lb_idle);
                         r_read_offset_psum   <= (others => (others => '0'));
@@ -474,8 +479,8 @@ begin
                             r_command_psum     <= (others => c_lb_shrink);
                             r_read_offset_psum <= (others => std_logic_vector(to_unsigned(i_image_x - i_kernel_size + 1, addr_width_psum)));
                         end if;
-                    else
-                        r_command_psum(size_y - r_count_c0w0 - 1) <= c_lb_read;
+                    else 
+                        r_command_psum(size_y - r_count_c0w0 - 1) <= c_lb_read; /* TODO read multiple psums if more than one kernel vertically */
 
                         if r_count_c0w0 /= size_y - 1 then
                             r_command_psum(size_y - r_count_c0w0 - 2) <= c_lb_read_update;
@@ -507,14 +512,15 @@ begin
             rstn           => rstn,
             o_status       => w_init_done,
             i_start        => i_start_init,
-            o_c1           => r_c1,
-            o_w1           => r_w1,
-            o_h2           => r_h2,
-            o_rows_last_h2 => r_rows_last_h2,
-            o_c0           => r_c0,
-            o_c0_last_c1   => r_c0_last_c1,
-            o_c0w0         => r_c0w0,
-            o_c0w0_last_c1 => r_c0w0_last_c1,
+            o_c1           => w_c1,
+            o_w1           => w_w1,
+            o_h2           => w_h2,
+            o_m0           => w_m0,
+            o_rows_last_h2 => w_rows_last_h2,
+            o_c0           => w_c0,
+            o_c0_last_c1   => w_c0_last_c1,
+            o_c0w0         => w_c0w0,
+            o_c0w0_last_c1 => w_c0w0_last_c1,
             i_image_x      => i_image_x,
             i_image_y      => i_image_y,
             i_channels     => i_channels,

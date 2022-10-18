@@ -142,6 +142,7 @@ architecture rtl of accelerator is
             o_c1 : out   integer range 0 to 1023;
             o_w1 : out   integer range 0 to 1023;
             o_h2 : out   integer range 0 to 1023;
+            o_m0 : out   integer range 0 to 1023;
 
             o_c0         : out   integer range 0 to 1023;
             o_c0_last_c1 : out   integer range 0 to 1023;
@@ -195,6 +196,7 @@ architecture rtl of accelerator is
             i_c1 : in    integer range 0 to 1023;
             i_w1 : in    integer range 0 to 1023;
             i_h2 : in    integer range 0 to 1023;
+            i_m0 : in    integer range 0 to 1023;
 
             i_c0         : in    integer range 0 to 1023;
             i_c0_last_c1 : in    integer range 0 to 1023;
@@ -464,6 +466,7 @@ architecture rtl of accelerator is
     signal w_c1 : integer range 0 to 1023; /* TODO change range to sth. useful */
     signal w_w1 : integer range 0 to 1023; /* TODO change range to sth. useful */
     signal w_h2 : integer range 0 to 1023; /* TODO change range to sth. useful */
+    signal w_m0 : integer range 0 to 1023;
 
     signal w_c0          : integer range 0 to 1023; /* TODO change range to sth. useful */
     signal w_c0_last_c1  : integer range 0 to 1023; /* TODO change range to sth. useful */
@@ -604,6 +607,7 @@ begin
             o_c1                 => w_c1,
             o_w1                 => w_w1,
             o_h2                 => w_h2,
+            o_m0                 => w_m0,
             o_c0                 => w_c0,
             o_c0_last_c1         => w_c0_last_c1,
             i_image_x            => r_image_x,
@@ -679,6 +683,7 @@ begin
             i_c1                 => w_c1,
             i_w1                 => w_w1,
             i_h2                 => w_h2,
+            i_m0                 => w_m0,
             i_c0                 => w_c0,
             i_c0_last_c1         => w_c0_last_c1,
             i_image_x            => r_image_x,

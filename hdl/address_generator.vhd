@@ -30,6 +30,7 @@ entity address_generator is
         i_c1 : in    integer range 0 to 1023;
         i_w1 : in    integer range 0 to 1023;
         i_h2 : in    integer range 0 to 1023;
+        i_m0 : in    integer range 0 to 1023;
 
         i_c0         : in    integer range 0 to 1023;
         i_c0_last_c1 : in    integer range 0 to 1023;
