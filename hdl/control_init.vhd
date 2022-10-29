@@ -9,6 +9,10 @@ entity control_init is
         size_y    : positive := 5;
         size_rows : positive := 9;
 
+        addr_width_rows : positive := 4;
+        addr_width_y    : positive := 3;
+        addr_width_x    : positive := 3;
+
         line_length_iact : positive := 512;
         addr_width_iact  : positive := 9;
         line_length_psum : positive := 512;
@@ -20,10 +24,12 @@ entity control_init is
         clk  : in    std_logic;
         rstn : in    std_logic;
 
-        o_c1           : out   integer range 0 to 1023;
-        o_w1           : out   integer range 0 to 1023;
-        o_h2           : out   integer range 0 to 1023;
-        o_m0           : out   integer range 0 to 1023;
+        o_c1      : out   integer range 0 to 1023;
+        o_w1      : out   integer range 0 to 1023;
+        o_h2      : out   integer range 0 to 1023;
+        o_m0      : out   integer range 0 to 1023;
+        o_m0_dist : out   array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
+
         o_rows_last_h2 : out   integer range 0 to 1023;
         o_c0           : out   integer range 0 to 1023;
         o_c0_last_c1   : out   integer range 0 to 1023;
@@ -59,13 +65,18 @@ architecture rtl of control_init is
     signal r_h2_tmp : integer range 0 to 1023;
     signal r_c1_tmp : integer range 0 to 4095;
 
-    signal r_m0 : integer range 0 to 1023;
+    signal r_m0     : integer range 0 to 1023;
     signal r_m0_tmp : integer range 0 to 1023;
 
-    signal r_init_h2_done           : std_logic;
-    signal r_init_c1_done           : std_logic;
+    signal r_init_h2_done   : std_logic;
+    signal r_init_c1_done   : std_logic;
     signal r_init_c0w0_done : std_logic;
-    signal r_init_m0_done : std_logic;
+    signal r_init_m0_done   : std_logic;
+
+    -- type t_m0 is array(natural range <>) of integer range 0 to size_y;
+    signal r_m0_dist         : array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
+    signal r_m0_count_idx    : integer range 0 to size_y + 1;
+    signal r_m0_count_kernel : integer range 0 to size_y + 1;
 
     -- delay and tmp values for calculation of init value: r_commands_last_tile_c
     signal r_delay_init : integer range 0 to 15;
@@ -78,61 +89,94 @@ begin
     o_c0_last_c1 <= r_c0_last_c1;
     o_c0         <= r_c0;
 
-    o_c1 <= r_c1;
-    o_w1 <= r_w1;
-    o_h2 <= r_h2;
-    o_m0 <= r_m0;
+    o_c1      <= r_c1;
+    o_w1      <= r_w1;
+    o_h2      <= r_h2;
+    o_m0      <= r_m0;
+    o_m0_dist <= r_m0_dist;
 
     o_c0w0         <= r_c0w0;
     o_c0w0_last_c1 <= r_c0w0_last_c1;
 
     o_rows_last_h2 <= r_rows_last_h2;
 
-    p_init_parallel_kernels : process (clk, rstn) is
+    -- Map kernels on accelerator y dimension. 0 is no kernel, thus starting with 1.
+    p_init_m0_dist : process (clk, rstn) is
+
+        variable v_m0_count : integer range 0 to size_y + 1;
+
     begin
 
         if not rstn then
-            r_m0 <= 0;
+            r_m0_count_idx    <= 0;
+            r_m0_count_kernel <= 0;
+            v_m0_count        := 1;
+            r_m0_dist         <= (others => (others => '0'));
+        elsif rising_edge(clk) then
+            if i_start = '1' and r_init_m0_done = '1' then
+                if r_m0_count_idx /= size_y then
+                    r_m0_count_idx <= r_m0_count_idx + 1;
+                    if r_m0_count_kernel /= i_kernel_size then
+                        r_m0_count_kernel         <= r_m0_count_kernel + 1;
+                        r_m0_dist(r_m0_count_idx) <= std_logic_vector(to_unsigned(v_m0_count, addr_width_y));
+                    else
+                        if r_m0_count_idx + i_kernel_size <= size_y then -- check if one more kernel can be mapped
+                            r_m0_count_kernel         <= 1;
+                            v_m0_count                := v_m0_count + 1;
+                            r_m0_dist(r_m0_count_idx) <= std_logic_vector(to_unsigned(v_m0_count, addr_width_y));
+                        end if;
+                    end if;
+                end if;
+            end if;
+        end if;
+
+    end process p_init_m0_dist;
+
+    p_init_m0 : process (clk, rstn) is
+    begin
+
+        if not rstn then
+            r_m0           <= 0;
             r_init_m0_done <= '0';
-            r_m0_tmp <= 0;
+            r_m0_tmp       <= 0;
         elsif rising_edge(clk) then
             if i_start and not r_init_m0_done then
                 r_m0_tmp <= r_m0_tmp + i_kernel_size;
                 if r_m0_tmp > size_y then
                     r_init_m0_done <= '1';
-                    r_m0 <= r_m0 - 1;
+                    r_m0           <= r_m0 - 1;
                 else
                     r_m0 <= r_m0 + 1;
                 end if;
             end if;
         end if;
 
-    end process p_init_parallel_kernels;
+    end process p_init_m0;
 
-
-    p_init_commands_per_tile : process (clk, rstn) is
+    p_init_c0w0 : process (clk, rstn) is
     begin
 
         if not rstn then
-            r_c0w0                   <= 0;
+            r_c0w0           <= 0;
             r_init_c0w0_done <= '0';
         elsif rising_edge(clk) then
             if i_start and not r_init_c0w0_done then
                 r_c0w0 <= r_c0w0 + i_kernel_size;
                 r_c0   <= r_c0 + 1;
-                if r_c0w0 > line_length_wght then
+                if r_c0w0 + 5 > line_length_wght then
                     -- Commands per tile determined
-                    r_c0w0                   <= r_c0w0 - i_kernel_size;
-                    r_c0                     <= r_c0 - 1;
+                    -- Tiling c0w0 to always have 5 values remaining in buffer (enable is only set low when r/u pipeline filled)
+                    r_c0w0           <= r_c0w0 - i_kernel_size;
+                    r_c0             <= r_c0 - 1;
                     r_init_c0w0_done <= '1';
                 else
                 end if;
             end if;
         end if;
 
-    end process p_init_commands_per_tile;
+    end process p_init_c0w0;
 
-    p_init_tiles_c : process (clk, rstn) is
+    p_init_c : process (clk, rstn) is
     begin
 
         if not rstn then
@@ -163,9 +207,9 @@ begin
             end if;
         end if;
 
-    end process p_init_tiles_c;
+    end process p_init_c;
 
-    p_init_tiles_y : process (clk, rstn) is
+    p_init_h2 : process (clk, rstn) is
     begin
 
         if not rstn then
@@ -176,12 +220,12 @@ begin
         elsif rising_edge(clk) then
             if i_start and r_init_m0_done and not r_init_h2_done then
                 r_h2_tmp <= r_h2_tmp + size_x;
-                
-                if r_h2_tmp >= (i_image_y - i_kernel_size + 1) and r_m0 = 1 then -- one kernel vertically
+
+                if r_h2_tmp >= (i_image_y - i_kernel_size + 1) and r_m0 = 1 then      -- one kernel vertically
                     -- Tiling done
                     r_rows_last_h2 <= r_h2_tmp - (i_image_y - 2 * i_kernel_size + 1);
                     r_init_h2_done <= '1';
-                elsif r_h2_tmp >= i_image_y then -- more than one kernel vertically
+                elsif r_h2_tmp >= i_image_y then                                      -- more than one kernel vertically
                     -- Tiling done
                     r_rows_last_h2 <= r_h2_tmp - (i_image_y - 2 * i_kernel_size + 1);
                     r_init_h2_done <= '1';
@@ -191,7 +235,7 @@ begin
             end if;
         end if;
 
-    end process p_init_tiles_y;
+    end process p_init_h2;
 
     w_startup_done <= '1' when r_init_c1_done and r_init_h2_done else
                       '0';

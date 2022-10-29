@@ -28,7 +28,7 @@ source sources.tcl
 ### Optimize design
 ###
 
-vopt -64 +acc -L xil_defaultlib -work xil_defaultlib xil_defaultlib.$SIM_TOP_LEVEL -o design_optimized
+vopt -64 +acc -L xil_defaultlib -L secureip -work xil_defaultlib xil_defaultlib.$SIM_TOP_LEVEL -o design_optimized
 
 ###
 ### initialize and run simulation
@@ -37,7 +37,6 @@ vsim -onfinish stop xil_defaultlib.design_optimized
 
 #vsim -onfinish stop -voptargs="+acc" $SIM_TOP_LEVEL
 
-#source wave.do
-source wave_control_adr.do
+source wave.do
 
 run $SIM_TIME

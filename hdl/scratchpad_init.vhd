@@ -12,7 +12,9 @@ entity scratchpad_init is
         addr_width_psum : positive := 15;
 
         data_width_wght : positive := 8;
-        addr_width_wght : positive := 15
+        addr_width_wght : positive := 15;
+
+        g_files_dir : string := ""
     );
     port (
         clk  : in    std_logic;
@@ -55,7 +57,8 @@ architecture rtl of scratchpad_init is
             addr_width     : positive  := 2;
             data_width     : positive  := 6;
             use_output_reg : std_logic := '0';
-            init_file      : string    := "mem.txt"
+            init_file      : string    := "mem.txt";
+            g_files_dir    : string    := ""
         );
         port (
             clk : in    std_logic;
@@ -84,7 +87,8 @@ begin
             addr_width     => addr_width_iact,
             data_width     => data_width_iact,
             use_output_reg => '0',
-            init_file      => "src/_mem_iact.txt"
+            init_file      => "_mem_iact.txt",
+            g_files_dir    => g_files_dir
         )
         port map (
             clk   => clk,
@@ -103,7 +107,8 @@ begin
             addr_width     => addr_width_psum,
             data_width     => data_width_psum,
             use_output_reg => '0',
-            init_file      => "src/_mem_psum.txt"
+            init_file      => "_mem_psum.txt",
+            g_files_dir    => g_files_dir
         )
         port map (
             clk   => clk,
@@ -122,7 +127,8 @@ begin
             addr_width     => addr_width_wght,
             data_width     => data_width_wght,
             use_output_reg => '0',
-            init_file      => "src/_mem_wght.txt"
+            init_file      => "_mem_wght_stack.txt",
+            g_files_dir    => g_files_dir
         )
         port map (
             clk   => clk,

@@ -1,5 +1,5 @@
 #ip
-#vcom -64 -2008 -work xil_defaultlib  \
+vcom -64 -2008 -work xil_defaultlib  \
 "../../reconfigurable-accelerator/reconfigurable-accelerator.gen/sources_1/ip/fifo_generator_0/fifo_generator_0_sim_netlist.vhdl" \
 "../../reconfigurable-accelerator/reconfigurable-accelerator.gen/sources_1/ip/mult_gen_0/mult_gen_0_sim_netlist.vhdl" \
 
@@ -32,7 +32,7 @@ vcom -64 -2008 -work xil_defaultlib  \
 
 # testbench
 vcom -64 -2008 -work xil_defaultlib  \
-"src/control_conv_tb.vhd" \
+"src/fifo_tb.vhd" \
 
-set SIM_TIME "10 ms"
-set SIM_TOP_LEVEL "control_conv_tb"
+set SIM_TIME "1000 ns"
+set SIM_TOP_LEVEL "tb_dc_fifo"

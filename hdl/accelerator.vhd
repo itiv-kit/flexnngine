@@ -30,10 +30,17 @@ entity accelerator is
 
         fifo_width : positive := 16;
 
+        g_iact_fifo_size : positive := 15;
+        g_wght_fifo_size : positive := 15;
+        g_psum_fifo_size : positive := 45;
+
         g_channels    : positive := 28;
         g_image_y     : positive := 14;
         g_image_x     : positive := 14;
-        g_kernel_size : positive := 5
+        g_kernel_size : positive := 5;
+
+        g_files_dir : string  := "";
+        g_init_sp   : boolean := false
     );
     port (
         clk  : in    std_logic;
@@ -124,6 +131,10 @@ architecture rtl of accelerator is
             size_y    : positive := 5;
             size_rows : positive := 9;
 
+            addr_width_rows : positive;
+            addr_width_y    : positive;
+            addr_width_x    : positive;
+
             line_length_iact : positive := 512;
             addr_width_iact  : positive := 9;
             line_length_psum : positive := 512;
@@ -138,11 +149,14 @@ architecture rtl of accelerator is
             o_status     : out   std_logic;
             i_start      : in    std_logic;
             i_start_init : in    std_logic;
+            o_enable     : out   std_logic;
+            o_new_output : out   std_logic;
 
-            o_c1 : out   integer range 0 to 1023;
-            o_w1 : out   integer range 0 to 1023;
-            o_h2 : out   integer range 0 to 1023;
-            o_m0 : out   integer range 0 to 1023;
+            o_c1      : out   integer range 0 to 1023;
+            o_w1      : out   integer range 0 to 1023;
+            o_h2      : out   integer range 0 to 1023;
+            o_m0      : out   integer range 0 to 1023;
+            o_m0_dist : out   array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
 
             o_c0         : out   integer range 0 to 1023;
             o_c0_last_c1 : out   integer range 0 to 1023;
@@ -175,6 +189,10 @@ architecture rtl of accelerator is
             size_y    : positive := 5;
             size_rows : positive := 9;
 
+            addr_width_rows : positive;
+            addr_width_y    : positive;
+            addr_width_x    : positive;
+
             line_length_iact    : positive := 512;
             addr_width_iact     : positive := 9;
             addr_width_iact_mem : positive := 15;
@@ -193,10 +211,11 @@ architecture rtl of accelerator is
 
             i_start : in    std_logic;
 
-            i_c1 : in    integer range 0 to 1023;
-            i_w1 : in    integer range 0 to 1023;
-            i_h2 : in    integer range 0 to 1023;
-            i_m0 : in    integer range 0 to 1023;
+            i_c1      : in    integer range 0 to 1023;
+            i_w1      : in    integer range 0 to 1023;
+            i_h2      : in    integer range 0 to 1023;
+            i_m0      : in    integer range 0 to 1023;
+            i_m0_dist : in    array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
 
             i_c0         : in    integer range 0 to 1023;
             i_c0_last_c1 : in    integer range 0 to 1023;
@@ -218,6 +237,53 @@ architecture rtl of accelerator is
     end component address_generator;
 
     component scratchpad_init is
+        generic (
+            data_width_iact : positive := 8;
+            addr_width_iact : positive := 15;
+
+            data_width_psum : positive := 16;
+            addr_width_psum : positive := 15;
+
+            data_width_wght : positive := 8;
+            addr_width_wght : positive := 15;
+
+            g_files_dir : string := ""
+        );
+        port (
+            clk  : in    std_logic;
+            rstn : in    std_logic;
+
+            write_adr_iact : in    std_logic_vector(addr_width_iact_mem - 1 downto 0);
+            write_adr_psum : in    std_logic_vector(addr_width_psum_mem - 1 downto 0);
+            write_adr_wght : in    std_logic_vector(addr_width_wght_mem - 1 downto 0);
+
+            read_adr_iact : in    std_logic_vector(addr_width_iact_mem - 1 downto 0);
+            read_adr_psum : in    std_logic_vector(addr_width_psum_mem - 1 downto 0);
+            read_adr_wght : in    std_logic_vector(addr_width_wght_mem - 1 downto 0);
+
+            write_en_iact : in    std_logic;
+            write_en_psum : in    std_logic;
+            write_en_wght : in    std_logic;
+
+            read_en_iact : in    std_logic;
+            read_en_psum : in    std_logic;
+            read_en_wght : in    std_logic;
+
+            din_iact : in    std_logic_vector(data_width_iact - 1 downto 0);
+            din_psum : in    std_logic_vector(data_width_psum - 1 downto 0);
+            din_wght : in    std_logic_vector(data_width_wght - 1 downto 0);
+
+            dout_iact : out   std_logic_vector(data_width_iact - 1 downto 0);
+            dout_psum : out   std_logic_vector(data_width_psum - 1 downto 0);
+            dout_wght : out   std_logic_vector(data_width_wght - 1 downto 0);
+
+            dout_iact_valid : out   std_logic;
+            dout_psum_valid : out   std_logic;
+            dout_wght_valid : out   std_logic
+        );
+    end component scratchpad_init;
+
+    component scratchpad is
         generic (
             data_width_iact : positive := 8;
             addr_width_iact : positive := 15;
@@ -260,7 +326,7 @@ architecture rtl of accelerator is
             dout_psum_valid : out   std_logic;
             dout_wght_valid : out   std_logic
         );
-    end component scratchpad_init;
+    end component scratchpad;
 
     component scratchpad_interface is
         generic (
@@ -288,6 +354,10 @@ architecture rtl of accelerator is
             addr_width_wght_mem : positive := 15;
 
             fifo_width : positive := 15;
+
+            g_iact_fifo_size : positive := 15;
+            g_wght_fifo_size : positive := 15;
+            g_psum_fifo_size : positive := 45;
 
             g_channels    : positive := 28;
             g_image_y     : positive := 14;
@@ -378,12 +448,16 @@ architecture rtl of accelerator is
 
             i_start : in    std_logic;
 
-            i_tiles_x : in    integer range 0 to 1023;
+            i_w1         : in    integer range 0 to 1023;
+            i_m0         : in    integer range 0 to 1023;
+            i_h2         : in    integer range 0 to 1023;
+            i_new_output : in    std_logic;
 
             i_valid_psum_out    : in    std_logic_vector(size_x - 1 downto 0);
             i_gnt_psum_binary_d : in    std_logic_vector(addr_width_x - 1 downto 0);
             i_command_psum      : in    command_lb_t;
             i_empty_psum_fifo   : in    std_logic_vector(size_x - 1 downto 0);
+            i_psums_valid       : in    std_logic_vector(size_x - 1 downto 0);
 
             o_address_psum : out   std_logic_vector(addr_width_psum_mem - 1 downto 0)
         );
@@ -444,6 +518,8 @@ architecture rtl of accelerator is
     signal w_read_en_psum : std_logic;
     signal w_read_en_wght : std_logic;
 
+    signal w_new_output : std_logic;
+
     -- signal din_iact : std_logic_vector(data_width_iact - 1 downto 0);
     signal w_din_psum : std_logic_vector(data_width_psum - 1 downto 0);
     -- signal din_wght : std_logic_vector(data_width_wght - 1 downto 0);
@@ -458,15 +534,17 @@ architecture rtl of accelerator is
 
     signal w_status_if : std_logic;
     signal w_enable    : std_logic;
+    signal w_enable_if : std_logic;
 
     signal w_status_adr     : std_logic;
     signal r_start_adr      : std_logic;
     signal w_start_init_adr : std_logic;
 
-    signal w_c1 : integer range 0 to 1023; /* TODO change range to sth. useful */
-    signal w_w1 : integer range 0 to 1023; /* TODO change range to sth. useful */
-    signal w_h2 : integer range 0 to 1023; /* TODO change range to sth. useful */
-    signal w_m0 : integer range 0 to 1023;
+    signal w_c1      : integer range 0 to 1023; /* TODO change range to sth. useful */
+    signal w_w1      : integer range 0 to 1023; /* TODO change range to sth. useful */
+    signal w_h2      : integer range 0 to 1023; /* TODO change range to sth. useful */
+    signal w_m0      : integer range 0 to 1023;
+    signal w_m0_dist : array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
 
     signal w_c0          : integer range 0 to 1023; /* TODO change range to sth. useful */
     signal w_c0_last_c1  : integer range 0 to 1023; /* TODO change range to sth. useful */
@@ -591,6 +669,9 @@ begin
             size_x           => size_x,
             size_y           => size_y,
             size_rows        => size_rows,
+            addr_width_rows  => addr_width_rows,
+            addr_width_y     => addr_width_y,
+            addr_width_x     => addr_width_x,
             line_length_iact => line_length_iact,
             addr_width_iact  => addr_width_iact,
             line_length_psum => line_length_psum,
@@ -602,12 +683,15 @@ begin
             clk                  => clk,
             rstn                 => rstn,
             o_status             => w_status_control,
-            i_start              => w_enable,
+            i_start              => w_enable_if,
             i_start_init         => r_start_init_control,
+            o_enable             => w_enable,
+            o_new_output         => w_new_output,
             o_c1                 => w_c1,
             o_w1                 => w_w1,
             o_h2                 => w_h2,
             o_m0                 => w_m0,
+            o_m0_dist            => w_m0_dist,
             o_c0                 => w_c0,
             o_c0_last_c1         => w_c0_last_c1,
             i_image_x            => r_image_x,
@@ -626,46 +710,93 @@ begin
             o_read_offset_wght   => w_read_offset_wght
         );
 
-    scratchpad_inst : component scratchpad_init
-        generic map (
-            data_width_iact => data_width_iact,
-            addr_width_iact => addr_width_iact_mem,
-            data_width_psum => data_width_psum,
-            addr_width_psum => addr_width_psum_mem,
-            data_width_wght => data_width_wght,
-            addr_width_wght => addr_width_wght_mem
-        )
-        port map (
-            clk             => clk_sp,
-            rstn            => rstn,
-            write_adr_iact  => w_write_adr_iact,
-            write_adr_psum  => w_write_adr_psum,
-            write_adr_wght  => w_write_adr_wght,
-            read_adr_iact   => w_read_adr_iact,
-            read_adr_psum   => w_read_adr_psum,
-            read_adr_wght   => w_read_adr_wght,
-            write_en_iact   => i_write_en_iact,
-            write_en_psum   => w_write_en_psum,
-            write_en_wght   => i_write_en_wght,
-            read_en_iact    => w_read_en_iact,
-            read_en_psum    => w_read_en_psum,
-            read_en_wght    => w_read_en_wght,
-            din_iact        => i_din_iact,
-            din_psum        => w_din_psum,
-            din_wght        => i_din_wght,
-            dout_iact       => w_dout_iact,
-            dout_psum       => o_dout_psum,
-            dout_wght       => w_dout_wght,
-            dout_iact_valid => w_dout_iact_valid,
-            dout_psum_valid => o_dout_psum_valid,
-            dout_wght_valid => w_dout_wght_valid
-        );
+    scratchpad_init_inst : if g_init_sp = true generate
+
+        scratchpad_inst : component scratchpad_init
+            generic map (
+                data_width_iact => data_width_iact,
+                addr_width_iact => addr_width_iact_mem,
+                data_width_psum => data_width_psum,
+                addr_width_psum => addr_width_psum_mem,
+                data_width_wght => data_width_wght,
+                addr_width_wght => addr_width_wght_mem,
+                g_files_dir     => g_files_dir
+            )
+            port map (
+                clk             => clk_sp,
+                rstn            => rstn,
+                write_adr_iact  => w_write_adr_iact,
+                write_adr_psum  => w_write_adr_psum,
+                write_adr_wght  => w_write_adr_wght,
+                read_adr_iact   => w_read_adr_iact,
+                read_adr_psum   => w_read_adr_psum,
+                read_adr_wght   => w_read_adr_wght,
+                write_en_iact   => i_write_en_iact,
+                write_en_psum   => w_write_en_psum,
+                write_en_wght   => i_write_en_wght,
+                read_en_iact    => w_read_en_iact,
+                read_en_psum    => w_read_en_psum,
+                read_en_wght    => w_read_en_wght,
+                din_iact        => i_din_iact,
+                din_psum        => w_din_psum,
+                din_wght        => i_din_wght,
+                dout_iact       => w_dout_iact,
+                dout_psum       => o_dout_psum,
+                dout_wght       => w_dout_wght,
+                dout_iact_valid => w_dout_iact_valid,
+                dout_psum_valid => o_dout_psum_valid,
+                dout_wght_valid => w_dout_wght_valid
+            );
+
+    end generate scratchpad_init_inst;
+
+    scratchpad_inst : if g_init_sp = false generate
+
+        scratchpad_inst : component scratchpad
+            generic map (
+                data_width_iact => data_width_iact,
+                addr_width_iact => addr_width_iact_mem,
+                data_width_psum => data_width_psum,
+                addr_width_psum => addr_width_psum_mem,
+                data_width_wght => data_width_wght,
+                addr_width_wght => addr_width_wght_mem
+            )
+            port map (
+                clk             => clk_sp,
+                rstn            => rstn,
+                write_adr_iact  => w_write_adr_iact,
+                write_adr_psum  => w_write_adr_psum,
+                write_adr_wght  => w_write_adr_wght,
+                read_adr_iact   => w_read_adr_iact,
+                read_adr_psum   => w_read_adr_psum,
+                read_adr_wght   => w_read_adr_wght,
+                write_en_iact   => i_write_en_iact,
+                write_en_psum   => w_write_en_psum,
+                write_en_wght   => i_write_en_wght,
+                read_en_iact    => w_read_en_iact,
+                read_en_psum    => w_read_en_psum,
+                read_en_wght    => w_read_en_wght,
+                din_iact        => i_din_iact,
+                din_psum        => w_din_psum,
+                din_wght        => i_din_wght,
+                dout_iact       => w_dout_iact,
+                dout_psum       => o_dout_psum,
+                dout_wght       => w_dout_wght,
+                dout_iact_valid => w_dout_iact_valid,
+                dout_psum_valid => o_dout_psum_valid,
+                dout_wght_valid => w_dout_wght_valid
+            );
+
+    end generate scratchpad_inst;
 
     address_generator_inst : component address_generator
         generic map (
             size_x              => size_x,
             size_y              => size_y,
             size_rows           => size_rows,
+            addr_width_rows     => addr_width_rows,
+            addr_width_y        => addr_width_y,
+            addr_width_x        => addr_width_x,
             line_length_iact    => line_length_iact,
             addr_width_iact     => addr_width_iact,
             addr_width_iact_mem => addr_width_iact_mem,
@@ -684,6 +815,7 @@ begin
             i_w1                 => w_w1,
             i_h2                 => w_h2,
             i_m0                 => w_m0,
+            i_m0_dist            => w_m0_dist,
             i_c0                 => w_c0,
             i_c0_last_c1         => w_c0_last_c1,
             i_image_x            => r_image_x,
@@ -719,6 +851,9 @@ begin
             addr_width_wght     => addr_width_wght,
             addr_width_wght_mem => addr_width_wght_mem,
             fifo_width          => fifo_width,
+            g_iact_fifo_size    => g_iact_fifo_size,
+            g_wght_fifo_size    => g_wght_fifo_size,
+            g_psum_fifo_size    => g_psum_fifo_size,
             g_channels          => g_channels,
             g_image_y           => g_image_y,
             g_image_x           => g_image_x,
@@ -730,7 +865,7 @@ begin
             clk_sp                   => clk_sp,
             i_start                  => r_start_adr,
             o_status                 => w_status_if,
-            o_enable                 => w_enable,
+            o_enable                 => w_enable_if,
             i_address_iact           => w_address_iact,
             i_address_wght           => w_address_wght,
             i_address_iact_valid     => w_address_iact_valid,
@@ -780,11 +915,15 @@ begin
             clk                 => clk_sp,
             rstn                => rstn,
             i_start             => r_start_adr,
-            i_tiles_x           => w_w1,
+            i_w1                => w_w1,
+            i_m0                => w_m0,
+            i_h2                => w_h2,
+            i_new_output        => w_new_output,
             i_valid_psum_out    => w_valid_psums_out,
             i_gnt_psum_binary_d => w_gnt_psum_binary_d,
             i_command_psum      => w_command_psum(0,0),
             i_empty_psum_fifo   => w_empty_psum_fifo,
+            i_psums_valid       => w_psums_valid,
             o_address_psum      => w_write_adr_psum
         );
 

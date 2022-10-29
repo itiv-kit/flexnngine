@@ -42,7 +42,7 @@ entity control_conv_tb is
         g_image_x     : positive := 29;
         g_kernel_size : positive := 5;
 
-        g_tiles_y : positive := positive(integer(ceil(real(g_image_x - g_kernel_size + 1) / real(g_kernel_size)))) -- Y tiles, determined in control module, but for input data loading required here
+        g_h2 : positive := positive(integer(ceil(real(g_image_x - g_kernel_size + 1) / real(g_kernel_size)))) -- Y tiles, determined in control module, but for input data loading required here
     );
 end entity control_conv_tb;
 
@@ -62,8 +62,8 @@ architecture imp of control_conv_tb is
     signal i_data_wght       : array_t (0 to size_y - 1)(data_width_wght - 1 downto 0);
     signal i_data_wght_valid : std_logic_vector(size_y - 1 downto 0);
 
-    signal s_input_image     : int_image_t(0 to size_rows - 1, 0 to g_image_x * g_channels * g_tiles_y - 1);         -- 2, because two tile_y
-    signal s_input_weights   : int_image_t(0 to g_kernel_size - 1, 0 to g_kernel_size * g_channels * g_tiles_y - 1); -- not *2 because kernel stays the same across tile_y
+    signal s_input_image     : int_image_t(0 to size_rows - 1, 0 to g_image_x * g_channels * g_h2 - 1);         -- 2, because two tile_y
+    signal s_input_weights   : int_image_t(0 to g_kernel_size - 1, 0 to g_kernel_size * g_channels * g_h2 - 1); -- not *2 because kernel stays the same across tile_y
     signal s_expected_output : int_image_t(0 to g_image_y - g_kernel_size, 0 to g_image_x - g_kernel_size);
 
     signal dout_psum       : std_logic_vector(data_width_psum - 1 downto 0);
@@ -204,8 +204,8 @@ begin
     p_read_files : process is
     begin
 
-        s_input_image     <= read_file(file_name => "src/_image_reordered.txt", num_col => g_image_x * g_channels * g_tiles_y, num_row => size_rows);
-        s_input_weights   <= read_file(file_name => "src/_kernel_reordered.txt", num_col => g_kernel_size * g_channels * g_tiles_y, num_row => g_kernel_size);
+        s_input_image     <= read_file(file_name => "src/_image_reordered.txt", num_col => g_image_x * g_channels * g_h2, num_row => size_rows);
+        s_input_weights   <= read_file(file_name => "src/_kernel_reordered.txt", num_col => g_kernel_size * g_channels * g_h2, num_row => g_kernel_size);
         s_expected_output <= read_file(file_name => "src/_convolution.txt", num_col => g_image_x - g_kernel_size + 1, num_row => g_image_y - g_kernel_size + 1);
         wait;
 
@@ -216,7 +216,7 @@ begin
         p_check_image_vals : process is
         begin
 
-            for i in 0 to g_image_x * g_channels * g_tiles_y - 1 loop
+            for i in 0 to g_image_x * g_channels * g_h2 - 1 loop
 
                 wait until rising_edge(clk) and i_data_iact_valid(y) = '1';
 
@@ -248,7 +248,7 @@ begin
         p_check_wght_vals : process is
         begin
 
-            for i in 0 to g_kernel_size * g_channels * g_tiles_y - 1 loop
+            for i in 0 to g_kernel_size * g_channels * g_h2 - 1 loop
 
                 wait until rising_edge(clk) and i_data_wght_valid(y) = '1';
 
@@ -290,7 +290,7 @@ begin
                 report "OUTPUTS -----------------------------------------------------"
                     severity note;
 
-                for j in 0 to g_tiles_y - 1 loop /* TODO Adjust range based on image size */
+                for j in 0 to g_h2 - 1 loop /* TODO Adjust range based on image size */
 
                     output_loop : for i in 0 to g_image_x - g_kernel_size loop
 
@@ -348,7 +348,7 @@ begin
                 report "OUTPUTS -----------------------------------------------------"
                     severity note;
 
-                for j in 0 to g_tiles_y - 1 loop /* TODO Adjust range based on image size */
+                for j in 0 to g_h2 - 1 loop /* TODO Adjust range based on image size */
 
                     output_loop : for i in 0 to g_image_x - g_kernel_size loop
 

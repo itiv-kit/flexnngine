@@ -9,6 +9,10 @@ entity control is
         size_y    : positive := 5;
         size_rows : positive := 9;
 
+        addr_width_rows : positive := 4;
+        addr_width_y    : positive := 3;
+        addr_width_x    : positive := 3;
+
         line_length_iact : positive := 512;
         addr_width_iact  : positive := 9;
         line_length_psum : positive := 512;
@@ -23,11 +27,14 @@ entity control is
         o_status     : out   std_logic;
         i_start      : in    std_logic;
         i_start_init : in    std_logic;
+        o_enable     : out   std_logic;
+        o_new_output : out   std_logic;
 
-        o_c1 : out   integer range 0 to 1023;
-        o_w1 : out   integer range 0 to 1023;
-        o_h2 : out   integer range 0 to 1023;
-        o_m0 : out   integer range 0 to 1023;
+        o_c1      : out   integer range 0 to 1023;
+        o_w1      : out   integer range 0 to 1023;
+        o_h2      : out   integer range 0 to 1023;
+        o_m0      : out   integer range 0 to 1023;
+        o_m0_dist : out   array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
 
         o_c0         : out   integer range 0 to 1023;
         o_c0_last_c1 : out   integer range 0 to 1023;
@@ -62,6 +69,10 @@ architecture rtl of control is
             size_y    : positive;
             size_rows : positive;
 
+            addr_width_rows : positive;
+            addr_width_y    : positive;
+            addr_width_x    : positive;
+
             line_length_iact : positive;
             addr_width_iact  : positive;
             line_length_psum : positive;
@@ -77,6 +88,7 @@ architecture rtl of control is
             o_w1           : out   integer range 0 to 1023;
             o_h2           : out   integer range 0 to 1023;
             o_m0           : out   integer range 0 to 1023;
+            o_m0_dist      : out   array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
             o_rows_last_h2 : out   integer range 0 to 1023;
             o_c0           : out   integer range 0 to 1023;
             o_c0_last_c1   : out   integer range 0 to 1023;
@@ -114,7 +126,8 @@ architecture rtl of control is
 
     signal r_incr_w1 : std_logic;
 
-    signal w_m0 : integer range 0 to 1023;
+    signal w_m0      : integer range 0 to 1023;
+    signal w_m0_dist : array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
 
     type   t_state is (s_calculate, s_output, s_incr_c1);
     signal r_state : t_state;
@@ -139,9 +152,16 @@ architecture rtl of control is
     signal w_mux_update_offset_psum : array_t(0 to size_y)(addr_width_psum - 1 downto 0);
     signal w_mux_command_psum       : command_lb_array_t(0 to size_y);
 
+    signal w_output_sequence : int_line_t(0 to size_y - 1);
+
     signal r_command : command_pe_array_t(0 to size_y);
 
+    signal i_start_d : std_logic_vector(3 downto 0);
+
 begin
+
+    o_new_output <= '1' when r_count_c0w0 = 2 and r_count_w1 = 0 and r_state = s_output else
+                    '0';
 
     r_command_psum_d       <= r_command_psum when rising_edge(clk);
     r_read_offset_psum_d   <= r_read_offset_psum when rising_edge(clk);
@@ -152,10 +172,18 @@ begin
     o_c0_last_c1 <= w_c0_last_c1;
     o_c0         <= w_c0;
 
-    o_c1 <= w_c1;
-    o_w1 <= w_w1;
-    o_h2 <= w_h2;
-    o_m0 <= w_m0;
+    o_c1      <= w_c1;
+    o_w1      <= w_w1;
+    o_h2      <= w_h2;
+    o_m0      <= w_m0;
+    o_m0_dist <= w_m0_dist;
+
+    i_start_d(0) <= '1' when i_start ='1';
+    -- Do not stop when filling read/update pipeline
+    o_enable <= i_start when r_count_c0w0 > 1 and r_state /= s_output else
+                '1' when i_start_d(0) = '1' else
+                '1' when r_state = s_output else
+                '0';
 
     gen_delay_y : for y in 0 to size_y - 1 generate
 
@@ -236,7 +264,7 @@ begin
             r_incr_w1    <= '0';
             r_state      <= s_calculate;
         elsif rising_edge(clk) then
-            if w_init_done = '1' and i_start = '1' then
+            if w_init_done = '1' and o_enable = '1' then
                 if r_state = s_calculate then
                     r_incr_w1 <= '0';
                     if r_count_h2 /= w_h2 then
@@ -281,7 +309,7 @@ begin
                     end if;
                 elsif r_state = s_incr_c1 then
                     -- Delay counter after shrinking for new values to arrive in the buffer
-                    if r_count_w1 /= 1 then
+                    if r_count_w1 /= 2 then
                         r_count_w1 <= r_count_w1 + 1;
                     else
                         r_count_w1   <= 0;
@@ -290,7 +318,7 @@ begin
                     end if;
                 elsif r_state = s_output then
                     -- Command counter for output commands (psum accumulation and psum read)
-                    if r_count_c0w0 /= size_y then
+                    if r_count_c0w0 /= i_kernel_size + w_m0 + 1 then                                                                                                 -- i_kernel_size + w_m0 then /* TODO Change to allow for multiple kernel data to be output */
                         if r_count_w1 /= w_w1 - 1 then
                             r_count_w1 <= r_count_w1 + 1;
                         else
@@ -299,7 +327,7 @@ begin
                         end if;
                     else
                         -- Delay counter after shrinking for new values to arrive in the buffer
-                        if r_count_w1 /= 2 then -- r_W1 - 1 then /* TODO changed - check! */
+                        if r_count_w1 /= 2 then                                                                                                                      -- r_W1 - 1 then /* TODO changed - check! */
                             r_count_w1 <= r_count_w1 + 1;
                         elsif r_count_h2 = w_h2 then
                         else
@@ -316,22 +344,6 @@ begin
 
     end process p_command_counter;
 
-    -- Commands to control dataflow within PE (psum / mult)
-    p_command : process (clk, rstn) is
-    begin
-
-        if not rstn then
-            r_command <= (others => c_pe_conv_mult);
-        elsif rising_edge(clk) then
-            if r_state = s_output and r_count_w1 = 1 then
-                r_command <= (others => c_pe_conv_psum);
-            elsif r_state = s_calculate then
-                r_command <= (others => c_pe_conv_mult);
-            end if;
-        end if;
-
-    end process p_command;
-
     p_iact_commands : process (clk, rstn) is
     begin
 
@@ -342,7 +354,7 @@ begin
         elsif rising_edge(clk) then
             r_update_offset_iact <= (others => (others => '0'));
 
-            if w_init_done = '1' and i_start = '1' then
+            if w_init_done = '1' and o_enable = '1' then
                 if r_state = s_calculate then
                     if r_incr_w1 = '1' then
                         -- shift kernel - increment w1
@@ -376,10 +388,10 @@ begin
                     r_command_iact     <= (others => c_lb_idle);
                     r_read_offset_iact <= (others => (others => '0'));
 
-                    if r_count_c0w0 = size_y and r_count_w1 = 0 then
+                    if r_count_c0w0 = 0 and r_count_w1 = 0 then
                         if w_c1 > 1 then
                             r_command_iact     <= (others => c_lb_shrink);
-                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * o_c0_last_c1 - o_c0_last_c1, addr_width_iact)));
+                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * w_c0_last_c1 - w_c0_last_c1, addr_width_iact)));
                         else
                             r_command_iact     <= (others => c_lb_shrink);
                             r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * i_channels - i_channels, addr_width_iact)));
@@ -401,7 +413,7 @@ begin
         elsif rising_edge(clk) then
             r_update_offset_wght <= (others => (others => '0'));
 
-            if w_init_done = '1' and i_start = '1' then
+            if w_init_done = '1' and o_enable = '1' then
                 if r_state = s_calculate then
                     if r_incr_w1 = '1' then
                         -- shift kernel - increment w1
@@ -428,7 +440,7 @@ begin
                     r_command_wght <= (others => c_lb_idle);
 
                     if w_c1 > 1 then
-                        if r_count_c0w0 = size_y and r_count_w1 = 0 then
+                        if r_count_c0w0 = 0 and r_count_w1 = 0 then
                             r_command_wght     <= (others => c_lb_shrink);
                             r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_kernel_size * o_c0_last_c1, addr_width_wght)));
                         end if;
@@ -439,67 +451,114 @@ begin
 
     end process p_wght_commands;
 
-    p_psum_commands : process (clk, rstn) is
-    begin
+    g_psum_pe_commands : for i in 0 to size_y - 1 generate
 
-        if not rstn then
-            r_command_psum       <= (others => c_lb_idle);
-            r_read_offset_psum   <= (others => (others => '0'));
-            r_update_offset_psum <= (others => (others => '0'));
-        elsif rising_edge(clk) then
-            if w_init_done = '1' and i_start = '1' then
-                if r_state = s_calculate then
-                    if r_incr_w1 = '1' then
-                        -- shift kernel - increment w1
-                        r_command_psum       <= (others => c_lb_idle);
-                        r_read_offset_psum   <= (others => std_logic_vector(to_unsigned(0, addr_width_psum)));
-                        r_update_offset_psum <= r_read_offset_psum;
-                    elsif r_count_w1 = w_w1 then
-                        -- Tile y change
-                        r_command_psum       <= (others => c_lb_idle);
-                        r_read_offset_psum   <= (others => (others => '0'));
-                        r_update_offset_psum <= (others => (others => '0'));
+        w_output_sequence(i) <= (i - (to_integer(unsigned(w_m0_dist(i)))) * i_kernel_size + i_kernel_size);
+
+        -- Commands to control dataflow within PE (psum / mult / passthrough)
+        p_command : process (clk, rstn) is
+        begin
+
+            if not rstn then
+                r_command(i) <= c_pe_conv_mult;
+            elsif rising_edge(clk) then
+                if r_state = s_output and r_count_w1 = 1 and r_count_c0w0 < i_kernel_size then
+                    r_command(i) <= c_pe_conv_psum;
+                elsif r_state = s_output and to_integer(unsigned(w_m0_dist(i))) = 0 then
+                    r_command(i) <= c_pe_conv_psum;
+                elsif r_state = s_output and r_count_c0w0 > i_kernel_size then
+                    if w_output_sequence(i) = i_kernel_size - r_count_c0w0 - 1 + to_integer(unsigned(w_m0_dist(i))) then
+                        r_command(i) <= c_pe_conv_psum;
+                    elsif r_count_w1 = 2 then
+                        r_command(i) <= c_pe_conv_pass;
                     else
-                        r_command_psum       <= (others => c_lb_read_update);
-                        r_read_offset_psum   <= (others => std_logic_vector(to_unsigned(r_count_w1, addr_width_psum)));
-                        r_update_offset_psum <= r_read_offset_psum;
+                    -- r_command(i) <= c_pe_conv_psum;
                     end if;
-                elsif r_state = s_incr_c1 then
-                    r_command_psum       <= (others => c_lb_idle);
-                    r_read_offset_psum   <= (others => (others => '0'));
-                    r_update_offset_psum <= (others => (others => '0'));
-                elsif r_state = s_output then
-                    r_command_psum       <= (others => c_lb_idle);
-                    r_read_offset_psum   <= (others => (others => '0'));
-                    r_update_offset_psum <= (others => (others => '0'));
+                elsif r_state = s_calculate then
+                    r_command(i) <= c_pe_conv_mult;
+                end if;
+            end if;
 
-                    if r_count_c0w0 = size_y then
-                        -- Remove all stored psums, new tile (h1)
-                        if r_count_w1 = 0 then
-                            r_command_psum     <= (others => c_lb_shrink);
-                            r_read_offset_psum <= (others => std_logic_vector(to_unsigned(i_image_x - i_kernel_size + 1, addr_width_psum)));
+        end process p_command;
+
+        -- Control PSUM commands (idle/read/read_update)
+        p_psum_commands : process (clk, rstn) is
+        begin
+
+            if not rstn then
+                r_command_psum(i)       <= c_lb_idle;
+                r_read_offset_psum(i)   <= (others => '0');
+                r_update_offset_psum(i) <= (others => '0');
+            elsif rising_edge(clk) then
+                if w_init_done = '1' and o_enable = '1' then
+                    if r_state = s_calculate then
+                        if r_incr_w1 = '1' then
+                            -- shift kernel - increment w1
+                            r_command_psum(i)       <= c_lb_idle;
+                            r_read_offset_psum(i)   <= std_logic_vector(to_unsigned(0, addr_width_psum));
+                            r_update_offset_psum(i) <= r_read_offset_psum(i);
+                        elsif r_count_w1 = w_w1 then
+                            -- Tile y change
+                            r_command_psum(i)       <= c_lb_idle;
+                            r_read_offset_psum(i)   <= (others => '0');
+                            r_update_offset_psum(i) <= (others => '0');
+                        else
+                            r_command_psum(i)       <= c_lb_read_update;
+                            r_read_offset_psum(i)   <= std_logic_vector(to_unsigned(r_count_w1, addr_width_psum));
+                            r_update_offset_psum(i) <= r_read_offset_psum(i);
                         end if;
-                    else 
-                        r_command_psum(size_y - r_count_c0w0 - 1) <= c_lb_read; /* TODO read multiple psums if more than one kernel vertically */
-
-                        if r_count_c0w0 /= size_y - 1 then
-                            r_command_psum(size_y - r_count_c0w0 - 2) <= c_lb_read_update;
+                    elsif r_state = s_incr_c1 then
+                        r_command_psum(i)       <= c_lb_idle;
+                        r_read_offset_psum(i)   <= (others => '0');
+                        r_update_offset_psum(i) <= (others => '0');
+                    elsif r_state = s_output then
+                        if i < w_m0 * i_kernel_size then
                         end if;
+                        r_command_psum(i)       <= c_lb_idle;
+                        r_read_offset_psum(i)   <= (others => '0');
+                        r_update_offset_psum(i) <= (others => '0');
 
-                        r_read_offset_psum   <= (others => std_logic_vector(to_unsigned(r_count_w1, addr_width_psum)));
-                        r_update_offset_psum <= (others => std_logic_vector(to_unsigned(r_count_w1, addr_width_psum)));
+                        if r_count_c0w0 = i_kernel_size + w_m0 then /* TODO prob. change i_kernel_size + w_m0*/
+                            -- Remove all stored psums, new tile (h1)
+                            if r_count_w1 = 0 then
+                                r_command_psum(i)     <= c_lb_shrink;
+                                r_read_offset_psum(i) <= std_logic_vector(to_unsigned(i_image_x - i_kernel_size + 1, addr_width_psum));
+                            end if;
+                        else
+                            -- Sum psums vertically across accelerator. Different kernels summed to their top row respectively
+                            --
+
+                            if w_output_sequence(i) = i_kernel_size - r_count_c0w0 - 1 and r_count_c0w0 < i_kernel_size + 1 then
+                                r_command_psum(i) <= c_lb_read;
+                            elsif w_output_sequence(i) = i_kernel_size - r_count_c0w0 - 2 and r_count_c0w0 < i_kernel_size + 1 then
+                                r_command_psum(i) <= c_lb_read_update;
+                            elsif r_count_c0w0 = i_kernel_size then
+                                r_command_psum(i) <= c_lb_idle;
+                            elsif w_output_sequence(i) = i_kernel_size - r_count_c0w0 - 1 + to_integer(unsigned(w_m0_dist(i))) and r_count_c0w0 >= i_kernel_size + 1 then
+                                r_command_psum(i) <= c_lb_read;
+                            else
+                                r_command_psum(i) <= c_lb_idle;
+                            end if;
+
+                            r_read_offset_psum(i)   <= std_logic_vector(to_unsigned(r_count_w1, addr_width_psum));
+                            r_update_offset_psum(i) <= std_logic_vector(to_unsigned(r_count_w1, addr_width_psum));
+                        end if;
                     end if;
                 end if;
             end if;
-        end if;
 
-    end process p_psum_commands;
+        end process p_psum_commands;
+
+    end generate g_psum_pe_commands;
 
     control_init_inst : component control_init
         generic map (
             size_x           => size_x,
             size_y           => size_y,
             size_rows        => size_rows,
+            addr_width_rows  => addr_width_rows,
+            addr_width_y     => addr_width_y,
+            addr_width_x     => addr_width_x,
             line_length_iact => line_length_iact,
             addr_width_iact  => addr_width_iact,
             line_length_psum => line_length_psum,
@@ -516,6 +575,7 @@ begin
             o_w1           => w_w1,
             o_h2           => w_h2,
             o_m0           => w_m0,
+            o_m0_dist      => w_m0_dist,
             o_rows_last_h2 => w_rows_last_h2,
             o_c0           => w_c0,
             o_c0_last_c1   => w_c0_last_c1,

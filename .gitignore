@@ -30,3 +30,6 @@ vsim.dbg
 
 #ignore nfs files
 .nfs*
+
+#ignore testbench batch files
+testbenches/*/test/*

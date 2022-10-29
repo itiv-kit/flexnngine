@@ -175,8 +175,9 @@ architecture behavioral of pe is
     signal w_iact_wght_valid : std_logic;
     signal w_data_mult_valid : std_logic;
 
-    signal r_sel_mult_psum : std_logic;
-    signal r_sel_conv_gemm : std_logic;
+    signal r_sel_mult_psum  : std_logic;
+    signal r_sel_conv_gemm  : std_logic;
+    signal r_sel_iact_input : std_logic;
 
     signal r_command_read_psum_delay : std_logic;
     signal r_command_read_psum       : std_logic;
@@ -224,6 +225,12 @@ begin
                 else
                     r_sel_conv_gemm <= '1';
                 end if;
+
+                if i_command = c_pe_conv_pass then
+                    r_sel_iact_input <= '0';
+                else
+                    r_sel_iact_input <= '1';
+                end if;
             end if;
         end if;
 
@@ -258,12 +265,14 @@ begin
         if not rstn then
             r_command_read_psum <= '0';
         elsif rising_edge(clk) then
-            if i_enable then
+            if r_enable_d then
                 if i_command_psum = c_lb_read then
                     r_command_read_psum <= '1';
                 else
                     r_command_read_psum <= '0';
                 end if;
+            else
+                r_command_read_psum <= '0';
             end if;
         end if;
 
@@ -311,14 +320,18 @@ begin
             r_command_read_iact_delay <= '0';
             r_command_read_wght_delay <= '0';
         elsif rising_edge(clk) then
-            if i_enable then
-                r_command_read_psum_delay <= r_command_read_psum;
-                r_command_read_iact_delay <= r_command_read_iact;
-                r_command_read_wght_delay <= r_command_read_wght;
-            end if;
+            -- if i_enable then
+            r_command_read_psum_delay <= r_command_read_psum;
+            r_command_read_iact_delay <= r_command_read_iact;
+            r_command_read_wght_delay <= r_command_read_wght;
+        -- end if;
         end if;
 
     end process delays;
+
+    -- r_command_read_psum_delay <= r_command_read_psum;
+    -- r_command_read_iact_delay <= r_command_read_iact;
+    -- r_command_read_wght_delay <= r_command_read_wght;
 
     data_delays : process (clk, rstn) is
     begin
@@ -475,7 +488,7 @@ begin
         port map (
             v_i(0) => i_data_in_iact,
             v_i(1) => w_demux_input_iact(data_width_iact - 1 downto 0),
-            sel(0) => r_sel_conv_gemm,
+            sel(0) => r_sel_conv_gemm and r_sel_iact_input,
             z_o    => w_data_in_iact
         );
 
@@ -488,7 +501,7 @@ begin
         port map (
             v_i(0)(0) => i_data_in_iact_valid,
             v_i(1)(0) => w_demux_input_iact_valid,
-            sel(0)    => r_sel_conv_gemm,
+            sel(0)    => r_sel_conv_gemm and r_sel_iact_input,
             z_o(0)    => w_data_in_iact_valid
         );
 
@@ -524,8 +537,34 @@ begin
 
     pe_output_psum : if pe_north = true generate
 
-        o_data_out_valid <= r_command_read_psum_delay;
-        o_data_out       <= w_data_psum;
+        mux_output : component mux
+            generic map (
+                input_width   => data_width_psum,
+                input_num     => 2,
+                address_width => 1
+            )
+            port map (
+                v_i(0) => w_data_psum,
+                v_i(1) => r_data_iact_wide,
+                sel(0) => not r_sel_iact_input,
+                z_o    => o_data_out
+            );
+
+        mux_output_valid : component mux
+            generic map (
+                input_width   => 1,
+                input_num     => 2,
+                address_width => 1
+            )
+            port map (
+                v_i(0)(0) => r_command_read_psum_delay,
+                v_i(1)(0) => r_data_iact_wide_valid,
+                sel(0)    => not r_sel_iact_input,
+                z_o(0)    => o_data_out_valid
+            );
+
+    -- o_data_out_valid <= r_command_read_psum_delay;
+    -- o_data_out       <= w_data_psum;
 
     end generate pe_output_psum;
 

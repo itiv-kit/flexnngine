@@ -18,7 +18,8 @@ entity ram_dp_init is
         addr_width     : positive  := 2;   --! Width of the BRAM addresses
         data_width     : positive  := 6;   --! Width of the data fields in the BRAM
         use_output_reg : std_logic := '0'; --! Specifies if the output is buffered in a separate register
-        init_file      : string    := "mem.txt"
+        init_file      : string    := "mem.txt";
+        g_files_dir    : string    := ""
     );
     port (
         clk : in    std_logic; --! Clock input
@@ -40,9 +41,9 @@ architecture syn of ram_dp_init is
 
     type ram_type is array (0 to 2 ** addr_width - 1) of std_logic_vector(data_width - 1 downto 0);
 
-    signal douta_s : std_logic_vector(data_width - 1 downto 0);
-    signal doutb_s : std_logic_vector(data_width - 1 downto 0);
-
+    signal douta_s        : std_logic_vector(data_width - 1 downto 0);
+    signal doutb_s        : std_logic_vector(data_width - 1 downto 0);
+    signal r_ram_instance : ram_type;
     ------------------------------------
     -- function to initialize memory content
 
@@ -54,6 +55,9 @@ architecture syn of ram_dp_init is
         variable temp_mem : ram_type;
 
     begin
+
+        report mem_file_name
+            severity note;
 
         for i in ram_type'range loop
 
@@ -69,9 +73,11 @@ architecture syn of ram_dp_init is
 
     -------------------------------------
 
-    shared variable ram_instance : ram_type := init_memory_wfile(init_file);
+    shared variable ram_instance : ram_type := init_memory_wfile(g_files_dir & init_file);
 
 begin
+
+    r_ram_instance <= ram_instance when rising_edge(clk);
 
     port_a : process (clk) is
     begin

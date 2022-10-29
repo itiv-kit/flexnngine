@@ -1,12 +1,17 @@
 import numpy as np
 import math
+import os
+import sys
 
-kernel_size = 3
-image_size = 16
-channels = 10
-input_bits = 3
+kernel_size = 1 #(R = S)
+image_size = 16 #(H = W)
+channels = 2
+
+input_bits = 5
 
 line_length_wght = 32
+line_length_iact = line_length_wght
+line_length_psum = 128
 
 mem_size_iact = 15
 mem_size_wght = 15
@@ -18,8 +23,11 @@ size_y = 10
 M0 = math.floor(size_y/kernel_size)
 H1 = size_x
 
-size_rows = 2 * kernel_size - 1
-H2 = math.ceil((image_size - kernel_size + 1) / kernel_size)
+size_rows = size_x + size_y - 1
+if M0 == 0:
+    H2 = math.ceil((image_size - kernel_size + 1)/size_x)
+else:
+    H2 = math.ceil(image_size / size_x)
 
 C0 = math.floor(line_length_wght/kernel_size)
 if channels * kernel_size < line_length_wght:
@@ -29,12 +37,12 @@ C1 = math.ceil(channels / C0)
 
 C0_last = channels - (C1 - 1) * C0
 
+os.environ["generics"] = "-gg_kernel_size=" + str(kernel_size) + " -gg_image_y=" + str(image_size) + " -gg_image_x=" + str(image_size) +  " -gg_channels=" + str(channels) + " -gline_length_wght=" + str(line_length_wght) +" -gaddr_width_wght=" + str(math.ceil(math.log2(line_length_wght))) +" -gline_length_iact=" + str(line_length_iact) + " -gaddr_width_iact=" + str(math.ceil(math.log2(line_length_iact))) +  " -gline_length_psum=" + str(line_length_psum) + " -gaddr_width_psum=" + str(math.ceil(math.log2(line_length_psum))) +                         " -gaddr_width_iact_mem=" + str(mem_size_iact) + " -gaddr_width_wght_mem=" + str(mem_size_wght) + " -gaddr_width_psum_mem=" + str(mem_size_psum) + " -gsize_x=" + str(size_x) + " -gsize_y=" + str(size_y) + " -gsize_rows=" + str(size_x + size_y - 1) + " -gaddr_width_x=" + str(math.ceil(math.log2(size_x))) + " -gaddr_width_y=" + str(math.ceil(math.log2(size_y))) + " -gaddr_width_rows=" + str(math.ceil(math.log2(size_x + size_y - 1))) + " -gg_tiles_y=" + str(2) + " -gg_columns_last_tile_y=" + str(6)
 
-
-print("H2 = ", H2)
-print("C1 = ", C1)
-print("C0 = ", C0)
-print("C0_last = ", C0_last)
+#print("H2 = ", H2)
+#print("C1 = ", C1)
+#print("C0 = ", C0)
+#print("C0_last = ", C0_last)
 
 
 np.random.seed(2)
@@ -42,7 +50,7 @@ st = np.random.get_state()
 #print(st)
 
 #print range of input_bits signed numbers
-print("Input range: ", -(2**(input_bits-1)), " to ", (2**(input_bits-1))-1)
+#print("Input range: ", -(2**(input_bits-1)), " to ", (2**(input_bits-1))-1)
 
 #state = ['MT19937', key_array, 624, 0, 0.0]
 
@@ -56,11 +64,11 @@ def convolution2d(image, kernel, bias):
         for i in range(y):
             for j in range(x):
                 new_image[i][j] = np.sum(image[i:i+m, j:j+m]*kernel) + bias
-    else:
-        print("Kernel size is not equal")
-        print("Kernel size is: ", m, n)
-        print("Kernel is: ", kernel)
-        print("Image size is: ", image.shape)
+    #else:
+        #print("Kernel size is not equal")
+        #print("Kernel size is: ", m, n)
+        #print("Kernel is: ", kernel)
+        #print("Image size is: ", image.shape)
     return new_image
 
 # create array with random filter weights
@@ -72,15 +80,9 @@ for k in range(M0):
     #kernels[k] = np.random.randint(-(2**(input_bits-1)), (2**(input_bits-1))-1, (kernel_size * channels, kernel_size))
     # TODO for now just copy the first kernel
     kernels[k] = kernel
-    
-
-print(kernel.shape)
-print(kernels.shape)
-# kernel = np.array([[1,2,1],[2,3,2],[3,4,3]])
 
 # create array with random input activations ("image")
 image = np.random.randint(-(2**(input_bits-1)), (2**(input_bits-1))-1, (image_size * channels, image_size))
-
 
 #create empty array for convolved image
 convolved_channel = np.zeros((channels, image_size - kernel_size + 1, image_size - kernel_size + 1))
@@ -116,20 +118,20 @@ for k in range(M0):
         kernels_stack = np.vstack((kernels_stack, kernels[k,:,:]))
 kernels_stack = kernels_stack.astype(int)
 
-print("convolved_image_shape: ", convolved_image.shape)
-print("convolved_images_shape: ", convolved_images.shape)
-print("convolved_images_stack_shape: ", convolved_images_stack.shape)
+#print("convolved_image_shape: ", convolved_image.shape)
+#print("convolved_images_shape: ", convolved_images.shape)
+#print("convolved_images_stack_shape: ", convolved_images_stack.shape)
 
 # save data as txt files
-np.savetxt('_image.txt', image, fmt='%d', delimiter=' ')
-np.savetxt('_kernel.txt', kernel, fmt='%d', delimiter=' ')
-np.savetxt('_kernel_stack.txt', kernels_stack, fmt='%d', delimiter=' ')
-np.savetxt('_convolution.txt', convolved_image, fmt='%d', delimiter=' ')
-np.savetxt('_convolution_stack.txt', convolved_images_stack, fmt='%d', delimiter=' ')
+np.savetxt('src/_image.txt', image, fmt='%d', delimiter=' ')
+np.savetxt('src/_kernel.txt', kernel, fmt='%d', delimiter=' ')
+np.savetxt('src/_kernel_stack.txt', kernels_stack, fmt='%d', delimiter=' ')
+np.savetxt('src/_convolution.txt', convolved_image, fmt='%d', delimiter=' ')
+np.savetxt('src/_convolution_stack.txt', convolved_images_stack, fmt='%d', delimiter=' ')
 
 #save mem files
 #save image as 8-bit binary values in _mem_iact.txt in two's complement
-with open('_mem_iact.txt', 'w') as f:
+with open('src/_mem_iact.txt', 'w') as f:
     for i in range(image_size * channels):
         for j in range(image_size):
             f.write('{0:08b} '.format(image[i][j] & 0xFF) + '\n')
@@ -137,7 +139,7 @@ with open('_mem_iact.txt', 'w') as f:
     for i in range(2**mem_size_iact - image.shape[0] * image.shape[1]):
         f.write('{0:08b}'.format(0) + '\n')
 
-with open('_mem_iact_dec.txt', 'w') as f:
+with open('src/_mem_iact_dec.txt', 'w') as f:
     for i in range(image_size * channels):
         for j in range(image_size):
             f.write(str(image[i][j]) + '\n')
@@ -145,10 +147,10 @@ with open('_mem_iact_dec.txt', 'w') as f:
     for i in range(2**mem_size_iact - image.shape[0] * image.shape[1]):
         f.write(str(0) + '\n')
 
-print("Pixels : " + str(image.shape[0] * image.shape[1]))
+#print("Pixels : " + str(image.shape[0] * image.shape[1]))
 
 #save kernel as 8-bit binary values in _mem_wght.txt in two's complement
-with open('_mem_wght.txt', 'w') as f:
+with open('src/_mem_wght.txt', 'w') as f:
     for i in range(kernel_size * channels):
         for j in range(kernel_size):
             f.write('{0:08b} '.format(kernel[i][j] & 0xFF) + '\n')
@@ -157,7 +159,7 @@ with open('_mem_wght.txt', 'w') as f:
         f.write('{0:08b}'.format(0) + '\n')
 
 # save kernels as 8-bit binary values in _mem_wght_stack.txt in two's complement
-with open('_mem_wght_stack.txt', 'w') as f:
+with open('src/_mem_wght_stack.txt', 'w') as f:
     for i in range(kernel_size * channels * M0):
         for j in range(kernel_size):
             f.write('{0:08b} '.format(kernels_stack[i][j] & 0xFF) + '\n')
@@ -167,102 +169,17 @@ with open('_mem_wght_stack.txt', 'w') as f:
 
 
 #save zeros as 8-bit binary values in _mem_psum.txt
-with open('_mem_psum.txt', 'w') as f:
+with open('src/_mem_psum.txt', 'w') as f:
     for i in range(2**mem_size_psum):
         f.write('{0:016b}'.format(0) + '\n')
 
 
 
-# reorder kernel in slices of kernel_size x kernel_size
-kernel_tmp = kernel
-print(" Kernel TMP SHAPE", kernel_tmp.shape)
-
-kernel = np.zeros((kernel_size, kernel_size * channels))
-column=0
-print("Reordered shape : ",  kernel.shape)
-for tile_c in range(C1):
-    if tile_c == C1 - 1:
-        c0 = C0_last
-    else:
-        c0 = C0
-    #print(c0)
-    for i in range(kernel_size):
-        for c in range(c0):
-            #print("c = ", c)
-            #print("tile_c = ", tile_c)
-            channel = c+tile_c*C0
-            index = channel * kernel_size
-            print("Address : c=", c, " tile_c=", tile_c, " channel=", channel, " index=", index, " x=", i)
-            #print("index 1 : ", index)
-            #print("index 2 : ", index + kernel_size - 1)
-            #print(kernel_tmp[index : index + kernel_size  , i])
-            kernel[:, column] = kernel_tmp[index : index + kernel_size  , i]
-            column += 1
-
-#kernel = np.concatenate((kernel, kernel_tmp[i*kernel_size:i*kernel_size+kernel_size,:]), axis=1)
-
-# concatenate H2 times kernel horizontally, TILE_Y 
-kernel = np.concatenate([kernel]*H2, axis=1)
-
-print("############################")
-print("############################")
-print("############################")
-
-# reorder image
+# reorder image to be able to check iact input
 image_tmp = image
-print(" Image TMP SHAPE", image_tmp.shape)
 image = np.zeros((size_rows, image_size * channels * H2))
 column=0
-print("Reordered shape : ",  image.shape)
-for tile_y in range(H2):
-    #print("tile_y = ", tile_y)
-    #print("############################")
-    #print("############################")
-    #print("############################")
-    for tile_c in range(C1):
-        if tile_c == C1 - 1:
-            c0 = C0_last
-        else:
-            c0 = C0
-        #print(c0)
-        for i in range(image_size):
-            for c in range(c0):
-                #print("c = ", c)
-                #print("tile_c = ", tile_c)
-                channel = c+tile_c*C0
-                index = channel * image_size + tile_y * kernel_size
-                #print("Address : c=", c, " tile_c=", tile_c, " tile_y=", tile_y, " index=", index, " channel=",channel, " x=", i)
-                #print("index 1 : ", index)
-                #print("index 2 : ", index + size_rows - 1)
-                #if c0 == C0_last:
-                    #print("Image pixel --- : ", image_tmp[index, i])
-                if image_tmp[index : index + size_rows, i].shape[0] < size_rows :
-                    tmp = np.zeros((size_rows, 1))
-                    tmp[0:image_tmp[index : index + size_rows, i].shape[0], 0] = image_tmp[index : index + size_rows, i]
-                    image[:, column] = tmp[:, 0]
-                    #print(" ---")
-                else:
-                    image[:, column] = image_tmp[index : index + size_rows, i]
-                column += 1
-
-np.savetxt('_kernel_reordered.txt', kernel, fmt='%d', delimiter=' ')
-np.savetxt('_image_reordered.txt', image, fmt='%d', delimiter=' ')
-
-print("image shape : ", image.shape)
-print("image tmp shape : ", image_tmp.shape)
-print("kernel shape : ", kernel.shape)
-
-
-# reorder image to match accelerator - calc new H2
-H2 = math.ceil(image_size / size_x)
-size_rows = size_x + size_y - 1
-
-print("H2 = ", H2)
-print("size_rows = ", size_rows)
-
-image = np.zeros((size_rows, image_size * channels * H2))
-column=0
-print("Reordered shape : ",  image.shape)
+#print("Reordered shape : ",  image.shape)
 for tile_y in range(H2):
     #print("tile_y = ", tile_y)
     #print("############################")
@@ -284,16 +201,65 @@ for tile_y in range(H2):
                     while h_ >= image_size:
                         h_ -= image_size
                     index = channel * image_size + h_
-                    print("Address : c=", c, " tile_c=", tile_c, " tile_y=", tile_y, " index=", index, " channel=",channel, " x=", i, " h=", h, " h_=", h_)
+                    #print("Address : c=", c, " tile_c=", tile_c, " tile_y=", tile_y, " index=", index, " channel=",channel, " x=", i, " h=", h, " h_=", h_)
                     if index >= image_tmp.shape[0]:
                         image[h, column] = 0
-                        print("err ---")
+                        #print("err ---")
                     else:
                         image[h, column] = image_tmp[index, i]
                 column += 1
                     
                 #image[:, column] = image_tmp[index : index + size_rows  , i]
                 #column += 1
-print("image shape : ", image.shape)
+#print("image shape : ", image.shape)
 #np.savetxt('_kernel_reordered.txt', kernel, fmt='%d', delimiter=' ')
-np.savetxt('_image_reordered_2.txt', image, fmt='%d', delimiter=' ')
+np.savetxt('src/_image_reordered_2.txt', image, fmt='%d', delimiter=' ')
+
+#read actual output from file ../_output.txt
+actual_output = np.loadtxt('_output.txt')
+#iterate over actual_output and store in 2d array every output_size values
+output_size = image_size - kernel_size + 1
+actual_output_2d = np.zeros((actual_output.shape[0] // output_size, output_size))
+for i in range(actual_output.shape[0] // output_size):
+    actual_output_2d[i] = actual_output[i * output_size : i * output_size + output_size]
+
+np.savetxt('src/_actual_output.txt', actual_output_2d, fmt='%d', delimiter=' ')
+
+index = 0
+index_convolution_stack = 0
+index_m = np.zeros(M0)
+row_m = np.zeros(M0)
+#compare expected output with actual output
+for h2 in range(H2):
+    for x in range(size_x):
+        for m0_count in range(M0):
+            if index < image_size * M0:
+                valid_rows = image_size - (m0_count + 1) * kernel_size + 1
+                pause_rows = kernel_size - 1
+                start_row  = m0_count * kernel_size
+                if index_m[m0_count] == 0:
+                    row_m[m0_count] = start_row
+                if index == 0:
+                    print("valid_rows = ", valid_rows , " pause_rows = ", pause_rows, " start_row = ", start_row)
+                if index_m[m0_count] < valid_rows or index_m[m0_count] >= valid_rows + pause_rows:
+                    index_convolution_stack = int(row_m[m0_count] + m0_count * output_size)
+                    index_actual_output = index
+                    print("index_convolution_stack = ", index_convolution_stack, " index_actual_output = ", index_actual_output, " row_m[m0_count] = ", int(row_m[m0_count]), " m0_count = ", m0_count, " index_m[m0_count] = ", int(index_m[m0_count]))
+                    if all(actual_output_2d[index_actual_output,:] == convolved_images_stack[index_convolution_stack,:]) == True:
+                        #print("Row OK")
+                        pass
+                    else:
+                        print("ERR: got row" , actual_output_2d[index_actual_output,:])
+                        print("expected row" , convolved_images_stack[index_convolution_stack,:])
+                        print("index_actual_output = ", index_actual_output, " index_convolution_stack = ", index_convolution_stack)
+                        #sys.exit("Row not OK")
+                    if row_m[m0_count] == output_size - 1:
+                        row_m[m0_count] = 0
+                    else:
+                        row_m[m0_count] += 1
+                else:
+                    print("Pause : ", index_m[m0_count], "valid_rows = ", valid_rows , " pause_rows = ", pause_rows, " start_row = ", start_row)
+                index += 1
+                index_m[m0_count] += 1
+
+print(H2)

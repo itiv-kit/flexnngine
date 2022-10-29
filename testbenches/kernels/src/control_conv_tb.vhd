@@ -8,42 +8,55 @@ library ieee;
     use std.env.finish;
     use std.env.stop;
     use ieee.math_real.ceil;
+    use ieee.math_real.floor;
     use ieee.math_real.log2;
+    use std.textio.all;
 
 entity control_conv_tb is
     generic (
-        size_x    : positive := 10;
-        size_y    : positive := 5;
+        size_x    : positive := 7;
+        size_y    : positive := 10;
         size_rows : positive := size_x + size_y - 1;
 
         addr_width_rows : positive := 4;
-        addr_width_y    : positive := 3;
-        addr_width_x    : positive := 4;
+        addr_width_y    : positive := 4;
+        addr_width_x    : positive := 3;
 
-        data_width_iact     : positive := 8; -- Width of the input data (weights, iacts)
-        line_length_iact    : positive := 32;
+        data_width_iact     : positive := 8;  -- Width of the input data (weights, iacts)
+        line_length_iact    : positive := 32; /* TODO check influence on tiling - does not work for length 32, kernel 4 and channels 10. Does not work for length 30, kernel 3 and channels 10*/
         addr_width_iact     : positive := 5;
-        addr_width_iact_mem : positive := 15;
+        addr_width_iact_mem : positive := 16;
 
         data_width_psum     : positive := 16; -- or 17??
-        line_length_psum    : positive := 127;
+        line_length_psum    : positive := 128;
         addr_width_psum     : positive := 7;
-        addr_width_psum_mem : positive := 15;
+        addr_width_psum_mem : positive := 16;
 
         data_width_wght     : positive := 8;
-        line_length_wght    : positive := 32;
+        line_length_wght    : positive := 32; /* TODO check influence on tiling - does not work for length 32, kernel 4 and channels 10. Does not work for length 30, kernel 3 and channels 10*/
         addr_width_wght     : positive := 5;
         addr_width_wght_mem : positive := 15;
 
         fifo_width : positive := 16;
 
-        g_channels    : positive := 10;
+        g_channels    : positive := 8;
         g_image_y     : positive := 16;
         g_image_x     : positive := 16;
         g_kernel_size : positive := 5;
 
-        g_tiles_y             : positive := positive(integer(ceil(real(g_image_x - g_kernel_size + 1) / real(size_x)))); -- Y tiles, determined in control module, but for input data loading required here
-        g_columns_last_tile_y : positive := positive(integer(real(g_image_x - g_kernel_size + 1 - (g_tiles_y - 1) * size_x - 1)))
+        g_iact_fifo_size : positive := 15;
+        g_wght_fifo_size : positive := 15;
+        g_psum_fifo_size : positive := 128;
+
+        g_clk    : time := 10000 ps; -- ps
+        g_clk_sp : time := 1000 ps;  -- ps
+
+        g_files_dir : string  := "test/image_size_16_kernel_size_5_c_8/";
+        g_init_sp   : boolean := true;
+
+        -- g_h2 : positive := positive(integer(ceil(real(g_image_x - g_kernel_size + 1) / real(size_x)))); -- Y tiles, determined in control module, but for input data loading required here
+        g_h2 : positive := positive(integer(ceil(real(g_image_x) / real(size_x)))); -- Y tiles, determined in control module, but for input data loading required here
+        g_m0 : positive := positive(integer(floor(real(size_y) / real(g_kernel_size))))
     );
 end entity control_conv_tb;
 
@@ -63,8 +76,8 @@ architecture imp of control_conv_tb is
     signal i_data_wght       : array_t (0 to size_y - 1)(data_width_wght - 1 downto 0);
     signal i_data_wght_valid : std_logic_vector(size_y - 1 downto 0);
 
-    signal s_input_image     : int_image_t(0 to size_rows - 1, 0 to g_image_x * g_channels * g_tiles_y - 1);         -- 2, because two tile_y
-    signal s_input_weights   : int_image_t(0 to g_kernel_size - 1, 0 to g_kernel_size * g_channels * g_tiles_y - 1); -- not *2 because kernel stays the same across tile_y
+    signal s_input_image     : int_image_t(0 to size_rows - 1, 0 to g_image_x * g_channels * g_h2 - 1);         -- 2, because two tile_y
+    signal s_input_weights   : int_image_t(0 to g_kernel_size - 1, 0 to g_kernel_size * g_channels * g_h2 - 1); -- not *2 because kernel stays the same across tile_y
     signal s_expected_output : int_image_t(0 to g_image_y - g_kernel_size, 0 to g_image_x - g_kernel_size);
 
     signal dout_psum       : std_logic_vector(data_width_psum - 1 downto 0);
@@ -74,6 +87,18 @@ architecture imp of control_conv_tb is
     signal din_iact        : std_logic_vector(data_width_iact - 1 downto 0);
     signal din_wght        : std_logic_vector(data_width_wght - 1 downto 0);
 
+    signal start_adr : std_logic;
+    signal w_h2      : integer;
+    signal w_m0      : integer;
+
+    type ram_type is array (0 to 2 ** addr_width_psum_mem - 1) of std_logic_vector(data_width_psum - 1 downto 0);
+
+    signal psum_ram_instance : ram_type;
+
+    type t_state is (s_calculate, s_output, s_incr_c1);
+
+    signal r_state : t_state;
+
 begin
 
     o_psums           <= << signal accelerator_inst.w_psums : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0)>>;
@@ -82,6 +107,14 @@ begin
     i_data_iact_valid <= << signal accelerator_inst.w_data_iact_valid : std_logic_vector(size_rows - 1 downto 0)>>;
     i_data_wght       <= << signal accelerator_inst.w_data_wght : array_t (0 to size_y - 1)(data_width_wght - 1 downto 0)>>;
     i_data_wght_valid <= << signal accelerator_inst.w_data_wght_valid : std_logic_vector(size_y - 1 downto 0)>>;
+    -- psum_ram_instance := << shared variable accelerator_inst.scratchpad_inst.ram_dp_psum.ram_instance : ram_type>>;
+
+    psum_ram_instance <= << signal accelerator_inst.scratchpad_init_inst.scratchpad_inst.ram_dp_psum.r_ram_instance : ram_type >>;
+
+    w_h2      <= << signal accelerator_inst.w_h2 : integer range 0 to 1023>>;
+    w_m0      <= << signal accelerator_inst.w_m0 : integer range 0 to 1023>>;
+    start_adr <= << signal accelerator_inst.address_generator_inst.i_start : std_logic>>;
+    r_state   <= << signal accelerator_inst.control_inst.r_state : t_state>>;
 
     write_en_iact <= '0';
     write_en_wght <= '0';
@@ -109,10 +142,15 @@ begin
             addr_width_wght     => addr_width_wght,
             addr_width_wght_mem => addr_width_wght_mem,
             fifo_width          => fifo_width,
+            g_iact_fifo_size    => g_iact_fifo_size,
+            g_wght_fifo_size    => g_wght_fifo_size,
+            g_psum_fifo_size    => g_psum_fifo_size,
             g_channels          => g_channels,
             g_image_y           => g_image_y,
             g_image_x           => g_image_x,
-            g_kernel_size       => g_kernel_size
+            g_kernel_size       => g_kernel_size,
+            g_files_dir         => g_files_dir,
+            g_init_sp           => g_init_sp
         )
         port map (
             clk               => clk,
@@ -144,14 +182,14 @@ begin
     clk_gen : process (clk) is
     begin
 
-        clk <= not clk after 10 ns;
+        clk <= not clk after g_clk;
 
     end process clk_gen;
 
     clk_sp_gen : process (clk_sp) is
     begin
 
-        clk_sp <= not clk_sp after 4 ns;
+        clk_sp <= not clk_sp after g_clk_sp;
 
     end process clk_sp_gen;
 
@@ -205,9 +243,9 @@ begin
     p_read_files : process is
     begin
 
-        s_input_image     <= read_file(file_name => "src/_image_reordered_2.txt", num_col => g_image_x * g_channels * g_tiles_y, num_row => size_rows);
-        s_input_weights   <= read_file(file_name => "src/_kernel_reordered.txt", num_col => g_kernel_size * g_channels * g_tiles_y, num_row => g_kernel_size);
-        s_expected_output <= read_file(file_name => "src/_convolution.txt", num_col => g_image_x - g_kernel_size + 1, num_row => g_image_y - g_kernel_size + 1);
+        s_input_image <= read_file(file_name => g_files_dir & "_image_reordered_2.txt", num_col => g_image_x * g_channels * g_h2, num_row => size_rows);
+        -- s_input_weights   <= read_file(file_name => "src/_kernel_reordered.txt", num_col => g_kernel_size * g_channels * g_tiles_y, num_row => g_kernel_size);
+        s_expected_output <= read_file(file_name => g_files_dir & "_convolution.txt", num_col => g_image_x - g_kernel_size + 1, num_row => g_image_y - g_kernel_size + 1);
         wait;
 
     end process p_read_files;
@@ -217,7 +255,7 @@ begin
         p_check_image_vals : process is
         begin
 
-            for i in 0 to g_image_x * g_channels * g_tiles_y - 1 loop
+            for i in 0 to g_image_x * g_channels * g_h2 - 1 loop
 
                 wait until rising_edge(clk) and i_data_iact_valid(y) = '1';
 
@@ -227,7 +265,7 @@ begin
                                & integer'image(s_input_image(y, i))
                         severity warning;
                 else
-                    report "Got correct iact " & integer'image(to_integer(signed(i_data_iact(y)))) & " (" & integer'image(i) & ")";
+                -- report "Got correct iact " & integer'image(to_integer(signed(i_data_iact(y)))) & " (" & integer'image(i) & ")";
                 end if;
 
             end loop;
@@ -246,7 +284,7 @@ begin
 
     end generate p_check_img;
 
-    p_check_wght : for y in 0 to size_y - 1 generate
+    /*p_check_wght : for y in 0 to size_y - 1 generate
 
         p_check_wght_vals : process is
         begin
@@ -276,92 +314,50 @@ begin
 
         end process p_check_wght_vals;
 
-    end generate p_check_wght;
+    end generate p_check_wght;*/
 
-    output_check : for p in 0 to size_x - 1 generate
+    write_outputs : process is
 
-        finish_check : if p = size_x - 1 generate
+        file     outfile : text open write_mode is g_files_dir & "_output.txt";
+        variable row     : line;
 
-            finish_check : process is
-            begin
+    begin
 
-                wait for 1000 ns;
+        wait until r_state = s_output;
 
-                for j in 0 to g_tiles_y - 1 loop /* TODO Adjust range based on image size */
+        output_while : while true loop
 
-                    output_loop : for i in 0 to g_image_x - g_kernel_size loop
+            output_for : for j in 0 to w_m0 * w_h2 * (g_image_x - g_kernel_size + 1) loop
 
-                        wait until rising_edge(clk);
+                wait for 100 ns;
 
-                        -- If result is not valid, wait until next rising edge with valid results.
-                        if o_psums_valid(p) = '0' then
-                            wait until rising_edge(clk) and o_psums_valid(p) = '1';
-                        end if;
+                if r_state /= s_output then
+                    exit output_for;
+                end if;
 
-                    end loop;
+            end loop output_for;
 
-                    wait until rising_edge(clk);
+            if r_state = s_output then
+                exit output_while;
+            end if;
 
-                end loop;
+        end loop output_while;
 
-                report "Output check is finished."
-                    severity note;
-                finish;
+        wait for 2000 ns;
 
-                wait;
+        for i in 0 to 2 ** addr_width_psum_mem - 1 loop
 
-            end process finish_check;
+            write(row, integer'image(to_integer(signed(psum_ram_instance(i)))));
+            writeline(outfile, row);
 
-        end generate finish_check;
+        end loop;
 
-        output_check : process is
+        report "Writing outputs is finished."
+            severity note;
+        finish;
 
-            variable check_rows : integer;
+        wait;
 
-        begin
-
-            wait for 1000 ns;
-
-            report "OUTPUTS -----------------------------------------------------"
-                severity note;
-
-            for j in 0 to g_tiles_y - 1 loop /* TODO Adjust range based on image size */
-
-                output_loop : for i in 0 to g_image_x - g_kernel_size loop
-
-                    wait until rising_edge(clk);
-
-                    -- If result is not valid, wait until next rising edge with valid results.
-                    if o_psums_valid(p) = '0' then
-                        wait until rising_edge(clk) and o_psums_valid(p) = '1';
-                    end if;
-
-                    check_rows := size_y - 1;
-
-                    if (j /= g_tiles_y - 1) or p <= g_columns_last_tile_y then
-                        assert o_psums(p) = std_logic_vector(to_signed(s_expected_output(p + j * size_x,i), data_width_psum))
-                            report "Output wrong. Result is " & integer'image(to_integer(signed(o_psums(p)))) & " - should be "
-                                   & integer'image(s_expected_output(p + j * size_x,i))
-                            severity failure;
-
-                        report "Got correct result " & integer'image(to_integer(signed(o_psums(p))));
-                    end if;
-
-                end loop;
-
-                wait until rising_edge(clk);
-
-            end loop;
-
-            -- Check if result valid signal is set to zero afterwards
-            assert o_psums_valid(p) = '0'
-                report "Result valid should be zero"
-                severity failure;
-
-            wait;
-
-        end process output_check;
-
-    end generate output_check;
+    end process write_outputs;
 
 end architecture imp;
