@@ -175,7 +175,7 @@ begin
 
     fsm : block is
 
-        type   states is (IDLE, SEND, DONE);
+        type   states is (idle, send, done);
         signal cur_state : states;
 
     begin

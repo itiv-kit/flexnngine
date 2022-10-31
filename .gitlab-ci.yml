@@ -30,7 +30,7 @@ style-guide:
     before_script:
         - pip3 install vsg
     script:
-        - vsg -c ci/vsg_configuration.json -f hdl/*.vhd -j vsg_results.xml
+        - vsg --configuration ci/config.yaml -f hdl/*.vhd -j vsg_results.xml
         - cat vsg_results.xml
     artifacts:
         reports:
@@ -41,7 +41,7 @@ style-guide-tb:
     before_script:
         - pip3 install vsg
     script:
-        - vsg -c ci/vsg_configuration_tb.json -f testbenches/*/src/*.vhd -j vsg_results_tb.xml
+        - vsg --configuration ci/config_tb.yaml -f testbenches/*/src/*.vhd -j vsg_results_tb.xml
         - cat vsg_results_tb.xml
     artifacts:
         reports:
