@@ -21,3 +21,5 @@ rule:
     disable: true
   constant_016:
     disable: true
+  constant_013:
+    severity: "Warning"

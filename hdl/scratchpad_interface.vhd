@@ -274,17 +274,17 @@ begin
                     r_done_wght <= '0';
                 end if;
 
-                if (and w_empty_iact_address_f) and (and w_empty_iact_f) then
+                if (and w_empty_iact_address_f(size_rows - 1 downto size_y - 1)) and (and w_empty_iact_f(size_rows - 1 downto size_y - 1)) then
                     r_done_iact <= '1';
                 else
                     r_done_iact <= '0';
                 end if;
 
-                if (or w_empty_iact_f = '1') and r_done_iact = '1' and (or w_empty_wght_f = '0') then
+                if (or w_empty_iact_f(size_rows - 1 downto size_y - 1) = '1') and r_done_iact = '1' and (or w_empty_wght_f = '0') then
                     o_enable <= '1';
-                elsif (or w_empty_wght_f = '1') and r_done_wght = '1' and (or w_empty_iact_f = '0') then
+                elsif (or w_empty_wght_f = '1') and r_done_wght = '1' and (or w_empty_iact_f(size_rows - 1 downto size_y - 1) = '0') then
                     o_enable <= '1';
-                elsif (or w_empty_iact_f = '0') and  (or w_empty_wght_f = '0') then
+                elsif (or w_empty_iact_f(size_rows - 1 downto size_y - 1) = '0') and  (or w_empty_wght_f = '0') then
                     o_enable <= '1';
                 elsif r_done_iact = '1' and r_done_wght = '1' then
                     o_enable <= '1';
@@ -303,7 +303,7 @@ begin
         if not rstn then
             o_status <= '0';
         elsif rising_edge(clk) then
-            if or w_empty_iact_f = '0' then
+            if or w_empty_iact_f(size_rows - 1 downto size_y - 1) = '0' then
                 o_status <= '1';
             end if;
         end if;

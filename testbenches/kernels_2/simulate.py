@@ -82,8 +82,10 @@ class Test:
         # Generate input activations
         # Generate weights
         # Generate expected output activations
-        self.M0 = math.floor(self.accelerator.size_y / self.convolution.kernel_size)
+        self.M0 = self.accelerator.size_y
         self.H1 = self.accelerator.size_x
+
+        self.line_length_wght_usable = self.accelerator.line_length_wght - 4
 
         size_rows = self.accelerator.size_x + self.accelerator.size_y - 1
         if self.M0 == 0:
@@ -95,11 +97,11 @@ class Test:
             self.H2 = math.ceil(self.convolution.image_size / self.accelerator.size_x)
 
         self.C0 = math.floor(
-            self.accelerator.line_length_wght / self.convolution.kernel_size
+            self.line_length_wght_usable / self.convolution.kernel_size
         )
         if (
             self.convolution.input_channels * self.convolution.kernel_size
-            < self.accelerator.line_length_wght
+            < self.line_length_wght_usable
         ):
             self.C0 = self.convolution.input_channels
 
@@ -616,13 +618,13 @@ if __name__ == "__main__":
     wght_fifo_size = 15
     psum_fifo_size = 128
 
-    image_size = [16, 17, 18, 20, 21]
-    kernel_size = [1, 3, 5, 7]
-    input_channels = [3, 10, 20, 30]
+    #image_size = [16, 17, 18, 20, 21]
+    #kernel_size = [1, 3, 5, 7]
+    #input_channels = [3, 10, 20, 30]
     
-    #image_size = [16]
-    #kernel_size = [5]
-    #input_channels = [8]
+    image_size = [16]
+    kernel_size = [1]
+    input_channels = [10]
     
     #image_size = [16, 28, 42, 65]
     #kernel_size = [1, 3, 5, 7]
