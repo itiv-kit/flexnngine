@@ -41,6 +41,9 @@ class Accelerator:
         iact_fifo_size,
         wght_fifo_size,
         psum_fifo_size,
+        clk_period,
+        clk_sp_period,
+        dataflow,
     ):
         self.size_x = size_x
         self.size_y = size_y
@@ -53,15 +56,19 @@ class Accelerator:
         self.iact_fifo_size = iact_fifo_size
         self.wght_fifo_size = wght_fifo_size
         self.psum_fifo_size = psum_fifo_size
+        self.clk_period = clk_period
+        self.clk_sp_period = clk_sp_period
+        self.dataflow = dataflow
 
 
 @dataclass
 class Setting:
     """Class to represent one setting consisting of a convolution and an accelerator."""
-    def __init__(self, name, convolution, accelerator):
+    def __init__(self, name, convolution, accelerator, start_gui):
         self.name = name
         self.convolution = convolution
         self.accelerator = accelerator
+        self.start_gui = start_gui
 
 
 class Test:
@@ -75,56 +82,117 @@ class Test:
         print("Generating test: ", test_name)
         os.makedirs(test_dir, exist_ok=True)
         self.test_dir = test_dir
-        self._generate_stimuli()
+        return self._generate_stimuli()
 
     def _generate_stimuli(self):
         print("Generating stimuli for test: ", self.name)
         # Generate input activations
         # Generate weights
         # Generate expected output activations
-        self.M0 = self.accelerator.size_y
-        self.H1 = self.accelerator.size_x
+        
+        if self.accelerator.dataflow == 1:
+            self.M0 = self.accelerator.size_y
+            self.H1 = self.accelerator.size_x
+            
+            self.W1 = self.convolution.image_size - self.convolution.kernel_size + 1
+            self.M0_last_m1 = 1 # not used yet
 
-        self.line_length_wght_usable = self.accelerator.line_length_wght - 4
+            self.line_length_wght_usable = self.accelerator.line_length_wght - 28
 
-        size_rows = self.accelerator.size_x + self.accelerator.size_y - 1
-        if self.M0 == 0:
+            size_rows = self.accelerator.size_x + self.accelerator.size_y - 1
             self.H2 = math.ceil(
                 (self.convolution.image_size - self.convolution.kernel_size + 1)
                 / self.accelerator.size_x
             )
+        
+            self.C1 = math.ceil(self.convolution.input_channels * self.convolution.kernel_size / self.line_length_wght_usable)
+            self.C0 = math.floor(self.convolution.input_channels / self.C1)
+
+            self.C0_last = self.convolution.input_channels - (self.C1 - 1) * self.C0
+            self.rows_last_h2 = (self.convolution.image_size - self.convolution.kernel_size + 1) - (self.H2 - 1) * self.accelerator.size_x
+            self.C0_last_c1 = self.C0_last
+            self.C0W0 = self.C0 * self.convolution.kernel_size
+            self.C0W0_last_c1 = self.C0_last * self.convolution.kernel_size
+            
+            self.C1 = math.ceil(self.convolution.input_channels / self.C0)
+            self.C0_last = self.convolution.input_channels - (self.C1 - 1) * self.C0
+            self.C0W0 = self.C0 * self.convolution.kernel_size
+            self.C0W0_last_c1 = self.C0_last * self.convolution.kernel_size
+            
+            # C0W0 must not be too short to allow for disabling of PE array while reading data
+            if self.C0W0_last_c1 < 6:
+                self.C1 = self.C1 - 1
+                self.C0_last = self.convolution.input_channels - (self.C1 - 1) * self.C0
+                self.C0W0 = self.C0 * self.convolution.kernel_size
+                self.C0W0_last_c1 = self.C0_last * self.convolution.kernel_size
+            
+            if (self.C0W0 * (self.C1-1) + self.C0W0_last_c1) != (self.convolution.input_channels * self.convolution.kernel_size):
+                print("H2 = ", self.H2)
+                print("rows_last_h2 = ", self.rows_last_h2)
+                print("C1 = ", self.C1)
+                print("C0 = ", self.C0)
+                print("C0_last_c1 = ", self.C0_last_c1)
+                print("C0W0 = ", self.C0W0)
+                print("C0W0_last_c1 = ", self.C0W0_last_c1)
+                print("MISMATCH")
+                return False
+            
+            if self.C0W0_last_c1 < 6:
+                print("H2 = ", self.H2)
+                print("rows_last_h2 = ", self.rows_last_h2)
+                print("C1 = ", self.C1)
+                print("C0 = ", self.C0)
+                print("C0_last_c1 = ", self.C0_last_c1)
+                print("C0W0 = ", self.C0W0)
+                print("C0W0_last_c1 = ", self.C0W0_last_c1)
+                return False
+            
+            if self.C0W0_last_c1 >= self.accelerator.line_length_wght:
+                print("H2 = ", self.H2)
+                print("rows_last_h2 = ", self.rows_last_h2)
+                print("C1 = ", self.C1)
+                print("C0 = ", self.C0)
+                print("C0_last_c1 = ", self.C0_last_c1)
+                print("C0W0 = ", self.C0W0)
+                print("C0W0_last_c1 = ", self.C0W0_last_c1)
+                return False
+
         else:
-            self.H2 = math.ceil(self.convolution.image_size / self.accelerator.size_x)
+            self.W1 = self.convolution.image_size - self.convolution.kernel_size + 1
+            self.M0_last_m1 = 1 # not used yet
+            self.rows_last_h2 = 1
+            self.C0_last_c1 = 1
+            self.C0W0 = 1
+            self.C0W0_last_c1 = 1
+            
+            self.M0 = math.floor(self.accelerator.size_y / self.convolution.kernel_size)
+            self.H1 = self.accelerator.size_x
 
-        self.C0 = math.floor(
-            self.line_length_wght_usable / self.convolution.kernel_size
-        )
-        if (
-            self.convolution.input_channels * self.convolution.kernel_size
-            < self.line_length_wght_usable
-        ):
-            self.C0 = self.convolution.input_channels
+            size_rows = self.accelerator.size_x + self.accelerator.size_y - 1
+            if self.M0 == 0:
+                self.H2 = math.ceil(
+                    (self.convolution.image_size - self.convolution.kernel_size + 1)
+                    / self.accelerator.size_x
+                )
+            else:
+                self.H2 = math.ceil(self.convolution.image_size / self.accelerator.size_x)
 
-        self.C1 = math.ceil(self.convolution.input_channels / self.C0)
+            self.C0 = math.floor(
+                self.accelerator.line_length_wght / self.convolution.kernel_size
+            )
+            if (
+                self.convolution.input_channels * self.convolution.kernel_size
+                < self.accelerator.line_length_wght
+            ):
+                self.C0 = self.convolution.input_channels
 
-        self.C0_last = self.convolution.input_channels - (self.C1 - 1) * self.C0
+            self.C1 = math.ceil(self.convolution.input_channels / self.C0)
 
-        print("H2 = ", self.H2)
-        print("C1 = ", self.C1)
-        print("C0 = ", self.C0)
-        print("C0_last = ", self.C0_last)
+            self.C0_last = self.convolution.input_channels - (self.C1 - 1) * self.C0
 
         np.random.seed(2)
         st = np.random.get_state()
         # print(st)
-
-        # print range of input_bits signed numbers
-        print(
-            "Input range: ",
-            -(2 ** (self.convolution.input_bits - 1)),
-            " to ",
-            (2 ** (self.convolution.input_bits - 1)) - 1,
-        )
 
         # state = ['MT19937', key_array, 624, 0, 0.0]
 
@@ -230,9 +298,9 @@ class Test:
                 kernels_stack = np.vstack((kernels_stack, kernels[k, :, :]))
         kernels_stack = kernels_stack.astype(int)
 
-        print("convolved_image_shape: ", convolved_image.shape)
-        print("convolved_images_shape: ", convolved_images.shape)
-        print("convolved_images_stack_shape: ", self.convolved_images_stack.shape)
+        # print("convolved_image_shape: ", convolved_image.shape)
+        # print("convolved_images_shape: ", convolved_images.shape)
+        # print("convolved_images_stack_shape: ", self.convolved_images_stack.shape)
 
         # save data as txt files
         np.savetxt(self.test_dir + "_image.txt", image, fmt="%d", delimiter=" ")
@@ -276,7 +344,7 @@ class Test:
             ):
                 f.write(str(0) + "\n")
 
-        print("Pixels : " + str(image.shape[0] * image.shape[1]))
+        # print("Pixels : " + str(image.shape[0] * image.shape[1]))
 
         # save kernel as 8-bit binary values in _mem_wght.txt in two's complement
         with open(self.test_dir + "_mem_wght.txt", "w") as f:
@@ -319,7 +387,7 @@ class Test:
             )
         )
         column = 0
-        print("Reordered shape : ", image.shape)
+        # print("Reordered shape : ", image.shape)
         for tile_y in range(self.H2):
             # print("tile_y = ", tile_y)
             # print("############################")
@@ -368,11 +436,12 @@ class Test:
 
                         # image[:, column] = image_tmp[index : index + size_rows  , i]
                         # column += 1
-        print("image shape : ", image.shape)
+        # print("image shape : ", image.shape)
         # np.savetxt('_kernel_reordered.txt', kernel, fmt='%d', delimiter=' ')
         np.savetxt(
             self.test_dir + "_image_reordered_2.txt", image, fmt="%d", delimiter=" "
         )
+        return True
 
     def _convolution2d(self, image, kernel, bias):
         m, n = kernel.shape
@@ -394,6 +463,9 @@ class Test:
         return new_image
 
     def run(self):
+        if os.path.exists(self.test_dir + "_success.txt"):
+            print("Test already passed. Only re-evaluating results.")
+            return self._evaluate()
         print("Running test: ", self.name)
         myenv = os.environ.copy()
         myenv["LM_LICENSE_FILE"] = "27840@ls.itiv.kit.edu"
@@ -449,10 +521,34 @@ class Test:
             + str(self.accelerator.wght_fifo_size)
             + " -gg_psum_fifo_size="
             + str(self.accelerator.psum_fifo_size)
-            + " -gg_h2="
+            + " -gg_control_init="
+            + "False"
+            + " -gg_c1="
+            + str(self.C1)
+            + " -gg_w1="
+            + str(self.W1)
+                        + " -gg_h2="
             + str(self.H2)
-            + " -gg_m0="
+                        + " -gg_m0="
             + str(self.M0)
+                        + " -gg_m0_last_m1="
+            + str(self.M0_last_m1)
+                        + " -gg_rows_last_h2="
+            + str(self.rows_last_h2)
+                        + " -gg_c0="
+            + str(self.C0)
+                        + " -gg_c0_last_c1="
+            + str(self.C0_last_c1)
+                        + " -gg_c0w0="
+            + str(self.C0W0)
+                        + " -gg_c0w0_last_c1="
+            + str(self.C0W0_last_c1)
+                                    + " -gg_clk="
+            + str(self.accelerator.clk_period)
+                                    + " -gg_clk_sp="
+            + str(self.accelerator.clk_sp_period)
+                                    + " -gg_dataflow="
+            + str(self.accelerator.dataflow)
             + " -gg_init_sp="
             + "True"
             + " -gg_files_dir="
@@ -462,25 +558,34 @@ class Test:
 
         with open(os.devnull, "wb") as devnull:
             try:
-                shutil.copyfile("modelsim.ini", self.test_dir + "modelsim.ini")
-                shutil.copyfile("run_batch.do", self.test_dir + "run_batch.do")
-                shutil.copyfile(
-                    "sources_batch.tcl", self.test_dir + "sources_batch.tcl"
-                )
+                if os.path.exists(self.test_dir + "modelsim.ini_lock"):
+                    os.remove(self.test_dir + "modelsim.ini_lock")
                 if self.show_output:
-                    check_call(
-                        [
-                            "/tools/cadence/mentor/2020-21/RHELx86/QUESTA-CORE-PRIME_2020.4/questasim/bin/vsim",
-                            "-c",
-                            "-do",
-                            "run_batch.do",
-                        ],
-                        stdout=subprocess.STDOUT,
-                        stderr=subprocess.STDOUT,
-                        env=myenv,
-                        cwd=self.test_dir,
+                    shutil.copyfile("modelsim.ini", self.test_dir + "modelsim.ini")
+                    shutil.copyfile("run_batch2.do", self.test_dir + "run_batch2.do")
+                    shutil.copyfile(
+                        "sources_batch.tcl", self.test_dir + "sources_batch.tcl"
                     )
+                    shutil.copyfile("wave_control_adr.do", self.test_dir + "wave_control_adr.do")
+                    with open(self.test_dir + "_log.txt", "w+") as f:
+                        check_call(
+                            [
+                                "/tools/cadence/mentor/2020-21/RHELx86/QUESTA-CORE-PRIME_2020.4/questasim/bin/vsim",
+                                #"-c",
+                                "-do",
+                                "run_batch2.do",
+                            ],
+                            stdout=f,
+                            stderr=subprocess.STDOUT,
+                            env=myenv,
+                            cwd=self.test_dir,
+                        )
                 else:
+                    shutil.copyfile("modelsim.ini", self.test_dir + "modelsim.ini")
+                    shutil.copyfile("run_batch.do", self.test_dir + "run_batch.do")
+                    shutil.copyfile(
+                        "sources_batch.tcl", self.test_dir + "sources_batch.tcl"
+                    )
                     with open(self.test_dir + "_log.txt", "w+") as f:
                         check_call(
                             [
@@ -520,70 +625,108 @@ class Test:
                 delimiter=" ",
             )
 
-            index = 0
-            index_convolution_stack = 0
-            index_m = np.zeros(self.M0)
-            row_m = np.zeros(self.M0)
-            # compare expected output with actual output
-            for h2 in range(self.H2):
-                for x in range(self.accelerator.size_x):
+            if self.accelerator.dataflow == 1:
+                index = 0
+                index_convolution_stack = 0
+                index_m = np.zeros(self.M0)
+                row_m = np.zeros(self.M0)
+                # compare expected output with actual output
+                max_x = self.convolution.image_size - self.convolution.kernel_size + 1
+                for x in range(max_x):
                     for m0_count in range(self.M0):
-                        if index < self.convolution.image_size * self.M0:
-                            valid_rows = (
-                                self.convolution.image_size
-                                - (m0_count + 1) * self.convolution.kernel_size
-                                + 1
+                        index_actual_output = x*self.M0 + m0_count
+                        index_convolution_stack = m0_count * max_x + x
+                        #print("Index actual output: " , index_actual_output, "   Index convolution stack : ", index_convolution_stack, "   max_x=", max_x)
+                        if (all(actual_output_2d[index_actual_output, :]== self.convolved_images_stack[index_convolution_stack, :])== True):
+                            #print(self.name + ": Row OK")
+                            pass
+                        else:
+                            pass
+                            print(
+                                self.name + ": ERR: got row",
+                                actual_output_2d[index_actual_output, :],
                             )
-                            pause_rows = self.convolution.kernel_size - 1
-                            start_row = m0_count * self.convolution.kernel_size
-                            if index_m[m0_count] == 0:
-                                row_m[m0_count] = start_row
-                            # if index == 0:
-                            # print("valid_rows = ", valid_rows , " pause_rows = ", pause_rows, " start_row = ", start_row)
-                            if (
-                                index_m[m0_count] < valid_rows
-                                or index_m[m0_count] >= valid_rows + pause_rows
-                            ):
-                                index_convolution_stack = int(
-                                    row_m[m0_count] + m0_count * output_size
+                            print(
+                                self.name + ": expected row",
+                                self.convolved_images_stack[
+                                    index_convolution_stack, :
+                                ],
+                            )
+                            print(
+                                self.name + ": index_actual_output = ",
+                                index_actual_output,
+                                " index_convolution_stack = ",
+                                index_convolution_stack,
+                            )
+                            return False
+            else:
+                index = 0
+                index_convolution_stack = 0
+                index_m = np.zeros(self.M0)
+                row_m = np.zeros(self.M0)
+                # compare expected output with actual output
+                for h2 in range(self.H2):
+                    for x in range(self.accelerator.size_x):
+                        for m0_count in range(self.M0):
+                            if index < self.convolution.image_size * self.M0:
+                                valid_rows = (
+                                    self.convolution.image_size
+                                    - (m0_count + 1) * self.convolution.kernel_size
+                                    + 1
                                 )
-                                index_actual_output = index
+                                pause_rows = self.convolution.kernel_size - 1
+                                start_row = m0_count * self.convolution.kernel_size
+                                if index_m[m0_count] == 0:
+                                    row_m[m0_count] = start_row
+                                # if index == 0:
+                                # print("valid_rows = ", valid_rows , " pause_rows = ", pause_rows, " start_row = ", start_row)
                                 if (
-                                    all(
-                                        actual_output_2d[index_actual_output, :]
-                                        == self.convolved_images_stack[
-                                            index_convolution_stack, :
-                                        ]
-                                    )
-                                    == True
+                                    index_m[m0_count] < valid_rows
+                                    or index_m[m0_count] >= valid_rows + pause_rows
                                 ):
-                                    #print(self.name + ": Row OK")
-                                    pass
-                                else:
-                                    print(
-                                        self.name + ": ERR: got row",
-                                        actual_output_2d[index_actual_output, :],
+                                    index_convolution_stack = int(
+                                        row_m[m0_count] + m0_count * output_size
                                     )
-                                    print(
-                                        self.name + ": expected row",
-                                        self.convolved_images_stack[
-                                            index_convolution_stack, :
-                                        ],
-                                    )
-                                    print(
-                                        self.name + ": index_actual_output = ",
-                                        index_actual_output,
-                                        " index_convolution_stack = ",
-                                        index_convolution_stack,
-                                    )
-                                    return False
-                                if row_m[m0_count] == output_size - 1:
-                                    row_m[m0_count] = 0
-                                else:
-                                    row_m[m0_count] += 1
-                            index += 1
-                            index_m[m0_count] += 1
+                                    index_actual_output = index
+                                    if (
+                                        all(
+                                            actual_output_2d[index_actual_output, :]
+                                            == self.convolved_images_stack[
+                                                index_convolution_stack, :
+                                            ]
+                                        )
+                                        == True
+                                    ):
+                                        #print(self.name + ": Row OK")
+                                        pass
+                                    else:
+                                        print(
+                                            self.name + ": err: got row",
+                                            actual_output_2d[index_actual_output, :],
+                                        )
+                                        print(
+                                            self.name + ": expected row",
+                                            self.convolved_images_stack[
+                                                index_convolution_stack, :
+                                            ],
+                                        )
+                                        print(
+                                            self.name + ": index_actual_output = ",
+                                            index_actual_output,
+                                            " index_convolution_stack = ",
+                                            index_convolution_stack,
+                                        )
+                                        return False
+                                    if row_m[m0_count] == output_size - 1:
+                                        row_m[m0_count] = 0
+                                    else:
+                                        row_m[m0_count] += 1
+                                index += 1
+                                index_m[m0_count] += 1
+
             print("Success: ", self.name)
+            with open((self.test_dir + '_success.txt'), 'w') as f:
+                f.write('Simulated and output checked successfully!')
             return True
         except IndexError as e:
             print("Error while evaluating test: ", self.name, " : ", str(e))
@@ -592,9 +735,14 @@ class Test:
 
 
 def run_test(setting):
-    test = Test(setting.name, setting.convolution, setting.accelerator, False)
-    test.generate_test(setting.name, "test/" + setting.name + "/")
-    return test.run()
+    test = Test(setting.name, setting.convolution, setting.accelerator, setting.start_gui)
+    gen_test = test.generate_test(setting.name, "test/" + setting.name + "/")
+    if gen_test:
+        return test.run()
+        return True
+    else:
+        print("Error while generating test: ", setting.name)
+        return False
 
 
 if __name__ == "__main__":
@@ -608,23 +756,40 @@ if __name__ == "__main__":
     # Define accelerator parameters
     size_x = 7
     size_y = 10
-    line_length_iact = 32  # word length
+    line_length_iact = 64  # word length
     line_length_psum = 128  # word length
-    line_length_wght = 32  # word length
+    line_length_wght = 64  # word length
     mem_size_iact = 16  # addressable memory size in bits
     mem_size_psum = 16  # addressable memory size in bits
-    mem_size_wght = 15  # addressable memory size in bits
+    mem_size_wght = 16  # addressable memory size in bits
     iact_fifo_size = 15
     wght_fifo_size = 15
     psum_fifo_size = 128
-
-    #image_size = [16, 17, 18, 20, 21]
-    #kernel_size = [1, 3, 5, 7]
-    #input_channels = [3, 10, 20, 30]
+    clk_period = 10000  # in ps
+    clk_sp_period = [1000]  # in ps
+    
+    dataflow = [0, 1]
+    
+    image_size = [16, 17, 20, 21]
+    kernel_size = [1, 3, 5, 7]
+    input_channels = [10, 20, 30, 100]
     
     image_size = [16]
-    kernel_size = [1]
+    kernel_size = [3]
     input_channels = [10]
+    
+    #image_size = [20]
+    #kernel_size = [5]
+    #input_channels = [10]
+    
+    start_gui = False
+    # if (len(image_size) * len(kernel_size) * len(input_channels) * len(dataflow) *
+    #     len(line_length_iact) * len(line_length_psum) * len(line_length_wght) *
+    #     len(mem_size_iact) * len(mem_size_psum) * len(mem_size_wght) * 
+    #     len(iact_fifo_size) * len(wght_fifo_size) * len(psum_fifo_size) * 
+    #     len(clk_period) * len(clk_sp_period) * 
+    #     len(size_x) * len(size_y) > 1):
+    #     start_gui = False
     
     #image_size = [16, 28, 42, 65]
     #kernel_size = [1, 3, 5, 7]
@@ -634,32 +799,118 @@ if __name__ == "__main__":
     #image_size = [17]
     #kernel_size = [7]
     
+    simulation = []
+
+    ## 1. Test with different dataflow. Kernel_size 1,3 and medium image size 16, 10-200 channels
+    simulation.append(Setting("", Convolution(image_size = [16], kernel_size = [1,3], input_channels = [10+i*10 for i in range(20)], output_channels = [3], input_bits = [4]), 
+                      Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
+                                  mem_size_iact = [20], mem_size_psum = [16], mem_size_wght = [16], 
+                                  iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [128], 
+                                  clk_period = [10000], clk_sp_period = [1000], dataflow=[0,1]), start_gui=False))
+
+    ## 2. Test with different dataflow. Kernel_size 1,3 and larger image size 32, 10-100 channels
+    simulation.append(Setting("", Convolution(image_size = [32], kernel_size = [1,3], input_channels = [10+i*10 for i in range(10)], output_channels = [3], input_bits = [4]), 
+                      Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
+                                  mem_size_iact = [20], mem_size_psum = [16], mem_size_wght = [16], 
+                                  iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [128], 
+                                  clk_period = [10000], clk_sp_period = [1000], dataflow=[0,1]), start_gui=False))
+        
+    ## 3. Test with different dataflow. Kernel_size 3 and large image size 124, 3 channels
+    simulation.append(Setting("", Convolution(image_size = [124], kernel_size = [3], input_channels = [3], output_channels = [3], input_bits = [4]), 
+                      Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
+                                  mem_size_iact = [20], mem_size_psum = [16], mem_size_wght = [16], 
+                                  iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [128], 
+                                  clk_period = [10000], clk_sp_period = [1000], dataflow=[0,1]), start_gui=False))
+    
+    ## 3. Test with different FIFO sizes. Kernel_size 1,3 and medium image size 16, 40 channels
+    simulation.append(Setting("", Convolution(image_size = [16], kernel_size = [1,3], input_channels = [40], output_channels = [3], input_bits = [4]), 
+                      Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
+                                  mem_size_iact = [20], mem_size_psum = [16], mem_size_wght = [16], 
+                                  iact_fifo_size = [5, 15, 30, 64, 128], wght_fifo_size = [5, 15, 30, 64, 128], psum_fifo_size = [128], 
+                                  clk_period = [10000], clk_sp_period = [1000], dataflow=[0,1]), start_gui=False))
+    
+    ## 4. Test with different Line buffer sizes. Kernel_size 1,3 and medium image size 16, 40 channels
+    simulation.append(Setting("", Convolution(image_size = [16], kernel_size = [1,3], input_channels = [40], output_channels = [3], input_bits = [4]), 
+                      Accelerator(size_x = [7], size_y = [10], line_length_iact = [], line_length_psum = [128], line_length_wght = [16, 32, 64, 128, 256, 512, 1024],
+                                  mem_size_iact = [20], mem_size_psum = [16], mem_size_wght = [16], 
+                                  iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [128], 
+                                  clk_period = [10000], clk_sp_period = [1000], dataflow=[0,1]), start_gui=False))
+
+    # simulation.append(Setting("", Convolution(image_size = [16], kernel_size = [5], input_channels = [50], output_channels = [3], input_bits = [4]), 
+    #                 Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
+    #                             mem_size_iact = [20], mem_size_psum = [16], mem_size_wght = [16], 
+    #                             iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [128], 
+    #                             clk_period = [10000], clk_sp_period = [1000], dataflow=[1]), start_gui=True))    
+    
+    # very small test
+    # simulation.append(Setting("", Convolution(image_size = [16], kernel_size = [1,3], input_channels = [10+i*1 for i in range(4)], output_channels = [3], input_bits = [4]), 
+    #                   Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
+    #                               mem_size_iact = [20], mem_size_psum = [16], mem_size_wght = [16], 
+    #                               iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [128], 
+    #                               clk_period = [10000], clk_sp_period = [1000], dataflow=[0,1]), start_gui=False))
+    
     settings = []
 
     outputs = []
 
-    for i in image_size:
-        for j in kernel_size:
-            for c in input_channels:
-                settings.append(
-                    Setting(
-                        "image_size_" + str(i) + "_kernel_size_" + str(j)+"_c_"+str(c),
-                        Convolution(i, j, c, output_channels, input_bits),
-                        Accelerator(
-                            size_x,
-                            size_y,
-                            line_length_iact,
-                            line_length_psum,
-                            line_length_wght,
-                            mem_size_iact,
-                            mem_size_psum,
-                            mem_size_wght,
-                            iact_fifo_size,
-                            wght_fifo_size,
-                            psum_fifo_size,
-                        ),
-                    )
-                )
+    for sim in simulation:
+        for hw in sim.convolution.image_size:
+            for rs in sim.convolution.kernel_size:
+                for c in sim.convolution.input_channels:
+                    for df in sim.accelerator.dataflow:
+                        #for li in sim.accelerator.line_length_iact:
+                            for lw in sim.accelerator.line_length_wght:
+                                for lp in sim.accelerator.line_length_psum:
+                                    for fifoi in sim.accelerator.iact_fifo_size:
+                                        for fifow in sim.accelerator.wght_fifo_size:
+                                            for fifop in sim.accelerator.psum_fifo_size:
+                                                for clk in sim.accelerator.clk_period:
+                                                    for clk_sp in sim.accelerator.clk_sp_period:
+                                                        for x in sim.accelerator.size_x:
+                                                            for y in sim.accelerator.size_y:
+                                                                li = lw
+                                                                settings.append(
+                                                                    Setting(
+                                                                        "HW_" + str(hw) +
+                                                                        "_RS_" + str(rs)+
+                                                                        "_C_" + str(c)+
+                                                                        "_Li_" + str(li)+
+                                                                        "_Lw_" + str(lw)+
+                                                                        "_Lp_" + str(lp)+                            
+                                                                        "_Fi_" + str(fifoi)+
+                                                                        "_Fw_" + str(fifow)+
+                                                                        "_Fp_" + str(fifop)+
+                                                                        "_Clk_" + str(clk)+
+                                                                        "_ClkSp_" + str(clk_sp)+
+                                                                        "_X_" + str(x)+
+                                                                        "_Y_" + str(y)+
+                                                                        "_Df_" + str(df),                    
+                                                                        Convolution(hw, rs, c, output_channels, input_bits),
+                                                                        Accelerator(
+                                                                            x,
+                                                                            y,
+                                                                            li,
+                                                                            lp,
+                                                                            lw,
+                                                                            mem_size_iact,
+                                                                            mem_size_psum,
+                                                                            mem_size_wght,
+                                                                            fifoi,
+                                                                            fifow,
+                                                                            fifop,
+                                                                            clk,
+                                                                            clk_sp,
+                                                                            df,
+                                                                        ),
+                                                                        sim.start_gui
+                                                                    )
+                                                                )
+                                                                if sim.start_gui == True:
+                                                                    start_gui = True
+                                                                
+    if len(settings) > 2 and start_gui == True:
+        print("Too many settings to display in GUI")
+        exit(1)
             
     pool = Pool(128)
     outputs = pool.map(run_test, settings)

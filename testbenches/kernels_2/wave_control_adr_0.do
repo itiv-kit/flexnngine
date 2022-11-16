@@ -7,64 +7,6 @@ add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/g_h
 add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/g_m0
 add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/w_h2
 add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/w_m0
-add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/w_m0_last_m1
-#add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/control_init_inst/r_m0_count_kernel
-#add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/control_init_inst/r_m0_last_m1
-#add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/control_init_inst/r_m1
-#add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/control_init_inst/i_kernels
-#add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/control_init_inst/r_h2_tmp
-#add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/control_init_inst/r_rows_last_h2
-#add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/control_init_inst/r_h2
-#add wave -noupdate -expand -group Testbench -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/control_init_inst/i_kernel_size
-
-add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/g_accelerator/accelerator_inst/control_inst/w_h2
-#add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/w_tiles_y_last_tile_rows
-add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/g_accelerator/accelerator_inst/control_inst/w_w1
-add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/g_accelerator/accelerator_inst/control_inst/w_c1
-add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/g_accelerator/accelerator_inst/control_inst/w_c0w0
-add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/g_accelerator/accelerator_inst/control_inst/w_c0w0_last_c1
-add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/g_accelerator/accelerator_inst/w_c0
-add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/g_accelerator/accelerator_inst/w_c0_last_c1
-#add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/g_accelerator/accelerator_inst/control_inst/control_init_inst/r_m0
-#add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/g_accelerator/accelerator_inst/control_inst/control_init_inst/r_rows_last_h2
-add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/g_accelerator/accelerator_inst/control_inst/w_m0
-add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/g_accelerator/accelerator_inst/control_inst/w_rows_last_h2
-
-
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_enable
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command(0)(0)
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command(1)(0)
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command(2)(0)
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command(3)(0)
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command(4)(0)
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command(5)(0)
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command(6)(0)
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command(7)(0)
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command(8)(0)
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command(9)(0)
-
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_iact
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_wght
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_psum(0)(0)
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_psum(1)(0)
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_psum(2)(0)
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_psum(3)(0)
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_psum(4)(0)
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_psum(5)(0)
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_psum(6)(0)
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_psum(7)(0)
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_psum(8)(0)
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_psum(9)(0)
-add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/w_output_sequence
-#add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/w_m0_dist
-add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/r_count_c0w0
-add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/r_count_c1
-add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/r_count_w1
-add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/r_count_h2
-add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/r_count_h1
-add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/r_incr_w1
-add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/r_state
-
 
 add wave -noupdate -expand -group FIFOs -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/scratchpad_interface_inst/fifo_iact(0)/fifo_iact/din
 add wave -noupdate -expand -group FIFOs -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/scratchpad_interface_inst/fifo_iact(0)/fifo_iact/wr_en
@@ -74,7 +16,6 @@ add wave -noupdate -expand -group FIFOs -radix unsigned /control_conv_tb/g_accel
 add wave -noupdate -expand -group FIFOs -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/scratchpad_interface_inst/fifo_iact(0)/fifo_iact/empty
 add wave -noupdate -expand -group FIFOs -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/scratchpad_interface_inst/fifo_iact(0)/fifo_iact/full
 add wave -noupdate -expand -group FIFOs -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/scratchpad_interface_inst/fifo_iact(0)/fifo_iact/almost_full
-
 
 add wave -noupdate -expand -group Evaluation -radix unsigned /control_conv_tb/r_state_accelerator
 add wave -noupdate -expand -group Evaluation -radix unsigned /control_conv_tb/r_status_sp_interface
@@ -143,6 +84,50 @@ add wave -noupdate -expand -group PSUM_OUTPUT -radix unsigned /control_conv_tb/g
 #add wave -noupdate -expand -group PSUM_OUTPUT -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_psum_inst/r_count_h2
 #add wave -noupdate -expand -group PSUM_OUTPUT -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_psum_inst/r_offset_m0
 
+
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/g_accelerator/accelerator_inst/control_inst/w_h2
+#add wave -noupdate -expand -group Control_static -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/w_tiles_y_last_tile_rows
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/g_accelerator/accelerator_inst/control_inst/w_w1
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/g_accelerator/accelerator_inst/control_inst/w_c1
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/g_accelerator/accelerator_inst/control_inst/w_c0w0
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/g_accelerator/accelerator_inst/control_inst/w_c0w0_last_c1
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/g_accelerator/accelerator_inst/w_c0
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/g_accelerator/accelerator_inst/w_c0_last_c1
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/g_accelerator/accelerator_inst/control_inst/control_init_inst/r_m0
+add wave -noupdate -expand -group Control_static -radix unsigned  /control_conv_tb/g_accelerator/accelerator_inst/control_inst/control_init_inst/r_rows_last_h2
+
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command(0)(0)
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command(1)(0)
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command(2)(0)
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command(3)(0)
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command(4)(0)
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command(5)(0)
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command(6)(0)
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command(7)(0)
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command(8)(0)
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command(9)(0)
+
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_iact
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_wght
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_psum(0)(0)
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_psum(1)(0)
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_psum(2)(0)
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_psum(3)(0)
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_psum(4)(0)
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_psum(5)(0)
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_psum(6)(0)
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_psum(7)(0)
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_psum(8)(0)
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/o_command_psum(9)(0)
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/w_output_sequence
+add wave -noupdate -expand -group Control -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/w_m0_dist
+add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/r_count_c0w0
+add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/r_count_c1
+add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/r_count_w1
+add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/r_count_h2
+add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/r_incr_w1
+add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/r_state
+
 add wave -noupdate -expand -group PSUMS_PASS -radix decimal /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/o_data_out
 add wave -noupdate -expand -group PSUMS_PASS -radix decimal /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/o_data_out_valid
 add wave -noupdate -expand -group PSUMS_PASS -radix decimal /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/o_data_out
@@ -209,7 +194,7 @@ add wave -noupdate -expand -group WGHTS -radix decimal /control_conv_tb/g_accele
 add wave -noupdate -expand -group WGHTS -radix decimal /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(8)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/ram/ram_instance
 add wave -noupdate -expand -group WGHTS -radix decimal /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(9)/pe_inst_x(0)/pe_south/pe_inst/line_buffer_wght/ram/ram_instance
 
-add wave -noupdate -expand -group ADR_iact -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/w_pause_iact
+
 add wave -noupdate -expand -group ADR_iact -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/o_address_iact_valid
 add wave -noupdate -expand -group ADR_iact -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/o_address_iact
 add wave -noupdate -expand -group ADR_iact -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/w_C0_iact
@@ -221,8 +206,6 @@ add wave -noupdate -expand -group ADR_iact -radix unsigned /control_conv_tb/g_ac
 add wave -noupdate -expand -group ADR_iact -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/r_count_c1_iact
 add wave -noupdate -expand -group ADR_iact -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/w_H2
 add wave -noupdate -expand -group ADR_iact -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/r_count_h2_iact
-add wave -noupdate -expand -group ADR_iact -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/i_kernel_size
-add wave -noupdate -expand -group ADR_iact -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/r_count_h1_iact
 add wave -noupdate -expand -group ADR_iact -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/r_offset_c_iact
 add wave -noupdate -expand -group ADR_iact -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/w_offset_mem_iact
 add wave -noupdate -expand -group ADR_iact -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/r_offset_c_last_c1_iact
@@ -238,13 +221,11 @@ add wave -noupdate -expand -group ADR_iact -radix unsigned /control_conv_tb/g_ac
 add wave -noupdate -expand -group ADR_iact -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/i_start
 add wave -noupdate -expand -group ADR_iact -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/i_fifo_full_iact
 
-add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/i_fifo_full_wght
-add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/r_delay_wght_valid
 add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/o_address_wght_valid
 add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/o_address_wght
 add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/r_test_wght
-#add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/i_m0_dist
-#add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/control_init_inst/r_m0_dist
+add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/i_m0_dist
+add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/control_init_inst/r_m0_dist
 add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/w_C0_wght
 add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/r_count_c0_wght
 add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/w_W1
@@ -253,8 +234,6 @@ add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/g_ac
 add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/r_count_c1_wght
 add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/w_H2
 add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/r_count_h2_wght
-add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/i_kernel_size
-add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/r_count_h1_wght
 add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/r_offset_c_wght
 add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/r_offset_c_last_c1_wght
 add wave -noupdate -expand -group ADR_wght -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/address_generator_inst/r_offset_c_last_h2_wght
@@ -326,7 +305,6 @@ add wave -noupdate -expand -group IACT_INPUT -radix decimal  /control_conv_tb/g_
 add wave -noupdate -expand -group {iact commands} -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/r_command_iact(0)
 add wave -noupdate -expand -group {iact commands} -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/r_read_offset_iact(0)
 add wave -noupdate -expand -group {iact commands} -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/r_update_offset_iact(0)
-add wave -noupdate -expand -group {iact commands} -radix unsigned /control_conv_tb/r_shrink_sum
 
 add wave -noupdate -expand -group {wght commands} -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/r_command_wght(0)
 add wave -noupdate -expand -group {wght commands} -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/r_read_offset_wght(0)
@@ -345,60 +323,42 @@ add wave -noupdate -expand -group {Outputs} -radix unsigned /control_conv_tb/g_a
 add wave -noupdate -expand -group {Outputs} -radix symbolic /control_conv_tb/g_accelerator/accelerator_inst/control_inst/r_command_wght
 add wave -noupdate -expand -group {Outputs} -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/control_inst/r_read_offset_wght
 
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_north/pe_inst/line_buffer_wght/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(2)/pe_north/pe_inst/line_buffer_wght/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(3)/pe_north/pe_inst/line_buffer_wght/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_wght/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_wght/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_wght/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_north/pe_inst/line_buffer_wght/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(2)/pe_north/pe_inst/line_buffer_wght/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(3)/pe_north/pe_inst/line_buffer_wght/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_wght/r_fill_count
-
 add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_iact/i_read_offset
 add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_iact/i_read_offset
+add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/i_read_offset
 add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_iact/i_read_offset
+add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/i_read_offset
 add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_iact/i_read_offset
+add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/i_read_offset
 add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_iact/i_read_offset
+add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/i_read_offset
 add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_north/pe_inst/line_buffer_iact/i_read_offset
+add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_north/pe_inst/line_buffer_wght/i_read_offset
 add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(2)/pe_north/pe_inst/line_buffer_iact/i_read_offset
+add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(2)/pe_north/pe_inst/line_buffer_wght/i_read_offset
 add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(3)/pe_north/pe_inst/line_buffer_iact/i_read_offset
+add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(3)/pe_north/pe_inst/line_buffer_wght/i_read_offset
 add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_iact/i_read_offset
+add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_wght/i_read_offset
+add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_wght/i_read_offset
 add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_iact/r_fill_count
+add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_wght/r_fill_count
 add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_iact/r_fill_count
+add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/r_fill_count
 add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_iact/r_fill_count
+add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/r_fill_count
 add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_iact/r_fill_count
+add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/r_fill_count
 add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(5)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(6)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(7)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(8)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(9)/pe_inst_x(0)/pe_south/pe_inst/line_buffer_iact/r_fill_count
+add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/r_fill_count
 add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_north/pe_inst/line_buffer_iact/r_fill_count
+add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_north/pe_inst/line_buffer_wght/r_fill_count
 add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(2)/pe_north/pe_inst/line_buffer_iact/r_fill_count
+add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(2)/pe_north/pe_inst/line_buffer_wght/r_fill_count
 add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(3)/pe_north/pe_inst/line_buffer_iact/r_fill_count
+add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(3)/pe_north/pe_inst/line_buffer_wght/r_fill_count
 add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_iact/r_fill_count
-
-add wave -noupdate -expand -group Fill_Counts_6 -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(6)/pe_north/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts_6 -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(6)/pe_middle/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts_6 -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(6)/pe_middle/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts_6 -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(6)/pe_middle/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts_6 -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(6)/pe_middle/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts_6 -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(5)/pe_inst_x(6)/pe_middle/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts_6 -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(6)/pe_inst_x(6)/pe_middle/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts_6 -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(7)/pe_inst_x(6)/pe_middle/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts_6 -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(8)/pe_inst_x(6)/pe_middle/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts_6 -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(9)/pe_inst_x(6)/pe_south/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts_6 -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/scratchpad_interface_inst/r_pause_iact
+add wave -noupdate -expand -group Fill_Counts -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_wght/r_fill_count
 
 
 add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /control_conv_tb/g_accelerator/accelerator_inst/w_update_offset_psum

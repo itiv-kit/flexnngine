@@ -418,7 +418,10 @@ architecture rtl of accelerator is
 
             -- Data from PE array
             i_psums       : in    array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
-            i_psums_valid : in    std_logic_vector(size_x - 1 downto 0)
+            i_psums_valid : in    std_logic_vector(size_x - 1 downto 0);
+
+            -- Data from control
+            i_pause_iact : in    std_logic
         );
     end component scratchpad_interface;
 
@@ -519,6 +522,7 @@ architecture rtl of accelerator is
     signal w_read_en_wght : std_logic;
 
     signal w_new_output : std_logic;
+    signal w_pause_iact : std_logic;
 
     -- signal din_iact : std_logic_vector(data_width_iact - 1 downto 0);
     signal w_din_psum : std_logic_vector(data_width_psum - 1 downto 0);
@@ -892,7 +896,8 @@ begin
             i_buffer_full_iact       => w_buffer_full_next_iact,
             i_buffer_full_wght       => w_buffer_full_next_wght,
             i_psums                  => w_psums,
-            i_psums_valid            => w_psums_valid
+            i_psums_valid            => w_psums_valid,
+            i_pause_iact             => '0'
         );
 
     address_generator_psum_inst : component address_generator_psum

@@ -11,7 +11,9 @@
 **Start python podman container with home directory mapped**  
 `podman run -it --name mypython -v $HOME:$HOME --security-opt label=disable python:latest bash`
 `podman run -it --name mypython -v /tools/:/tools/ -v $HOME:$HOME --security-opt label=disable python:latest bash`
-
+`podman run -it --name mypython2 -v /tools/:/tools/ -v $HOME:$HOME -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=unix$DISPLAY --security-opt label=disable python:latest bash`
+`podman run -it --name mypython3 --uidmap 1000:0:1 --uidmap 0:1:999 --uidmap 1001:1001:64535 -p 127.0.0.1:8315:8888/tcp -v /tools/:/tools/ -v $HOME:$HOME -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=unix$DISPLAY --security-opt label=disable python:latest bash`
+`podman run --name jupyter --uidmap 1000:0:1 --uidmap 0:1:999 --uidmap 1001:1001:64535 -p 127.0.0.1:8314:8888/tcp -e JUPYTER_ENABLE_LAB=yes -v "$PWD":/home/jovyan:Z jupyter/minimal-notebook`
 **Start container again**  
 `podman start -ia mypython`
 

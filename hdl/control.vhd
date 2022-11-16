@@ -129,7 +129,7 @@ architecture rtl of control is
     signal w_m0      : integer range 0 to 1023;
     signal w_m0_dist : array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
 
-    type   t_state is (s_calculate, s_output, s_incr_c1);
+    type   t_state is (s_calculate, s_output, s_incr_c1, s_incr_h1);
     signal r_state : t_state;
 
     signal r_command_iact       : command_lb_array_t(0 to size_y);
@@ -157,6 +157,8 @@ architecture rtl of control is
     signal r_command : command_pe_array_t(0 to size_y);
 
     signal i_start_d : std_logic_vector(3 downto 0);
+
+    signal r_done : std_logic;
 
 begin
 
@@ -248,6 +250,12 @@ begin
                 w_mux_update_offset_psum <= r_update_offset_psum_d;
                 w_mux_command_psum       <= r_command_psum_d;
 
+            when others => 
+
+                w_mux_read_offset_psum   <= r_read_offset_psum_d;
+                w_mux_update_offset_psum <= r_update_offset_psum_d;
+                w_mux_command_psum       <= r_command_psum_d;
+
         end case;
 
     end process switch_state;
@@ -263,6 +271,7 @@ begin
             r_count_c0w0 <= 0;
             r_incr_w1    <= '0';
             r_state      <= s_calculate;
+            r_done       <= '0';
         elsif rising_edge(clk) then
             if w_init_done = '1' and o_enable = '1' then
                 if r_state = s_calculate then
@@ -330,6 +339,7 @@ begin
                         if r_count_w1 /= 2 then                                                                                                                      -- r_W1 - 1 then /* TODO changed - check! */
                             r_count_w1 <= r_count_w1 + 1;
                         elsif r_count_h2 = w_h2 then
+                            r_done <= '1';
                         else
                             r_count_c1   <= 0;
                             r_count_w1   <= 0;

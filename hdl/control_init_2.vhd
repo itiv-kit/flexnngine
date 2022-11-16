@@ -79,7 +79,7 @@ architecture rtl of control_init_2 is
     signal r_m0_dist         : array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
     signal r_m0_count_idx    : integer range 0 to size_y + 1;
     signal r_m0_count_kernel : integer range 0 to 4096;
-    signal r_m0_last_m1      : integer range 0 to size_y + 1; 
+    signal r_m0_last_m1      : integer range 0 to size_y + 1;
 
     -- delay and tmp values for calculation of init value: r_commands_last_tile_c
     signal r_delay_init : integer range 0 to 15;
@@ -118,15 +118,15 @@ begin
             if i_start = '1' and r_init_m0_done = '0' then
                 if r_m0_count_kernel < i_kernels then
                     r_m0_count_kernel <= r_m0_count_kernel + size_y;
-                    r_m1 <= r_m1 + 1;
+                    r_m1              <= r_m1 + 1;
                 elsif r_m0_count_kernel - i_kernels = 0 then
-                    r_m0_last_m1   <=  size_y;
+                    r_m0_last_m1   <= size_y;
                     r_init_m0_done <= '1';
                 elsif r_m1 = 1 then
-                    r_m0_last_m1   <=  i_kernels;
+                    r_m0_last_m1   <= i_kernels;
                     r_init_m0_done <= '1';
                 else
-                    r_m0_last_m1   <=  i_kernels - (r_m0_count_kernel - size_y);
+                    r_m0_last_m1   <= i_kernels - (r_m0_count_kernel - size_y);
                     r_init_m0_done <= '1';
                 end if;
             end if;
@@ -144,9 +144,9 @@ begin
             if i_start and not r_init_c0w0_done then
                 r_c0w0 <= r_c0w0 + i_kernel_size;
                 r_c0   <= r_c0 + 1;
-                if r_c0w0 + 5 > line_length_wght then
+                if r_c0w0 + 25 > line_length_wght then
                     -- Commands per tile determined
-                    -- Tiling c0w0 to always have 5 values remaining in buffer (enable is only set low when r/u pipeline filled)
+                    -- Tiling c0w0 to always have 5 values remaining in buffer (enable is only set low when r/u pipeline filled) /* TODO now set to 15 values */
                     r_c0w0           <= r_c0w0 - i_kernel_size;
                     r_c0             <= r_c0 - 1;
                     r_init_c0w0_done <= '1';
@@ -202,7 +202,7 @@ begin
             if i_start and not r_init_h2_done then
                 r_h2_tmp <= r_h2_tmp + size_x;
 
-                if r_h2_tmp + i_kernel_size >= i_image_x then
+                if r_h2_tmp + i_kernel_size > i_image_x then
                     r_rows_last_h2 <= size_x + i_image_x - (r_h2_tmp + i_kernel_size) + 1;
                     r_init_h2_done <= '1';
                 else

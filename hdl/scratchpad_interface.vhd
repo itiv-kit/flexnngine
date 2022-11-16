@@ -95,7 +95,10 @@ entity scratchpad_interface is
 
         -- Data from PE array
         i_psums       : in    array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
-        i_psums_valid : in    std_logic_vector(size_x - 1 downto 0)
+        i_psums_valid : in    std_logic_vector(size_x - 1 downto 0);
+
+        -- Data from control
+        i_pause_iact : in    std_logic
     );
 end entity scratchpad_interface;
 
@@ -253,7 +256,12 @@ architecture rtl of scratchpad_interface is
     signal r_done_wght : std_logic;
     signal r_done_iact : std_logic;
 
+    signal r_pause_iact : std_logic_vector(size_rows - 1 downto 0);
+
 begin
+
+    -- Delay i_pause_iact signal for to propagate through array
+    r_pause_iact(size_rows - 1 downto 0) <= r_pause_iact(size_rows - 2 downto size_y - 1) & i_pause_iact & (size_y - 2 downto 0 => '0') when rising_edge(clk);
 
     -- Create enable signal for PEs. Enable if first values in buffer (o_status) and one of three conditions fulfilled:
     -- 1. Input activations "done" and all wght FIFOs not empty
@@ -320,7 +328,7 @@ begin
 
         o_data_iact(i) <= w_dout_iact_f(i);
 
-        w_rd_en_iact_f(i) <= '1' when i_start = '1' and i_buffer_full_iact(i) = '0' and w_empty_iact_f(i) <= '0' else
+        w_rd_en_iact_f(i) <= '1' when i_start = '1' and i_buffer_full_iact(i) = '0' and w_empty_iact_f(i) <= '0' and r_pause_iact(i) = '0' else
                              '0';
 
     end generate pe_arr_iact;

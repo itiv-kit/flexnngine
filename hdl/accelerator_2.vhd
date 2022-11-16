@@ -41,7 +41,19 @@ entity accelerator_2 is
         g_kernel_size : positive := 5;
 
         g_files_dir : string  := "";
-        g_init_sp   : boolean := false
+        g_init_sp   : boolean := false;
+
+        g_control_init : boolean  := false;
+        g_c1           : positive := 1;
+        g_w1           : positive := 1;
+        g_h2           : positive := 1;
+        g_m0           : positive := 1;
+        g_m0_last_m1   : positive := 1;
+        g_rows_last_h2 : positive := 1;
+        g_c0           : positive := 1;
+        g_c0_last_c1   : positive := 1;
+        g_c0w0         : positive := 1;
+        g_c0w0_last_c1 : positive := 1
     );
     port (
         clk  : in    std_logic;
@@ -141,7 +153,19 @@ architecture rtl of accelerator_2 is
             line_length_psum : positive := 512;
             addr_width_psum  : positive := 9;
             line_length_wght : positive := 512;
-            addr_width_wght  : positive := 9
+            addr_width_wght  : positive := 9;
+
+            g_control_init : boolean := false;
+            g_c1           : positive := 1;
+            g_w1           : positive := 1;
+            g_h2           : positive := 1;
+            g_m0           : positive := 1;
+            g_m0_last_m1   : positive := 1;
+            g_rows_last_h2 : positive := 1;
+            g_c0           : positive := 1;
+            g_c0_last_c1   : positive := 1;
+            g_c0w0         : positive := 1;
+            g_c0w0_last_c1 : positive := 1
         );
         port (
             clk  : in    std_logic;
@@ -422,7 +446,10 @@ architecture rtl of accelerator_2 is
 
             -- Data from PE array
             i_psums       : in    array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
-            i_psums_valid : in    std_logic_vector(size_x - 1 downto 0)
+            i_psums_valid : in    std_logic_vector(size_x - 1 downto 0);
+
+            -- Data from control
+            i_pause_iact : in    std_logic
         );
     end component scratchpad_interface;
 
@@ -685,7 +712,18 @@ begin
             line_length_psum => line_length_psum,
             addr_width_psum  => addr_width_psum,
             line_length_wght => line_length_wght,
-            addr_width_wght  => addr_width_wght
+            addr_width_wght  => addr_width_wght,
+            g_control_init   => g_control_init,
+            g_c1             => g_c1,
+            g_w1             => g_w1,
+            g_h2             => g_h2,
+            g_m0             => g_m0,
+            g_m0_last_m1     => g_m0_last_m1,
+            g_rows_last_h2   => g_rows_last_h2,
+            g_c0             => g_c0,
+            g_c0_last_c1     => g_c0_last_c1,
+            g_c0w0           => g_c0w0,
+            g_c0w0_last_c1   => g_c0w0_last_c1
         )
         port map (
             clk                  => clk,
@@ -821,7 +859,7 @@ begin
             clk                  => clk,
             rstn                 => rstn,
             i_start              => r_start_adr,
-            i_pause_iact         => w_pause_iact,
+            i_pause_iact         => '0',
             i_c1                 => w_c1,
             i_w1                 => w_w1,
             i_h2                 => w_h2,
@@ -903,7 +941,8 @@ begin
             i_buffer_full_iact       => w_buffer_full_next_iact,
             i_buffer_full_wght       => w_buffer_full_next_wght,
             i_psums                  => w_psums,
-            i_psums_valid            => w_psums_valid
+            i_psums_valid            => w_psums_valid,
+            i_pause_iact             => w_pause_iact
         );
 
     address_generator_psum_inst : component address_generator_psum_2

@@ -18,7 +18,19 @@ entity control_2 is
         line_length_psum : positive := 512;
         addr_width_psum  : positive := 9;
         line_length_wght : positive := 512;
-        addr_width_wght  : positive := 9
+        addr_width_wght  : positive := 9;
+
+        g_control_init : boolean  := false;
+        g_c1           : positive := 1;
+        g_w1           : positive := 1;
+        g_h2           : positive := 1;
+        g_m0           : positive := 1;
+        g_m0_last_m1   : positive := 1;
+        g_rows_last_h2 : positive := 1;
+        g_c0           : positive := 1;
+        g_c0_last_c1   : positive := 1;
+        g_c0w0         : positive := 1;
+        g_c0w0_last_c1 : positive := 1
     );
     port (
         clk  : in    std_logic;
@@ -160,7 +172,9 @@ architecture rtl of control_2 is
 
     signal r_command : command_pe_array_t(0 to size_y);
 
-    signal i_start_d : std_logic_vector(3 downto 0);
+    signal w_start : std_logic;
+
+    signal r_done : std_logic;
 
 begin
 
@@ -176,15 +190,36 @@ begin
     o_c0_last_c1 <= w_c0_last_c1;
     o_c0         <= w_c0;
 
-    o_c1      <= w_c1;
-    o_w1      <= w_w1;
-    o_h2      <= w_h2;
-    o_m0      <= w_m0;
+    o_c1 <= w_c1;
+    o_w1 <= w_w1;
+    o_h2 <= w_h2;
+    o_m0 <= w_m0;
 
-    i_start_d(0) <= '1' when i_start ='1';
+    p_start : process(clk, rstn) is
+    begin
+
+        if not rstn then
+            w_start <= '0';
+        elsif rising_edge(clk) then
+            if i_start = '1' then
+                w_start <= '1';
+            end if;    
+        end if;
+        
+    end process p_start;
+
+    /*p_start : process(i_start) is
+        begin
+    
+            if i_start = '1' then
+                w_start <= '1';
+            end if;
+    
+    end process p_start;*/
+
     -- Do not stop when filling read/update pipeline
     o_enable <= i_start when r_count_c0w0 > 1 and r_state /= s_output else
-                '1' when i_start_d(0) = '1' else
+                '1' when w_start = '1' else
                 '1' when r_state = s_output else
                 '0';
 
@@ -308,7 +343,7 @@ begin
                 w_mux_update_offset_psum <= r_update_offset_psum_d;
                 w_mux_command_psum       <= r_command_psum_d;
 
-            when s_incr_h1 => 
+            when s_incr_h1 =>
 
                 w_mux_read_offset_psum   <= r_read_offset_psum_d;
                 w_mux_update_offset_psum <= r_update_offset_psum_d;
@@ -329,6 +364,7 @@ begin
             r_count_c0w0 <= 0;
             r_incr_w1    <= '0';
             r_state      <= s_calculate;
+            r_done       <= '0';
         elsif rising_edge(clk) then
             if w_init_done = '1' and o_enable = '1' then
                 if r_state = s_calculate then
@@ -362,7 +398,7 @@ begin
                                         r_state <= s_incr_c1;
                                     else
                                         -- Increment h1, process next kernel row
-                                        r_state <= s_incr_h1;
+                                        r_state    <= s_incr_h1;
                                         r_count_h1 <= r_count_h1 + 1;
                                         r_count_c1 <= 0;
                                     end if;
@@ -370,7 +406,7 @@ begin
                             else
                             end if;
                         else
-                            -- Switch to output state done in incr_h1 state
+                        -- Switch to output state done in incr_h1 state
                         end if;
                     else
                     -- DONE for now (not tiled for PSUM Line Buffer Length)
@@ -394,7 +430,7 @@ begin
                         r_count_w1   <= 0;
                         r_count_c0w0 <= 0;
                         r_count_h1   <= 0;
-                        r_count_h2 <= r_count_h2 + 1;
+                        r_count_h2   <= r_count_h2 + 1;
                         r_state      <= s_output;
                     else
                         r_count_w1   <= 0;
@@ -403,7 +439,7 @@ begin
                     end if;
                 elsif r_state = s_output then
                     -- Command counter for output commands (psum accumulation and psum read)
-                    if r_count_c0w0 /= i_kernel_size + w_m0 + 1 then                                                                                                 -- i_kernel_size + w_m0 then /* TODO Change to allow for multiple kernel data to be output */
+                    if r_count_c0w0 /= w_m0 + 4 then                                                                                                                     -- i_kernel_size + w_m0 then /* TODO Change to allow for multiple kernel data to be output */
                         if r_count_w1 /= w_w1 - 1 then
                             r_count_w1 <= r_count_w1 + 1;
                         else
@@ -412,9 +448,11 @@ begin
                         end if;
                     else
                         -- Delay counter after shrinking for new values to arrive in the buffer
-                        if r_count_w1 /= 2 then                                                                                                                      -- r_W1 - 1 then /* TODO changed - check! */
+                        if r_count_w1 /= 2 then                                                                                                                          -- r_W1 - 1 then /* TODO changed - check! */
                             r_count_w1 <= r_count_w1 + 1;
                         elsif r_count_h2 = w_h2 then
+                            -- All h2 done and output
+                            r_done <= '1';
                         else
                             r_count_c1   <= 0;
                             r_count_w1   <= 0;
@@ -483,11 +521,11 @@ begin
 
                     if r_count_c0w0 = 0 and r_count_w1 = 0 then
                         if w_c1 > 1 then
-                            --r_command_iact     <= (others => c_lb_shrink);
-                            --r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * w_c0_last_c1 - w_c0_last_c1, addr_width_iact)));
+                        -- r_command_iact     <= (others => c_lb_shrink);
+                        -- r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * w_c0_last_c1 - w_c0_last_c1, addr_width_iact)));
                         else
-                            r_command_iact     <= (others => c_lb_shrink);
-                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * i_channels - i_channels, addr_width_iact)));
+                        -- r_command_iact     <= (others => c_lb_shrink);
+                        -- r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * i_channels - i_channels, addr_width_iact)));
                         end if;
                     end if;
                 end if;
@@ -565,11 +603,11 @@ begin
             elsif rising_edge(clk) then
                 if r_state = s_output then
                     if r_count_c0w0 = i + 2 then
-                        r_command(i) <= c_pe_conv_mult; -- c_pe_gemm_psum;
-                    elsif r_count_w1 = 2 and r_count_c0w0 > 1 then
-                        r_command(i) <= c_pe_conv_pass; -- c_pe_gemm_psum;
-                    elsif r_count_c0w0 > size_y + 2 then
+                        r_command(i) <= c_pe_conv_mult;            -- c_pe_gemm_psum;
+                    elsif r_count_c0w0 > size_y + 3 then
                         r_command(i) <= c_pe_gemm_mult;
+                    elsif r_count_w1 = 2 and r_count_c0w0 > 1 then
+                        r_command(i) <= c_pe_conv_pass;            -- c_pe_gemm_psum;
                     else
                     -- r_command(i) <= c_pe_conv_psum;
                     end if;
@@ -617,7 +655,7 @@ begin
                         r_read_offset_psum(i)   <= (others => '0');
                         r_update_offset_psum(i) <= (others => '0');
 
-                        if r_count_c0w0 = i_kernel_size + w_m0 then
+                        if r_count_c0w0 = w_m0 + 3 then
                             -- Remove all stored psums, new tile (h1)
                             if r_count_w1 = 0 then
                                 r_command_psum(i)     <= c_lb_shrink;
@@ -650,41 +688,59 @@ begin
 
     end generate g_psum_pe_commands;
 
-    control_init_inst : component control_init_2
-        generic map (
-            size_x           => size_x,
-            size_y           => size_y,
-            size_rows        => size_rows,
-            addr_width_rows  => addr_width_rows,
-            addr_width_y     => addr_width_y,
-            addr_width_x     => addr_width_x,
-            line_length_iact => line_length_iact,
-            addr_width_iact  => addr_width_iact,
-            line_length_psum => line_length_psum,
-            addr_width_psum  => addr_width_psum,
-            line_length_wght => line_length_wght,
-            addr_width_wght  => addr_width_wght
-        )
-        port map (
-            clk            => clk,
-            rstn           => rstn,
-            o_status       => w_init_done,
-            i_start        => i_start_init,
-            o_c1           => w_c1,
-            o_w1           => w_w1,
-            o_h2           => w_h2,
-            o_m0           => w_m0,
-            o_m0_last_m1   => w_m0_last_m1,
-            o_rows_last_h2 => w_rows_last_h2,
-            o_c0           => w_c0,
-            o_c0_last_c1   => w_c0_last_c1,
-            o_c0w0         => w_c0w0,
-            o_c0w0_last_c1 => w_c0w0_last_c1,
-            i_image_x      => i_image_x,
-            i_image_y      => i_image_y,
-            i_channels     => i_channels,
-            i_kernels      => i_kernels,
-            i_kernel_size  => i_kernel_size
-        );
+    control_init : if g_control_init = true generate
+
+        control_init_inst : component control_init_2
+            generic map (
+                size_x           => size_x,
+                size_y           => size_y,
+                size_rows        => size_rows,
+                addr_width_rows  => addr_width_rows,
+                addr_width_y     => addr_width_y,
+                addr_width_x     => addr_width_x,
+                line_length_iact => line_length_iact,
+                addr_width_iact  => addr_width_iact,
+                line_length_psum => line_length_psum,
+                addr_width_psum  => addr_width_psum,
+                line_length_wght => line_length_wght,
+                addr_width_wght  => addr_width_wght
+            )
+            port map (
+                clk            => clk,
+                rstn           => rstn,
+                o_status       => w_init_done,
+                i_start        => i_start_init,
+                o_c1           => w_c1,
+                o_w1           => w_w1,
+                o_h2           => w_h2,
+                o_m0           => w_m0,
+                o_m0_last_m1   => w_m0_last_m1,
+                o_rows_last_h2 => w_rows_last_h2,
+                o_c0           => w_c0,
+                o_c0_last_c1   => w_c0_last_c1,
+                o_c0w0         => w_c0w0,
+                o_c0w0_last_c1 => w_c0w0_last_c1,
+                i_image_x      => i_image_x,
+                i_image_y      => i_image_y,
+                i_channels     => i_channels,
+                i_kernels      => i_kernels,
+                i_kernel_size  => i_kernel_size
+            );
+
+    else generate
+
+        w_c1           <= g_c1;
+        w_w1           <= g_w1;
+        w_h2           <= g_h2;
+        w_m0           <= g_m0;
+        w_m0_last_m1   <= g_m0_last_m1;
+        w_rows_last_h2 <= g_rows_last_h2;
+        w_c0           <= g_c0;
+        w_c0_last_c1   <= g_c0_last_c1;
+        w_c0w0         <= g_c0w0;
+        w_c0w0_last_c1 <= g_c0w0_last_c1;
+        w_init_done    <= '1';
+
+    end generate control_init;
 
 end architecture rtl;
