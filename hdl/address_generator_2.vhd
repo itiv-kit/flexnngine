@@ -70,14 +70,14 @@ architecture rtl of address_generator_2 is
     -- signal r_count_w0 : integer; Kernel size
 
     signal w_w1            : integer;
-    signal r_count_w1_iact : integer;
+    signal r_count_w1_iact : integer range 0 to 512;
 
     signal w_c1            : integer;
-    signal r_count_c1_iact : integer;
+    signal r_count_c1_iact : integer range 0 to 512;
 
     signal w_h2            : integer;
-    signal r_count_h2_iact : integer;
-    signal r_count_h1_iact : integer;
+    signal r_count_h2_iact : integer range 0 to 128;
+    signal r_count_h1_iact : integer range 0 to 128;
 
     signal r_index_h_iact      : integer;
     signal r_index_c_iact      : integer;
@@ -105,12 +105,12 @@ architecture rtl of address_generator_2 is
     -- signal r_W0 : integer; Kernel size
     -- signal r_count_w0 : integer; Kernel size
 
-    signal r_count_w1_wght : integer;
+    signal r_count_w1_wght : integer range 0 to 512;
 
-    signal r_count_c1_wght : integer;
+    signal r_count_c1_wght : integer range 0 to 512;
 
-    signal r_count_h2_wght : integer;
-    signal r_count_h1_wght : integer;
+    signal r_count_h2_wght : integer range 0 to 128;
+    signal r_count_h1_wght : integer range 0 to 128;
 
     signal r_index_x_wght : integer;
     signal r_index_y_wght : integer;

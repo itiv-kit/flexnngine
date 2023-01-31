@@ -5,27 +5,27 @@ library ieee;
 
 entity accelerator_2 is
     generic (
-        size_x    : positive := 5;
-        size_y    : positive := 5;
-        size_rows : positive := 9;
+        size_x    : positive := 7;
+        size_y    : positive := 7;
+        size_rows : positive := 13;
 
         addr_width_rows : positive := 4;
         addr_width_y    : positive := 3;
         addr_width_x    : positive := 3;
 
         data_width_iact     : positive := 8; -- Width of the input data (weights, iacts)
-        line_length_iact    : positive := 512;
-        addr_width_iact     : positive := 9;
+        line_length_iact    : positive := 64;
+        addr_width_iact     : positive := 6;
         addr_width_iact_mem : positive := 15;
 
         data_width_psum     : positive := 16; -- or 17??
-        line_length_psum    : positive := 1024;
-        addr_width_psum     : positive := 10;
+        line_length_psum    : positive := 128;
+        addr_width_psum     : positive := 7;
         addr_width_psum_mem : positive := 15;
 
         data_width_wght     : positive := 8;
-        line_length_wght    : positive := 512;
-        addr_width_wght     : positive := 9;
+        line_length_wght    : positive := 64;
+        addr_width_wght     : positive := 6;
         addr_width_wght_mem : positive := 15;
 
         fifo_width : positive := 16;
@@ -35,7 +35,7 @@ entity accelerator_2 is
         g_psum_fifo_size : positive := 45;
 
         g_channels    : positive := 28;
-        g_kernels     : positive := 25;
+        g_kernels     : positive := 10;
         g_image_y     : positive := 14;
         g_image_x     : positive := 14;
         g_kernel_size : positive := 5;
@@ -79,10 +79,9 @@ architecture rtl of accelerator_2 is
 
     component pe_array is
         generic (
-            size_x : positive := 3;
-            size_y : positive := 3;
-
-            size_rows : positive := 5;
+            size_x    : positive := 7;
+            size_y    : positive := 7;
+            size_rows : positive := 13;
 
             data_width_iact  : positive := 8;
             line_length_iact : positive := 32;
@@ -138,24 +137,28 @@ architecture rtl of accelerator_2 is
         );
     end component pe_array;
 
-    component control_2 is
+    component control_address_generator_2 is
         generic (
-            size_x    : positive := 5;
-            size_y    : positive := 5;
-            size_rows : positive := 9;
-
-            addr_width_rows : positive;
-            addr_width_y    : positive;
-            addr_width_x    : positive;
-
+            size_x    : positive := 7;
+            size_y    : positive := 7;
+            size_rows : positive := 13;
+    
+            addr_width_rows : positive := 4;
+            addr_width_y    : positive := 3;
+            addr_width_x    : positive := 3;
+    
+            addr_width_iact_mem : positive := 15;
+            addr_width_wght_mem : positive := 15;
+            addr_width_psum_mem : positive := 15;
+    
             line_length_iact : positive := 512;
             addr_width_iact  : positive := 9;
             line_length_psum : positive := 512;
             addr_width_psum  : positive := 9;
             line_length_wght : positive := 512;
             addr_width_wght  : positive := 9;
-
-            g_control_init : boolean := false;
+    
+            g_control_init : boolean  := false;
             g_c1           : positive := 1;
             g_w1           : positive := 1;
             g_h2           : positive := 1;
@@ -170,100 +173,51 @@ architecture rtl of accelerator_2 is
         port (
             clk  : in    std_logic;
             rstn : in    std_logic;
-
-            o_status     : out   std_logic;
+    
             i_start      : in    std_logic;
             i_start_init : in    std_logic;
+            i_start_adr  : in    std_logic;
+            i_enable_if  : in    std_logic;
+    
+            o_status     : out   std_logic;
             o_enable     : out   std_logic;
             o_new_output : out   std_logic;
             o_pause_iact : out   std_logic;
-
-            o_c1         : out   integer range 0 to 1023;
+    
             o_w1         : out   integer range 0 to 1023;
-            o_h2         : out   integer range 0 to 1023;
             o_m0         : out   integer range 0 to 1023;
-            o_m0_last_m1 : out   integer range 0 to 1023;
-
-            o_c0         : out   integer range 0 to 1023;
-            o_c0_last_c1 : out   integer range 0 to 1023;
-
-            i_image_x : in    integer range 0 to 1023;
-            i_image_y : in    integer range 0 to 1023;
-
-            i_channels : in    integer range 0 to 4095;
-            i_kernels  : in    integer range 0 to 4095;
-
+    
+            i_image_x : in    integer range 0 to 1023; --! size of input image
+            i_image_y : in    integer range 0 to 1023; --! size of input image
+    
+            i_channels : in    integer range 0 to 4095; -- Number of input channels the image and kernels have
+            i_kernels  : in    integer range 0 to 4095; -- Number of kernels / output channels
+    
             i_kernel_size : in    integer range 0 to 32;
-
+    
             o_command      : out   command_pe_row_col_t(0 to size_y - 1, 0 to size_x - 1);
             o_command_iact : out   command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
             o_command_psum : out   command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
             o_command_wght : out   command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-
+    
             o_update_offset_iact : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
             o_update_offset_psum : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
             o_update_offset_wght : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
-
+    
             o_read_offset_iact : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
             o_read_offset_psum : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
-            o_read_offset_wght : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0)
-        );
-    end component control_2;
-
-    component address_generator_2 is
-        generic (
-            size_x    : positive := 5;
-            size_y    : positive := 5;
-            size_rows : positive := 9;
-
-            addr_width_rows : positive;
-            addr_width_y    : positive;
-            addr_width_x    : positive;
-
-            line_length_iact    : positive := 512;
-            addr_width_iact     : positive := 9;
-            addr_width_iact_mem : positive := 15;
-
-            line_length_psum    : positive := 512;
-            addr_width_psum     : positive := 9;
-            addr_width_psum_mem : positive := 15;
-
-            line_length_wght    : positive := 512;
-            addr_width_wght     : positive := 9;
-            addr_width_wght_mem : positive := 15
-        );
-        port (
-            clk  : in    std_logic;
-            rstn : in    std_logic;
-
-            i_start      : in    std_logic;
-            i_pause_iact : in    std_logic;
-
-            i_c1         : in    integer range 0 to 1023;
-            i_w1         : in    integer range 0 to 1023;
-            i_h2         : in    integer range 0 to 1023;
-            i_m0         : in    integer range 0 to 1023;
-            i_m0_last_m1 : in    integer range 0 to 1023;
-
-            i_c0         : in    integer range 0 to 1023;
-            i_c0_last_c1 : in    integer range 0 to 1023;
-
-            i_image_x     : in    integer range 0 to 1023;
-            i_image_y     : in    integer range 0 to 1023;
-            i_channels    : in    integer range 0 to 4095;
-            i_kernel_size : in    integer range 0 to 32;
-
-            i_fifo_full_iact : in    std_logic;
-            i_fifo_full_wght : in    std_logic;
-
+            o_read_offset_wght : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
+    
+            w_fifo_iact_address_full : in  std_logic;
+            w_fifo_wght_address_full : in  std_logic;
+    
             o_address_iact : out   array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
             o_address_wght : out   array_t(0 to size_y - 1)(addr_width_wght_mem - 1 downto 0);
-
             o_address_iact_valid : out   std_logic_vector(size_rows - 1 downto 0);
             o_address_wght_valid : out   std_logic_vector(size_y - 1 downto 0)
         );
-    end component address_generator_2;
-
+    end component control_address_generator_2;
+    
     component scratchpad_init is
         generic (
             data_width_iact : positive := 8;
@@ -358,10 +312,10 @@ architecture rtl of accelerator_2 is
 
     component scratchpad_interface is
         generic (
-            size_x    : positive := 5;
-            size_y    : positive := 5;
-            size_rows : positive := 9;
-
+            size_x    : positive := 7;
+            size_y    : positive := 7;
+            size_rows : positive := 13;
+    
             addr_width_rows : positive := 4;
             addr_width_y    : positive := 3;
             addr_width_x    : positive := 3;
@@ -453,22 +407,22 @@ architecture rtl of accelerator_2 is
         );
     end component scratchpad_interface;
 
-    component address_generator_psum_2 is
+    component address_generator_psum is
         generic (
-            size_x    : positive := 5;
-            size_y    : positive := 5;
-            size_rows : positive := 9;
-
+            size_x    : positive := 7;
+            size_y    : positive := 7;
+            size_rows : positive := 13;
+    
             addr_width_x : positive := 3;
-
+    
             line_length_iact    : positive := 512;
             addr_width_iact     : positive := 9;
             addr_width_iact_mem : positive := 15;
-
+    
             line_length_psum    : positive := 512;
             addr_width_psum     : positive := 9;
             addr_width_psum_mem : positive := 15;
-
+    
             line_length_wght    : positive := 512;
             addr_width_wght     : positive := 9;
             addr_width_wght_mem : positive := 15
@@ -476,23 +430,20 @@ architecture rtl of accelerator_2 is
         port (
             clk  : in    std_logic;
             rstn : in    std_logic;
-
+    
             i_start : in    std_logic;
-
+    
             i_w1         : in    integer range 0 to 1023;
             i_m0         : in    integer range 0 to 1023;
-            i_h2         : in    integer range 0 to 1023;
             i_new_output : in    std_logic;
-
+    
             i_valid_psum_out    : in    std_logic_vector(size_x - 1 downto 0);
             i_gnt_psum_binary_d : in    std_logic_vector(addr_width_x - 1 downto 0);
-            i_command_psum      : in    command_lb_t;
             i_empty_psum_fifo   : in    std_logic_vector(size_x - 1 downto 0);
-            i_psums_valid       : in    std_logic_vector(size_x - 1 downto 0);
-
+    
             o_address_psum : out   std_logic_vector(addr_width_psum_mem - 1 downto 0)
         );
-    end component address_generator_psum_2;
+    end component address_generator_psum;
 
     signal w_preload_psum       : std_logic_vector(data_width_psum - 1 downto 0);
     signal w_preload_psum_valid : std_logic;
@@ -562,24 +513,17 @@ architecture rtl of accelerator_2 is
 
     signal w_status_control     : std_logic;
     signal r_start_control      : std_logic;
-    signal r_start_init_control : std_logic;
+    signal r_start_init : std_logic;
 
     signal w_status_if : std_logic;
     signal w_enable    : std_logic;
     signal w_enable_if : std_logic;
 
-    signal w_status_adr     : std_logic;
     signal r_start_adr      : std_logic;
-    signal w_start_init_adr : std_logic;
 
-    signal w_c1         : integer range 0 to 1023; /* TODO change range to sth. useful */
     signal w_w1         : integer range 0 to 1023; /* TODO change range to sth. useful */
-    signal w_h2         : integer range 0 to 1023; /* TODO change range to sth. useful */
     signal w_m0         : integer range 0 to 1023;
-    signal w_m0_last_m1 : integer range 0 to 1023;
 
-    signal w_c0          : integer range 0 to 1023; /* TODO change range to sth. useful */
-    signal w_c0_last_c1  : integer range 0 to 1023; /* TODO change range to sth. useful */
     signal r_image_x     : integer range 0 to 1023; /* TODO change range to sth. useful */
     signal r_image_y     : integer range 0 to 1023; /* TODO change range to sth. useful */
     signal r_channels    : integer range 0 to 4095; /* TODO change range to sth. useful */
@@ -617,7 +561,7 @@ begin
 
         if not rstn then
             r_start_control      <= '0';
-            r_start_init_control <= '0';
+            r_start_init <= '0';
             r_start_adr          <= '0';
 
             r_image_x     <= 0;
@@ -637,11 +581,10 @@ begin
 
                 if r_state = s_idle then
                     r_state              <= s_init_started;
-                    r_start_init_control <= '1';
+                    r_start_init <= '1';
                 elsif w_status_control then
                     r_state              <= s_load_fifo_started;
                     r_start_adr          <= '1';
-                    r_start_init_control <= '0';
                     if w_status_if = '1' then
                         r_start_control <= '1';
                         r_state         <= s_processing;
@@ -699,64 +642,70 @@ begin
             o_psums_valid           => w_psums_valid
         );
 
-    control_inst : component control_2
-        generic map (
-            size_x           => size_x,
-            size_y           => size_y,
-            size_rows        => size_rows,
-            addr_width_rows  => addr_width_rows,
-            addr_width_y     => addr_width_y,
-            addr_width_x     => addr_width_x,
-            line_length_iact => line_length_iact,
-            addr_width_iact  => addr_width_iact,
-            line_length_psum => line_length_psum,
-            addr_width_psum  => addr_width_psum,
-            line_length_wght => line_length_wght,
-            addr_width_wght  => addr_width_wght,
-            g_control_init   => g_control_init,
-            g_c1             => g_c1,
-            g_w1             => g_w1,
-            g_h2             => g_h2,
-            g_m0             => g_m0,
-            g_m0_last_m1     => g_m0_last_m1,
-            g_rows_last_h2   => g_rows_last_h2,
-            g_c0             => g_c0,
-            g_c0_last_c1     => g_c0_last_c1,
-            g_c0w0           => g_c0w0,
-            g_c0w0_last_c1   => g_c0w0_last_c1
-        )
-        port map (
-            clk                  => clk,
-            rstn                 => rstn,
-            o_status             => w_status_control,
-            i_start              => w_enable_if,
-            i_start_init         => r_start_init_control,
-            o_enable             => w_enable,
-            o_new_output         => w_new_output,
-            o_pause_iact         => w_pause_iact,
-            o_c1                 => w_c1,
-            o_w1                 => w_w1,
-            o_h2                 => w_h2,
-            o_m0                 => w_m0,
-            o_m0_last_m1         => w_m0_last_m1,
-            o_c0                 => w_c0,
-            o_c0_last_c1         => w_c0_last_c1,
-            i_image_x            => r_image_x,
-            i_image_y            => r_image_y,
-            i_channels           => r_channels,
-            i_kernels            => r_kernels,
-            i_kernel_size        => r_kernel_size,
-            o_command            => w_command,
-            o_command_iact       => w_command_iact,
-            o_command_psum       => w_command_psum,
-            o_command_wght       => w_command_wght,
-            o_update_offset_iact => w_update_offset_iact,
-            o_update_offset_psum => w_update_offset_psum,
-            o_update_offset_wght => w_update_offset_wght,
-            o_read_offset_iact   => w_read_offset_iact,
-            o_read_offset_psum   => w_read_offset_psum,
-            o_read_offset_wght   => w_read_offset_wght
-        );
+    control_address_generator_inst: component control_address_generator_2
+      generic map (
+        size_x              => size_x,
+        size_y              => size_y,
+        size_rows           => size_rows,
+        addr_width_rows     => addr_width_rows,
+        addr_width_y        => addr_width_y,
+        addr_width_x        => addr_width_x,
+        addr_width_iact_mem => addr_width_iact_mem,
+        addr_width_wght_mem => addr_width_wght_mem,
+        addr_width_psum_mem => addr_width_psum_mem,
+        line_length_iact    => line_length_iact,
+        addr_width_iact     => addr_width_iact,
+        line_length_psum    => line_length_psum,
+        addr_width_psum     => addr_width_psum,
+        line_length_wght    => line_length_wght,
+        addr_width_wght     => addr_width_wght,
+        g_control_init      => g_control_init,
+        g_c1                => g_c1,
+        g_w1                => g_w1,
+        g_h2                => g_h2,
+        g_m0                => g_m0,
+        g_m0_last_m1        => g_m0_last_m1,
+        g_rows_last_h2      => g_rows_last_h2,
+        g_c0                => g_c0,
+        g_c0_last_c1        => g_c0_last_c1,
+        g_c0w0              => g_c0w0,
+        g_c0w0_last_c1      => g_c0w0_last_c1
+      )
+      port map (
+        clk                      => clk,
+        rstn                     => rstn,
+        i_start                  => i_start,
+        i_start_init             => r_start_init,
+        i_start_adr              => r_start_adr,
+        i_enable_if              => w_enable_if,
+        o_status                 => w_status_control,
+        o_enable                 => w_enable,
+        o_new_output             => w_new_output,
+        o_pause_iact             => w_pause_iact,
+        o_w1                     => w_w1,
+        o_m0                     => w_m0,
+        i_image_x                => r_image_x,
+        i_image_y                => r_image_y,
+        i_channels               => r_channels,
+        i_kernels                => r_kernels,
+        i_kernel_size            => r_kernel_size,
+        o_command                => w_command,
+        o_command_iact           => w_command_iact,
+        o_command_psum           => w_command_psum,
+        o_command_wght           => w_command_wght,
+        o_update_offset_iact     => w_update_offset_iact,
+        o_update_offset_psum     => w_update_offset_psum,
+        o_update_offset_wght     => w_update_offset_wght,
+        o_read_offset_iact       => w_read_offset_iact,
+        o_read_offset_psum       => w_read_offset_psum,
+        o_read_offset_wght       => w_read_offset_wght,
+        w_fifo_iact_address_full => w_fifo_iact_address_full,
+        w_fifo_wght_address_full => w_fifo_wght_address_full,
+        o_address_iact           => w_address_iact,
+        o_address_wght           => w_address_wght,
+        o_address_iact_valid     => w_address_iact_valid,
+        o_address_wght_valid     => w_address_wght_valid
+      );
 
     scratchpad_init_inst : if g_init_sp = true generate
 
@@ -837,48 +786,6 @@ begin
 
     end generate scratchpad_inst;
 
-    address_generator_inst : component address_generator_2
-        generic map (
-            size_x              => size_x,
-            size_y              => size_y,
-            size_rows           => size_rows,
-            addr_width_rows     => addr_width_rows,
-            addr_width_y        => addr_width_y,
-            addr_width_x        => addr_width_x,
-            line_length_iact    => line_length_iact,
-            addr_width_iact     => addr_width_iact,
-            addr_width_iact_mem => addr_width_iact_mem,
-            line_length_psum    => line_length_psum,
-            addr_width_psum     => addr_width_psum,
-            addr_width_psum_mem => addr_width_psum_mem,
-            line_length_wght    => line_length_wght,
-            addr_width_wght     => addr_width_wght,
-            addr_width_wght_mem => addr_width_wght_mem
-        )
-        port map (
-            clk                  => clk,
-            rstn                 => rstn,
-            i_start              => r_start_adr,
-            i_pause_iact         => '0',
-            i_c1                 => w_c1,
-            i_w1                 => w_w1,
-            i_h2                 => w_h2,
-            i_m0                 => w_m0,
-            i_m0_last_m1         => w_m0_last_m1,
-            i_c0                 => w_c0,
-            i_c0_last_c1         => w_c0_last_c1,
-            i_image_x            => r_image_x,
-            i_image_y            => r_image_y,
-            i_channels           => r_channels,
-            i_kernel_size        => r_kernel_size,
-            i_fifo_full_iact     => w_fifo_iact_address_full,
-            i_fifo_full_wght     => w_fifo_wght_address_full,
-            o_address_iact       => w_address_iact,
-            o_address_wght       => w_address_wght,
-            o_address_iact_valid => w_address_iact_valid,
-            o_address_wght_valid => w_address_wght_valid
-        );
-
     scratchpad_interface_inst : component scratchpad_interface
         generic map (
             size_x              => size_x,
@@ -945,7 +852,7 @@ begin
             i_pause_iact             => w_pause_iact
         );
 
-    address_generator_psum_inst : component address_generator_psum_2
+    address_generator_psum_inst : component address_generator_psum
         generic map (
             size_x              => size_x,
             size_y              => size_y,
@@ -967,13 +874,10 @@ begin
             i_start             => r_start_adr,
             i_w1                => w_w1,
             i_m0                => w_m0,
-            i_h2                => w_h2,
             i_new_output        => w_new_output,
             i_valid_psum_out    => w_valid_psums_out,
             i_gnt_psum_binary_d => w_gnt_psum_binary_d,
-            i_command_psum      => w_command_psum(0,0),
             i_empty_psum_fifo   => w_empty_psum_fifo,
-            i_psums_valid       => w_psums_valid,
             o_address_psum      => w_write_adr_psum
         );
 

@@ -65,7 +65,7 @@ architecture rtl of line_buffer is
 
     -- process internal signals
     signal r_pointer_head   : integer;
-    signal r_pointer_tail_s : integer;
+    signal r_pointer_tail : integer;
     signal r_fill_count     : integer range 0 to line_length;
     -- signal fifo_filled_s    : std_logic;
     signal r_fifo_empty_s : std_logic;
@@ -136,11 +136,11 @@ begin
         if rising_edge(clk) then
             if i_enable = '1' or psum_type = true then
                 if i_command = c_lb_read or i_command = c_lb_read_update then
-                    assert to_integer(unsigned(i_read_offset)) < r_fill_count
+                    assert to_integer(unsigned(i_read_offset)) <= r_fill_count
                         report "Error: reading from offset " & integer'image(to_integer(unsigned(i_read_offset))) & " ; Fill count only " & integer'image(r_fill_count)
                         severity failure;
 
-                    assert to_integer(unsigned(i_update_offset)) < r_fill_count
+                    assert to_integer(unsigned(i_update_offset)) <= r_fill_count
                         report "Error: updating value at offset " & integer'image(to_integer(unsigned(i_read_offset))) & " ; Fill count only " & integer'image(r_fill_count)
                         severity failure;
                 end if;
@@ -178,7 +178,7 @@ begin
             r_wena           <= '0';
             r_addra          <= (others => '0');
             r_dina           <= (others => '0');
-            r_pointer_tail_s <= 0;
+            r_pointer_tail <= 0;
             r_fifo_empty_s   <= '1';
         elsif rising_edge(clk) then
             -- Update data
@@ -194,9 +194,9 @@ begin
             -- Write data to tail
             elsif i_data_valid and not o_buffer_full then
                 r_wena         <= '1';
-                r_addra        <= std_logic_vector(to_unsigned(r_pointer_tail_s, addr_width));
+                r_addra        <= std_logic_vector(to_unsigned(r_pointer_tail, addr_width));
                 r_dina         <= i_data;
-                incr(r_pointer_tail_s);
+                incr(r_pointer_tail);
                 r_fifo_empty_s <= '0';
             -- Idle
             else

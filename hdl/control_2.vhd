@@ -122,11 +122,11 @@ architecture rtl of control_2 is
 
     signal w_init_done : std_logic;
 
-    signal r_count_c0w0 : integer; -- range 0 to 511
+    signal r_count_c0w0 : integer range 0 to 2048; -- range 0 to 511
     signal r_count_c1   : integer range 0 to 1023;
     signal r_count_w1   : integer range 0 to 1023;
-    signal r_count_h2   : integer range 0 to 1023;
-    signal r_count_h1   : integer range 0 to 1023;
+    signal r_count_h2   : integer range 0 to 128;
+    signal r_count_h1   : integer range 0 to 128;
 
     signal w_c0w0         : integer range 0 to 1023;
     signal w_c0w0_last_c1 : integer range 0 to 1023;
@@ -134,8 +134,8 @@ architecture rtl of control_2 is
     signal w_c0         : integer range 0 to 1023;
     signal w_c0_last_c1 : integer range 0 to 1023;
 
-    signal w_h2           : integer range 0 to 1023;
-    signal w_rows_last_h2 : integer range 0 to 1023;
+    signal w_h2           : integer range 0 to 128;
+    signal w_rows_last_h2 : integer range 0 to 128;
 
     signal w_w1 : integer range 0 to 1023;
     signal w_c1 : integer range 0 to 1023;

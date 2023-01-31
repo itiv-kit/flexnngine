@@ -18,18 +18,30 @@ entity control is
         line_length_psum : positive := 512;
         addr_width_psum  : positive := 9;
         line_length_wght : positive := 512;
-        addr_width_wght  : positive := 9
+        addr_width_wght  : positive := 9;
+
+        g_control_init : boolean  := true;
+        g_c1           : positive := 1;
+        g_w1           : positive := 1;
+        g_h2           : positive := 1;
+        g_m0           : positive := 1;
+        g_rows_last_h2 : positive := 1;
+        g_c0           : positive := 1;
+        g_c0_last_c1   : positive := 1;
+        g_c0w0         : positive := 1;
+        g_c0w0_last_c1 : positive := 1
     );
     port (
         clk  : in    std_logic;
         rstn : in    std_logic;
 
-        o_status     : out   std_logic;
         i_start      : in    std_logic;
         i_start_init : in    std_logic;
+
         o_enable     : out   std_logic;
         o_new_output : out   std_logic;
-
+        o_status     : out   std_logic;
+        
         o_c1      : out   integer range 0 to 1023;
         o_w1      : out   integer range 0 to 1023;
         o_h2      : out   integer range 0 to 1023;
@@ -159,6 +171,11 @@ architecture rtl of control is
     signal i_start_d : std_logic_vector(3 downto 0);
 
     signal r_done : std_logic;
+
+    signal r_m0_dist         : array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
+    signal r_m0_count_idx    : integer range 0 to size_y + 1;
+    signal r_m0_count_kernel : integer range 0 to size_y + 1;
+    signal r_init_done       : std_logic;
 
 begin
 
@@ -561,40 +578,92 @@ begin
 
     end generate g_psum_pe_commands;
 
-    control_init_inst : component control_init
-        generic map (
-            size_x           => size_x,
-            size_y           => size_y,
-            size_rows        => size_rows,
-            addr_width_rows  => addr_width_rows,
-            addr_width_y     => addr_width_y,
-            addr_width_x     => addr_width_x,
-            line_length_iact => line_length_iact,
-            addr_width_iact  => addr_width_iact,
-            line_length_psum => line_length_psum,
-            addr_width_psum  => addr_width_psum,
-            line_length_wght => line_length_wght,
-            addr_width_wght  => addr_width_wght
-        )
-        port map (
-            clk            => clk,
-            rstn           => rstn,
-            o_status       => w_init_done,
-            i_start        => i_start_init,
-            o_c1           => w_c1,
-            o_w1           => w_w1,
-            o_h2           => w_h2,
-            o_m0           => w_m0,
-            o_m0_dist      => w_m0_dist,
-            o_rows_last_h2 => w_rows_last_h2,
-            o_c0           => w_c0,
-            o_c0_last_c1   => w_c0_last_c1,
-            o_c0w0         => w_c0w0,
-            o_c0w0_last_c1 => w_c0w0_last_c1,
-            i_image_x      => i_image_x,
-            i_image_y      => i_image_y,
-            i_channels     => i_channels,
-            i_kernel_size  => i_kernel_size
-        );
+    control_init_inst : if g_control_init = true generate
+
+        control_init_inst : component control_init
+            generic map (
+                size_x           => size_x,
+                size_y           => size_y,
+                size_rows        => size_rows,
+                addr_width_rows  => addr_width_rows,
+                addr_width_y     => addr_width_y,
+                addr_width_x     => addr_width_x,
+                line_length_iact => line_length_iact,
+                addr_width_iact  => addr_width_iact,
+                line_length_psum => line_length_psum,
+                addr_width_psum  => addr_width_psum,
+                line_length_wght => line_length_wght,
+                addr_width_wght  => addr_width_wght
+            )
+            port map (
+                clk            => clk,
+                rstn           => rstn,
+                o_status       => w_init_done,
+                i_start        => i_start_init,
+                o_c1           => w_c1,
+                o_w1           => w_w1,
+                o_h2           => w_h2,
+                o_m0           => w_m0,
+                o_m0_dist      => w_m0_dist,
+                o_rows_last_h2 => w_rows_last_h2,
+                o_c0           => w_c0,
+                o_c0_last_c1   => w_c0_last_c1,
+                o_c0w0         => w_c0w0,
+                o_c0w0_last_c1 => w_c0w0_last_c1,
+                i_image_x      => i_image_x,
+                i_image_y      => i_image_y,
+                i_channels     => i_channels,
+                i_kernel_size  => i_kernel_size
+            );
+    
+    else generate
+
+        w_c1           <= g_c1;
+        w_w1           <= g_w1;
+        w_h2           <= g_h2;
+        w_m0           <= g_m0;
+        w_m0_dist      <= r_m0_dist;
+        w_rows_last_h2 <= g_rows_last_h2;
+        w_c0           <= g_c0;
+        w_c0_last_c1   <= g_c0_last_c1;
+        w_c0w0         <= g_c0w0;
+        w_c0w0_last_c1 <= g_c0w0_last_c1;
+        w_init_done    <= r_init_done;
+
+        p_init_m0_dist : process (clk, rstn) is
+
+            variable v_m0_count : integer range 0 to size_y + 1;
+    
+        begin
+    
+            if not rstn then
+                r_m0_count_idx    <= 0;
+                r_m0_count_kernel <= 0;
+                v_m0_count        := 1;
+                r_m0_dist         <= (others => (others => '0'));
+                r_init_done       <= '0';
+            elsif rising_edge(clk) then
+                if i_start_init = '1' then
+                    if r_m0_count_idx /= size_y then
+                        r_m0_count_idx <= r_m0_count_idx + 1;
+                        if r_m0_count_kernel /= i_kernel_size then
+                            r_m0_count_kernel         <= r_m0_count_kernel + 1;
+                            r_m0_dist(r_m0_count_idx) <= std_logic_vector(to_unsigned(v_m0_count, addr_width_y));
+                        else
+                            if r_m0_count_idx + i_kernel_size <= size_y then -- check if one more kernel can be mapped
+                                r_m0_count_kernel         <= 1;
+                                v_m0_count                := v_m0_count + 1;
+                                r_m0_dist(r_m0_count_idx) <= std_logic_vector(to_unsigned(v_m0_count, addr_width_y));
+                            end if;
+                        end if;
+                    else
+                        r_init_done    <= '1';
+                    end if;
+                end if;
+            end if;
+    
+        end process p_init_m0_dist;
+
+    end generate control_init_inst;
 
 end architecture rtl;

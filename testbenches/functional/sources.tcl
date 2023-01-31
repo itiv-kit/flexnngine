@@ -12,9 +12,10 @@ vcom -64 -2008 -work xil_defaultlib  \
 "../../hdl/control.vhd" \
 "../../hdl/control_init.vhd" \
 "../../hdl/address_generator_2.vhd" \
-"../../hdl/address_generator_psum_2.vhd" \
 "../../hdl/control_2.vhd" \
 "../../hdl/control_init_2.vhd" \
+"../../hdl/control_address_generator.vhd" \
+"../../hdl/control_address_generator_2.vhd" \
 "../../hdl/pe_array.vhd" \
 "../../hdl/demux.vhd" \
 "../../hdl/line_buffer.vhd" \

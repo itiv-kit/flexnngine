@@ -181,10 +181,6 @@ architecture behavioral of pe is
 
     signal r_command_read_psum_delay : std_logic;
     signal r_command_read_psum       : std_logic;
-    signal r_command_read_iact_delay : std_logic;
-    signal r_command_read_iact       : std_logic;
-    signal r_command_read_wght_delay : std_logic;
-    signal r_command_read_wght       : std_logic;
 
     signal w_demux_input_iact : std_logic_vector(data_width_psum - 1 downto 0);
     signal w_demux_input_psum : std_logic_vector(data_width_psum - 1 downto 0);
@@ -276,52 +272,14 @@ begin
 
     end process psum_output_valid;
 
-    iact_output_valid : process (clk, rstn) is
-    begin
-
-        if not rstn then
-            r_command_read_iact <= '0';
-        elsif rising_edge(clk) then
-            if i_enable then
-                if i_command_iact = c_lb_read then
-                    r_command_read_iact <= '1';
-                else
-                    r_command_read_iact <= '0';
-                end if;
-            end if;
-        end if;
-
-    end process iact_output_valid;
-
-    wght_output_vaild : process (clk, rstn) is
-    begin
-
-        if not rstn then
-            r_command_read_wght <= '0';
-        elsif rising_edge(clk) then
-            if i_enable then
-                if i_command_wght = c_lb_read then
-                    r_command_read_wght <= '1';
-                else
-                    r_command_read_wght <= '0';
-                end if;
-            end if;
-        end if;
-
-    end process wght_output_vaild;
-
     delays : process (clk, rstn) is
     begin
 
         if not rstn then
             r_command_read_psum_delay <= '0';
-            r_command_read_iact_delay <= '0';
-            r_command_read_wght_delay <= '0';
         elsif rising_edge(clk) then
             -- if i_enable then
             r_command_read_psum_delay <= r_command_read_psum;
-            r_command_read_iact_delay <= r_command_read_iact;
-            r_command_read_wght_delay <= r_command_read_wght;
         -- end if;
         end if;
 
@@ -597,6 +555,6 @@ begin
     r_enable_dd         <= r_enable_d when rising_edge(clk);
     r_enable_ddd        <= r_enable_dd when rising_edge(clk);
     i_data_in_valid_chg <= '0' when r_sel_mult_psum = '1' and r_enable_ddd = '0' else
-                           i_data_in_valid; -- 0 wenn enable off und psum pfad aktiv
+                           i_data_in_valid; -- 0 if enable off and psum path active
 
 end architecture behavioral;

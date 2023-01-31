@@ -99,7 +99,6 @@ architecture imp of control_conv_tb is
     signal din_wght        : std_logic_vector(data_width_wght - 1 downto 0);
 
     signal start_adr : std_logic;
-    signal w_h2      : integer;
     signal w_m0      : integer;
 
     type ram_type is array (0 to 2 ** addr_width_psum_mem - 1) of std_logic_vector(data_width_psum - 1 downto 0);
@@ -130,6 +129,7 @@ architecture imp of control_conv_tb is
     signal r_empty_psum_fifo           : std_logic_vector(size_x - 1 downto 0);
     signal r_preload_fifos_started     : std_logic;
     signal r_write_en_psum             : std_logic;
+    signal r_data_out_valid            : std_logic_vector(size_x - 1 downto 0);
 
 begin
 
@@ -146,17 +146,17 @@ begin
     r_iact_command     <= << signal g_accelerator.accelerator_inst.pe_array_inst.pe_inst_y(0).pe_inst_x(0).pe_north.pe_inst.line_buffer_iact.i_command : command_lb_t >>;
     r_iact_read_offset <= << signal g_accelerator.accelerator_inst.pe_array_inst.pe_inst_y(0).pe_inst_x(0).pe_north.pe_inst.line_buffer_iact.i_read_offset : std_logic_vector(addr_width_iact - 1 downto 0) >>;
 
-    w_h2      <= << signal g_accelerator.accelerator_inst.w_h2 : integer range 0 to 1023>>;
     w_m0      <= << signal g_accelerator.accelerator_inst.w_m0 : integer range 0 to 1023>>;
-    start_adr <= << signal g_accelerator.accelerator_inst.address_generator_inst.i_start : std_logic>>;
-    r_state   <= << signal g_accelerator.accelerator_inst.control_inst.r_state : t_state_pe>>;
+    start_adr <= << signal g_accelerator.accelerator_inst.control_address_generator_inst.address_generator_inst.i_start : std_logic>>;
+    r_state   <= << signal g_accelerator.accelerator_inst.control_address_generator_inst.control_inst.r_state : t_state_pe>>;
 
     -- Signals for evaluation
     r_status_sp_interface   <= << signal g_accelerator.accelerator_inst.scratchpad_interface_inst.o_status : std_logic>>;
     r_enable_pe_array       <= << signal g_accelerator.accelerator_inst.pe_array_inst.i_enable : std_logic>>;
     r_preload_fifos_done    <= '1' when rising_edge(r_enable_pe_array);
     r_preload_fifos_started <= '1' when r_state_accelerator = s_load_fifo_started;
-    r_psum_commands_tmp     <= << signal g_accelerator.accelerator_inst.control_inst.o_command_psum : command_lb_row_col_t >>;
+    r_psum_commands_tmp     <= << signal g_accelerator.accelerator_inst.control_address_generator_inst.control_inst.o_command_psum : command_lb_row_col_t >>;
+    r_data_out_valid        <= << signal g_accelerator.accelerator_inst.pe_array_inst.o_psums_valid : std_logic_vector(size_x - 1 downto 0)>>;
 
     g_psum_commands : for y in 0 to size_y - 1 generate
         r_psum_commands(y)             <= r_psum_commands_tmp(y,0);
@@ -166,7 +166,7 @@ begin
                                           '0';
     end generate g_psum_commands;
 
-    r_done_processing   <= << signal g_accelerator.accelerator_inst.control_inst.r_done : std_logic>>;
+    r_done_processing   <= << signal g_accelerator.accelerator_inst.control_address_generator_inst.control_inst.r_done : std_logic>>;
     r_empty_psum_fifo   <= << signal g_accelerator.accelerator_inst.address_generator_psum_inst.i_empty_psum_fifo : std_logic_vector(size_x - 1 downto 0)>>;
     r_state_accelerator <= << signal g_accelerator.accelerator_inst.r_state : t_state_accelerator>>;
     r_data_iact_valid   <= << signal g_accelerator.accelerator_inst.scratchpad_interface_inst.o_data_iact_valid : std_logic_vector(size_rows - 1 downto 0)>>;
@@ -485,6 +485,10 @@ begin
                         elsif or r_psum_commands_read_update = '1' then
                             -- Sum up partial sums
                             write(row, integer'image(11));
+                            write(row, string'("  "));
+                        elsif or r_data_out_valid = '1' then
+                            -- Output data
+                            write(row, integer'image(12));
                             write(row, string'("  "));
                         else
                             -- Idle
