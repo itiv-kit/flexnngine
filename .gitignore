@@ -1,0 +1,36 @@
+# ignore ModelSim generated files and directories (temp files and so on)
+[_@]*
+
+# ignore compilation output of ModelSim
+*.mti
+*.dat
+*.dbs
+*.psm
+*.bak
+*.cmp
+*.jpg
+*.html
+*.bsf
+
+# ignore Vivado generated files
+reconfigurable-accelerator/*
+reconfigurable-accelerator-partial/*
+
+# ignore simulation output of ModelSim
+wlf*
+*.wlf
+*.vstf
+*.ucdb
+cov*/
+transcript*
+sc_dpiheader.h
+vsim.dbg
+
+#ignore v4p
+*.v4p
+
+#ignore nfs files
+.nfs*
+
+#ignore testbench batch files
+testbenches/*/test/*

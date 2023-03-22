@@ -16,19 +16,194 @@
 # This specific template is located at:
 # https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Getting-Started.gitlab-ci.yml
 
+image: python:latest
+
 stages:          # List of stages for jobs, and their order of execution
-  - mac
+  - lint
+  - test_1
+  - test_2
+  - test_3
  
+
+style-guide:
+    stage: lint
+    before_script:
+        - pip3 install vsg
+    script:
+        - vsg --configuration ci/config.yaml -f hdl/*.vhd -j vsg_results.xml
+        - cat vsg_results.xml
+    artifacts:
+        reports:
+            junit: vsg_results.xml
+
+style-guide-tb:
+    stage: lint
+    before_script:
+        - pip3 install vsg
+    script:
+        - vsg --configuration ci/config_tb.yaml -f testbenches/*/src/*.vhd -j vsg_results_tb.xml
+        - cat vsg_results_tb.xml
+    artifacts:
+        reports:
+            junit: vsg_results_tb.xml
+
 test-mac:
-    stage: mac
+    stage: test_1
     tags:
         - modelsim
     only:
         changes:
             - hdl/mac.vhd
+            - hdl/utilities.vhd
             - testbenches/mac/src/*
+            - .gitlab-ci.yml
     script:
         - source /tools/mentor/set_modelsim_10.6b.sh
         - cd ./testbenches/mac
+        - vsim -c -do "../../ci/simulate.tcl"
+        - cd ../..
+
+test-line-buffer-iact:
+    stage: test_1
+    tags:
+        - modelsim
+    only:
+        changes:
+            - hdl/line_buffer.vhd
+            - hdl/ram_dp.vhd
+            - hdl/utilities.vhd
+            - testbenches/line_buffer_iact/src/*
+            - .gitlab-ci.yml
+    script:
+        - source /tools/mentor/set_modelsim_10.6b.sh
+        - cd ./testbenches/line_buffer_iact
+        - vsim -c -do "../../ci/simulate.tcl"
+        - cd ../..
+
+test-line-buffer-psum:
+    stage: test_1
+    tags:
+        - modelsim
+    only:
+        changes:
+            - hdl/line_buffer.vhd
+            - hdl/ram_dp.vhd
+            - hdl/utilities.vhd
+            - testbenches/line_buffer_psum/src/*
+            - .gitlab-ci.yml
+    script:
+        - source /tools/mentor/set_modelsim_10.6b.sh
+        - cd ./testbenches/line_buffer_psum
+        - vsim -c -do "../../ci/simulate.tcl"
+        - cd ../..
+
+
+test-line-buffer-wght:
+    stage: test_1
+    tags:
+        - modelsim
+    only:
+        changes:
+            - hdl/line_buffer.vhd
+            - hdl/ram_dp.vhd
+            - hdl/utilities.vhd
+            - testbenches/line_buffer_wght/src/*
+            - .gitlab-ci.yml
+    script:
+        - source /tools/mentor/set_modelsim_10.6b.sh
+        - cd ./testbenches/line_buffer_wght
+        - vsim -c -do "../../ci/simulate.tcl"
+        - cd ../..
+
+
+test-pe-conv:
+    stage: test_2
+    tags:
+        - modelsim
+    only:
+        changes:
+            - hdl/pe.vhd
+            - hdl/line_buffer.vhd
+            - hdl/mult.vhd
+            - hdl/mux.vhd
+            - hdl/add.vhd
+            - hdl/ram_dp.vhd
+            - hdl/utilities.vhd
+            - testbenches/pe_conv/src/*
+            - .gitlab-ci.yml
+    script:
+        - source /tools/mentor/set_modelsim_10.6b.sh
+        - cd ./testbenches/pe_conv
+        - vsim -c -do "../../ci/simulate.tcl"
+        - cd ../..
+
+test-pe-array-conv-3x3:
+    stage: test_3
+    tags:
+        - modelsim
+    only:
+        changes:
+            - hdl/pe.vhd
+            - hdl/line_buffer.vhd
+            - hdl/mult.vhd
+            - hdl/mux.vhd
+            - hdl/add.vhd
+            - hdl/ram_dp.vhd
+            - hdl/pe_array.vhd
+            - hdl/utilities.vhd
+            - testbenches/pe_array_conv_3x3/src/*
+            - .gitlab-ci.yml
+    script:
+        - source /tools/mentor/set_modelsim_10.6b.sh
+        - cd ./testbenches/pe_array_conv_3x3
+        - vsim -c -do "../../ci/simulate.tcl"
+        - cd ../..
+
+test-pe-array-conv-3x3-wide:
+    stage: test_3
+    tags:
+        - modelsim
+    only:
+        changes:
+            - hdl/pe.vhd
+            - hdl/line_buffer.vhd
+            - hdl/mult.vhd
+            - hdl/mux.vhd
+            - hdl/add.vhd
+            - hdl/ram_dp.vhd
+            - hdl/pe_array.vhd
+            - hdl/utilities.vhd
+            - testbenches/pe_array_conv_3x3_wide/src/*
+            - .gitlab-ci.yml
+    script:
+        - source /tools/mentor/set_modelsim_10.6b.sh
+        - cd ./testbenches/pe_array_conv_3x3
+        - vsim -c -do "../../ci/simulate.tcl"
+        - cd ../..
+
+pe_array_conv_5x5_channels_tb:
+    stage: test_3
+    tags:
+        - modelsim
+    only:
+        changes:
+            - hdl/pe.vhd
+            - hdl/line_buffer.vhd
+            - hdl/mult.vhd
+            - hdl/mux.vhd
+            - hdl/add.vhd
+            - hdl/ram_dp.vhd
+            - hdl/pe_array.vhd
+            - hdl/utilities.vhd
+            - testbenches/pe_array_conv_5x5_channels_size/src/*
+            - .gitlab-ci.yml
+    before_script:
+        - pip3 install numpy
+        - cd ./testbenches/pe_array_conv_5x5_channels_size/src
+        - python3 stimuli.py
+        - python3 program.py
+    script:
+        - cd ..
+        - source /tools/mentor/set_modelsim_10.6b.sh
         - vsim -c -do "../../ci/simulate.tcl"
         - cd ../..

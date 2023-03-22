@@ -1,0 +1,25 @@
+rule:
+  global:
+    indentSize: 4
+  if_002:
+    parenthesis: "remove"
+  type_010:
+    disable: true
+  type_011:
+    disable: true
+  variable_007:
+    severity: "Warning"
+  signal_007:
+    disable: true
+  instantiation_034:
+    disable: true
+  whitespace_004:
+    disable: true
+  whitespace_007:
+    disable: true
+  constant_012: 
+    disable: true
+  constant_016:
+    disable: true
+  constant_013:
+    severity: "Warning"
