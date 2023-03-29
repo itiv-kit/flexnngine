@@ -119,6 +119,8 @@ architecture rtl of control_2 is
             i_start  : in    std_logic
         );
     end component control_init_2;
+    
+    for all : control_init_2 use entity work.control_init (alternative_rs_dataflow ) ;
 
     signal w_init_done : std_logic;
 

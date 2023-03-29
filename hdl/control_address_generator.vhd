@@ -110,6 +110,7 @@ architecture rtl of control_address_generator is
             g_w1           : positive := 1;
             g_h2           : positive := 1;
             g_m0           : positive := 1;
+            g_m0_last_m1   : positive := 1;
             g_rows_last_h2 : positive := 1;
             g_c0           : positive := 1;
             g_c0_last_c1   : positive := 1;
@@ -126,12 +127,14 @@ architecture rtl of control_address_generator is
             o_enable     : out   std_logic;
             o_new_output : out   std_logic;
             o_status     : out   std_logic;
+            o_pause_iact : out   std_logic;
 
             o_c1      : out   integer range 0 to 1023;
             o_w1      : out   integer range 0 to 1023;
             o_h2      : out   integer range 0 to 1023;
             o_m0      : out   integer range 0 to 1023;
             o_m0_dist : out   array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
+            o_m0_last_m1 : out   integer range 0 to 1023;
 
             o_c0         : out   integer range 0 to 1023;
             o_c0_last_c1 : out   integer range 0 to 1023;
@@ -140,6 +143,7 @@ architecture rtl of control_address_generator is
             i_image_y : in    integer range 0 to 1023;
 
             i_channels : in    integer range 0 to 4095;
+            i_kernels  : in    integer range 0 to 4095;
 
             i_kernel_size : in    integer range 0 to 32;
 
@@ -246,6 +250,7 @@ begin
             g_w1 => g_w1,
             g_h2 => g_h2,
             g_m0 => g_m0,
+            g_m0_last_m1     => g_m0_last_m1,
             g_rows_last_h2 => g_rows_last_h2,
             g_c0 => g_c0,
             g_c0_last_c1 => g_c0_last_c1,
@@ -270,6 +275,7 @@ begin
             i_image_x            => i_image_x,
             i_image_y            => i_image_y,
             i_channels           => i_channels,
+            i_kernels            => i_kernels,
             i_kernel_size        => i_kernel_size,
             o_command            => o_command,
             o_command_iact       => o_command_iact,
