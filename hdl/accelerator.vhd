@@ -218,6 +218,8 @@ architecture rtl of accelerator is
             o_address_wght_valid : out   std_logic_vector(size_y - 1 downto 0)
         );
     end component control_address_generator;
+    
+    for all : control_address_generator use entity work.control_address_generator (rs_dataflow) ;
 
     component scratchpad_init is
         generic (

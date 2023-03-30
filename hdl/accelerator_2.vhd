@@ -218,6 +218,8 @@ architecture rtl of accelerator_2 is
         );
     end component control_address_generator_2;
     
+    for all : control_address_generator_2 use entity work.control_address_generator (alternative_rs_dataflow) ;
+    
     component scratchpad_init is
         generic (
             data_width_iact : positive := 8;
