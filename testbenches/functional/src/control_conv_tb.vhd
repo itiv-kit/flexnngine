@@ -66,7 +66,7 @@ entity control_conv_tb is
         g_c0_last_c1   : positive := 1;
         g_c0w0         : positive := 1;
         g_c0w0_last_c1 : positive := 1;
-        g_dataflow : integer := 1
+        g_dataflow     : integer  := 1
     );
 end entity control_conv_tb;
 
@@ -178,6 +178,7 @@ begin
     din_wght      <= (others => '0');
 
     g_accelerator : if g_dataflow = 1 generate
+
         accelerator_inst : entity work.accelerator_2
             generic map (
                 size_x              => size_x,
@@ -234,52 +235,53 @@ begin
                 i_din_iact        => din_iact,
                 i_din_wght        => din_wght
             );
+
     else generate
 
         accelerator_inst : entity work.accelerator
-        generic map (
-            size_x              => size_x,
-            size_y              => size_y,
-            size_rows           => size_rows,
-            addr_width_rows     => addr_width_rows,
-            addr_width_y        => addr_width_y,
-            addr_width_x        => addr_width_x,
-            data_width_iact     => data_width_iact,
-            line_length_iact    => line_length_iact,
-            addr_width_iact     => addr_width_iact,
-            addr_width_iact_mem => addr_width_iact_mem,
-            data_width_psum     => data_width_psum,
-            line_length_psum    => line_length_psum,
-            addr_width_psum     => addr_width_psum,
-            addr_width_psum_mem => addr_width_psum_mem,
-            data_width_wght     => data_width_wght,
-            line_length_wght    => line_length_wght,
-            addr_width_wght     => addr_width_wght,
-            addr_width_wght_mem => addr_width_wght_mem,
-            fifo_width          => fifo_width,
-            g_iact_fifo_size    => g_iact_fifo_size,
-            g_wght_fifo_size    => g_wght_fifo_size,
-            g_psum_fifo_size    => g_psum_fifo_size,
-            g_channels          => g_channels,
-            g_image_y           => g_image_y,
-            g_image_x           => g_image_x,
-            g_kernel_size       => g_kernel_size,
-            g_files_dir         => g_files_dir,
-            g_init_sp           => g_init_sp
-        )
-        port map (
-            clk               => clk,
-            rstn              => rstn,
-            clk_sp            => clk_sp,
-            i_start_init      => start_init,
-            i_start           => start,
-            o_dout_psum       => dout_psum,
-            o_dout_psum_valid => dout_psum_valid,
-            i_write_en_iact   => write_en_iact,
-            i_write_en_wght   => write_en_wght,
-            i_din_iact        => din_iact,
-            i_din_wght        => din_wght
-        );
+            generic map (
+                size_x              => size_x,
+                size_y              => size_y,
+                size_rows           => size_rows,
+                addr_width_rows     => addr_width_rows,
+                addr_width_y        => addr_width_y,
+                addr_width_x        => addr_width_x,
+                data_width_iact     => data_width_iact,
+                line_length_iact    => line_length_iact,
+                addr_width_iact     => addr_width_iact,
+                addr_width_iact_mem => addr_width_iact_mem,
+                data_width_psum     => data_width_psum,
+                line_length_psum    => line_length_psum,
+                addr_width_psum     => addr_width_psum,
+                addr_width_psum_mem => addr_width_psum_mem,
+                data_width_wght     => data_width_wght,
+                line_length_wght    => line_length_wght,
+                addr_width_wght     => addr_width_wght,
+                addr_width_wght_mem => addr_width_wght_mem,
+                fifo_width          => fifo_width,
+                g_iact_fifo_size    => g_iact_fifo_size,
+                g_wght_fifo_size    => g_wght_fifo_size,
+                g_psum_fifo_size    => g_psum_fifo_size,
+                g_channels          => g_channels,
+                g_image_y           => g_image_y,
+                g_image_x           => g_image_x,
+                g_kernel_size       => g_kernel_size,
+                g_files_dir         => g_files_dir,
+                g_init_sp           => g_init_sp
+            )
+            port map (
+                clk               => clk,
+                rstn              => rstn,
+                clk_sp            => clk_sp,
+                i_start_init      => start_init,
+                i_start           => start,
+                o_dout_psum       => dout_psum,
+                o_dout_psum_valid => dout_psum_valid,
+                i_write_en_iact   => write_en_iact,
+                i_write_en_wght   => write_en_wght,
+                i_din_iact        => din_iact,
+                i_din_wght        => din_wght
+            );
 
     end generate g_accelerator;
 
@@ -499,7 +501,7 @@ begin
                         write(row, integer'image(13));
                         write(row, string'("  "));
                     else
-                        -- Output done, writing results done
+                    -- Output done, writing results done
                     end if;
                 else
                     -- Preload fifos
@@ -536,18 +538,22 @@ begin
 
                 -- load input activations for all input rows
                 for i in 0 to size_rows - 1 loop
+
                     if r_data_iact_valid(i) = '1' then
                         write(row, integer'image(100 + i));
                         write(row, string'("  "));
                     end if;
+
                 end loop;
 
                 -- load wgths for all rows
                 for i in 0 to size_y - 1 loop
+
                     if r_data_wght_valid(i) = '1' then
                         write(row, integer'image(200 + i));
                         write(row, string'("  "));
                     end if;
+
                 end loop;
 
                 -- Load weights
