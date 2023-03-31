@@ -138,7 +138,7 @@ architecture imp of pe_conv_tb is
     );
 
     constant expected_psums : integer_t(0 to (line_length - kernel_size + 1) * kernel_size - 1) := (
-        --( 0,2,4,1,5,8,2,8,12,3,11,16,4,14,20)
+        -- ( 0,2,4,1,5,8,2,8,12,3,11,16,4,14,20)
         (0,0,2,0,1,5,0,2,8,0,3,11,0,4,14)
     );
 

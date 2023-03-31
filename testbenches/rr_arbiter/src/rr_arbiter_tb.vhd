@@ -14,7 +14,7 @@ end entity rr_arbiter_tb;
 
 architecture imp of rr_arbiter_tb is
 
-    constant period : time   := 20 ns;
+    constant period : time := 20 ns;
 
     signal clk        : std_logic := '0';
     signal rstn       : std_logic := '0';

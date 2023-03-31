@@ -316,7 +316,7 @@ begin
             r_startup <= r_startup(9 downto 0) & '0';
             if or w_empty_iact_f(size_rows - 1 downto size_y - 1) = '0' then
                 r_startup <= r_startup(9 downto 0) & '1';
-                --o_status <= '1';
+                -- o_status <= '1';
             end if;
             if and r_startup = '1' then
                 o_status <= '1';

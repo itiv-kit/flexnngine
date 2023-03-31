@@ -236,7 +236,7 @@ begin
             );
     else generate
 
-        accelerator_inst: entity work.accelerator
+        accelerator_inst : entity work.accelerator
         generic map (
             size_x              => size_x,
             size_y              => size_y,

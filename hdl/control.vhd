@@ -43,7 +43,7 @@ entity control is
         o_new_output : out   std_logic;
         o_status     : out   std_logic;
         o_pause_iact : out   std_logic;
-        
+
         o_c1      : out   integer range 0 to 1023;
         o_w1      : out   integer range 0 to 1023;
         o_h2      : out   integer range 0 to 1023;
@@ -122,7 +122,7 @@ architecture rs_dataflow of control is
             i_start  : in    std_logic
         );
     end component control_init;
-    
+
     for all : control_init use entity work.control_init (rs_dataflow ) ;
 
     signal w_init_done : std_logic;
@@ -276,7 +276,7 @@ begin
                 w_mux_update_offset_psum <= r_update_offset_psum_d;
                 w_mux_command_psum       <= r_command_psum_d;
 
-            when others => 
+            when others =>
 
                 w_mux_read_offset_psum   <= r_read_offset_psum_d;
                 w_mux_update_offset_psum <= r_update_offset_psum_d;
@@ -626,7 +626,7 @@ begin
                 i_kernels      => i_kernels,
                 i_kernel_size  => i_kernel_size
             );
-    
+
     else generate
 
         w_c1           <= g_c1;
@@ -644,9 +644,9 @@ begin
         p_init_m0_dist : process (clk, rstn) is
 
             variable v_m0_count : integer range 0 to size_y + 1;
-    
+
         begin
-    
+
             if not rstn then
                 r_m0_count_idx    <= 0;
                 r_m0_count_kernel <= 0;
@@ -672,7 +672,7 @@ begin
                     end if;
                 end if;
             end if;
-    
+
         end process p_init_m0_dist;
 
     end generate control_init_inst;
@@ -723,7 +723,7 @@ architecture alternative_rs_dataflow of control is
             i_start  : in    std_logic
         );
     end component control_init;
-    
+
     for all : control_init use entity work.control_init (alternative_rs_dataflow ) ;
 
     signal w_init_done : std_logic;
@@ -809,9 +809,9 @@ begin
         elsif rising_edge(clk) then
             if i_start = '1' then
                 w_start <= '1';
-            end if;    
+            end if;
         end if;
-        
+
     end process p_start;
 
     /*p_start : process(i_start) is

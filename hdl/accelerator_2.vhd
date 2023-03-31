@@ -142,22 +142,22 @@ architecture rtl of accelerator_2 is
             size_x    : positive := 7;
             size_y    : positive := 7;
             size_rows : positive := 13;
-    
+
             addr_width_rows : positive := 4;
             addr_width_y    : positive := 3;
             addr_width_x    : positive := 3;
-    
+
             addr_width_iact_mem : positive := 15;
             addr_width_wght_mem : positive := 15;
             addr_width_psum_mem : positive := 15;
-    
+
             line_length_iact : positive := 512;
             addr_width_iact  : positive := 9;
             line_length_psum : positive := 512;
             addr_width_psum  : positive := 9;
             line_length_wght : positive := 512;
             addr_width_wght  : positive := 9;
-    
+
             g_control_init : boolean  := false;
             g_c1           : positive := 1;
             g_w1           : positive := 1;
@@ -173,53 +173,53 @@ architecture rtl of accelerator_2 is
         port (
             clk  : in    std_logic;
             rstn : in    std_logic;
-    
+
             i_start      : in    std_logic;
             i_start_init : in    std_logic;
             i_start_adr  : in    std_logic;
             i_enable_if  : in    std_logic;
-    
+
             o_status     : out   std_logic;
             o_enable     : out   std_logic;
             o_new_output : out   std_logic;
             o_pause_iact : out   std_logic;
-    
+
             o_w1         : out   integer range 0 to 1023;
             o_m0         : out   integer range 0 to 1023;
-    
+
             i_image_x : in    integer range 0 to 1023; --! size of input image
             i_image_y : in    integer range 0 to 1023; --! size of input image
-    
+
             i_channels : in    integer range 0 to 4095; -- Number of input channels the image and kernels have
             i_kernels  : in    integer range 0 to 4095; -- Number of kernels / output channels
-    
+
             i_kernel_size : in    integer range 0 to 32;
-    
+
             o_command      : out   command_pe_row_col_t(0 to size_y - 1, 0 to size_x - 1);
             o_command_iact : out   command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
             o_command_psum : out   command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
             o_command_wght : out   command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-    
+
             o_update_offset_iact : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
             o_update_offset_psum : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
             o_update_offset_wght : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
-    
+
             o_read_offset_iact : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
             o_read_offset_psum : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
             o_read_offset_wght : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
-    
+
             w_fifo_iact_address_full : in  std_logic;
             w_fifo_wght_address_full : in  std_logic;
-    
+
             o_address_iact : out   array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
             o_address_wght : out   array_t(0 to size_y - 1)(addr_width_wght_mem - 1 downto 0);
             o_address_iact_valid : out   std_logic_vector(size_rows - 1 downto 0);
             o_address_wght_valid : out   std_logic_vector(size_y - 1 downto 0)
         );
     end component control_address_generator_2;
-    
+
     for all : control_address_generator_2 use entity work.control_address_generator (alternative_rs_dataflow) ;
-    
+
     component scratchpad_init is
         generic (
             data_width_iact : positive := 8;
@@ -317,7 +317,7 @@ architecture rtl of accelerator_2 is
             size_x    : positive := 7;
             size_y    : positive := 7;
             size_rows : positive := 13;
-    
+
             addr_width_rows : positive := 4;
             addr_width_y    : positive := 3;
             addr_width_x    : positive := 3;
@@ -414,17 +414,17 @@ architecture rtl of accelerator_2 is
             size_x    : positive := 7;
             size_y    : positive := 7;
             size_rows : positive := 13;
-    
+
             addr_width_x : positive := 3;
-    
+
             line_length_iact    : positive := 512;
             addr_width_iact     : positive := 9;
             addr_width_iact_mem : positive := 15;
-    
+
             line_length_psum    : positive := 512;
             addr_width_psum     : positive := 9;
             addr_width_psum_mem : positive := 15;
-    
+
             line_length_wght    : positive := 512;
             addr_width_wght     : positive := 9;
             addr_width_wght_mem : positive := 15
@@ -432,17 +432,17 @@ architecture rtl of accelerator_2 is
         port (
             clk  : in    std_logic;
             rstn : in    std_logic;
-    
+
             i_start : in    std_logic;
-    
+
             i_w1         : in    integer range 0 to 1023;
             i_m0         : in    integer range 0 to 1023;
             i_new_output : in    std_logic;
-    
+
             i_valid_psum_out    : in    std_logic_vector(size_x - 1 downto 0);
             i_gnt_psum_binary_d : in    std_logic_vector(addr_width_x - 1 downto 0);
             i_empty_psum_fifo   : in    std_logic_vector(size_x - 1 downto 0);
-    
+
             o_address_psum : out   std_logic_vector(addr_width_psum_mem - 1 downto 0)
         );
     end component address_generator_psum;

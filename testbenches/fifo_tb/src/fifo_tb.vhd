@@ -31,26 +31,26 @@ architecture tb of tb_dc_fifo is
         );
     end component;
 
-    signal wr_clk       : std_logic := '0';
-    signal rst          : std_logic := '1';
-    signal wr_en        : std_logic := '0';
+    signal wr_clk       : std_logic 			:= '0';
+    signal rst          : std_logic 			:= '1';
+    signal wr_en        : std_logic 			:= '0';
     signal din          : std_logic_vector(15 downto 0) := (others => '0');
-    signal full         : std_logic := '0';
-    signal almost_full  : std_logic := '0';
-    signal full2        : std_logic := '0';
-    signal almost_full2 : std_logic := '0';
-    signal keep         : std_logic := '0';
-    signal drop         : std_logic := '0';
+    signal full         : std_logic 			:= '0';
+    signal almost_full  : std_logic 			:= '0';
+    signal full2        : std_logic 			:= '0';
+    signal almost_full2 : std_logic 			:= '0';
+    signal keep         : std_logic 			:= '0';
+    signal drop         : std_logic 			:= '0';
 
-    signal rd_clk : std_logic := '0';
+    signal rd_clk : std_logic 				:= '0';
     -- signal rrst      : std_logic := '1';
-    signal rd_en  : std_logic := '0';
-    signal dout   : std_logic_vector(15 downto 0) := (others => '0');
-    signal dout2  : std_logic_vector(15 downto 0) := (others => '0');
+    signal rd_en  : std_logic 				:= '0';
+    signal dout   : std_logic_vector(15 downto 0) 	:= (others => '0');
+    signal dout2  : std_logic_vector(15 downto 0) 	:= (others => '0');
     signal valid  : std_logic;
     signal valid2 : std_logic;
-    signal empty  : std_logic := '0';
-    signal empty2 : std_logic := '0';
+    signal empty  : std_logic 				:= '0';
+    signal empty2 : std_logic 				:= '0';
 
 begin
 

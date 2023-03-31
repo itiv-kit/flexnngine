@@ -24,4 +24,4 @@ rule:
   constant_013:
     severity: "Warning"
   length_001:
-    length: 200
+    length: 300

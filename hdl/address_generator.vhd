@@ -574,8 +574,8 @@ begin
                     -- o_address_wght(i)       <= std_logic_vector(to_unsigned(w_offset_mem_wght + i * i_kernel_size, addr_width_wght_mem));
                     if i < i_m0 * i_kernel_size then
                         o_address_wght(i) <= std_logic_vector(to_unsigned(w_offset_mem_wght + r_ckki(i) + r_count_h1_wght * i_kernel_size, addr_width_wght_mem)); -- channel offset + kernel offset + row offset
-                        --r_test_wght(i)    <= (i - i_kernel_size + i_kernel_size);
-                        --r_test_wght2(i)   <= (i * i_kernel_size * i_kernel_size * i_channels);
+                        -- r_test_wght(i)    <= (i - i_kernel_size + i_kernel_size);
+                        -- r_test_wght2(i)   <= (i * i_kernel_size * i_kernel_size * i_channels);
                     end if;
                 else
                     o_address_wght_valid(i) <= '0';

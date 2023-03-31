@@ -117,7 +117,7 @@ begin
 
     end process p_create_output_map;*/
 
-    p_address_psum_helper : process(clk, rstn) is
+    p_address_psum_helper : process (clk, rstn) is
     begin
         if not rstn then
             r_w1m0 <= 0;

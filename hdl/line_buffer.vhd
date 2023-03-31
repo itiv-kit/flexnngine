@@ -64,9 +64,9 @@ architecture rtl of line_buffer is
     signal doutb   : std_logic_vector(data_width - 1 downto 0);
 
     -- process internal signals
-    signal r_pointer_head   : integer;
+    signal r_pointer_head : integer;
     signal r_pointer_tail : integer;
-    signal r_fill_count     : integer range 0 to line_length;
+    signal r_fill_count   : integer range 0 to line_length;
     -- signal fifo_filled_s    : std_logic;
     signal r_fifo_empty_s : std_logic;
     -- signal fifo_shrink_s    : std_logic;
@@ -178,7 +178,7 @@ begin
             r_wena           <= '0';
             r_addra          <= (others => '0');
             r_dina           <= (others => '0');
-            r_pointer_tail <= 0;
+            r_pointer_tail   <= 0;
             r_fifo_empty_s   <= '1';
         elsif rising_edge(clk) then
             -- Update data

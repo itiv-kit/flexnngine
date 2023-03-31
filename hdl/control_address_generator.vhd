@@ -84,8 +84,6 @@ entity control_address_generator is
     );
 end entity control_address_generator;
 
--- #synthesis translate_off 
-
 architecture rs_dataflow of control_address_generator is
 
     component control is
@@ -161,7 +159,7 @@ architecture rs_dataflow of control_address_generator is
             o_read_offset_wght : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0)
         );
     end component control;
-    
+
     for all : control use entity work.control (rs_dataflow ) ;
 
     component address_generator is
@@ -192,7 +190,7 @@ architecture rs_dataflow of control_address_generator is
 
             i_start : in    std_logic;
             i_pause_iact : in    std_logic;
-            
+
 
             i_c1      : in    integer range 0 to 1023;
             i_w1      : in    integer range 0 to 1023;
@@ -223,7 +221,7 @@ architecture rs_dataflow of control_address_generator is
     for all : address_generator use entity work.address_generator (rs_dataflow ) ;
 
 
-    signal w_c1 : integer range 0 to 1023;        
+    signal w_c1 : integer range 0 to 1023;
     signal w_w1 : integer range 0 to 1023;
     signal w_h2 : integer range 0 to 1023;
     signal w_m0 : integer range 0 to 1023;
@@ -416,7 +414,7 @@ architecture alternative_rs_dataflow of control_address_generator is
             o_read_offset_wght : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0)
         );
     end component control;
-    
+
     for all : control use entity work.control (alternative_rs_dataflow ) ;
 
     component address_generator is
@@ -473,11 +471,11 @@ architecture alternative_rs_dataflow of control_address_generator is
             o_address_wght_valid : out   std_logic_vector(size_y - 1 downto 0)
         );
     end component address_generator;
-    
+
     for all : address_generator use entity work.address_generator (alternative_rs_dataflow ) ;
 
 
-    signal w_c1 : integer range 0 to 1023;        
+    signal w_c1 : integer range 0 to 1023;
     signal w_w1 : integer range 0 to 1023;
     signal w_h2 : integer range 0 to 1023;
     signal w_m0 : integer range 0 to 1023;

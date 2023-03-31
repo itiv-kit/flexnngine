@@ -143,22 +143,22 @@ architecture rtl of accelerator is
             size_x    : positive := 5;
             size_y    : positive := 5;
             size_rows : positive := 9;
-    
+
             addr_width_rows : positive := 4;
             addr_width_y    : positive := 3;
             addr_width_x    : positive := 3;
-    
+
             addr_width_iact_mem : positive := 15;
             addr_width_wght_mem : positive := 15;
             addr_width_psum_mem : positive := 15;
-    
+
             line_length_iact : positive := 512;
             addr_width_iact  : positive := 9;
             line_length_psum : positive := 512;
             addr_width_psum  : positive := 9;
             line_length_wght : positive := 512;
             addr_width_wght  : positive := 9;
-    
+
             g_control_init : boolean  := false;
             g_c1           : positive := 1;
             g_w1           : positive := 1;
@@ -174,20 +174,20 @@ architecture rtl of accelerator is
         port (
             clk  : in    std_logic;
             rstn : in    std_logic;
-    
+
             i_start      : in    std_logic;
             i_start_init : in    std_logic;
             i_start_adr  : in    std_logic;
             i_enable_if  : in    std_logic;
-    
+
             o_status     : out   std_logic;
             o_enable     : out   std_logic;
             o_new_output : out   std_logic;
             o_pause_iact : out   std_logic;
-    
+
             o_w1         : out   integer range 0 to 1023;
             o_m0         : out   integer range 0 to 1023;
-    
+
             i_image_x : in    integer range 0 to 1023; --! size of input image
             i_image_y : in    integer range 0 to 1023; --! size of input image
     
