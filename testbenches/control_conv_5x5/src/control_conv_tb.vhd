@@ -32,7 +32,7 @@ entity control_conv_tb is
         g_image_x     : positive := 14;
         g_kernel_size : positive := 5;
 
-        g_h2 : positive := positive(integer(ceil(real(g_image_x - g_kernel_size + 1) / real(g_kernel_size)))) -- Y tiles, determined in control module, but for input data loading required here
+        g_h2 : positive := positive(integer(ceil(real(g_image_x - g_kernel_size + 1) / real(g_kernel_size)))) /* Y tiles, determined in control module, but for input data loading required here*/
     );
 end entity control_conv_tb;
 

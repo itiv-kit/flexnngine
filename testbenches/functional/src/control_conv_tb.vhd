@@ -66,7 +66,6 @@ entity control_conv_tb is
         g_c0_last_c1   : positive := 1;
         g_c0w0         : positive := 1;
         g_c0w0_last_c1 : positive := 1;
-        
         g_dataflow : integer := 1
     );
 end entity control_conv_tb;
