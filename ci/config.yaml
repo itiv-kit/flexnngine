@@ -11,3 +11,5 @@ rule:
     severity: "Warning"
   signal_007:
     disable: true
+  length_001:
+    length: 200
