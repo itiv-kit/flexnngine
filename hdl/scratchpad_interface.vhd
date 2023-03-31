@@ -257,7 +257,7 @@ architecture rtl of scratchpad_interface is
     signal r_done_iact : std_logic;
 
     signal r_pause_iact : std_logic_vector(size_rows - 1 downto 0);
-    signal r_startup : std_logic_vector(10 downto 0); /* TODO Depending on clk_sp / clk factor */
+    signal r_startup    : std_logic_vector(10 downto 0); /* TODO Depending on clk_sp / clk factor */
 
 begin
 
@@ -310,13 +310,13 @@ begin
     begin
 
         if not rstn then
-            o_status <= '0';
+            o_status  <= '0';
             r_startup <= (others => '0');
         elsif rising_edge(clk) then
             r_startup <= r_startup(9 downto 0) & '0';
             if or w_empty_iact_f(size_rows - 1 downto size_y - 1) = '0' then
                 r_startup <= r_startup(9 downto 0) & '1';
-                -- o_status <= '1';
+                /* o_status <= '1';*/
             end if;
             if and r_startup = '1' then
                 o_status <= '1';

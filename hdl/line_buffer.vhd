@@ -175,11 +175,11 @@ begin
     begin
 
         if not rstn then
-            r_wena           <= '0';
-            r_addra          <= (others => '0');
-            r_dina           <= (others => '0');
-            r_pointer_tail   <= 0;
-            r_fifo_empty_s   <= '1';
+            r_wena         <= '0';
+            r_addra        <= (others => '0');
+            r_dina         <= (others => '0');
+            r_pointer_tail <= 0;
+            r_fifo_empty_s <= '1';
         elsif rising_edge(clk) then
             -- Update data
             if r_command_delay(2) = c_lb_read_update then

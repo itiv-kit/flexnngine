@@ -184,8 +184,8 @@ architecture rtl of accelerator_2 is
             o_new_output : out   std_logic;
             o_pause_iact : out   std_logic;
 
-            o_w1         : out   integer range 0 to 1023;
-            o_m0         : out   integer range 0 to 1023;
+            o_w1 : out   integer range 0 to 1023;
+            o_m0 : out   integer range 0 to 1023;
 
             i_image_x : in    integer range 0 to 1023; --! size of input image
             i_image_y : in    integer range 0 to 1023; --! size of input image
@@ -208,17 +208,17 @@ architecture rtl of accelerator_2 is
             o_read_offset_psum : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
             o_read_offset_wght : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
 
-            w_fifo_iact_address_full : in  std_logic;
-            w_fifo_wght_address_full : in  std_logic;
+            w_fifo_iact_address_full : in    std_logic;
+            w_fifo_wght_address_full : in    std_logic;
 
-            o_address_iact : out   array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
-            o_address_wght : out   array_t(0 to size_y - 1)(addr_width_wght_mem - 1 downto 0);
+            o_address_iact       : out   array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
+            o_address_wght       : out   array_t(0 to size_y - 1)(addr_width_wght_mem - 1 downto 0);
             o_address_iact_valid : out   std_logic_vector(size_rows - 1 downto 0);
             o_address_wght_valid : out   std_logic_vector(size_y - 1 downto 0)
         );
     end component control_address_generator_2;
 
-    for all : control_address_generator_2 use entity work.control_address_generator (alternative_rs_dataflow) ;
+    for all : control_address_generator_2 use entity work.control_address_generator (alternative_rs_dataflow);
 
     component scratchpad_init is
         generic (
@@ -513,24 +513,24 @@ architecture rtl of accelerator_2 is
     -- signal dout_psum : std_logic_vector(data_width_psum - 1 downto 0);
     signal w_dout_wght : std_logic_vector(data_width_wght - 1 downto 0);
 
-    signal w_status_control     : std_logic;
-    signal r_start_control      : std_logic;
-    signal r_start_init : std_logic;
+    signal w_status_control : std_logic;
+    signal r_start_control  : std_logic;
+    signal r_start_init     : std_logic;
 
     signal w_status_if : std_logic;
     signal w_enable    : std_logic;
     signal w_enable_if : std_logic;
 
-    signal r_start_adr      : std_logic;
+    signal r_start_adr : std_logic;
 
-    signal w_w1         : integer range 0 to 1023; /* TODO change range to sth. useful */
-    signal w_m0         : integer range 0 to 1023;
+    signal w_w1 : integer range 0 to 1023; /* TODO change range to sth. useful */
+    signal w_m0 : integer range 0 to 1023;
 
     signal r_image_x     : integer range 0 to 1023; /* TODO change range to sth. useful */
     signal r_image_y     : integer range 0 to 1023; /* TODO change range to sth. useful */
     signal r_channels    : integer range 0 to 4095; /* TODO change range to sth. useful */
     signal r_kernels     : integer range 0 to 4095; /* TODO change range to sth. useful */
-    signal r_kernel_size : integer range 0 to 32; /* TODO change range to sth. useful */
+    signal r_kernel_size : integer range 0 to 32;   /* TODO change range to sth. useful */
 
     signal w_dout_iact_valid : std_logic;
     -- signal dout_psum_valid : std_logic;
@@ -562,9 +562,9 @@ begin
     begin
 
         if not rstn then
-            r_start_control      <= '0';
-            r_start_init <= '0';
-            r_start_adr          <= '0';
+            r_start_control <= '0';
+            r_start_init    <= '0';
+            r_start_adr     <= '0';
 
             r_image_x     <= 0;
             r_image_y     <= 0;
@@ -582,11 +582,11 @@ begin
                 r_kernel_size <= g_kernel_size;
 
                 if r_state = s_idle then
-                    r_state              <= s_init_started;
+                    r_state      <= s_init_started;
                     r_start_init <= '1';
                 elsif w_status_control then
-                    r_state              <= s_load_fifo_started;
-                    r_start_adr          <= '1';
+                    r_state     <= s_load_fifo_started;
+                    r_start_adr <= '1';
                     if w_status_if = '1' then
                         r_start_control <= '1';
                         r_state         <= s_processing;
@@ -644,70 +644,70 @@ begin
             o_psums_valid           => w_psums_valid
         );
 
-    control_address_generator_inst: component control_address_generator_2
-      generic map (
-        size_x              => size_x,
-        size_y              => size_y,
-        size_rows           => size_rows,
-        addr_width_rows     => addr_width_rows,
-        addr_width_y        => addr_width_y,
-        addr_width_x        => addr_width_x,
-        addr_width_iact_mem => addr_width_iact_mem,
-        addr_width_wght_mem => addr_width_wght_mem,
-        addr_width_psum_mem => addr_width_psum_mem,
-        line_length_iact    => line_length_iact,
-        addr_width_iact     => addr_width_iact,
-        line_length_psum    => line_length_psum,
-        addr_width_psum     => addr_width_psum,
-        line_length_wght    => line_length_wght,
-        addr_width_wght     => addr_width_wght,
-        g_control_init      => g_control_init,
-        g_c1                => g_c1,
-        g_w1                => g_w1,
-        g_h2                => g_h2,
-        g_m0                => g_m0,
-        g_m0_last_m1        => g_m0_last_m1,
-        g_rows_last_h2      => g_rows_last_h2,
-        g_c0                => g_c0,
-        g_c0_last_c1        => g_c0_last_c1,
-        g_c0w0              => g_c0w0,
-        g_c0w0_last_c1      => g_c0w0_last_c1
-      )
-      port map (
-        clk                      => clk,
-        rstn                     => rstn,
-        i_start                  => i_start,
-        i_start_init             => r_start_init,
-        i_start_adr              => r_start_adr,
-        i_enable_if              => w_enable_if,
-        o_status                 => w_status_control,
-        o_enable                 => w_enable,
-        o_new_output             => w_new_output,
-        o_pause_iact             => w_pause_iact,
-        o_w1                     => w_w1,
-        o_m0                     => w_m0,
-        i_image_x                => r_image_x,
-        i_image_y                => r_image_y,
-        i_channels               => r_channels,
-        i_kernels                => r_kernels,
-        i_kernel_size            => r_kernel_size,
-        o_command                => w_command,
-        o_command_iact           => w_command_iact,
-        o_command_psum           => w_command_psum,
-        o_command_wght           => w_command_wght,
-        o_update_offset_iact     => w_update_offset_iact,
-        o_update_offset_psum     => w_update_offset_psum,
-        o_update_offset_wght     => w_update_offset_wght,
-        o_read_offset_iact       => w_read_offset_iact,
-        o_read_offset_psum       => w_read_offset_psum,
-        o_read_offset_wght       => w_read_offset_wght,
-        w_fifo_iact_address_full => w_fifo_iact_address_full,
-        w_fifo_wght_address_full => w_fifo_wght_address_full,
-        o_address_iact           => w_address_iact,
-        o_address_wght           => w_address_wght,
-        o_address_iact_valid     => w_address_iact_valid,
-        o_address_wght_valid     => w_address_wght_valid
-      );
+    control_address_generator_inst : component control_address_generator_2
+        generic map (
+            size_x              => size_x,
+            size_y              => size_y,
+            size_rows           => size_rows,
+            addr_width_rows     => addr_width_rows,
+            addr_width_y        => addr_width_y,
+            addr_width_x        => addr_width_x,
+            addr_width_iact_mem => addr_width_iact_mem,
+            addr_width_wght_mem => addr_width_wght_mem,
+            addr_width_psum_mem => addr_width_psum_mem,
+            line_length_iact    => line_length_iact,
+            addr_width_iact     => addr_width_iact,
+            line_length_psum    => line_length_psum,
+            addr_width_psum     => addr_width_psum,
+            line_length_wght    => line_length_wght,
+            addr_width_wght     => addr_width_wght,
+            g_control_init      => g_control_init,
+            g_c1                => g_c1,
+            g_w1                => g_w1,
+            g_h2                => g_h2,
+            g_m0                => g_m0,
+            g_m0_last_m1        => g_m0_last_m1,
+            g_rows_last_h2      => g_rows_last_h2,
+            g_c0                => g_c0,
+            g_c0_last_c1        => g_c0_last_c1,
+            g_c0w0              => g_c0w0,
+            g_c0w0_last_c1      => g_c0w0_last_c1
+        )
+        port map (
+            clk                      => clk,
+            rstn                     => rstn,
+            i_start                  => i_start,
+            i_start_init             => r_start_init,
+            i_start_adr              => r_start_adr,
+            i_enable_if              => w_enable_if,
+            o_status                 => w_status_control,
+            o_enable                 => w_enable,
+            o_new_output             => w_new_output,
+            o_pause_iact             => w_pause_iact,
+            o_w1                     => w_w1,
+            o_m0                     => w_m0,
+            i_image_x                => r_image_x,
+            i_image_y                => r_image_y,
+            i_channels               => r_channels,
+            i_kernels                => r_kernels,
+            i_kernel_size            => r_kernel_size,
+            o_command                => w_command,
+            o_command_iact           => w_command_iact,
+            o_command_psum           => w_command_psum,
+            o_command_wght           => w_command_wght,
+            o_update_offset_iact     => w_update_offset_iact,
+            o_update_offset_psum     => w_update_offset_psum,
+            o_update_offset_wght     => w_update_offset_wght,
+            o_read_offset_iact       => w_read_offset_iact,
+            o_read_offset_psum       => w_read_offset_psum,
+            o_read_offset_wght       => w_read_offset_wght,
+            w_fifo_iact_address_full => w_fifo_iact_address_full,
+            w_fifo_wght_address_full => w_fifo_wght_address_full,
+            o_address_iact           => w_address_iact,
+            o_address_wght           => w_address_wght,
+            o_address_iact_valid     => w_address_iact_valid,
+            o_address_wght_valid     => w_address_wght_valid
+        );
 
     scratchpad_init_inst : if g_init_sp = true generate
 

@@ -44,11 +44,11 @@ entity control is
         o_status     : out   std_logic;
         o_pause_iact : out   std_logic;
 
-        o_c1      : out   integer range 0 to 1023;
-        o_w1      : out   integer range 0 to 1023;
-        o_h2      : out   integer range 0 to 1023;
-        o_m0      : out   integer range 0 to 1023;
-        o_m0_dist : out   array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
+        o_c1         : out   integer range 0 to 1023;
+        o_w1         : out   integer range 0 to 1023;
+        o_h2         : out   integer range 0 to 1023;
+        o_m0         : out   integer range 0 to 1023;
+        o_m0_dist    : out   array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
         o_m0_last_m1 : out   integer range 0 to 1023;
 
         o_c0         : out   integer range 0 to 1023;
@@ -123,7 +123,7 @@ architecture rs_dataflow of control is
         );
     end component control_init;
 
-    for all : control_init use entity work.control_init (rs_dataflow ) ;
+    for all : control_init use entity work.control_init (rs_dataflow);
 
     signal w_init_done : std_logic;
 
@@ -146,8 +146,8 @@ architecture rs_dataflow of control is
 
     signal r_incr_w1 : std_logic;
 
-    signal w_m0      : integer range 0 to 1023;
-    signal w_m0_dist : array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
+    signal w_m0         : integer range 0 to 1023;
+    signal w_m0_dist    : array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
     signal w_m0_last_m1 : integer range 0 to 1023;
 
     type   t_state is (s_calculate, s_output, s_incr_c1, s_incr_h1);
@@ -668,7 +668,7 @@ begin
                             end if;
                         end if;
                     else
-                        r_init_done    <= '1';
+                        r_init_done <= '1';
                     end if;
                 end if;
             end if;
@@ -724,7 +724,7 @@ architecture alternative_rs_dataflow of control is
         );
     end component control_init;
 
-    for all : control_init use entity work.control_init (alternative_rs_dataflow ) ;
+    for all : control_init use entity work.control_init (alternative_rs_dataflow);
 
     signal w_init_done : std_logic;
 
@@ -801,7 +801,7 @@ begin
     o_h2 <= w_h2;
     o_m0 <= w_m0;
 
-    p_start : process(clk, rstn) is
+    p_start : process (clk, rstn) is
     begin
 
         if not rstn then

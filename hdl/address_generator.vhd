@@ -29,14 +29,14 @@ entity address_generator is
         clk  : in    std_logic;
         rstn : in    std_logic;
 
-        i_start : in    std_logic;
+        i_start      : in    std_logic;
         i_pause_iact : in    std_logic;
 
-        i_c1      : in    integer range 0 to 1023;
-        i_w1      : in    integer range 0 to 1023;
-        i_h2      : in    integer range 0 to 1023;
-        i_m0      : in    integer range 0 to 1023;
-        i_m0_dist : in    array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
+        i_c1         : in    integer range 0 to 1023;
+        i_w1         : in    integer range 0 to 1023;
+        i_h2         : in    integer range 0 to 1023;
+        i_m0         : in    integer range 0 to 1023;
+        i_m0_dist    : in    array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
         i_m0_last_m1 : in    integer range 0 to 1023;
 
         i_c0         : in    integer range 0 to 1023;
@@ -491,7 +491,7 @@ architecture alternative_rs_dataflow of address_generator is
     signal r_test_wght  : int_line_t(0 to size_y - 1);
     signal r_test_wght2 : int_line_t(0 to size_y - 1);
 
-    signal r_ckk : integer;
+    signal r_ckk  : integer;
     signal r_ckki : int_line_t(0 to size_y - 1);
 
 begin
@@ -546,11 +546,13 @@ begin
 
     p_wght_address_helper : process (clk, rstn) is
     begin
+
         if not rstn then
             r_ckk <= 0;
         elsif rising_edge(clk) then
             r_ckk <= i_kernel_size * i_kernel_size * i_channels;
         end if;
+
     end process p_wght_address_helper;
 
     wght_address_out : for i in 0 to size_y - 1 generate
@@ -574,8 +576,8 @@ begin
                     -- o_address_wght(i)       <= std_logic_vector(to_unsigned(w_offset_mem_wght + i * i_kernel_size, addr_width_wght_mem));
                     if i < i_m0 * i_kernel_size then
                         o_address_wght(i) <= std_logic_vector(to_unsigned(w_offset_mem_wght + r_ckki(i) + r_count_h1_wght * i_kernel_size, addr_width_wght_mem)); -- channel offset + kernel offset + row offset
-                        -- r_test_wght(i)    <= (i - i_kernel_size + i_kernel_size);
-                        -- r_test_wght2(i)   <= (i * i_kernel_size * i_kernel_size * i_channels);
+                        /* r_test_wght(i)    <= (i - i_kernel_size + i_kernel_size);
+                         r_test_wght2(i)   <= (i * i_kernel_size * i_kernel_size * i_channels);*/
                     end if;
                 else
                     o_address_wght_valid(i) <= '0';

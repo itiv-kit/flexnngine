@@ -329,10 +329,10 @@ end entity gray_sync;
 
 architecture rtl of gray_sync is
 
-    signal src_gray  : std_logic_vector(src_bin'range)  := (others => '0');
+    signal src_gray  : std_logic_vector(src_bin'range) := (others => '0');
     type   dst_gray_t is array(stages - 1 downto 0) of std_logic_vector(dst_bin'range);
-    signal dst_gray  : dst_gray_t 			:= (others => (others => '0'));
-    signal dst_bin_s : std_logic_vector(dst_bin'range)  := (others => '0');
+    signal dst_gray  : dst_gray_t                      := (others => (others => '0'));
+    signal dst_bin_s : std_logic_vector(dst_bin'range) := (others => '0');
 
     attribute async_reg : string;
     attribute async_reg of dst_gray : signal is "TRUE";
