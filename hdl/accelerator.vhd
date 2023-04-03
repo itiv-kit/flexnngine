@@ -646,7 +646,6 @@ begin
 
     g_control_address_generator : if g_dataflow = 1 generate
         for all : control_address_generator use entity work.control_address_generator (alternative_rs_dataflow);
-
     begin
 
         control_address_generator_inst : component control_address_generator

@@ -973,7 +973,7 @@ if __name__ == "__main__":
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20, 
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512], 
-                                  clk_period = [10000], clk_sp_period = [1000], dataflow=[1]), start_gui=True))
+                                  clk_period = [10000], clk_sp_period = [1000], dataflow=[0]), start_gui=True))
     
     # # 8. Test different SPad clock speeds
     # simulation.append(Setting("", Convolution(image_size = [32], kernel_size = [1], input_channels = [40], output_channels = [3], input_bits = [4]), 
