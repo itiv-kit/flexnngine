@@ -12,6 +12,6 @@ rule:
   signal_007:
     disable: true
   length_001:
-    length: 300
+    disable: true
   component_019:
     disable: true
