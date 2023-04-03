@@ -177,7 +177,6 @@ begin
     din_iact      <= (others => '0');
     din_wght      <= (others => '0');
 
-
     accelerator_inst : entity work.accelerator
         generic map (
             size_x              => size_x,
