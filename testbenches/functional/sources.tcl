@@ -24,7 +24,6 @@ vcom -64 -2008 -work xil_defaultlib  \
 "../../hdl/ram_dp.vhd" \
 "../../hdl/ram_dp_init.vhd" \
 "../../hdl/accelerator.vhd" \
-"../../hdl/accelerator_2.vhd" \
 "../../hdl/scratchpad.vhd" \
 "../../hdl/scratchpad_init.vhd" \
 "../../hdl/scratchpad_interface.vhd" \

@@ -132,30 +132,30 @@ architecture imp of control_conv_tb is
 
 begin
 
-    o_psums           <= << signal g_accelerator.accelerator_inst.w_psums : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0)>>;
-    o_psums_valid     <= << signal g_accelerator.accelerator_inst.w_psums_valid : std_logic_vector(size_x - 1 downto 0)>>;
-    i_data_iact       <= << signal g_accelerator.accelerator_inst.w_data_iact : array_t (0 to size_rows - 1)(data_width_iact - 1 downto 0)>>;
-    i_data_iact_valid <= << signal g_accelerator.accelerator_inst.w_data_iact_valid : std_logic_vector(size_rows - 1 downto 0)>>;
-    i_data_wght       <= << signal g_accelerator.accelerator_inst.w_data_wght : array_t (0 to size_y - 1)(data_width_wght - 1 downto 0)>>;
-    i_data_wght_valid <= << signal g_accelerator.accelerator_inst.w_data_wght_valid : std_logic_vector(size_y - 1 downto 0)>>;
+    o_psums           <= << signal accelerator_inst.w_psums : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0)>>;
+    o_psums_valid     <= << signal accelerator_inst.w_psums_valid : std_logic_vector(size_x - 1 downto 0)>>;
+    i_data_iact       <= << signal accelerator_inst.w_data_iact : array_t (0 to size_rows - 1)(data_width_iact - 1 downto 0)>>;
+    i_data_iact_valid <= << signal accelerator_inst.w_data_iact_valid : std_logic_vector(size_rows - 1 downto 0)>>;
+    i_data_wght       <= << signal accelerator_inst.w_data_wght : array_t (0 to size_y - 1)(data_width_wght - 1 downto 0)>>;
+    i_data_wght_valid <= << signal accelerator_inst.w_data_wght_valid : std_logic_vector(size_y - 1 downto 0)>>;
     -- psum_ram_instance := << shared variable accelerator_inst.scratchpad_inst.ram_dp_psum.ram_instance : ram_type>>;
 
-    psum_ram_instance <= << signal g_accelerator.accelerator_inst.scratchpad_init_inst.scratchpad_inst.ram_dp_psum.r_ram_instance : ram_type >>;
+    psum_ram_instance <= << signal accelerator_inst.scratchpad_init_inst.scratchpad_inst.ram_dp_psum.r_ram_instance : ram_type >>;
 
-    r_iact_command     <= << signal g_accelerator.accelerator_inst.pe_array_inst.pe_inst_y(0).pe_inst_x(0).pe_north.pe_inst.line_buffer_iact.i_command : command_lb_t >>;
-    r_iact_read_offset <= << signal g_accelerator.accelerator_inst.pe_array_inst.pe_inst_y(0).pe_inst_x(0).pe_north.pe_inst.line_buffer_iact.i_read_offset : std_logic_vector(addr_width_iact - 1 downto 0) >>;
+    r_iact_command     <= << signal accelerator_inst.pe_array_inst.pe_inst_y(0).pe_inst_x(0).pe_north.pe_inst.line_buffer_iact.i_command : command_lb_t >>;
+    r_iact_read_offset <= << signal accelerator_inst.pe_array_inst.pe_inst_y(0).pe_inst_x(0).pe_north.pe_inst.line_buffer_iact.i_read_offset : std_logic_vector(addr_width_iact - 1 downto 0) >>;
 
-    w_m0      <= << signal g_accelerator.accelerator_inst.w_m0 : integer range 0 to 1023>>;
-    start_adr <= << signal g_accelerator.accelerator_inst.control_address_generator_inst.address_generator_inst.i_start : std_logic>>;
-    r_state   <= << signal g_accelerator.accelerator_inst.control_address_generator_inst.control_inst.r_state : t_state_pe>>;
+    w_m0      <= << signal accelerator_inst.w_m0 : integer range 0 to 1023>>;
+    start_adr <= << signal accelerator_inst.g_control_address_generator.control_address_generator_inst.address_generator_inst.i_start : std_logic>>;
+    r_state   <= << signal accelerator_inst.g_control_address_generator.control_address_generator_inst.control_inst.r_state : t_state_pe>>;
 
     -- Signals for evaluation
-    r_status_sp_interface   <= << signal g_accelerator.accelerator_inst.scratchpad_interface_inst.o_status : std_logic>>;
-    r_enable_pe_array       <= << signal g_accelerator.accelerator_inst.pe_array_inst.i_enable : std_logic>>;
+    r_status_sp_interface   <= << signal accelerator_inst.scratchpad_interface_inst.o_status : std_logic>>;
+    r_enable_pe_array       <= << signal accelerator_inst.pe_array_inst.i_enable : std_logic>>;
     r_preload_fifos_done    <= '1' when rising_edge(r_enable_pe_array);
     r_preload_fifos_started <= '1' when r_state_accelerator = s_load_fifo_started;
-    r_psum_commands_tmp     <= << signal g_accelerator.accelerator_inst.control_address_generator_inst.control_inst.o_command_psum : command_lb_row_col_t >>;
-    r_data_out_valid        <= << signal g_accelerator.accelerator_inst.pe_array_inst.o_psums_valid : std_logic_vector(size_x - 1 downto 0)>>;
+    r_psum_commands_tmp     <= << signal accelerator_inst.g_control_address_generator.control_address_generator_inst.control_inst.o_command_psum : command_lb_row_col_t >>;
+    r_data_out_valid        <= << signal accelerator_inst.pe_array_inst.o_psums_valid : std_logic_vector(size_x - 1 downto 0)>>;
 
     g_psum_commands : for y in 0 to size_y - 1 generate
         r_psum_commands(y)             <= r_psum_commands_tmp(y,0);
@@ -165,125 +165,76 @@ begin
                                           '0';
     end generate g_psum_commands;
 
-    r_done_processing   <= << signal g_accelerator.accelerator_inst.control_address_generator_inst.control_inst.r_done : std_logic>>;
-    r_empty_psum_fifo   <= << signal g_accelerator.accelerator_inst.address_generator_psum_inst.i_empty_psum_fifo : std_logic_vector(size_x - 1 downto 0)>>;
-    r_state_accelerator <= << signal g_accelerator.accelerator_inst.r_state : t_state_accelerator>>;
-    r_data_iact_valid   <= << signal g_accelerator.accelerator_inst.scratchpad_interface_inst.o_data_iact_valid : std_logic_vector(size_rows - 1 downto 0)>>;
-    r_data_wght_valid   <= << signal g_accelerator.accelerator_inst.scratchpad_interface_inst.o_data_wght_valid : std_logic_vector(size_y - 1 downto 0)>>;
-    r_write_en_psum     <= << signal g_accelerator.accelerator_inst.scratchpad_interface_inst.o_write_en_psum : std_logic>>;
+    r_done_processing   <= << signal accelerator_inst.g_control_address_generator.control_address_generator_inst.control_inst.r_done : std_logic>>;
+    r_empty_psum_fifo   <= << signal accelerator_inst.address_generator_psum_inst.i_empty_psum_fifo : std_logic_vector(size_x - 1 downto 0)>>;
+    r_state_accelerator <= << signal accelerator_inst.r_state : t_state_accelerator>>;
+    r_data_iact_valid   <= << signal accelerator_inst.scratchpad_interface_inst.o_data_iact_valid : std_logic_vector(size_rows - 1 downto 0)>>;
+    r_data_wght_valid   <= << signal accelerator_inst.scratchpad_interface_inst.o_data_wght_valid : std_logic_vector(size_y - 1 downto 0)>>;
+    r_write_en_psum     <= << signal accelerator_inst.scratchpad_interface_inst.o_write_en_psum : std_logic>>;
 
     write_en_iact <= '0';
     write_en_wght <= '0';
     din_iact      <= (others => '0');
     din_wght      <= (others => '0');
 
-    g_accelerator : if g_dataflow = 1 generate
-
-        accelerator_inst : entity work.accelerator_2
-            generic map (
-                size_x              => size_x,
-                size_y              => size_y,
-                size_rows           => size_rows,
-                addr_width_rows     => addr_width_rows,
-                addr_width_y        => addr_width_y,
-                addr_width_x        => addr_width_x,
-                data_width_iact     => data_width_iact,
-                line_length_iact    => line_length_iact,
-                addr_width_iact     => addr_width_iact,
-                addr_width_iact_mem => addr_width_iact_mem,
-                data_width_psum     => data_width_psum,
-                line_length_psum    => line_length_psum,
-                addr_width_psum     => addr_width_psum,
-                addr_width_psum_mem => addr_width_psum_mem,
-                data_width_wght     => data_width_wght,
-                line_length_wght    => line_length_wght,
-                addr_width_wght     => addr_width_wght,
-                addr_width_wght_mem => addr_width_wght_mem,
-                fifo_width          => fifo_width,
-                g_iact_fifo_size    => g_iact_fifo_size,
-                g_wght_fifo_size    => g_wght_fifo_size,
-                g_psum_fifo_size    => g_psum_fifo_size,
-                g_channels          => g_channels,
-                g_kernels           => g_kernels,
-                g_image_y           => g_image_y,
-                g_image_x           => g_image_x,
-                g_kernel_size       => g_kernel_size,
-                g_files_dir         => g_files_dir,
-                g_init_sp           => g_init_sp,
-                g_control_init      => g_control_init,
-                g_c1                => g_c1,
-                g_w1                => g_w1,
-                g_h2                => g_h2,
-                g_m0                => g_m0,
-                g_m0_last_m1        => g_m0_last_m1,
-                g_rows_last_h2      => g_rows_last_h2,
-                g_c0                => g_c0,
-                g_c0_last_c1        => g_c0_last_c1,
-                g_c0w0              => g_c0w0,
-                g_c0w0_last_c1      => g_c0w0_last_c1
-            )
-            port map (
-                clk               => clk,
-                rstn              => rstn,
-                clk_sp            => clk_sp,
-                i_start_init      => start_init,
-                i_start           => start,
-                o_dout_psum       => dout_psum,
-                o_dout_psum_valid => dout_psum_valid,
-                i_write_en_iact   => write_en_iact,
-                i_write_en_wght   => write_en_wght,
-                i_din_iact        => din_iact,
-                i_din_wght        => din_wght
-            );
-
-    else generate
-
-        accelerator_inst : entity work.accelerator
-            generic map (
-                size_x              => size_x,
-                size_y              => size_y,
-                size_rows           => size_rows,
-                addr_width_rows     => addr_width_rows,
-                addr_width_y        => addr_width_y,
-                addr_width_x        => addr_width_x,
-                data_width_iact     => data_width_iact,
-                line_length_iact    => line_length_iact,
-                addr_width_iact     => addr_width_iact,
-                addr_width_iact_mem => addr_width_iact_mem,
-                data_width_psum     => data_width_psum,
-                line_length_psum    => line_length_psum,
-                addr_width_psum     => addr_width_psum,
-                addr_width_psum_mem => addr_width_psum_mem,
-                data_width_wght     => data_width_wght,
-                line_length_wght    => line_length_wght,
-                addr_width_wght     => addr_width_wght,
-                addr_width_wght_mem => addr_width_wght_mem,
-                fifo_width          => fifo_width,
-                g_iact_fifo_size    => g_iact_fifo_size,
-                g_wght_fifo_size    => g_wght_fifo_size,
-                g_psum_fifo_size    => g_psum_fifo_size,
-                g_channels          => g_channels,
-                g_image_y           => g_image_y,
-                g_image_x           => g_image_x,
-                g_kernel_size       => g_kernel_size,
-                g_files_dir         => g_files_dir,
-                g_init_sp           => g_init_sp
-            )
-            port map (
-                clk               => clk,
-                rstn              => rstn,
-                clk_sp            => clk_sp,
-                i_start_init      => start_init,
-                i_start           => start,
-                o_dout_psum       => dout_psum,
-                o_dout_psum_valid => dout_psum_valid,
-                i_write_en_iact   => write_en_iact,
-                i_write_en_wght   => write_en_wght,
-                i_din_iact        => din_iact,
-                i_din_wght        => din_wght
-            );
-
-    end generate g_accelerator;
+  
+    accelerator_inst : entity work.accelerator
+        generic map (
+            size_x              => size_x,
+            size_y              => size_y,
+            size_rows           => size_rows,
+            addr_width_rows     => addr_width_rows,
+            addr_width_y        => addr_width_y,
+            addr_width_x        => addr_width_x,
+            data_width_iact     => data_width_iact,
+            line_length_iact    => line_length_iact,
+            addr_width_iact     => addr_width_iact,
+            addr_width_iact_mem => addr_width_iact_mem,
+            data_width_psum     => data_width_psum,
+            line_length_psum    => line_length_psum,
+            addr_width_psum     => addr_width_psum,
+            addr_width_psum_mem => addr_width_psum_mem,
+            data_width_wght     => data_width_wght,
+            line_length_wght    => line_length_wght,
+            addr_width_wght     => addr_width_wght,
+            addr_width_wght_mem => addr_width_wght_mem,
+            fifo_width          => fifo_width,
+            g_iact_fifo_size    => g_iact_fifo_size,
+            g_wght_fifo_size    => g_wght_fifo_size,
+            g_psum_fifo_size    => g_psum_fifo_size,
+            g_channels          => g_channels,
+            g_kernels           => g_kernels,
+            g_image_y           => g_image_y,
+            g_image_x           => g_image_x,
+            g_kernel_size       => g_kernel_size,
+            g_files_dir         => g_files_dir,
+            g_init_sp           => g_init_sp,
+            g_control_init      => g_control_init,
+            g_c1                => g_c1,
+            g_w1                => g_w1,
+            g_h2                => g_h2,
+            g_m0                => g_m0,
+            g_m0_last_m1        => g_m0_last_m1,
+            g_rows_last_h2      => g_rows_last_h2,
+            g_c0                => g_c0,
+            g_c0_last_c1        => g_c0_last_c1,
+            g_c0w0              => g_c0w0,
+            g_c0w0_last_c1      => g_c0w0_last_c1,
+            g_dataflow          => g_dataflow
+        )
+        port map (
+            clk               => clk,
+            rstn              => rstn,
+            clk_sp            => clk_sp,
+            i_start_init      => start_init,
+            i_start           => start,
+            o_dout_psum       => dout_psum,
+            o_dout_psum_valid => dout_psum_valid,
+            i_write_en_iact   => write_en_iact,
+            i_write_en_wght   => write_en_wght,
+            i_din_iact        => din_iact,
+            i_din_wght        => din_wght
+        );
 
     rstn_gen : process is
     begin
