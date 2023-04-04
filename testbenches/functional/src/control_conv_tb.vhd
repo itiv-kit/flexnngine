@@ -146,15 +146,15 @@ begin
     r_iact_read_offset <= << signal accelerator_inst.pe_array_inst.pe_inst_y(0).pe_inst_x(0).pe_north.pe_inst.line_buffer_iact.i_read_offset : std_logic_vector(addr_width_iact - 1 downto 0) >>;
 
     w_m0      <= << signal accelerator_inst.w_m0 : integer range 0 to 1023>>;
-    start_adr <= << signal accelerator_inst.g_control_address_generator.control_address_generator_inst.address_generator_inst.i_start : std_logic>>;
-    r_state   <= << signal accelerator_inst.g_control_address_generator.control_address_generator_inst.control_inst.r_state : t_state_pe>>;
+    start_adr <= << signal accelerator_inst.control_address_generator_inst.g_address_generator.address_generator_inst.i_start : std_logic>>;
+    r_state   <= << signal accelerator_inst.control_address_generator_inst.g_control.control_inst.r_state : t_state_pe>>;
 
     -- Signals for evaluation
     r_status_sp_interface   <= << signal accelerator_inst.scratchpad_interface_inst.o_status : std_logic>>;
     r_enable_pe_array       <= << signal accelerator_inst.pe_array_inst.i_enable : std_logic>>;
     r_preload_fifos_done    <= '1' when rising_edge(r_enable_pe_array);
     r_preload_fifos_started <= '1' when r_state_accelerator = s_load_fifo_started;
-    r_psum_commands_tmp     <= << signal accelerator_inst.g_control_address_generator.control_address_generator_inst.control_inst.o_command_psum : command_lb_row_col_t >>;
+    r_psum_commands_tmp     <= << signal accelerator_inst.control_address_generator_inst.g_control.control_inst.o_command_psum : command_lb_row_col_t >>;
     r_data_out_valid        <= << signal accelerator_inst.pe_array_inst.o_psums_valid : std_logic_vector(size_x - 1 downto 0)>>;
 
     g_psum_commands : for y in 0 to size_y - 1 generate
@@ -165,7 +165,7 @@ begin
                                           '0';
     end generate g_psum_commands;
 
-    r_done_processing   <= << signal accelerator_inst.g_control_address_generator.control_address_generator_inst.control_inst.r_done : std_logic>>;
+    r_done_processing   <= << signal accelerator_inst.control_address_generator_inst.g_control.control_inst.r_done : std_logic>>;
     r_empty_psum_fifo   <= << signal accelerator_inst.address_generator_psum_inst.i_empty_psum_fifo : std_logic_vector(size_x - 1 downto 0)>>;
     r_state_accelerator <= << signal accelerator_inst.r_state : t_state_accelerator>>;
     r_data_iact_valid   <= << signal accelerator_inst.scratchpad_interface_inst.o_data_iact_valid : std_logic_vector(size_rows - 1 downto 0)>>;
