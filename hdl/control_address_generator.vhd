@@ -235,228 +235,228 @@ begin
 
     o_w1 <= w_w1;
     o_m0 <= w_m0;
-    
+
     g_control : if g_dataflow = 1 generate
         for all : control use entity work.control (alternative_rs_dataflow);
     begin
 
-    control_inst : component control
-        generic map (
-            size_x           => size_x,
-            size_y           => size_y,
-            size_rows        => size_rows,
-            addr_width_rows  => addr_width_rows,
-            addr_width_y     => addr_width_y,
-            addr_width_x     => addr_width_x,
-            line_length_iact => line_length_iact,
-            addr_width_iact  => addr_width_iact,
-            line_length_psum => line_length_psum,
-            addr_width_psum  => addr_width_psum,
-            line_length_wght => line_length_wght,
-            addr_width_wght  => addr_width_wght,
-            g_control_init   => g_control_init,
-            g_c1             => g_c1,
-            g_w1             => g_w1,
-            g_h2             => g_h2,
-            g_m0             => g_m0,
-            g_m0_last_m1     => g_m0_last_m1,
-            g_rows_last_h2   => g_rows_last_h2,
-            g_c0             => g_c0,
-            g_c0_last_c1     => g_c0_last_c1,
-            g_c0w0           => g_c0w0,
-            g_c0w0_last_c1   => g_c0w0_last_c1
-        )
-        port map (
-            clk                  => clk,
-            rstn                 => rstn,
-            o_status             => o_status,
-            i_start              => i_enable_if,
-            i_start_init         => i_start_init,
-            o_enable             => o_enable,
-            o_new_output         => o_new_output,
-            o_c1                 => w_c1,
-            o_w1                 => w_w1,
-            o_h2                 => w_h2,
-            o_m0                 => w_m0,
-            o_m0_dist            => w_m0_dist,
-            o_m0_last_m1         => w_m0_last_m1,
-            o_c0                 => w_c0,
-            o_c0_last_c1         => w_c0_last_c1,
-            i_image_x            => i_image_x,
-            i_image_y            => i_image_y,
-            i_channels           => i_channels,
-            i_kernels            => i_kernels,
-            i_kernel_size        => i_kernel_size,
-            o_command            => o_command,
-            o_command_iact       => o_command_iact,
-            o_command_psum       => o_command_psum,
-            o_command_wght       => o_command_wght,
-            o_update_offset_iact => o_update_offset_iact,
-            o_update_offset_psum => o_update_offset_psum,
-            o_update_offset_wght => o_update_offset_wght,
-            o_read_offset_iact   => o_read_offset_iact,
-            o_read_offset_psum   => o_read_offset_psum,
-            o_read_offset_wght   => o_read_offset_wght
-        );
-
-    else generate 
-        for all : control use entity work.control (rs_dataflow);
-    begin
-
         control_inst : component control
-        generic map (
-            size_x           => size_x,
-            size_y           => size_y,
-            size_rows        => size_rows,
-            addr_width_rows  => addr_width_rows,
-            addr_width_y     => addr_width_y,
-            addr_width_x     => addr_width_x,
-            line_length_iact => line_length_iact,
-            addr_width_iact  => addr_width_iact,
-            line_length_psum => line_length_psum,
-            addr_width_psum  => addr_width_psum,
-            line_length_wght => line_length_wght,
-            addr_width_wght  => addr_width_wght,
-            g_control_init   => g_control_init,
-            g_c1             => g_c1,
-            g_w1             => g_w1,
-            g_h2             => g_h2,
-            g_m0             => g_m0,
-            g_m0_last_m1     => g_m0_last_m1,
-            g_rows_last_h2   => g_rows_last_h2,
-            g_c0             => g_c0,
-            g_c0_last_c1     => g_c0_last_c1,
-            g_c0w0           => g_c0w0,
-            g_c0w0_last_c1   => g_c0w0_last_c1
-        )
-        port map (
-            clk                  => clk,
-            rstn                 => rstn,
-            o_status             => o_status,
-            i_start              => i_enable_if,
-            i_start_init         => i_start_init,
-            o_enable             => o_enable,
-            o_new_output         => o_new_output,
-            o_c1                 => w_c1,
-            o_w1                 => w_w1,
-            o_h2                 => w_h2,
-            o_m0                 => w_m0,
-            o_m0_dist            => w_m0_dist,
-            o_m0_last_m1         => w_m0_last_m1,
-            o_c0                 => w_c0,
-            o_c0_last_c1         => w_c0_last_c1,
-            i_image_x            => i_image_x,
-            i_image_y            => i_image_y,
-            i_channels           => i_channels,
-            i_kernels            => i_kernels,
-            i_kernel_size        => i_kernel_size,
-            o_command            => o_command,
-            o_command_iact       => o_command_iact,
-            o_command_psum       => o_command_psum,
-            o_command_wght       => o_command_wght,
-            o_update_offset_iact => o_update_offset_iact,
-            o_update_offset_psum => o_update_offset_psum,
-            o_update_offset_wght => o_update_offset_wght,
-            o_read_offset_iact   => o_read_offset_iact,
-            o_read_offset_psum   => o_read_offset_psum,
-            o_read_offset_wght   => o_read_offset_wght
-        );
-
-    end generate g_control;
-
-    g_address_generator : if g_dataflow = 1 generate
-        for all : control use entity work.control (alternative_rs_dataflow);
-    begin
-
-    address_generator_inst : component address_generator
-        generic map (
-            size_x              => size_x,
-            size_y              => size_y,
-            size_rows           => size_rows,
-            addr_width_rows     => addr_width_rows,
-            addr_width_y        => addr_width_y,
-            addr_width_x        => addr_width_x,
-            line_length_iact    => line_length_iact,
-            addr_width_iact     => addr_width_iact,
-            addr_width_iact_mem => addr_width_iact_mem,
-            line_length_psum    => line_length_psum,
-            addr_width_psum     => addr_width_psum,
-            addr_width_psum_mem => addr_width_psum_mem,
-            line_length_wght    => line_length_wght,
-            addr_width_wght     => addr_width_wght,
-            addr_width_wght_mem => addr_width_wght_mem
-        )
-        port map (
-            clk                  => clk,
-            rstn                 => rstn,
-            i_start              => i_start_adr,
-            i_pause_iact         => '0',
-            i_c1                 => w_c1,
-            i_w1                 => w_w1,
-            i_h2                 => w_h2,
-            i_m0                 => w_m0,
-            i_m0_dist            => w_m0_dist,
-            i_m0_last_m1         => w_m0_last_m1,
-            i_c0                 => w_c0,
-            i_c0_last_c1         => w_c0_last_c1,
-            i_image_x            => i_image_x,
-            i_image_y            => i_image_y,
-            i_channels           => i_channels,
-            i_kernel_size        => i_kernel_size,
-            i_fifo_full_iact     => w_fifo_iact_address_full,
-            i_fifo_full_wght     => w_fifo_wght_address_full,
-            o_address_iact       => o_address_iact,
-            o_address_wght       => o_address_wght,
-            o_address_iact_valid => o_address_iact_valid,
-            o_address_wght_valid => o_address_wght_valid
-        );
+            generic map (
+                size_x           => size_x,
+                size_y           => size_y,
+                size_rows        => size_rows,
+                addr_width_rows  => addr_width_rows,
+                addr_width_y     => addr_width_y,
+                addr_width_x     => addr_width_x,
+                line_length_iact => line_length_iact,
+                addr_width_iact  => addr_width_iact,
+                line_length_psum => line_length_psum,
+                addr_width_psum  => addr_width_psum,
+                line_length_wght => line_length_wght,
+                addr_width_wght  => addr_width_wght,
+                g_control_init   => g_control_init,
+                g_c1             => g_c1,
+                g_w1             => g_w1,
+                g_h2             => g_h2,
+                g_m0             => g_m0,
+                g_m0_last_m1     => g_m0_last_m1,
+                g_rows_last_h2   => g_rows_last_h2,
+                g_c0             => g_c0,
+                g_c0_last_c1     => g_c0_last_c1,
+                g_c0w0           => g_c0w0,
+                g_c0w0_last_c1   => g_c0w0_last_c1
+            )
+            port map (
+                clk                  => clk,
+                rstn                 => rstn,
+                o_status             => o_status,
+                i_start              => i_enable_if,
+                i_start_init         => i_start_init,
+                o_enable             => o_enable,
+                o_new_output         => o_new_output,
+                o_c1                 => w_c1,
+                o_w1                 => w_w1,
+                o_h2                 => w_h2,
+                o_m0                 => w_m0,
+                o_m0_dist            => w_m0_dist,
+                o_m0_last_m1         => w_m0_last_m1,
+                o_c0                 => w_c0,
+                o_c0_last_c1         => w_c0_last_c1,
+                i_image_x            => i_image_x,
+                i_image_y            => i_image_y,
+                i_channels           => i_channels,
+                i_kernels            => i_kernels,
+                i_kernel_size        => i_kernel_size,
+                o_command            => o_command,
+                o_command_iact       => o_command_iact,
+                o_command_psum       => o_command_psum,
+                o_command_wght       => o_command_wght,
+                o_update_offset_iact => o_update_offset_iact,
+                o_update_offset_psum => o_update_offset_psum,
+                o_update_offset_wght => o_update_offset_wght,
+                o_read_offset_iact   => o_read_offset_iact,
+                o_read_offset_psum   => o_read_offset_psum,
+                o_read_offset_wght   => o_read_offset_wght
+            );
 
     else generate
         for all : control use entity work.control (rs_dataflow);
     begin
 
+        control_inst : component control
+            generic map (
+                size_x           => size_x,
+                size_y           => size_y,
+                size_rows        => size_rows,
+                addr_width_rows  => addr_width_rows,
+                addr_width_y     => addr_width_y,
+                addr_width_x     => addr_width_x,
+                line_length_iact => line_length_iact,
+                addr_width_iact  => addr_width_iact,
+                line_length_psum => line_length_psum,
+                addr_width_psum  => addr_width_psum,
+                line_length_wght => line_length_wght,
+                addr_width_wght  => addr_width_wght,
+                g_control_init   => g_control_init,
+                g_c1             => g_c1,
+                g_w1             => g_w1,
+                g_h2             => g_h2,
+                g_m0             => g_m0,
+                g_m0_last_m1     => g_m0_last_m1,
+                g_rows_last_h2   => g_rows_last_h2,
+                g_c0             => g_c0,
+                g_c0_last_c1     => g_c0_last_c1,
+                g_c0w0           => g_c0w0,
+                g_c0w0_last_c1   => g_c0w0_last_c1
+            )
+            port map (
+                clk                  => clk,
+                rstn                 => rstn,
+                o_status             => o_status,
+                i_start              => i_enable_if,
+                i_start_init         => i_start_init,
+                o_enable             => o_enable,
+                o_new_output         => o_new_output,
+                o_c1                 => w_c1,
+                o_w1                 => w_w1,
+                o_h2                 => w_h2,
+                o_m0                 => w_m0,
+                o_m0_dist            => w_m0_dist,
+                o_m0_last_m1         => w_m0_last_m1,
+                o_c0                 => w_c0,
+                o_c0_last_c1         => w_c0_last_c1,
+                i_image_x            => i_image_x,
+                i_image_y            => i_image_y,
+                i_channels           => i_channels,
+                i_kernels            => i_kernels,
+                i_kernel_size        => i_kernel_size,
+                o_command            => o_command,
+                o_command_iact       => o_command_iact,
+                o_command_psum       => o_command_psum,
+                o_command_wght       => o_command_wght,
+                o_update_offset_iact => o_update_offset_iact,
+                o_update_offset_psum => o_update_offset_psum,
+                o_update_offset_wght => o_update_offset_wght,
+                o_read_offset_iact   => o_read_offset_iact,
+                o_read_offset_psum   => o_read_offset_psum,
+                o_read_offset_wght   => o_read_offset_wght
+            );
+
+    end generate g_control;
+
+    g_address_generator : if g_dataflow = 1 generate
+        for all : address_generator use entity work.address_generator (alternative_rs_dataflow);
+    begin
+
         address_generator_inst : component address_generator
-        generic map (
-            size_x              => size_x,
-            size_y              => size_y,
-            size_rows           => size_rows,
-            addr_width_rows     => addr_width_rows,
-            addr_width_y        => addr_width_y,
-            addr_width_x        => addr_width_x,
-            line_length_iact    => line_length_iact,
-            addr_width_iact     => addr_width_iact,
-            addr_width_iact_mem => addr_width_iact_mem,
-            line_length_psum    => line_length_psum,
-            addr_width_psum     => addr_width_psum,
-            addr_width_psum_mem => addr_width_psum_mem,
-            line_length_wght    => line_length_wght,
-            addr_width_wght     => addr_width_wght,
-            addr_width_wght_mem => addr_width_wght_mem
-        )
-        port map (
-            clk                  => clk,
-            rstn                 => rstn,
-            i_start              => i_start_adr,
-            i_pause_iact         => '0',
-            i_c1                 => w_c1,
-            i_w1                 => w_w1,
-            i_h2                 => w_h2,
-            i_m0                 => w_m0,
-            i_m0_dist            => w_m0_dist,
-            i_m0_last_m1         => w_m0_last_m1,
-            i_c0                 => w_c0,
-            i_c0_last_c1         => w_c0_last_c1,
-            i_image_x            => i_image_x,
-            i_image_y            => i_image_y,
-            i_channels           => i_channels,
-            i_kernel_size        => i_kernel_size,
-            i_fifo_full_iact     => w_fifo_iact_address_full,
-            i_fifo_full_wght     => w_fifo_wght_address_full,
-            o_address_iact       => o_address_iact,
-            o_address_wght       => o_address_wght,
-            o_address_iact_valid => o_address_iact_valid,
-            o_address_wght_valid => o_address_wght_valid
-        );
+            generic map (
+                size_x              => size_x,
+                size_y              => size_y,
+                size_rows           => size_rows,
+                addr_width_rows     => addr_width_rows,
+                addr_width_y        => addr_width_y,
+                addr_width_x        => addr_width_x,
+                line_length_iact    => line_length_iact,
+                addr_width_iact     => addr_width_iact,
+                addr_width_iact_mem => addr_width_iact_mem,
+                line_length_psum    => line_length_psum,
+                addr_width_psum     => addr_width_psum,
+                addr_width_psum_mem => addr_width_psum_mem,
+                line_length_wght    => line_length_wght,
+                addr_width_wght     => addr_width_wght,
+                addr_width_wght_mem => addr_width_wght_mem
+            )
+            port map (
+                clk                  => clk,
+                rstn                 => rstn,
+                i_start              => i_start_adr,
+                i_pause_iact         => '0',
+                i_c1                 => w_c1,
+                i_w1                 => w_w1,
+                i_h2                 => w_h2,
+                i_m0                 => w_m0,
+                i_m0_dist            => w_m0_dist,
+                i_m0_last_m1         => w_m0_last_m1,
+                i_c0                 => w_c0,
+                i_c0_last_c1         => w_c0_last_c1,
+                i_image_x            => i_image_x,
+                i_image_y            => i_image_y,
+                i_channels           => i_channels,
+                i_kernel_size        => i_kernel_size,
+                i_fifo_full_iact     => w_fifo_iact_address_full,
+                i_fifo_full_wght     => w_fifo_wght_address_full,
+                o_address_iact       => o_address_iact,
+                o_address_wght       => o_address_wght,
+                o_address_iact_valid => o_address_iact_valid,
+                o_address_wght_valid => o_address_wght_valid
+            );
+
+    else generate
+        for all : address_generator use entity work.address_generator (rs_dataflow);
+    begin
+
+        address_generator_inst : component address_generator
+            generic map (
+                size_x              => size_x,
+                size_y              => size_y,
+                size_rows           => size_rows,
+                addr_width_rows     => addr_width_rows,
+                addr_width_y        => addr_width_y,
+                addr_width_x        => addr_width_x,
+                line_length_iact    => line_length_iact,
+                addr_width_iact     => addr_width_iact,
+                addr_width_iact_mem => addr_width_iact_mem,
+                line_length_psum    => line_length_psum,
+                addr_width_psum     => addr_width_psum,
+                addr_width_psum_mem => addr_width_psum_mem,
+                line_length_wght    => line_length_wght,
+                addr_width_wght     => addr_width_wght,
+                addr_width_wght_mem => addr_width_wght_mem
+            )
+            port map (
+                clk                  => clk,
+                rstn                 => rstn,
+                i_start              => i_start_adr,
+                i_pause_iact         => '0',
+                i_c1                 => w_c1,
+                i_w1                 => w_w1,
+                i_h2                 => w_h2,
+                i_m0                 => w_m0,
+                i_m0_dist            => w_m0_dist,
+                i_m0_last_m1         => w_m0_last_m1,
+                i_c0                 => w_c0,
+                i_c0_last_c1         => w_c0_last_c1,
+                i_image_x            => i_image_x,
+                i_image_y            => i_image_y,
+                i_channels           => i_channels,
+                i_kernel_size        => i_kernel_size,
+                i_fifo_full_iact     => w_fifo_iact_address_full,
+                i_fifo_full_wght     => w_fifo_wght_address_full,
+                o_address_iact       => o_address_iact,
+                o_address_wght       => o_address_wght,
+                o_address_iact_valid => o_address_iact_valid,
+                o_address_wght_valid => o_address_wght_valid
+            );
 
     end generate g_address_generator;
 
