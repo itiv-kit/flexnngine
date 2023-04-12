@@ -161,8 +161,6 @@ architecture rtl of control_address_generator is
         );
     end component control;
 
-    -- for all : control use entity work.control (rs_dataflow);
-
     component address_generator is
         generic (
             size_x    : positive := 5;
@@ -217,8 +215,6 @@ architecture rtl of control_address_generator is
             o_address_wght_valid : out   std_logic_vector(size_y - 1 downto 0)
         );
     end component address_generator;
-
-    -- for all : address_generator use entity work.address_generator (rs_dataflow);
 
     signal w_c1         : integer range 0 to 1023;
     signal w_w1         : integer range 0 to 1023;
