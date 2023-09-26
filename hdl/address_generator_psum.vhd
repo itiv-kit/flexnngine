@@ -68,7 +68,7 @@ architecture rtl of address_generator_psum is
     signal r_test         : std_logic_vector(size_x - 1 downto 0);
     signal r_delay_offset : std_logic_vector(100 downto 0); /* TODO depending on the clk_sp / clk factor */
 
-    signal r_w1m0 : integer;
+    signal r_w1m0 : integer; -- w1*m0, w1 = output width, m0 = RS: #kernels fitting accelerator y size / ARS: accelerator y size
 
     /*signal r_output_row_valid          : std_logic_row_col_t(0 to i_m0, 0 to 1023);
     signal r_address_psum_ms           : array_row_col_t(0 to size_x - 1, 0 to i_m0)(addr_width_psum_mem - 1 downto 0);
@@ -146,8 +146,8 @@ begin
                 else
                     r_address_offsets_psum_done <= '1';
                 end if;
-            elsif r_address_offsets_psum_done = '1' and i_new_output = '1' and (or r_delay_offset = '0') then                                                                                                           -- i_command_psum = c_lb_shrink then /* TODO MAY BE TOO LATE FOR SMALL KERNELS? */
-                r_address_offsets_psum_done <= '0';                                                                                                                                                                     -- Tile h2 change
+            elsif r_address_offsets_psum_done = '1' and i_new_output = '1' and (or r_delay_offset = '0') then -- i_command_psum = c_lb_shrink then /* TODO MAY BE TOO LATE FOR SMALL KERNELS? */
+                r_address_offsets_psum_done <= '0';                                                           -- Tile h2 change
                 r_address_offsets_count_x   <= 0;
                 r_address_offsets_psum(0)   <= std_logic_vector(to_unsigned(to_integer(unsigned(r_address_offsets_psum(size_x - 1)) + r_w1m0), addr_width_psum_mem));
                 r_delay_offset              <= r_delay_offset(r_delay_offset'length - 2 downto 0) & '1';
