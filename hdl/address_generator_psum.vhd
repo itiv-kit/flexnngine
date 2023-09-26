@@ -123,7 +123,7 @@ begin
         if not rstn then
             r_w1m0 <= 0;
         elsif rising_edge(clk) then
-            r_w1m0 <= i_w1 * i_m0;
+            r_w1m0 <= i_w1;-- * i_m0;
         end if;
 
     end process p_address_psum_helper;

@@ -197,7 +197,9 @@ class Test:
             self.M0_last_m1 = 1 # not used yet
 
             size_rows = self.accelerator.size_x + self.accelerator.size_y - 1
-            if self.M0 == 0:
+            # TODO: check case for M0 = 0. IMHO the else path is incorrect, as H2 is the number of iterations for mapping
+            # each set of rows (accelerator.size_x rows) to the pe array.
+            if True: # self.M0 == 0:
                 self.H2 = math.ceil(
                     (self.convolution.image_size - self.convolution.kernel_size + 1)
                     / self.accelerator.size_x
