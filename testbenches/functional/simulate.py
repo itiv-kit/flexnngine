@@ -392,11 +392,6 @@ class Test:
             ):
                 for j in range(self.convolution.image_size):
                     f.write("{0:08b} ".format(image[i][j] & 0xFF) + "\n")
-            # Append zeros to fill up memory (until 2 ** mem_size_iact)
-            for i in range(
-                2**self.accelerator.mem_size_iact - image.shape[0] * image.shape[1]
-            ):
-                f.write("{0:08b}".format(0) + "\n")
 
         with open(self.test_dir + "_mem_iact_dec.txt", "w") as f:
             for i in range(
@@ -404,11 +399,6 @@ class Test:
             ):
                 for j in range(self.convolution.image_size):
                     f.write(str(image[i][j]) + "\n")
-            # Append zeros to fill up memory (until 2 ** mem_size_iact)
-            for i in range(
-                2**self.accelerator.mem_size_iact - image.shape[0] * image.shape[1]
-            ):
-                f.write(str(0) + "\n")
 
         # print("Pixels : " + str(image.shape[0] * image.shape[1]))
 
@@ -419,11 +409,6 @@ class Test:
             ):
                 for j in range(self.convolution.kernel_size):
                     f.write("{0:08b} ".format(kernel[i][j] & 0xFF) + "\n")
-            # Append zeros to fill up memory (until 2 ** mem_size_wght)
-            for i in range(
-                2**self.accelerator.mem_size_wght - kernel.shape[0] * kernel.shape[1]
-            ):
-                f.write("{0:08b}".format(0) + "\n")
 
         # save kernels as 8-bit binary values in _mem_wght_stack.txt in two's complement
         with open(self.test_dir + "_mem_wght_stack.txt", "w") as f:
@@ -432,17 +417,10 @@ class Test:
             ):
                 for j in range(self.convolution.kernel_size):
                     f.write("{0:08b} ".format(kernels_stack[i][j] & 0xFF) + "\n")
-            # Append zeros to fill up memory (until 2 ** mem_size_wght)
-            for i in range(
-                2**self.accelerator.mem_size_wght
-                - kernels.shape[0] * kernels.shape[1] * kernels.shape[2]
-            ):
-                f.write("{0:08b}".format(0) + "\n")
 
-        # save zeros as 8-bit binary values in _mem_psum.txt
+        # save empty file as _mem_psum.txt
         with open(self.test_dir + "_mem_psum.txt", "w") as f:
-            for i in range(2**self.accelerator.mem_size_psum):
-                f.write("{0:016b}".format(0) + "\n")
+            pass
 
         # reorder image to be able to check iact input
         image_tmp = image
