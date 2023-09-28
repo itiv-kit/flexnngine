@@ -73,39 +73,32 @@ architecture syn of ram_dp_init is
 
     -------------------------------------
 
-    shared variable ram_instance : ram_type := init_memory_wfile(g_files_dir & init_file);
+    signal ram_instance : ram_type := init_memory_wfile(g_files_dir & init_file);
 
 begin
 
     r_ram_instance <= ram_instance when rising_edge(clk);
 
-    port_a : process (clk) is
+    ports : process (clk) is
     begin
 
         if rising_edge(clk) then
             if wena = '1' then
-                ram_instance(to_integer(unsigned(addra))) := dina;
+                ram_instance(to_integer(unsigned(addra))) <= dina;
                 douta_s                                   <= dina;
             else
                 douta_s <= ram_instance(to_integer(unsigned(addra)));
             end if;
-        end if;
 
-    end process port_a;
-
-    port_b : process (clk) is
-    begin
-
-        if rising_edge(clk) then
             if wenb = '1' then
-                ram_instance(to_integer(unsigned(addrb))) := dinb;
+                ram_instance(to_integer(unsigned(addrb))) <= dinb;
                 doutb_s                                   <= dinb;
             else
                 doutb_s <= ram_instance(to_integer(unsigned(addrb)));
             end if;
         end if;
 
-    end process port_b;
+    end process ports;
 
     g0_use_output_reg_0 : if use_output_reg = '0' generate   -- directly connected with the output
         douta <= douta_s;
