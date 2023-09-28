@@ -9,7 +9,7 @@ library ieee;
     use ieee.math_real.ceil;
     use ieee.math_real.log2;
 
-entity control_conv_tb is
+entity control_conv_5x5_tb is
     generic (
         size_x    : positive := 5;
         size_y    : positive := 5;
@@ -34,9 +34,9 @@ entity control_conv_tb is
 
         g_h2 : positive := positive(integer(ceil(real(g_image_x - g_kernel_size + 1) / real(g_kernel_size)))) -- Y tiles, determined in control module, but for input data loading required here
     );
-end entity control_conv_tb;
+end entity control_conv_5x5_tb;
 
-architecture imp of control_conv_tb is
+architecture imp of control_conv_5x5_tb is
 
     signal clk  : std_logic := '0';
     signal rstn : std_logic;

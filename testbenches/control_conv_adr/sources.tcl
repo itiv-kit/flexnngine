@@ -20,8 +20,8 @@ vcom -64 -2008 -work xil_defaultlib  \
 
 # testbench
 vcom -64 -2008 -work xil_defaultlib  \
-"../../testbenches/control_conv_adr/src/control_conv_tb.vhd" \
+"../../testbenches/control_conv_adr/src/control_conv_adr_tb.vhd" \
 
 set SIM_TIME "10 ms"
-set SIM_TOP_LEVEL "control_conv_tb"
+set SIM_TOP_LEVEL "control_conv_adr_tb"
 
