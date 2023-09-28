@@ -22,12 +22,12 @@ architecture syns of demux is
 
 begin
 
-    demux : process (all) is
+    demux_proc : process (all) is
     begin
 
         z_o                            <= (others => (others => '0'));
         z_o(to_integer(unsigned(sel))) <= v_i;
 
-    end process demux;
+    end process demux_proc;
 
 end architecture syns;
