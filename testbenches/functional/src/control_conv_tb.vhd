@@ -49,8 +49,8 @@ entity control_conv_tb is
         g_wght_fifo_size : positive := 15;
         g_psum_fifo_size : positive := 128;
 
-        g_clk    : time := 10000 ps; -- ps
-        g_clk_sp : time := 2000 ps;  -- ps
+        g_clk    : integer := 10000;
+        g_clk_sp : integer := 2000;
 
         g_files_dir : string  := "test/image_size_20_kernel_size_1_c_30/";
         g_init_sp   : boolean := true;
@@ -251,14 +251,14 @@ begin
     clk_gen : process (clk) is
     begin
 
-        clk <= not clk after g_clk;
+        clk <= not clk after g_clk * 1 ps;
 
     end process clk_gen;
 
     clk_sp_gen : process (clk_sp) is
     begin
 
-        clk_sp <= not clk_sp after g_clk_sp;
+        clk_sp <= not clk_sp after g_clk_sp * 1 ps;
 
     end process clk_sp_gen;
 
