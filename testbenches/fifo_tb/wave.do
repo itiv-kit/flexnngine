@@ -1,30 +1,30 @@
 onerror {resume}
 quietly WaveActivateNextPane {} 0
 
-add wave -position end  sim:/tb_dc_fifo/TX_CLOCK_DURATION
-add wave -position end  sim:/tb_dc_fifo/RX_CLOCK_DURATION
-add wave -position end  sim:/tb_dc_fifo/USE_PACKETS
-add wave -position end  sim:/tb_dc_fifo/wr_clk
-add wave -position end  sim:/tb_dc_fifo/rst
-add wave -position end  sim:/tb_dc_fifo/wr_en
-add wave -position end  sim:/tb_dc_fifo/din
-add wave -position end  sim:/tb_dc_fifo/full
-add wave -position end  sim:/tb_dc_fifo/full2
-add wave -position end  sim:/tb_dc_fifo/almost_full
-add wave -position end  sim:/tb_dc_fifo/almost_full2
-add wave -position end  sim:/tb_dc_fifo/keep
-add wave -position end  sim:/tb_dc_fifo/drop
-add wave -position end  sim:/tb_dc_fifo/rd_clk
-add wave -position end  sim:/tb_dc_fifo/rd_en
-add wave -position end  sim:/tb_dc_fifo/dout
-add wave -position end  sim:/tb_dc_fifo/dout2
-add wave -position end  sim:/tb_dc_fifo/valid
-add wave -position end  sim:/tb_dc_fifo/valid2
-add wave -position end  sim:/tb_dc_fifo/empty
-add wave -position end  sim:/tb_dc_fifo/empty2
+add wave -position end  sim:/fifo_tb/TX_CLOCK_DURATION
+add wave -position end  sim:/fifo_tb/RX_CLOCK_DURATION
+add wave -position end  sim:/fifo_tb/USE_PACKETS
+add wave -position end  sim:/fifo_tb/wr_clk
+add wave -position end  sim:/fifo_tb/rst
+add wave -position end  sim:/fifo_tb/wr_en
+add wave -position end  sim:/fifo_tb/din
+add wave -position end  sim:/fifo_tb/full
+add wave -position end  sim:/fifo_tb/full2
+add wave -position end  sim:/fifo_tb/almost_full
+add wave -position end  sim:/fifo_tb/almost_full2
+add wave -position end  sim:/fifo_tb/keep
+add wave -position end  sim:/fifo_tb/drop
+add wave -position end  sim:/fifo_tb/rd_clk
+add wave -position end  sim:/fifo_tb/rd_en
+add wave -position end  sim:/fifo_tb/dout
+add wave -position end  sim:/fifo_tb/dout2
+add wave -position end  sim:/fifo_tb/valid
+add wave -position end  sim:/fifo_tb/valid2
+add wave -position end  sim:/fifo_tb/empty
+add wave -position end  sim:/fifo_tb/empty2
 
-add wave -position end  sim:/tb_dc_fifo/uut/rdcnt_wr
-add wave -position end  sim:/tb_dc_fifo/uut/wrcnt
+add wave -position end  sim:/fifo_tb/uut/rdcnt_wr
+add wave -position end  sim:/fifo_tb/uut/wrcnt
 
 TreeUpdate [SetDefaultTree]
 WaveRestoreCursors {{Cursor 1} {0 ns} 0}

@@ -5,15 +5,15 @@ library ieee;
 library work;
     use work.fifos.fifo;
 
-entity tb_dc_fifo is
+entity fifo_tb is
     generic (
         tx_clock_duration : time    := 2 ns;
         rx_clock_duration : time    := 3 ns;
         use_packets       : boolean := false
     );
-end entity tb_dc_fifo;
+end entity fifo_tb;
 
-architecture tb of tb_dc_fifo is
+architecture tb of fifo_tb is
 
     component fifo_generator_0 is
         port (

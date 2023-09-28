@@ -41,73 +41,13 @@ end entity pe_array_conv_5x5_tb;
 
 architecture imp of pe_array_conv_5x5_tb is
 
-    component pe_array is
-        generic (
-            size_x : positive := 3;
-            size_y : positive := 3;
-
-            size_rows : positive := 5;
-
-            data_width_iact  : positive := 8;
-            line_length_iact : positive := 32;
-            addr_width_iact  : positive := 5;
-
-            data_width_psum  : positive := 16;
-            line_length_psum : positive := 2048;
-            addr_width_psum  : positive := 11;
-
-            data_width_wght  : positive := 8;
-            line_length_wght : positive := 32;
-            addr_width_wght  : positive := 5
-        );
-        port (
-            clk  : in    std_logic;
-            rstn : in    std_logic;
-
-            i_preload_psum       : in    std_logic_vector(data_width_psum - 1 downto 0);
-            i_preload_psum_valid : in    std_logic;
-
-            i_enable       : in    std_logic;
-            i_command      : in    command_pe_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-            i_command_iact : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-            i_command_psum : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-            i_command_wght : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-
-            i_data_iact : in    array_t (0 to size_rows - 1)(data_width_iact - 1 downto 0);
-            i_data_psum : in    std_logic_vector(data_width_psum - 1 downto 0);
-            i_data_wght : in    array_t (0 to size_y - 1)(data_width_wght - 1 downto 0);
-
-            i_data_iact_valid : in    std_logic_vector(size_rows - 1 downto 0);
-            i_data_psum_valid : in    std_logic;
-            i_data_wght_valid : in    std_logic_vector(size_y - 1 downto 0);
-
-            o_buffer_full_iact : out   std_logic_vector(size_rows - 1 downto 0);
-            o_buffer_full_psum : out   std_logic;
-            o_buffer_full_wght : out   std_logic_vector(size_y - 1 downto 0);
-
-            o_buffer_full_next_iact : out   std_logic_vector(size_rows - 1 downto 0);
-            o_buffer_full_next_psum : out   std_logic;
-            o_buffer_full_next_wght : out   std_logic_vector(size_y - 1 downto 0);
-
-            i_update_offset_iact : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
-            i_update_offset_psum : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
-            i_update_offset_wght : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
-
-            i_read_offset_iact : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
-            i_read_offset_psum : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
-            i_read_offset_wght : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
-
-            o_psums       : out   array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
-            o_psums_valid : out   std_logic_vector(size_x - 1 downto 0)
-        );
-    end component pe_array;
-
     signal clk  : std_logic := '1';
     signal rstn : std_logic;
 
     signal i_preload_psum       : std_logic_vector(data_width_psum - 1 downto 0);
     signal i_preload_psum_valid : std_logic;
 
+    signal i_enable     : std_logic := '1';
     signal command      : command_pe_row_col_t(0 to size_y - 1, 0 to size_x - 1);
     signal command_iact : command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
     signal command_psum : command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
@@ -222,7 +162,7 @@ architecture imp of pe_array_conv_5x5_tb is
 
 begin
 
-    pe_array_inst : component pe_array
+    pe_array_inst : entity work.pe_array
         generic map (
             size_x           => size_x,
             size_y           => size_y,
@@ -242,7 +182,7 @@ begin
             rstn                    => rstn,
             i_preload_psum          => i_preload_psum,
             i_preload_psum_valid    => i_preload_psum_valid,
-            i_enable                => '1',
+            i_enable                => i_enable,
             i_command               => command,
             i_command_iact          => command_iact,
             i_command_psum          => command_psum,

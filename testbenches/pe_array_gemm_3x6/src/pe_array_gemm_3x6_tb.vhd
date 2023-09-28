@@ -41,72 +41,13 @@ end entity pe_array_gemm_3x6_tb;
 
 architecture imp of pe_array_gemm_3x6_tb is
 
-    component pe_array is
-        generic (
-            size_x : positive := 3;
-            size_y : positive := 3;
-
-            size_rows : positive := 5;
-
-            data_width_iact  : positive := 8;
-            line_length_iact : positive := 7;
-            addr_width_iact  : positive := 3;
-
-            data_width_psum  : positive := 16;
-            line_length_psum : positive := 7;
-            addr_width_psum  : positive := 4;
-
-            data_width_wght  : positive := 8;
-            line_length_wght : positive := 7;
-            addr_width_wght  : positive := 3
-        );
-        port (
-            clk  : in    std_logic;
-            rstn : in    std_logic;
-
-            i_preload_psum       : in    std_logic_vector(data_width_psum - 1 downto 0);
-            i_preload_psum_valid : in    std_logic;
-
-            command      : in    command_pe_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-            command_iact : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-            command_psum : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-            command_wght : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-
-            i_data_iact : in    array_t (0 to size_rows - 1)(data_width_iact - 1 downto 0);
-            i_data_psum : in    std_logic_vector(data_width_psum - 1 downto 0);
-            i_data_wght : in    array_t (0 to size_y - 1)(data_width_wght - 1 downto 0);
-
-            i_data_iact_valid : in    std_logic_vector(size_rows - 1 downto 0);
-            i_data_psum_valid : in    std_logic;
-            i_data_wght_valid : in    std_logic_vector(size_y - 1 downto 0);
-
-            o_buffer_full_iact : out   std_logic;
-            o_buffer_full_psum : out   std_logic;
-            o_buffer_full_wght : out   std_logic;
-
-            o_buffer_full_next_iact : out   std_logic;
-            o_buffer_full_next_psum : out   std_logic;
-            o_buffer_full_next_wght : out   std_logic;
-
-            update_offset_iact : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
-            update_offset_psum : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
-            update_offset_wght : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
-
-            read_offset_iact : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
-            read_offset_psum : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
-            read_offset_wght : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
-
-            o_psums       : out   array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
-            o_psums_valid : out   std_logic_vector(size_x - 1 downto 0)
-        );
-    end component pe_array;
-
     signal clk  : std_logic := '1';
     signal rstn : std_logic;
 
     signal i_preload_psum       : std_logic_vector(data_width_psum - 1 downto 0);
     signal i_preload_psum_valid : std_logic;
 
+    signal i_enable     : std_logic := '1';
     signal command      : command_pe_row_col_t(0 to size_y - 1, 0 to size_x - 1);
     signal command_iact : command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
     signal command_psum : command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
@@ -120,13 +61,13 @@ architecture imp of pe_array_gemm_3x6_tb is
     signal i_data_psum_valid : std_logic;
     signal i_data_wght_valid : std_logic_vector(size_y - 1 downto 0);
 
-    signal o_buffer_full_iact : std_logic;
+    signal o_buffer_full_iact : std_logic_vector(size_rows - 1 downto 0);
     signal o_buffer_full_psum : std_logic;
-    signal o_buffer_full_wght : std_logic;
+    signal o_buffer_full_wght : std_logic_vector(size_y - 1 downto 0);
 
-    signal o_buffer_full_next_iact : std_logic;
+    signal o_buffer_full_next_iact : std_logic_vector(size_rows - 1 downto 0);
     signal o_buffer_full_next_psum : std_logic;
-    signal o_buffer_full_next_wght : std_logic;
+    signal o_buffer_full_next_wght : std_logic_vector(size_y - 1 downto 0);
 
     signal update_offset_iact : array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
     signal update_offset_psum : array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
@@ -244,7 +185,7 @@ architecture imp of pe_array_gemm_3x6_tb is
 
 begin
 
-    pe_array_inst : component pe_array
+    pe_array_inst : entity work.pe_array
         generic map (
             size_x           => size_x,
             size_y           => size_y,
@@ -264,10 +205,11 @@ begin
             rstn                    => rstn,
             i_preload_psum          => i_preload_psum,
             i_preload_psum_valid    => i_preload_psum_valid,
-            command                 => command,
-            command_iact            => command_iact,
-            command_psum            => command_psum,
-            command_wght            => command_wght,
+            i_enable                => i_enable,
+            i_command               => command,
+            i_command_iact          => command_iact,
+            i_command_psum          => command_psum,
+            i_command_wght          => command_wght,
             i_data_iact             => i_data_iact,
             i_data_psum             => i_data_psum,
             i_data_wght             => i_data_wght,
@@ -280,12 +222,12 @@ begin
             o_buffer_full_next_iact => o_buffer_full_next_iact,
             o_buffer_full_next_psum => o_buffer_full_next_psum,
             o_buffer_full_next_wght => o_buffer_full_next_wght,
-            update_offset_iact      => update_offset_iact,
-            update_offset_psum      => update_offset_psum,
-            update_offset_wght      => update_offset_wght,
-            read_offset_iact        => read_offset_iact,
-            read_offset_psum        => read_offset_psum,
-            read_offset_wght        => read_offset_wght,
+            i_update_offset_iact    => update_offset_iact,
+            i_update_offset_psum    => update_offset_psum,
+            i_update_offset_wght    => update_offset_wght,
+            i_read_offset_iact      => read_offset_iact,
+            i_read_offset_psum      => read_offset_psum,
+            i_read_offset_wght      => read_offset_wght,
             o_psums                 => o_psums,
             o_psums_valid           => o_psums_valid
         );
@@ -320,7 +262,7 @@ begin
 
         for i in 0 to size_x - 1 loop
 
-            while o_buffer_full_wght = '1' loop
+            while (or o_buffer_full_wght) = '1' loop
 
                 wait until rising_edge(clk);
 
@@ -356,12 +298,14 @@ begin
             if s_y = image_y then
                 s_done <= true;
             -- data_in_valid <= '0';
-            elsif o_buffer_full_iact = '0' then
+            else
 
                 for i in size_y - 1 to size_rows - 1 loop
 
-                    i_data_iact_valid(i) <= '1';
-                    i_data_iact(i)       <= std_logic_vector(to_signed(input_image(size_y - 1 - s_x, i - size_y + 1), data_width_iact));
+                    if o_buffer_full_iact(i) = '0' then
+                        i_data_iact_valid(i) <= '1';
+                        i_data_iact(i)       <= std_logic_vector(to_signed(input_image(size_y - 1 - s_x, i - size_y + 1), data_width_iact));
+                    end if;
 
                 end loop;
 

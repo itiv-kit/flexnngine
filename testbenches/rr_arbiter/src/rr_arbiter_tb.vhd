@@ -23,34 +23,6 @@ architecture imp of rr_arbiter_tb is
     signal gnt_binary : std_logic_vector(binary_width - 1 downto 0);
     signal endsim     : boolean   := false;
 
-    component rr_arbiter is
-        generic (
-            arbiter_width : natural := 4
-        );
-        port (
-            clk  : in    std_logic;
-            rstn : in    std_logic;
-
-            -- inputs
-            req : in    std_logic_vector(arbiter_width - 1 downto 0);
-
-            -- outputs
-            gnt : out   std_logic_vector(arbiter_width - 1 downto 0)
-        );
-    end component rr_arbiter;
-
-    component onehot_binary is
-        generic (
-
-            onehot_width : positive := 9;
-            binary_width : positive := 4
-        );
-        port (
-            onehot : in    std_logic_vector(onehot_width - 1 downto 0);
-            binary : out   std_logic_vector(binary_width - 1 downto 0)
-        );
-    end component onehot_binary;
-
 begin
 
     clk  <= not clk after period / 2;
@@ -197,7 +169,7 @@ begin
 
     end process end_sim;
 
-    rr_arbiter_inst : component rr_arbiter
+    rr_arbiter_inst : entity work.rr_arbiter
         generic map (
             arbiter_width => arbiter_width
         )
@@ -205,18 +177,18 @@ begin
             clk  => clk,
             rstn => rstn,
 
-            req => req,
-            gnt => gnt
+            i_req => req,
+            o_gnt => gnt
         );
 
-    onehot_binary_inst : component onehot_binary
+    onehot_binary_inst : entity work.onehot_binary
         generic map (
             onehot_width => arbiter_width,
             binary_width => binary_width
         )
         port map (
-            onehot => gnt,
-            binary => gnt_binary
+            i_onehot => gnt,
+            o_binary => gnt_binary
         );
 
 end architecture imp;

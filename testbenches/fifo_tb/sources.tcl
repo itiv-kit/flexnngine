@@ -32,4 +32,4 @@ vcom -64 -2008 -work xil_defaultlib  \
 "src/fifo_tb.vhd" \
 
 set SIM_TIME "1000 ns"
-set SIM_TOP_LEVEL "tb_dc_fifo"
+set SIM_TOP_LEVEL "fifo_tb"

@@ -31,10 +31,12 @@ architecture imp of control_conv_tb is
 
     signal status       : std_logic;
     signal start        : std_logic;
-    signal image_x      : integer;
-    signal image_y      : integer;
-    signal channels     : integer;
-    signal kernel_size  : integer;
+    signal start_init   : std_logic;
+    signal image_x      : integer range 0 to 1023;
+    signal image_y      : integer range 0 to 1023;
+    signal channels     : integer range 0 to 4095;
+    signal kernels      : integer range 0 to 4095;
+    signal kernel_size  : integer range 0 to 32;
     signal command      : command_pe_row_col_t(0 to size_y - 1, 0 to size_x - 1);
     signal command_iact : command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
     signal command_psum : command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
@@ -59,9 +61,11 @@ begin
             rstn           => rstn,
             o_status       => status,
             i_start        => start,
+            i_start_init   => start_init,
             i_image_x      => image_x,
             i_image_y      => image_y,
             i_channels     => channels,
+            i_kernels      => kernels,
             i_kernel_size  => kernel_size,
             o_command      => command,
             o_command_iact => command_iact,
@@ -92,12 +96,17 @@ begin
         wait until rstn = '1';
         wait until rising_edge(clk);
 
-        start <= '0';
+        start      <= '0';
+        start_init <= '0';
 
         image_x     <= 14;
         image_y     <= 14;
+        kernels     <= 3;
         channels    <= 5;
         kernel_size <= 5;
+
+        wait for 50 ns;
+        start_init <= '1';
 
         wait for 50 ns;
         start <= '1';
