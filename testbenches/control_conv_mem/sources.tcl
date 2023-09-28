@@ -16,7 +16,6 @@ vcom -64 -2008 -work xil_defaultlib  \
 "../../hdl/mux.vhd" \
 "../../hdl/pe.vhd" \
 "../../hdl/ram_dp.vhd" \
-"../../hdl/ram_dp_init.vhd" \
 "../../hdl/scratchpad.vhd" \
 
 

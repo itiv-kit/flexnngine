@@ -277,7 +277,10 @@ architecture rtl of accelerator is
             addr_width_psum : positive := 15;
 
             data_width_wght : positive := 8;
-            addr_width_wght : positive := 15
+            addr_width_wght : positive := 15;
+
+            initialize_mems : boolean := false;
+            g_files_dir : string := ""
         );
         port (
             clk  : in    std_logic;
@@ -711,84 +714,42 @@ begin
             o_address_wght_valid     => w_address_wght_valid
         );
 
-    scratchpad_init_inst : if g_init_sp = true generate
-
-        scratchpad_inst : component scratchpad_init
-            generic map (
-                data_width_iact => data_width_iact,
-                addr_width_iact => addr_width_iact_mem,
-                data_width_psum => data_width_psum,
-                addr_width_psum => addr_width_psum_mem,
-                data_width_wght => data_width_wght,
-                addr_width_wght => addr_width_wght_mem,
-                g_files_dir     => g_files_dir
-            )
-            port map (
-                clk             => clk_sp,
-                rstn            => rstn,
-                write_adr_iact  => w_write_adr_iact,
-                write_adr_psum  => w_write_adr_psum,
-                write_adr_wght  => w_write_adr_wght,
-                read_adr_iact   => w_read_adr_iact,
-                read_adr_psum   => w_read_adr_psum,
-                read_adr_wght   => w_read_adr_wght,
-                write_en_iact   => i_write_en_iact,
-                write_en_psum   => w_write_en_psum,
-                write_en_wght   => i_write_en_wght,
-                read_en_iact    => w_read_en_iact,
-                read_en_psum    => w_read_en_psum,
-                read_en_wght    => w_read_en_wght,
-                din_iact        => i_din_iact,
-                din_psum        => w_din_psum,
-                din_wght        => i_din_wght,
-                dout_iact       => w_dout_iact,
-                dout_psum       => o_dout_psum,
-                dout_wght       => w_dout_wght,
-                dout_iact_valid => w_dout_iact_valid,
-                dout_psum_valid => o_dout_psum_valid,
-                dout_wght_valid => w_dout_wght_valid
-            );
-
-    end generate scratchpad_init_inst;
-
-    scratchpad_inst : if g_init_sp = false generate
-
-        scratchpad_inst : component scratchpad
-            generic map (
-                data_width_iact => data_width_iact,
-                addr_width_iact => addr_width_iact_mem,
-                data_width_psum => data_width_psum,
-                addr_width_psum => addr_width_psum_mem,
-                data_width_wght => data_width_wght,
-                addr_width_wght => addr_width_wght_mem
-            )
-            port map (
-                clk             => clk_sp,
-                rstn            => rstn,
-                write_adr_iact  => w_write_adr_iact,
-                write_adr_psum  => w_write_adr_psum,
-                write_adr_wght  => w_write_adr_wght,
-                read_adr_iact   => w_read_adr_iact,
-                read_adr_psum   => w_read_adr_psum,
-                read_adr_wght   => w_read_adr_wght,
-                write_en_iact   => i_write_en_iact,
-                write_en_psum   => w_write_en_psum,
-                write_en_wght   => i_write_en_wght,
-                read_en_iact    => w_read_en_iact,
-                read_en_psum    => w_read_en_psum,
-                read_en_wght    => w_read_en_wght,
-                din_iact        => i_din_iact,
-                din_psum        => w_din_psum,
-                din_wght        => i_din_wght,
-                dout_iact       => w_dout_iact,
-                dout_psum       => o_dout_psum,
-                dout_wght       => w_dout_wght,
-                dout_iact_valid => w_dout_iact_valid,
-                dout_psum_valid => o_dout_psum_valid,
-                dout_wght_valid => w_dout_wght_valid
-            );
-
-    end generate scratchpad_inst;
+    scratchpad_inst : component scratchpad
+        generic map (
+            data_width_iact => data_width_iact,
+            addr_width_iact => addr_width_iact_mem,
+            data_width_psum => data_width_psum,
+            addr_width_psum => addr_width_psum_mem,
+            data_width_wght => data_width_wght,
+            addr_width_wght => addr_width_wght_mem,
+            initialize_mems => g_init_sp,
+            g_files_dir     => g_files_dir
+        )
+        port map (
+            clk             => clk_sp,
+            rstn            => rstn,
+            write_adr_iact  => w_write_adr_iact,
+            write_adr_psum  => w_write_adr_psum,
+            write_adr_wght  => w_write_adr_wght,
+            read_adr_iact   => w_read_adr_iact,
+            read_adr_psum   => w_read_adr_psum,
+            read_adr_wght   => w_read_adr_wght,
+            write_en_iact   => i_write_en_iact,
+            write_en_psum   => w_write_en_psum,
+            write_en_wght   => i_write_en_wght,
+            read_en_iact    => w_read_en_iact,
+            read_en_psum    => w_read_en_psum,
+            read_en_wght    => w_read_en_wght,
+            din_iact        => i_din_iact,
+            din_psum        => w_din_psum,
+            din_wght        => i_din_wght,
+            dout_iact       => w_dout_iact,
+            dout_psum       => o_dout_psum,
+            dout_wght       => w_dout_wght,
+            dout_iact_valid => w_dout_iact_valid,
+            dout_psum_valid => o_dout_psum_valid,
+            dout_wght_valid => w_dout_wght_valid
+        );
 
     scratchpad_interface_inst : component scratchpad_interface
         generic map (
