@@ -18,10 +18,8 @@ vcom -64 -2008 -work xil_defaultlib  \
 "../../hdl/mux.vhd" \
 "../../hdl/pe.vhd" \
 "../../hdl/ram_dp.vhd" \
-"../../hdl/ram_dp_init.vhd" \
 "../../hdl/accelerator.vhd" \
 "../../hdl/scratchpad.vhd" \
-"../../hdl/scratchpad_init.vhd" \
 "../../hdl/scratchpad_interface.vhd" \
 "../../hdl/rr_arbiter.vhd" \
 "../../hdl/onehot_binary.vhd" \

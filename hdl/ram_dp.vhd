@@ -6,6 +6,7 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
+    use std.textio.all;
 
 --! This component encapsulates a dual ported BRAM.
 
@@ -14,9 +15,11 @@ library ieee;
 
 entity ram_dp is
     generic (
-        addr_width     : positive  := 2;  --! Width of the BRAM addresses
-        data_width     : positive  := 6;  --! Width of the data fields in the BRAM
-        use_output_reg : std_logic := '0' --! Specifies if the output is buffered in a separate register
+        addr_width     : positive  := 2;   --! Width of the BRAM addresses
+        data_width     : positive  := 6;   --! Width of the data fields in the BRAM
+        use_output_reg : std_logic := '0'; --! Specifies if the output is buffered in a separate register
+        initialize     : boolean   := false;
+        init_file      : string    := ""
     );
     port (
         clk : in    std_logic; --! Clock input
@@ -38,10 +41,38 @@ architecture syn of ram_dp is
 
     type ram_type is array (0 to 2 ** addr_width - 1) of std_logic_vector(data_width - 1 downto 0);
 
-    signal ram_instance : ram_type;
-
     signal douta_s : std_logic_vector(data_width - 1 downto 0);
     signal doutb_s : std_logic_vector(data_width - 1 downto 0);
+
+    impure function init_memory_wfile(mem_file_name : in string) return ram_type is
+        file     mem_file : text open read_mode is mem_file_name;
+        variable mem_line : line;
+        variable temp_bv  : bit_vector(data_width - 1 downto 0);
+        variable temp_mem : ram_type := (others => (others => '0'));
+    begin
+        report mem_file_name severity note;
+        for i in ram_type'range loop
+            if not endfile(mem_file) then
+                readline(mem_file, mem_line);
+                read(mem_line, temp_bv);
+                temp_mem(i) := to_stdlogicvector(temp_bv);
+            else
+                exit;
+            end if;
+        end loop;
+        return temp_mem;
+    end function;
+
+    impure function init_file_or_zero(mem_file_name : in string) return ram_type is
+    begin
+        if initialize then
+            return init_memory_wfile(mem_file_name);
+        else
+            return (others => (others => '0'));
+        end if;
+    end function;
+
+    signal ram_instance : ram_type := init_file_or_zero(init_file);
 
 begin
 
