@@ -146,8 +146,8 @@ begin
                 else
                     r_address_offsets_psum_done <= '1';
                 end if;
-            elsif r_address_offsets_psum_done = '1' and i_new_output = '1' and (or r_delay_offset = '0') then -- i_command_psum = c_lb_shrink then /* TODO MAY BE TOO LATE FOR SMALL KERNELS? */
-                r_address_offsets_psum_done <= '0';                                                           -- Tile h2 change
+            elsif r_address_offsets_psum_done = '1' and i_new_output = '1' and (or r_delay_offset = '0') then                                                                                                      -- i_command_psum = c_lb_shrink then /* TODO MAY BE TOO LATE FOR SMALL KERNELS? */
+                r_address_offsets_psum_done <= '0';                                                                                                                                                                -- Tile h2 change
                 r_address_offsets_count_x   <= 0;
                 r_address_offsets_psum(0)   <= std_logic_vector(to_unsigned(to_integer(unsigned(r_address_offsets_psum(size_x - 1)) + r_w1m0), addr_width_psum_mem));
                 r_delay_offset              <= r_delay_offset(r_delay_offset'length - 2 downto 0) & '1';
