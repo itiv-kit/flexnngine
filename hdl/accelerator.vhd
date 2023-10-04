@@ -280,7 +280,7 @@ architecture rtl of accelerator is
             addr_width_wght : positive := 15;
 
             initialize_mems : boolean := false;
-            g_files_dir : string := ""
+            g_files_dir     : string  := ""
         );
         port (
             clk  : in    std_logic;

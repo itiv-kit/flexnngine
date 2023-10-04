@@ -44,32 +44,40 @@ architecture syn of ram_dp is
     signal douta_s : std_logic_vector(data_width - 1 downto 0);
     signal doutb_s : std_logic_vector(data_width - 1 downto 0);
 
-    impure function init_memory_wfile(mem_file_name : in string) return ram_type is
+    impure function init_memory_wfile (mem_file_name : in string) return ram_type is
+
         file     mem_file : text open read_mode is mem_file_name;
         variable mem_line : line;
         variable temp_bv  : bit_vector(data_width - 1 downto 0);
-        variable temp_mem : ram_type := (others => (others => '0'));
+        variable temp_mem : ram_type;
+
     begin
-        report mem_file_name severity note;
+
         for i in ram_type'range loop
+
             if not endfile(mem_file) then
                 readline(mem_file, mem_line);
                 read(mem_line, temp_bv);
                 temp_mem(i) := to_stdlogicvector(temp_bv);
             else
-                exit;
+                temp_mem(i) := (others => '0');
             end if;
+
         end loop;
+
         return temp_mem;
+
     end function;
 
-    impure function init_file_or_zero(mem_file_name : in string) return ram_type is
+    impure function init_file_or_zero (mem_file_name : in string) return ram_type is
     begin
+
         if initialize then
             return init_memory_wfile(mem_file_name);
         else
             return (others => (others => '0'));
         end if;
+
     end function;
 
     signal ram_instance : ram_type := init_file_or_zero(init_file);

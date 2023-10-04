@@ -189,7 +189,7 @@ begin
             wait until rising_edge(tx_clk);
 
             if tx_rst = '1' then
-                cur_state <= IDLE;
+                cur_state <= idle;
                 tx_reg_en <= '0';
                 req_tx    <= '0';
                 tx_busy   <= '0';
@@ -199,28 +199,28 @@ begin
 
                 case cur_state is
 
-                    when IDLE =>
+                    when idle =>
 
                         if tx_start = '1' then
-                            next_state := SEND;
+                            next_state := send;
                             tx_reg_en  <= '1';
                         end if;
 
-                    when SEND =>                -- Wait for Rx side to assert ack
+                    when send =>                -- wait for rx side to assert ack
 
                         if ack_tx = '1' then
-                            next_state := DONE;
+                            next_state := done;
                         end if;
 
-                    when DONE =>                -- Wait for Rx side to deassert ack
+                    when done =>                -- wait for rx side to deassert ack
 
                         if ack_tx = '0' then
-                            next_state := IDLE;
+                            next_state := idle;
                         end if;
 
                     when others =>
 
-                        next_state := IDLE;
+                        next_state := idle;
 
                 end case;
 
@@ -231,16 +231,16 @@ begin
 
                 case next_state is
 
-                    when IDLE =>
+                    when idle =>
 
                         null;
 
-                    when SEND =>
+                    when send =>
 
                         req_tx  <= '1';
                         tx_busy <= '1';
 
-                    when DONE =>
+                    when done =>
 
                         tx_busy <= '1';
 
