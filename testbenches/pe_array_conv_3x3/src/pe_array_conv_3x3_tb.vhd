@@ -148,8 +148,8 @@ architecture imp of pe_array_conv_3x3_tb is
     -- INPUT IMAGE, FILTER WEIGTHS AND EXPECTED OUTPUT
 
     constant input_image : int_image_t(0 to image_y - 1, 0 to image_x - 1) := (
-        (1,2,3,4,5),
-        (6,7,8,9,10),
+        ( 1, 2, 3, 4, 5),
+        ( 6, 7, 8, 9,10),
         (11,12,13,14,15),
         (16,17,18,19,20),
         (21,22,23,24,25)
@@ -312,7 +312,6 @@ begin
 
             for y in 0 to size_y - 1 loop
 
-                -- data_in_wght <= std_logic_vector(to_signed(input_wght(i), data_width_iact_wght));
                 i_data_wght(y) <= std_logic_vector(to_signed(input_weights(y,i), data_width_wght));
 
             end loop;
@@ -327,7 +326,7 @@ begin
 
     end process stimuli_data_wght;
 
-    stimuli_data_iact : process (rstn, clk, clk) is
+    stimuli_data_iact : process (rstn, clk) is
     begin
 
         if not rstn then
@@ -339,7 +338,6 @@ begin
         elsif rising_edge(clk) then
             if s_y = image_y then
                 s_done <= true;
-            -- data_in_valid <= '0';
             elsif or o_buffer_full_iact = '0' then
 
                 for i in 0 to size_rows - 1 loop
