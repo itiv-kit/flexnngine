@@ -3,6 +3,7 @@
 ###
 
 file mkdir "_run"
+file mkdir -p "questa_lib/work"
 transcript file "_run/transcript.txt"
 transcript on
 

@@ -183,6 +183,7 @@ add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/accel
 add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_count_h2
 add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_incr_w1
 add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_state
+add wave -noupdate -expand -group Control -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_done
 
 add wave -noupdate -expand -group {iact commands} -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_command_iact(0)
 add wave -noupdate -expand -group {iact commands} -radix unsigned /control_conv_tb/accelerator_inst/control_inst/r_read_offset_iact(0)
