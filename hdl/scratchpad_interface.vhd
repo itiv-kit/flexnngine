@@ -20,7 +20,7 @@ entity scratchpad_interface is
         addr_width_iact     : positive := 5;
         addr_width_iact_mem : positive := 15;
 
-        data_width_psum     : positive := 16; -- or 17??
+        data_width_psum     : positive := 16;
         line_length_psum    : positive := 127;
         addr_width_psum     : positive := 7;
         addr_width_psum_mem : positive := 15;
@@ -36,12 +36,7 @@ entity scratchpad_interface is
         g_wght_fifo_size         : positive := 15;
         g_psum_fifo_size         : positive := 45;
         g_iact_address_fifo_size : positive := 10;
-        g_wght_address_fifo_size : positive := 10;
-
-        g_channels    : positive := 3;
-        g_image_y     : positive := 14;
-        g_image_x     : positive := 14;
-        g_kernel_size : positive := 5
+        g_wght_address_fifo_size : positive := 10
     );
     port (
         clk  : in    std_logic;

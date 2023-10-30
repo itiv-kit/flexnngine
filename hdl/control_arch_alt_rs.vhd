@@ -14,8 +14,8 @@ architecture alternative_rs_dataflow of control is
     signal r_count_c0w0 : integer range 0 to 2048; -- range 0 to 511
     signal r_count_c1   : integer range 0 to 1023;
     signal r_count_w1   : integer range 0 to 1023;
-    signal r_count_h2   : integer range 0 to 1023;
-    signal r_count_h1   : integer range 0 to 1023;
+    signal r_count_h2   : integer range 0 to 127;
+    signal r_count_h1   : integer range 0 to 127;
 
     signal w_c0w0         : integer range 0 to 1023;
     signal w_c0w0_last_c1 : integer range 0 to 1023;
@@ -23,8 +23,8 @@ architecture alternative_rs_dataflow of control is
     signal w_c0         : integer range 0 to 1023;
     signal w_c0_last_c1 : integer range 0 to 1023;
 
-    signal w_h2           : integer range 0 to 1023;
-    signal w_rows_last_h2 : integer range 0 to 1023;
+    signal w_h2           : integer range 0 to 127;
+    signal w_rows_last_h2 : integer range 0 to 127;
 
     signal w_w1 : integer range 0 to 1023;
     signal w_c1 : integer range 0 to 1023;
@@ -70,11 +70,10 @@ begin
 
     o_c0_last_c1 <= w_c0_last_c1;
     o_c0         <= w_c0;
-
-    o_c1 <= w_c1;
-    o_w1 <= w_w1;
-    o_h2 <= w_h2;
-    o_m0 <= w_m0;
+    o_c1         <= w_c1;
+    o_w1         <= w_w1;
+    o_h2         <= w_h2;
+    o_m0         <= w_m0;
 
     -- unused by alternative rs dataflow, so drive these with constant 0
     w_m0_dist    <= (others => (others => '0'));
@@ -665,16 +664,16 @@ begin
 
     else generate
 
-        w_c1           <= g_c1;
-        w_w1           <= g_w1;
-        w_h2           <= g_h2;
-        w_m0           <= g_m0;
-        w_m0_last_m1   <= g_m0_last_m1;
-        w_rows_last_h2 <= g_rows_last_h2;
-        w_c0           <= g_c0;
-        w_c0_last_c1   <= g_c0_last_c1;
-        w_c0w0         <= g_c0w0;
-        w_c0w0_last_c1 <= g_c0w0_last_c1;
+        w_c1           <= i_c1;
+        w_w1           <= i_w1;
+        w_h2           <= i_h2;
+        w_m0           <= i_m0;
+        w_m0_last_m1   <= i_m0_last_m1;
+        w_rows_last_h2 <= i_rows_last_h2;
+        w_c0           <= i_c0;
+        w_c0_last_c1   <= i_c0_last_c1;
+        w_c0w0         <= i_c0w0;
+        w_c0w0_last_c1 <= i_c0w0_last_c1;
         r_init_done    <= '1';
 
     end generate control_init_inst;

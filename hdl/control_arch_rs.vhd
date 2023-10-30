@@ -586,17 +586,17 @@ begin
 
     else generate
 
-        w_c1           <= g_c1;
-        w_w1           <= g_w1;
-        w_h2           <= g_h2;
-        w_m0           <= g_m0;
+        w_c1           <= i_c1;
+        w_w1           <= i_w1;
+        w_h2           <= i_h2;
+        w_m0           <= i_m0;
         w_m0_dist      <= r_m0_dist;
         w_m0_last_m1   <= 0; -- unused
-        w_rows_last_h2 <= g_rows_last_h2;
-        w_c0           <= g_c0;
-        w_c0_last_c1   <= g_c0_last_c1;
-        w_c0w0         <= g_c0w0;
-        w_c0w0_last_c1 <= g_c0w0_last_c1;
+        w_rows_last_h2 <= i_rows_last_h2;
+        w_c0           <= i_c0;
+        w_c0_last_c1   <= i_c0_last_c1;
+        w_c0w0         <= i_c0w0;
+        w_c0w0_last_c1 <= i_c0w0_last_c1;
         o_init_done    <= r_init_done;
 
         p_init_m0_dist : process (clk, rstn) is

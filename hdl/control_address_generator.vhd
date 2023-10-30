@@ -26,18 +26,8 @@ entity control_address_generator is
         line_length_wght : positive := 64;
         addr_width_wght  : positive := 6;
 
-        g_control_init : boolean  := false;
-        g_c1           : positive := 1;
-        g_w1           : positive := 1;
-        g_h2           : positive := 1;
-        g_m0           : positive := 1;
-        g_m0_last_m1   : positive := 1;
-        g_rows_last_h2 : positive := 1;
-        g_c0           : positive := 1;
-        g_c0_last_c1   : positive := 1;
-        g_c0w0         : positive := 1;
-        g_c0w0_last_c1 : positive := 1;
-        g_dataflow     : integer  := 1
+        g_control_init : boolean := false;
+        g_dataflow : integer := 1
     );
     port (
         clk  : in    std_logic;
@@ -81,7 +71,18 @@ entity control_address_generator is
         o_address_iact       : out   array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
         o_address_wght       : out   array_t(0 to size_y - 1)(addr_width_wght_mem - 1 downto 0);
         o_address_iact_valid : out   std_logic_vector(size_rows - 1 downto 0);
-        o_address_wght_valid : out   std_logic_vector(size_y - 1 downto 0)
+        o_address_wght_valid : out   std_logic_vector(size_y - 1 downto 0);
+
+        i_c1           : in    integer range 0 to 1023;
+        i_w1           : in    integer range 0 to 1023;
+        i_h2           : in    integer range 0 to 1023;
+        i_m0           : in    integer range 0 to 1023;
+        i_m0_last_m1   : in    integer range 0 to 1023;
+        i_rows_last_h2 : in    integer range 0 to 1023;
+        i_c0           : in    integer range 0 to 1023;
+        i_c0_last_c1   : in    integer range 0 to 1023;
+        i_c0w0         : in    integer range 0 to 1023;
+        i_c0w0_last_c1 : in    integer range 0 to 1023
     );
 end entity control_address_generator;
 
@@ -122,17 +123,7 @@ begin
                 addr_width_psum  => addr_width_psum,
                 line_length_wght => line_length_wght,
                 addr_width_wght  => addr_width_wght,
-                g_control_init   => g_control_init,
-                g_c1             => g_c1,
-                g_w1             => g_w1,
-                g_h2             => g_h2,
-                g_m0             => g_m0,
-                g_m0_last_m1     => g_m0_last_m1,
-                g_rows_last_h2   => g_rows_last_h2,
-                g_c0             => g_c0,
-                g_c0_last_c1     => g_c0_last_c1,
-                g_c0w0           => g_c0w0,
-                g_c0w0_last_c1   => g_c0w0_last_c1
+                g_control_init   => g_control_init
             )
             port map (
                 clk                  => clk,
@@ -165,7 +156,17 @@ begin
                 o_update_offset_wght => o_update_offset_wght,
                 o_read_offset_iact   => o_read_offset_iact,
                 o_read_offset_psum   => o_read_offset_psum,
-                o_read_offset_wght   => o_read_offset_wght
+                o_read_offset_wght   => o_read_offset_wght,
+                i_c1                 => i_c1,
+                i_w1                 => i_w1,
+                i_h2                 => i_h2,
+                i_m0                 => i_m0,
+                i_m0_last_m1         => i_m0_last_m1,
+                i_rows_last_h2       => i_rows_last_h2,
+                i_c0                 => i_c0,
+                i_c0_last_c1         => i_c0_last_c1,
+                i_c0w0               => i_c0w0,
+                i_c0w0_last_c1       => i_c0w0_last_c1
             );
 
     else generate
@@ -185,17 +186,7 @@ begin
                 addr_width_psum  => addr_width_psum,
                 line_length_wght => line_length_wght,
                 addr_width_wght  => addr_width_wght,
-                g_control_init   => g_control_init,
-                g_c1             => g_c1,
-                g_w1             => g_w1,
-                g_h2             => g_h2,
-                g_m0             => g_m0,
-                g_m0_last_m1     => g_m0_last_m1,
-                g_rows_last_h2   => g_rows_last_h2,
-                g_c0             => g_c0,
-                g_c0_last_c1     => g_c0_last_c1,
-                g_c0w0           => g_c0w0,
-                g_c0w0_last_c1   => g_c0w0_last_c1
+                g_control_init   => g_control_init
             )
             port map (
                 clk                  => clk,
@@ -228,7 +219,17 @@ begin
                 o_update_offset_wght => o_update_offset_wght,
                 o_read_offset_iact   => o_read_offset_iact,
                 o_read_offset_psum   => o_read_offset_psum,
-                o_read_offset_wght   => o_read_offset_wght
+                o_read_offset_wght   => o_read_offset_wght,
+                i_c1                 => i_c1,
+                i_w1                 => i_w1,
+                i_h2                 => i_h2,
+                i_m0                 => i_m0,
+                i_m0_last_m1         => i_m0_last_m1,
+                i_rows_last_h2       => i_rows_last_h2,
+                i_c0                 => i_c0,
+                i_c0_last_c1         => i_c0_last_c1,
+                i_c0w0               => i_c0w0,
+                i_c0w0_last_c1       => i_c0w0_last_c1
             );
 
     end generate g_control;
@@ -326,4 +327,3 @@ begin
     end generate g_address_generator;
 
 end architecture rtl;
-

@@ -30,33 +30,24 @@ entity accelerator is
         addr_width_wght     : positive := 9;
         addr_width_wght_mem : positive := 15;
 
+        data_width_iact_port_a : positive := 32;
+        data_width_wght_port_a : positive := 32;
+        data_width_psum_port_a : positive := 32;
+        addr_width_iact_port_a : positive := 13;
+        addr_width_wght_port_a : positive := 13;
+        addr_width_psum_port_a : positive := 14;
+
         fifo_width : positive := 16;
 
         g_iact_fifo_size : positive := 15;
         g_wght_fifo_size : positive := 15;
         g_psum_fifo_size : positive := 45;
 
-        g_channels    : positive := 28;
-        g_kernels     : positive := 10;
-        g_image_y     : positive := 14;
-        g_image_x     : positive := 14;
-        g_kernel_size : positive := 5;
-
         g_files_dir : string  := "";
         g_init_sp   : boolean := false;
 
-        g_control_init : boolean  := false;
-        g_c1           : positive := 1;
-        g_w1           : positive := 1;
-        g_h2           : positive := 1;
-        g_m0           : positive := 1;
-        g_m0_last_m1   : positive := 1;
-        g_rows_last_h2 : positive := 1;
-        g_c0           : positive := 1;
-        g_c0_last_c1   : positive := 1;
-        g_c0w0         : positive := 1;
-        g_c0w0_last_c1 : positive := 1;
-        g_dataflow     : integer  := 1
+        g_control_init : boolean := false;
+        g_dataflow     : integer := 1
     );
     port (
         clk  : in    std_logic;
@@ -67,14 +58,39 @@ entity accelerator is
         i_start : in    std_logic;
         o_done  : out   std_logic;
 
-        o_dout_psum       : out   std_logic_vector(data_width_psum - 1 downto 0);
-        o_dout_psum_valid : out   std_logic;
+        o_dout_psum       : out   std_logic_vector(data_width_psum_port_a - 1 downto 0);
+        o_dout_iact       : out   std_logic_vector(data_width_iact_port_a - 1 downto 0);
+        o_dout_wght       : out   std_logic_vector(data_width_wght_port_a - 1 downto 0);
+        o_dout_psum_valid : out   std_logi;
 
         i_write_en_iact : in    std_logic;
         i_write_en_wght : in    std_logic;
+        i_read_en_psum  : in    std_logic;
 
-        i_din_iact : in    std_logic_vector(data_width_iact - 1 downto 0);
-        i_din_wght : in    std_logic_vector(data_width_wght - 1 downto 0)
+        i_write_adr_iact : in    std_logic_vector(addr_width_iact_port_a - 1 downto 0);
+        i_write_adr_wght : in    std_logic_vector(addr_width_wght_port_a - 1 downto 0);
+        i_read_adr_psum  : in    std_logic_vector(addr_width_psum_port_a - 1 downto 0);
+
+        i_din_iact : in    std_logic_vector(data_width_iact_port_a - 1 downto 0);
+        i_din_wght : in    std_logic_vector(data_width_wght_port_a - 1 downto 0);
+
+        -- modified to receive parameters via ports
+        i_channels    : in    integer range 0 to 1023;
+        i_kernels     : in    integer range 0 to 1023;
+        i_image_y     : in    integer range 0 to 4095;
+        i_image_x     : in    integer range 0 to 4095;
+        i_kernel_size : in    integer range 0 to 31;
+
+        i_conv_param_c1           : in    integer range 0 to 1023;
+        i_conv_param_w1           : in    integer range 0 to 1023;
+        i_conv_param_h2           : in    integer range 0 to 1023;
+        i_conv_param_m0           : in    integer range 0 to 1023;
+        i_conv_param_m0_last_m1   : in    integer range 0 to 1023;
+        i_conv_param_row_last_h2  : in    integer range 0 to 1023;
+        i_conv_param_c0           : in    integer range 0 to 1023;
+        i_conv_param_c0_last_c1   : in    integer range 0 to 1023;
+        i_conv_param_c0w0         : in    integer range 0 to 1023;
+        i_conv_param_c0w0_last_c1 : in    integer range 0 to 1023
     );
 end entity accelerator;
 
@@ -187,11 +203,11 @@ begin
             r_kernels     <= 0;
             r_kernel_size <= 0;
         elsif rising_edge(clk) then
-            r_image_x     <= g_image_x;
-            r_image_y     <= g_image_y;
-            r_channels    <= g_channels;
-            r_kernels     <= g_kernels;
-            r_kernel_size <= g_kernel_size;
+            r_image_x     <= i_image_x;
+            r_image_y     <= i_image_y;
+            r_channels    <= i_channels;
+            r_kernels     <= i_kernels;
+            r_kernel_size <= i_kernel_size;
         end if;
 
     end process start_procedure;
@@ -261,16 +277,6 @@ begin
             line_length_wght    => line_length_wght,
             addr_width_wght     => addr_width_wght,
             g_control_init      => g_control_init,
-            g_c1                => g_c1,
-            g_w1                => g_w1,
-            g_h2                => g_h2,
-            g_m0                => g_m0,
-            g_m0_last_m1        => g_m0_last_m1,
-            g_rows_last_h2      => g_rows_last_h2,
-            g_c0                => g_c0,
-            g_c0_last_c1        => g_c0_last_c1,
-            g_c0w0              => g_c0w0,
-            g_c0w0_last_c1      => g_c0w0_last_c1,
             g_dataflow          => g_dataflow
         )
         port map (
@@ -304,28 +310,44 @@ begin
             o_address_iact           => w_address_iact,
             o_address_wght           => w_address_wght,
             o_address_iact_valid     => w_address_iact_valid,
-            o_address_wght_valid     => w_address_wght_valid
+            o_address_wght_valid     => w_address_wght_valid,
+            i_c1                     => i_conv_param_c1,
+            i_w1                     => i_conv_param_w1,
+            i_h2                     => i_conv_param_h2,
+            i_m0                     => i_conv_param_m0,
+            i_m0_last_m1             => i_conv_param_m0_last_m1,
+            i_rows_last_h2           => i_conv_param_row_last_h2,
+            i_c0                     => i_conv_param_c0,
+            i_c0_last_c1             => i_conv_param_c0_last_c1,
+            i_c0w0                   => i_conv_param_c0w0,
+            i_c0w0_last_c1           => i_conv_param_c0w0_last_c1
         );
 
     scratchpad_inst : entity accel.scratchpad
         generic map (
-            data_width_iact => data_width_iact,
-            addr_width_iact => addr_width_iact_mem,
-            data_width_psum => data_width_psum,
-            addr_width_psum => addr_width_psum_mem,
-            data_width_wght => data_width_wght,
-            addr_width_wght => addr_width_wght_mem,
-            initialize_mems => g_init_sp,
-            g_files_dir     => g_files_dir
+            data_width_iact_a => data_width_iact_port_a,
+            addr_width_iact_a => addr_width_iact_port_a,
+            data_width_psum_a => data_width_psum_port_a,
+            addr_width_psum_a => addr_width_psum_port_a,
+            data_width_wght_a => data_width_wght_port_a,
+            addr_width_wght_a => addr_width_wght_port_a,
+            data_width_iact_b => data_width_iact,
+            addr_width_iact_b => addr_width_iact_mem,
+            data_width_psum_b => data_width_psum,
+            addr_width_psum_b => addr_width_psum_mem,
+            data_width_wght_b => data_width_wght,
+            addr_width_wght_b => addr_width_wght_mem,
+            generate_init     => g_init_sp,
+            g_files_dir       => g_files_dir
         )
         port map (
             clk             => clk_sp,
             rstn            => rstn,
-            write_adr_iact  => w_write_adr_iact,
+            write_adr_iact  => i_write_adr_iact,
             write_adr_psum  => w_write_adr_psum,
-            write_adr_wght  => w_write_adr_wght,
+            write_adr_wght  => i_write_adr_wght,
             read_adr_iact   => w_read_adr_iact,
-            read_adr_psum   => w_read_adr_psum,
+            read_adr_psum   => i_read_adr_psum,
             read_adr_wght   => w_read_adr_wght,
             write_en_iact   => i_write_en_iact,
             write_en_psum   => w_write_en_psum and not w_write_suppress_psum,
@@ -339,6 +361,8 @@ begin
             dout_iact       => w_dout_iact,
             dout_psum       => o_dout_psum,
             dout_wght       => w_dout_wght,
+            bus_dout_iact   => o_dout_iact,
+            bus_dout_wght   => o_dout_wght,
             dout_iact_valid => w_dout_iact_valid,
             dout_psum_valid => o_dout_psum_valid,
             dout_wght_valid => w_dout_wght_valid
@@ -367,11 +391,7 @@ begin
             fifo_width          => fifo_width,
             g_iact_fifo_size    => g_iact_fifo_size,
             g_wght_fifo_size    => g_wght_fifo_size,
-            g_psum_fifo_size    => g_psum_fifo_size,
-            g_channels          => g_channels,
-            g_image_y           => g_image_y,
-            g_image_x           => g_image_x,
-            g_kernel_size       => g_kernel_size
+            g_psum_fifo_size    => g_psum_fifo_size
         )
         port map (
             clk                      => clk,
@@ -423,7 +443,7 @@ begin
             i_dataflow          => w_dataflow,
             i_w1                => w_w1,
             i_m0                => w_m0,
-            i_kernel_size       => g_kernel_size,
+            i_kernel_size       => i_kernel_size,
             i_valid_psum_out    => w_valid_psums_out,
             i_gnt_psum_binary_d => w_gnt_psum_binary_d,
             i_empty_psum_fifo   => w_empty_psum_fifo,

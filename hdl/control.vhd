@@ -22,17 +22,7 @@ entity control is
         line_length_wght : positive := 512;
         addr_width_wght  : positive := 9;
 
-        g_control_init : boolean  := true;
-        g_c1           : positive := 1;
-        g_w1           : positive := 1;
-        g_h2           : positive := 1;
-        g_m0           : positive := 1;
-        g_m0_last_m1   : positive := 1;
-        g_rows_last_h2 : positive := 1;
-        g_c0           : positive := 1;
-        g_c0_last_c1   : positive := 1;
-        g_c0w0         : positive := 1;
-        g_c0w0_last_c1 : positive := 1
+        g_control_init : boolean := true
     );
     port (
         clk  : in    std_logic;
@@ -75,6 +65,18 @@ entity control is
 
         o_read_offset_iact : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
         o_read_offset_psum : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
-        o_read_offset_wght : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0)
+        o_read_offset_wght : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
+
+        -- Added ports from generics
+        i_c1           : in    integer range 0 to 1023;
+        i_w1           : in    integer range 0 to 1023;
+        i_h2           : in    integer range 0 to 1023;
+        i_m0           : in    integer range 0 to 1023;
+        i_m0_last_m1   : in    integer range 0 to 1023;
+        i_rows_last_h2 : in    integer range 0 to 1023;
+        i_c0           : in    integer range 0 to 1023;
+        i_c0_last_c1   : in    integer range 0 to 1023;
+        i_c0w0         : in    integer range 0 to 1023;
+        i_c0w0_last_c1 : in    integer range 0 to 1023
     );
 end entity control;
