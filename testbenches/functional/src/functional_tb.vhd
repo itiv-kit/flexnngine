@@ -12,7 +12,7 @@ library ieee;
     use ieee.math_real.log2;
     use std.textio.all;
 
-entity control_conv_tb is
+entity functional_tb is
     generic (
         size_x    : positive := 7;
         size_y    : positive := 10;
@@ -68,9 +68,9 @@ entity control_conv_tb is
         g_c0w0_last_c1 : positive := 1;
         g_dataflow     : integer  := 1
     );
-end entity control_conv_tb;
+end entity functional_tb;
 
-architecture imp of control_conv_tb is
+architecture imp of functional_tb is
 
     signal clk    : std_logic := '0';
     signal clk_sp : std_logic := '0';
@@ -138,9 +138,8 @@ begin
     i_data_iact_valid <= << signal accelerator_inst.w_data_iact_valid : std_logic_vector(size_rows - 1 downto 0)>>;
     i_data_wght       <= << signal accelerator_inst.w_data_wght : array_t (0 to size_y - 1)(data_width_wght - 1 downto 0)>>;
     i_data_wght_valid <= << signal accelerator_inst.w_data_wght_valid : std_logic_vector(size_y - 1 downto 0)>>;
-    -- psum_ram_instance := << shared variable accelerator_inst.scratchpad_inst.ram_dp_psum.ram_instance : ram_type>>;
 
-    psum_ram_instance <= << signal accelerator_inst.scratchpad_init_inst.scratchpad_inst.ram_dp_psum.r_ram_instance : ram_type >>;
+    psum_ram_instance <= << signal accelerator_inst.scratchpad_inst.ram_dp_psum.ram_instance : ram_type >>;
 
     r_iact_command     <= << signal accelerator_inst.pe_array_inst.pe_inst_y(0).pe_inst_x(0).pe_north.pe_inst.line_buffer_iact.i_command : command_lb_t >>;
     r_iact_read_offset <= << signal accelerator_inst.pe_array_inst.pe_inst_y(0).pe_inst_x(0).pe_north.pe_inst.line_buffer_iact.i_read_offset : std_logic_vector(addr_width_iact - 1 downto 0) >>;
@@ -527,7 +526,7 @@ begin
                 /*if r_status_sp_interface = '1' and r_enable_pe_array = '0' then
 
                     -- Preloading FIFOs
-                    write(row, integer'image(0));      
+                    write(row, integer'image(0));
                     write(row, string'("  "));
 
                 elsif r_enable_pe_array = '1' then
