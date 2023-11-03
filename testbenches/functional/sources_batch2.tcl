@@ -31,10 +31,10 @@ vcom -64 -2008 -work xil_defaultlib  \
 
 # testbench
 vcom -64 -2008 -work xil_defaultlib  \
-"../../src/control_conv_tb.vhd" \
+"../../src/functional_tb.vhd" \
 
 set SIM_TIME "10 ms"
-set SIM_TOP_LEVEL "control_conv_tb"
+set SIM_TOP_LEVEL "functional_tb"
 
 
 set generics $::env(generics)
