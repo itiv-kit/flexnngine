@@ -15,3 +15,5 @@ rule:
     disable: true
   component_019:
     disable: true
+  concurrent_007:
+    allow_single_line: true
