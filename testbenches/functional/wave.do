@@ -206,191 +206,68 @@ add wave -noupdate -expand -group {Outputs} -radix unsigned /functional_tb/accel
 add wave -noupdate -expand -group {Outputs} -radix symbolic /functional_tb/accelerator_inst/control_inst/r_command_wght
 add wave -noupdate -expand -group {Outputs} -radix unsigned /functional_tb/accelerator_inst/control_inst/r_read_offset_wght
 
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_iact/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_wght/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_wght/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_iact/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_iact/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_iact/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/line_buffer_iact/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/line_buffer_wght/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/line_buffer_wght/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_north/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_north/pe_inst/line_buffer_iact/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_north/pe_inst/line_buffer_wght/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(1)/pe_north/pe_inst/line_buffer_wght/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(2)/pe_north/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(2)/pe_north/pe_inst/line_buffer_iact/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(2)/pe_north/pe_inst/line_buffer_wght/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(2)/pe_north/pe_inst/line_buffer_wght/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(3)/pe_north/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(3)/pe_north/pe_inst/line_buffer_iact/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(3)/pe_north/pe_inst/line_buffer_wght/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(3)/pe_north/pe_inst/line_buffer_wght/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_iact/i_read_offset
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_wght/r_fill_count
-add wave -noupdate -expand -group Fill_Counts -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_wght/i_read_offset
+set size_x 7
+set size_y 10
+proc get_pe_path {x y} {
+    if {$y > 0} {
+        if {$y == $size_y-1} {
+            set pe_name "pe_south"
+        } else {
+            set pe_name "pe_middle"
+        }
+    } else {
+        set pe_name "pe_north"
+    }
+    return "/functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(${y})/pe_inst_x(${x})/${pe_name}/pe_inst"
+}
 
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /functional_tb/accelerator_inst/w_update_offset_psum
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/i_update_offset_psum
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/i_preload_psum_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/i_data_in_psum_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/r_sel_mult_psum
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/i_update_offset_psum
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/w_data_acc_out
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/w_data_acc_in1
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/w_data_acc_in2
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/w_data_acc_in1_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/w_data_acc_in2_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_psum/i_update_val
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_psum/i_update_offset
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_psum/i_command
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_wght/i_command
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_wght/i_read_offset
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_iact/i_command
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_iact/i_read_offset
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/w_data_psum
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/w_data_psum_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/w_data_iact
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/w_data_wght
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/w_data_iact_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/w_data_wght_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/i_enable
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/w_data_mult
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/w_data_mult_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/w_data_acc_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/w_data_acc_out
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/w_data_acc_out_valid
+# line buffer fill counts
+for {set y 0} {$y < 5} {incr y} {
+    set pe_path [get_pe_path 0 $y]
+    add wave -noupdate -expand -group Fill_Counts -radix decimal ${pe_path}/line_buffer_iact/r_fill_count
+    add wave -noupdate -expand -group Fill_Counts -radix decimal ${pe_path}/line_buffer_iact/i_read_offset
+    add wave -noupdate -expand -group Fill_Counts -radix decimal ${pe_path}/line_buffer_wght/r_fill_count
+    add wave -noupdate -expand -group Fill_Counts -radix decimal ${pe_path}/line_buffer_wght/i_read_offset
+}
+for {set x 1} {$x < 5} {incr x} {
+    set pe_path [get_pe_path $x 0]
+    add wave -noupdate -expand -group Fill_Counts -radix decimal ${pe_path}/line_buffer_iact/r_fill_count
+    add wave -noupdate -expand -group Fill_Counts -radix decimal ${pe_path}/line_buffer_iact/i_read_offset
+    add wave -noupdate -expand -group Fill_Counts -radix decimal ${pe_path}/line_buffer_wght/r_fill_count
+    add wave -noupdate -expand -group Fill_Counts -radix decimal ${pe_path}/line_buffer_wght/i_read_offset
+}
 
-#
-#
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_psum/ram/ram_instance
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_psum/r_fill_count
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/i_data_in_iact
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_iact/ram/ram_instance
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_wght/ram/ram_instance
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_wght/i_data
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_wght/i_data_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_wght/i_command
-
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/i_data_in_psum_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/r_sel_mult_psum
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/i_update_offset_psum
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/w_data_acc_out
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/w_data_acc_in1
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/w_data_acc_in2
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/w_data_acc_in1_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/w_data_acc_in2_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_psum/i_update_val
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_psum/i_update_offset
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_psum/i_command
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_iact/i_command
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/i_command
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_psum/ram/ram_instance
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_psum/r_fill_count
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_iact/ram/ram_instance
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/ram/ram_instance
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/i_data
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/i_data_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_1_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/i_command
-
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/i_data_in_psum_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/r_sel_mult_psum
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/i_update_offset_psum
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/w_data_acc_out
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/w_data_acc_in1
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/w_data_acc_in2
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/w_data_acc_in1_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/w_data_acc_in2_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_psum/i_update_val
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_psum/i_update_offset
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_psum/i_command
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_psum/ram/ram_instance
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_psum/r_fill_count
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_iact/ram/ram_instance
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/ram/ram_instance
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/i_data
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/i_data_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_2_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/i_command
-
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/i_data_in_psum_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/r_sel_mult_psum
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/i_update_offset_psum
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/w_data_acc_out
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/w_data_acc_in1
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/w_data_acc_in2
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/w_data_acc_in1_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/w_data_acc_in2_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/w_data_mult
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/w_data_psum
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/w_data_mult_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/i_data_in_psum_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_psum/i_update_val
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_psum/i_update_offset
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_psum/i_command
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/i_enable
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/i_data_in_valid_chg
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_psum/ram/ram_instance
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_psum/r_fill_count
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_iact/ram/ram_instance
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/ram/ram_instance
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/i_data
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/i_data_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_3_0 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/i_command
-
-add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/i_data_in_psum_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/r_sel_mult_psum
-add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/i_update_offset_psum
-add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/w_data_acc_out
-add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/w_data_acc_in1
-add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/w_data_acc_in2
-add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/w_data_acc_in1_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/w_data_acc_in2_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/line_buffer_psum/i_update_val
-add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/line_buffer_psum/i_update_offset
-add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/line_buffer_psum/i_command
-add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/line_buffer_psum/ram/ram_instance
-add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/line_buffer_psum/r_fill_count
-add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/line_buffer_iact/ram/ram_instance
-add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/line_buffer_iact/r_fill_count
-add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/line_buffer_wght/ram/ram_instance
-add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/line_buffer_wght/i_data
-add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/line_buffer_wght/i_data_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_4_0 -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(4)/pe_inst_x(0)/pe_south/pe_inst/line_buffer_wght/i_command
-
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/i_data_in_psum_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/r_sel_mult_psum
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/i_update_offset_psum
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/w_data_acc_out
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/w_data_acc_in1
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/w_data_acc_in2
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/w_data_acc_in1_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/w_data_acc_in2_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_psum/i_update_val
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_psum/i_update_offset
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_psum/i_command
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_psum/ram/ram_instance
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_psum/r_fill_count
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/i_data_in_iact
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_iact/ram/ram_instance
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_wght/ram/ram_instance
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_wght/i_data
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_wght/i_data_valid
-add wave -noupdate -expand -group RAM_internal -expand -group PE_0_4 -radix decimal /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(4)/pe_north/pe_inst/line_buffer_wght/i_command
-
-
+# line buffer memory i/o of individual PEs
+add wave -noupdate -expand -group RAM_internal -radix unsigned /functional_tb/accelerator_inst/w_update_offset_psum
+add wave -noupdate -expand -group RAM_internal -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/i_update_offset_psum
+add wave -noupdate -expand -group RAM_internal -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/i_preload_psum_valid
+for {set y 0} {$y < 5} {incr y} {
+    set group "PE_${y}_0"
+    set pe_path [get_pe_path 0 $y]
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix unsigned ${pe_path}/i_data_in_psum_valid
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix unsigned ${pe_path}/r_sel_mult_psum
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix unsigned ${pe_path}/i_update_offset_psum
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix decimal  ${pe_path}/w_data_acc_out
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix decimal  ${pe_path}/w_data_acc_in1
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix decimal  ${pe_path}/w_data_acc_in2
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix unsigned ${pe_path}/w_data_acc_in1_valid
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix unsigned ${pe_path}/w_data_acc_in2_valid
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix decimal  ${pe_path}/line_buffer_iact/i_command
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix decimal  ${pe_path}/line_buffer_iact/i_read_offset
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix decimal  ${pe_path}/line_buffer_iact/i_data_valid
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix decimal  ${pe_path}/line_buffer_iact/i_data
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix decimal  ${pe_path}/line_buffer_iact/ram/ram_instance
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix decimal  ${pe_path}/line_buffer_wght/i_command
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix decimal  ${pe_path}/line_buffer_wght/i_read_offset
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix decimal  ${pe_path}/line_buffer_wght/i_data_valid
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix decimal  ${pe_path}/line_buffer_wght/i_data
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix decimal  ${pe_path}/line_buffer_wght/ram/ram_instance
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix decimal  ${pe_path}/line_buffer_psum/i_command
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix decimal  ${pe_path}/line_buffer_psum/i_update_val
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix decimal  ${pe_path}/line_buffer_psum/i_update_offset
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix decimal  ${pe_path}/line_buffer_psum/r_fill_count
+    add wave -noupdate -expand -group RAM_internal -expand -group $group -radix decimal  ${pe_path}/line_buffer_psum/ram/ram_instance
+}
 
 TreeUpdate [SetDefaultTree]
 WaveRestoreCursors {{Cursor 1} {0 ns} 0}
