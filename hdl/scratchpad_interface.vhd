@@ -667,21 +667,7 @@ begin
 
     fifo_psum_out : for x in 0 to size_x - 1 generate
 
-        /*fifo_psum_out : component fifo_generator_0
-            port map (
-                rst    => not rstn,
-                wr_clk => clk,
-                rd_clk => clk_sp,
-                din    => i_psums(x),
-                wr_en  => i_psums_valid(x),
-                rd_en  => w_rd_en_psum_out_f(x),
-                dout   => w_dout_psum_out_f(x),
-                full   => w_full_psum_out_f(x),
-                empty  => w_empty_psum_out_f(x),
-                valid  => w_valid_psum_out_f(x)
-            );*/
-/* TODO use feasible size for Psum FIFO */
-
+        /* TODO use feasible size for Psum FIFO */
         fifo_psum_out : component dc_fifo
             generic map (
                 mem_size    => g_psum_fifo_size,

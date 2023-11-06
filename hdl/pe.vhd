@@ -327,7 +327,7 @@ begin
             o_data_valid       => w_data_iact_valid,
             o_buffer_full      => o_buffer_full_iact,
             o_buffer_full_next => o_buffer_full_next_iact,
-            i_update_val       => (others=>'0'),
+            i_update_val       => (others => '0'),
             i_update_offset    => i_update_offset_iact,
             i_read_offset      => i_read_offset_iact,
             i_command          => i_command_iact
@@ -373,7 +373,7 @@ begin
             o_data_valid       => w_data_wght_valid,
             o_buffer_full      => o_buffer_full_wght,
             o_buffer_full_next => o_buffer_full_next_wght,
-            i_update_val       => (others=>'0'),
+            i_update_val       => (others => '0'),
             i_update_offset    => i_update_offset_wght,
             i_read_offset      => i_read_offset_wght,
             i_command          => i_command_wght
