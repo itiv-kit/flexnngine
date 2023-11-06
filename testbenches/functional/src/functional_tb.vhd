@@ -102,8 +102,6 @@ architecture imp of functional_tb is
 
     type ram_type is array (0 to 2 ** addr_width_psum_mem - 1) of std_logic_vector(data_width_psum - 1 downto 0);
 
-    signal psum_ram_instance : ram_type;
-
     type t_state_pe is (s_calculate, s_output, s_incr_c1, s_incr_h1);
     type t_state_accelerator is (s_idle, s_init_started, s_load_fifo_started, s_processing);
 
@@ -138,8 +136,6 @@ begin
     i_data_iact_valid <= << signal accelerator_inst.w_data_iact_valid : std_logic_vector(size_rows - 1 downto 0)>>;
     i_data_wght       <= << signal accelerator_inst.w_data_wght : array_t (0 to size_y - 1)(data_width_wght - 1 downto 0)>>;
     i_data_wght_valid <= << signal accelerator_inst.w_data_wght_valid : std_logic_vector(size_y - 1 downto 0)>>;
-
-    psum_ram_instance <= << signal accelerator_inst.scratchpad_inst.ram_dp_psum.ram_instance : ram_type >>;
 
     r_iact_command     <= << signal accelerator_inst.pe_array_inst.pe_inst_y(0).pe_inst_x(0).pe_north.pe_inst.line_buffer_iact.i_command : command_lb_t >>;
     r_iact_read_offset <= << signal accelerator_inst.pe_array_inst.pe_inst_y(0).pe_inst_x(0).pe_north.pe_inst.line_buffer_iact.i_read_offset : std_logic_vector(addr_width_iact - 1 downto 0) >>;
@@ -547,6 +543,7 @@ begin
 
         file     outfile : text open write_mode is g_files_dir & "_output.txt";
         variable row     : line;
+        variable psum_ram_instance : ram_type := << variable accelerator_inst.scratchpad_inst.ram_dp_psum.ram_instance : ram_type >>;
 
     begin
 
