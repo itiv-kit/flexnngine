@@ -5,10 +5,9 @@ import os
 import sys
 from multiprocessing import Pool
 from dataclasses import dataclass
-from subprocess import DEVNULL, STDOUT, CalledProcessError, check_call
-import subprocess
+from subprocess import STDOUT, CalledProcessError, check_call
 import shutil
-
+from pathlib import Path
 
 @dataclass
 class Convolution:
@@ -72,15 +71,16 @@ class Setting:
 
 
 class Test:
-    def __init__(self, name, convolution, accelerator, show_output):
+    def __init__(self, name, convolution, accelerator, gui=True):
         self.convolution = convolution
         self.accelerator = accelerator
         self.name = name
-        self.show_output = show_output
+        self.gui = gui
+        self.test_dir = None
 
     def generate_test(self, test_name, test_dir):
         print("Generating test: ", test_name)
-        os.makedirs(test_dir, exist_ok=True)
+        test_dir.mkdir(parents=True, exist_ok=True)
         self.test_dir = test_dir
         return self._generate_stimuli()
 
@@ -369,16 +369,16 @@ class Test:
         # print("convolved_images_stack_shape: ", self.convolved_images_stack.shape)
 
         # save data as txt files
-        np.savetxt(self.test_dir + "_image.txt", image, fmt="%d", delimiter=" ")
-        np.savetxt(self.test_dir + "_kernel.txt", kernel, fmt="%d", delimiter=" ")
+        np.savetxt(self.test_dir / "_image.txt", image, fmt="%d", delimiter=" ")
+        np.savetxt(self.test_dir / "_kernel.txt", kernel, fmt="%d", delimiter=" ")
         np.savetxt(
-            self.test_dir + "_kernel_stack.txt", kernels_stack, fmt="%d", delimiter=" "
+            self.test_dir / "_kernel_stack.txt", kernels_stack, fmt="%d", delimiter=" "
         )
         np.savetxt(
-            self.test_dir + "_convolution.txt", convolved_image, fmt="%d", delimiter=" "
+            self.test_dir / "_convolution.txt", convolved_image, fmt="%d", delimiter=" "
         )
         np.savetxt(
-            self.test_dir + "_convolution_stack.txt",
+            self.test_dir / "_convolution_stack.txt",
             self.convolved_images_stack,
             fmt="%d",
             delimiter=" ",
@@ -386,14 +386,14 @@ class Test:
 
         # save mem files
         # save image as 8-bit binary values in _mem_iact.txt in two's complement
-        with open(self.test_dir + "_mem_iact.txt", "w") as f:
+        with open(self.test_dir / "_mem_iact.txt", "w") as f:
             for i in range(
                 self.convolution.image_size * self.convolution.input_channels
             ):
                 for j in range(self.convolution.image_size):
                     f.write("{0:08b} ".format(image[i][j] & 0xFF) + "\n")
 
-        with open(self.test_dir + "_mem_iact_dec.txt", "w") as f:
+        with open(self.test_dir / "_mem_iact_dec.txt", "w") as f:
             for i in range(
                 self.convolution.image_size * self.convolution.input_channels
             ):
@@ -403,7 +403,7 @@ class Test:
         # print("Pixels : " + str(image.shape[0] * image.shape[1]))
 
         # save kernel as 8-bit binary values in _mem_wght.txt in two's complement
-        with open(self.test_dir + "_mem_wght.txt", "w") as f:
+        with open(self.test_dir / "_mem_wght.txt", "w") as f:
             for i in range(
                 self.convolution.kernel_size * self.convolution.input_channels
             ):
@@ -411,7 +411,7 @@ class Test:
                     f.write("{0:08b} ".format(kernel[i][j] & 0xFF) + "\n")
 
         # save kernels as 8-bit binary values in _mem_wght_stack.txt in two's complement
-        with open(self.test_dir + "_mem_wght_stack.txt", "w") as f:
+        with open(self.test_dir / "_mem_wght_stack.txt", "w") as f:
             for i in range(
                 self.convolution.kernel_size * self.convolution.input_channels * self.M0
             ):
@@ -419,7 +419,7 @@ class Test:
                     f.write("{0:08b} ".format(kernels_stack[i][j] & 0xFF) + "\n")
 
         # save empty file as _mem_psum.txt
-        with open(self.test_dir + "_mem_psum.txt", "w") as f:
+        with open(self.test_dir / "_mem_psum.txt", "w") as f:
             pass
 
         # reorder image to be able to check iact input
@@ -483,7 +483,7 @@ class Test:
         # print("image shape : ", image.shape)
         # np.savetxt('_kernel_reordered.txt', kernel, fmt='%d', delimiter=' ')
         np.savetxt(
-            self.test_dir + "_image_reordered_2.txt", image, fmt="%d", delimiter=" "
+            self.test_dir / "_image_reordered_2.txt", image, fmt="%d", delimiter=" "
         )
         return True
 
@@ -506,152 +506,94 @@ class Test:
             print("Image size is: ", image.shape)
         return new_image
 
+    def build_generics(self):
+        return {
+            'g_kernel_size':       self.convolution.kernel_size,
+            'g_image_y':           self.convolution.image_size,
+            'g_image_x':           self.convolution.image_size,
+            'g_channels':          self.convolution.input_channels,
+            'line_length_wght':    self.accelerator.line_length_wght,
+            'addr_width_wght':     math.ceil(math.log2(self.accelerator.line_length_wght)),
+            'line_length_iact':    self.accelerator.line_length_iact,
+            'addr_width_iact':     math.ceil(math.log2(self.accelerator.line_length_iact)),
+            'line_length_psum':    self.accelerator.line_length_psum,
+            'addr_width_psum':     math.ceil(math.log2(self.accelerator.line_length_psum)),
+            'addr_width_iact_mem': self.accelerator.mem_size_iact,
+            'addr_width_wght_mem': self.accelerator.mem_size_wght,
+            'addr_width_psum_mem': self.accelerator.mem_size_psum,
+            'size_x':              self.accelerator.size_x,
+            'size_y':              self.accelerator.size_y,
+            'size_rows':           self.accelerator.size_x + self.accelerator.size_y - 1,
+            'addr_width_x':        math.ceil(math.log2(self.accelerator.size_x)),
+            'addr_width_y':        math.ceil(math.log2(self.accelerator.size_y)),
+            'addr_width_rows':     math.ceil(math.log2(self.accelerator.size_x + self.accelerator.size_y - 1)),
+            'g_iact_fifo_size':    self.accelerator.iact_fifo_size,
+            'g_wght_fifo_size':    self.accelerator.wght_fifo_size,
+            'g_psum_fifo_size':    self.accelerator.psum_fifo_size,
+            'g_control_init':      False,
+            'g_c1':                self.C1,
+            'g_w1':                self.W1,
+            'g_h2':                self.H2,
+            'g_m0':                self.M0,
+            'g_m0_last_m1':        self.M0_last_m1,
+            'g_rows_last_h2':      self.rows_last_h2,
+            'g_c0':                self.C0,
+            'g_c0_last_c1':        self.C0_last_c1,
+            'g_c0w0':              self.C0W0,
+            'g_c0w0_last_c1':      self.C0W0_last_c1,
+            'g_clk':               self.accelerator.clk_period,
+            'g_clk_sp':            self.accelerator.clk_sp_period,
+            'g_dataflow':          self.accelerator.dataflow,
+            'g_init_sp':           True,
+            'g_files_dir':         str(self.test_dir.absolute()) + '/',
+        }
+
     def run(self):
-        if os.path.exists(self.test_dir + "_success.txt") and sim.start_gui == False:
+        if os.path.exists(self.test_dir / "_success.txt") and sim.start_gui == False:
             print("Test already passed. Only re-evaluating results.")
             return self._evaluate()
         print("Running test: ", self.name)
         myenv = os.environ.copy()
         myenv["LM_LICENSE_FILE"] = "1717@scclic2.scc.kit.edu"
-        # myenv["generics"] = "$generics"
-        myenv["library"] = self.test_dir
+        myenv["library"] = self.test_dir.absolute()
         myenv["library_name"] = self.name
-        myenv["generics"] = (
-            "-gg_kernel_size="
-            + str(self.convolution.kernel_size)
-            + " -gg_image_y="
-            + str(self.convolution.image_size)
-            + " -gg_image_x="
-            + str(self.convolution.image_size)
-            + " -gg_channels="
-            + str(self.convolution.input_channels)
-            + " -gline_length_wght="
-            + str(self.accelerator.line_length_wght)
-            + " -gaddr_width_wght="
-            + str(math.ceil(math.log2(self.accelerator.line_length_wght)))
-            + " -gline_length_iact="
-            + str(self.accelerator.line_length_iact)
-            + " -gaddr_width_iact="
-            + str(math.ceil(math.log2(self.accelerator.line_length_iact)))
-            + " -gline_length_psum="
-            + str(self.accelerator.line_length_psum)
-            + " -gaddr_width_psum="
-            + str(math.ceil(math.log2(self.accelerator.line_length_psum)))
-            + " -gaddr_width_iact_mem="
-            + str(self.accelerator.mem_size_iact)
-            + " -gaddr_width_wght_mem="
-            + str(self.accelerator.mem_size_wght)
-            + " -gaddr_width_psum_mem="
-            + str(self.accelerator.mem_size_psum)
-            + " -gsize_x="
-            + str(self.accelerator.size_x)
-            + " -gsize_y="
-            + str(self.accelerator.size_y)
-            + " -gsize_rows="
-            + str(self.accelerator.size_x + self.accelerator.size_y - 1)
-            + " -gaddr_width_x="
-            + str(math.ceil(math.log2(self.accelerator.size_x)))
-            + " -gaddr_width_y="
-            + str(math.ceil(math.log2(self.accelerator.size_y)))
-            + " -gaddr_width_rows="
-            + str(
-                math.ceil(
-                    math.log2(self.accelerator.size_x + self.accelerator.size_y - 1)
-                )
-            )
-            + " -gg_iact_fifo_size="
-            + str(self.accelerator.iact_fifo_size)
-            + " -gg_wght_fifo_size="
-            + str(self.accelerator.wght_fifo_size)
-            + " -gg_psum_fifo_size="
-            + str(self.accelerator.psum_fifo_size)
-            + " -gg_control_init="
-            + "False"
-            + " -gg_c1="
-            + str(self.C1)
-            + " -gg_w1="
-            + str(self.W1)
-                        + " -gg_h2="
-            + str(self.H2)
-                        + " -gg_m0="
-            + str(self.M0)
-                        + " -gg_m0_last_m1="
-            + str(self.M0_last_m1)
-                        + " -gg_rows_last_h2="
-            + str(self.rows_last_h2)
-                        + " -gg_c0="
-            + str(self.C0)
-                        + " -gg_c0_last_c1="
-            + str(self.C0_last_c1)
-                        + " -gg_c0w0="
-            + str(self.C0W0)
-                        + " -gg_c0w0_last_c1="
-            + str(self.C0W0_last_c1)
-                                    + " -gg_clk="
-            + str(self.accelerator.clk_period)
-                                    + " -gg_clk_sp="
-            + str(self.accelerator.clk_sp_period)
-                                    + " -gg_dataflow="
-            + str(self.accelerator.dataflow)
-            + " -gg_init_sp="
-            + "True"
-            + " -gg_files_dir="
-            + "./"
-        )
+        myenv["GENERICS"] = " ".join(f'-g{x}={y}' for x,y in self.build_generics().items())
         myenv["MTI_VCO_MODE"] = "64"
+        myenv["LAUNCH_GUI"] = str(int(sim.start_gui))
 
-        with open(os.devnull, "wb") as devnull:
+        script_dir = Path(__file__).resolve().parent
+        shutil.copyfile("modelsim.ini", self.test_dir / "modelsim.ini")
+        shutil.copyfile("run_batch.do", self.test_dir / "run_batch.do")
+        shutil.copyfile("run_batch2.do", self.test_dir / "run_batch2.do")
+        shutil.copyfile("sources_batch.tcl", self.test_dir / "sources_batch.tcl")
+        shutil.copyfile("wave_control_adr.do", self.test_dir / "wave_control_adr.do")
+        if os.path.exists(self.test_dir / "modelsim.ini_lock"):
+            os.remove(self.test_dir / "modelsim.ini_lock")
+
+        simulator = "/tools/cadence/mentor/2020-21/RHELx86/QUESTA-CORE-PRIME_2020.4/questasim/bin/vsim"
+        arguments = []
+        if not self.gui:
+            arguments += ["-c"]
+        arguments += ["-do", script_dir / "run.do"]
+
+        with open(self.test_dir / "_log.txt", "w+") as logfile:
             try:
-                if os.path.exists(self.test_dir + "modelsim.ini_lock"):
-                    os.remove(self.test_dir + "modelsim.ini_lock")
-                if self.show_output:
-                    shutil.copyfile("modelsim.ini", self.test_dir + "modelsim.ini")
-                    shutil.copyfile("run_batch2.do", self.test_dir + "run_batch2.do")
-                    shutil.copyfile(
-                        "sources_batch.tcl", self.test_dir + "sources_batch.tcl"
-                    )
-                    shutil.copyfile("wave_control_adr.do", self.test_dir + "wave_control_adr.do")
-                    with open(self.test_dir + "_log.txt", "w+") as f:
-                        check_call(
-                            [
-                                "/tools/cadence/mentor/2020-21/RHELx86/QUESTA-CORE-PRIME_2020.4/questasim/bin/vsim",
-                                #"-c",
-                                "-do",
-                                "run_batch2.do",
-                            ],
-                            stdout=f,
-                            stderr=subprocess.STDOUT,
-                            env=myenv,
-                            cwd=self.test_dir,
-                        )
-                else:
-                    shutil.copyfile("modelsim.ini", self.test_dir + "modelsim.ini")
-                    shutil.copyfile("run_batch.do", self.test_dir + "run_batch.do")
-                    shutil.copyfile(
-                        "sources_batch.tcl", self.test_dir + "sources_batch.tcl"
-                    )
-                    with open(self.test_dir + "_log.txt", "w+") as f:
-                        check_call(
-                            [
-                                "/tools/cadence/mentor/2020-21/RHELx86/QUESTA-CORE-PRIME_2020.4/questasim/bin/vsim",
-                                "-c",
-                                "-do",
-                                "run_batch.do",
-                            ],
-                            stdout=f,
-                            stderr=subprocess.STDOUT,
-                            env=myenv,
-                            cwd=self.test_dir,
-                        )
+                check_call([simulator] + arguments,
+                    stdout=logfile,
+                    stderr=STDOUT,
+                    env=myenv,
+                    cwd=self.test_dir,
+                )
             except CalledProcessError as e:
                 print("Error while running test: ", self.name, " : ", e.output)
                 return False
+
         return self._evaluate()
 
     def _evaluate(self):
         try:
             # read actual output from file ../_output.txt
-            actual_output = np.loadtxt(self.test_dir + "_output.txt")
+            actual_output = np.loadtxt(self.test_dir / "_output.txt")
             # iterate over actual_output and store in 2d array every output_size values
             output_size = self.convolution.image_size - self.convolution.kernel_size + 1
             actual_output_2d = np.zeros(
@@ -663,7 +605,7 @@ class Test:
                 ]
 
             np.savetxt(
-                self.test_dir + "_actual_output.txt",
+                self.test_dir / "_actual_output.txt",
                 actual_output_2d,
                 fmt="%d",
                 delimiter=" ",
@@ -769,7 +711,7 @@ class Test:
                                 index_m[m0_count] += 1
 
             print("Success: ", self.name)
-            with open((self.test_dir + '_success.txt'), 'w') as f:
+            with open((self.test_dir / '_success.txt'), 'w') as f:
                 f.write('Simulated and output checked successfully!')
             return True
         except IndexError as e:
@@ -780,7 +722,7 @@ class Test:
 
 def run_test(setting):
     test = Test(setting.name, setting.convolution, setting.accelerator, setting.start_gui)
-    gen_test = test.generate_test(setting.name, "test/" + setting.name + "/")
+    gen_test = test.generate_test(setting.name, Path("test") / setting.name)
     if gen_test:
         return test.run()
         return True
@@ -790,58 +732,49 @@ def run_test(setting):
 
 
 if __name__ == "__main__":
-    # Define convolution parameters
-    image_size = 32
-    kernel_size = 3
-    input_channels = 20
+    # # Define convolution parameters
+    # image_size = 32
+    # kernel_size = 3
+    # input_channels = 20
     output_channels = 3
     input_bits = 4
 
-    # Define accelerator parameters
-    size_x = 7
-    size_y = 10
-    line_length_iact = 64  # word length
-    line_length_psum = 128  # word length
-    line_length_wght = 64  # word length
-    mem_size_iact = 16  # addressable memory size in bits
-    mem_size_psum = 16  # addressable memory size in bits
-    mem_size_wght = 16  # addressable memory size in bits
-    iact_fifo_size = 15
-    wght_fifo_size = 15
-    psum_fifo_size = 128
-    clk_period = 10000  # in ps
-    clk_sp_period = [1000]  # in ps
+    # # Define accelerator parameters
+    # size_x = 7
+    # size_y = 10
+    # line_length_iact = 64  # word length
+    # line_length_psum = 128  # word length
+    # line_length_wght = 64  # word length
+    # mem_size_iact = 16  # addressable memory size in bits
+    # mem_size_psum = 16  # addressable memory size in bits
+    # mem_size_wght = 16  # addressable memory size in bits
+    # iact_fifo_size = 15
+    # wght_fifo_size = 15
+    # psum_fifo_size = 128
+    # clk_period = 10000  # in ps
+    # clk_sp_period = [1000]  # in ps
 
-    dataflow = [0, 1]
+    # dataflow = [0, 1]
 
-    image_size = [16, 17, 20, 21]
-    kernel_size = [1, 3, 5, 7]
-    input_channels = [10, 20, 30, 100]
+    # image_size = [16, 17, 20, 21]
+    # kernel_size = [1, 3, 5, 7]
+    # input_channels = [10, 20, 30, 100]
 
-    image_size = [16]
-    kernel_size = [3]
-    input_channels = [10]
+    # image_size = [16]
+    # kernel_size = [3]
+    # input_channels = [10]
 
-    #image_size = [20]
-    #kernel_size = [5]
-    #input_channels = [10]
+    # #image_size = [20]
+    # #kernel_size = [5]
+    # #input_channels = [10]
 
-    start_gui = False
-    # if (len(image_size) * len(kernel_size) * len(input_channels) * len(dataflow) *
-    #     len(line_length_iact) * len(line_length_psum) * len(line_length_wght) *
-    #     len(mem_size_iact) * len(mem_size_psum) * len(mem_size_wght) *
-    #     len(iact_fifo_size) * len(wght_fifo_size) * len(psum_fifo_size) *
-    #     len(clk_period) * len(clk_sp_period) *
-    #     len(size_x) * len(size_y) > 1):
-    #     start_gui = False
+    # #image_size = [16, 28, 42, 65]
+    # #kernel_size = [1, 3, 5, 7]
 
-    #image_size = [16, 28, 42, 65]
-    #kernel_size = [1, 3, 5, 7]
+    # # 18/1 21/7 20/7 17/7 18/7 16/7
 
-    # 18/1 21/7 20/7 17/7 18/7 16/7
-
-    #image_size = [17]
-    #kernel_size = [7]
+    # #image_size = [17]
+    # #kernel_size = [7]
 
     simulation = []
 
@@ -969,10 +902,9 @@ if __name__ == "__main__":
     #                               iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [128],
     #                               clk_period = [10000], clk_sp_period = [1000], dataflow=[0,1]), start_gui=False))
 
+    # generate simulation settings for all permutations
     settings = []
-
-    outputs = []
-
+    gui_requested = False
     for sim in simulation:
         for hw in sim.convolution.image_size:
             for rs in sim.convolution.kernel_size:
@@ -989,22 +921,10 @@ if __name__ == "__main__":
                                                         for x in sim.accelerator.size_x:
                                                             for y in sim.accelerator.size_y:
                                                                 li = lw
+                                                                name = f'HW_{hw}_RS_{rs}_C_{c}_Li_{li}_Lw_{lw}_Lp_{lp}_Fi_{fifoi}_Fw_{fifow}_Fp_{fifop}_Clk_{clk}_ClkSp_{clk_sp}_X_{x}_Y_{y}_Df_{df}'
                                                                 settings.append(
                                                                     Setting(
-                                                                        "HW_" + str(hw) +
-                                                                        "_RS_" + str(rs)+
-                                                                        "_C_" + str(c)+
-                                                                        "_Li_" + str(li)+
-                                                                        "_Lw_" + str(lw)+
-                                                                        "_Lp_" + str(lp)+
-                                                                        "_Fi_" + str(fifoi)+
-                                                                        "_Fw_" + str(fifow)+
-                                                                        "_Fp_" + str(fifop)+
-                                                                        "_Clk_" + str(clk)+
-                                                                        "_ClkSp_" + str(clk_sp)+
-                                                                        "_X_" + str(x)+
-                                                                        "_Y_" + str(y)+
-                                                                        "_Df_" + str(df),
+                                                                        name,
                                                                         Convolution(hw, rs, c, output_channels, input_bits),
                                                                         Accelerator(
                                                                             x,
@@ -1026,9 +946,9 @@ if __name__ == "__main__":
                                                                     )
                                                                 )
                                                                 if sim.start_gui == True:
-                                                                    start_gui = True
+                                                                    gui_requested = True
 
-    if len(settings) > 4 and start_gui == True:
+    if len(settings) > 4 and gui_requested == True:
         print("Too many settings to display in GUI")
         exit(1)
 
