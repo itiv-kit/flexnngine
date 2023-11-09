@@ -1,3 +1,5 @@
+delete wave *
+
 onerror {resume}
 quietly WaveActivateNextPane {} 0
 
@@ -6,11 +8,11 @@ add wave -noupdate -expand -group Testbench -radix unsigned /functional_tb/rstn
 
 add wave -noupdate -expand -group Start -radix unsigned /functional_tb/start
 add wave -noupdate -expand -group Start -radix unsigned /functional_tb/accelerator_inst/r_state
-add wave -noupdate -expand -group Start -radix unsigned /functional_tb/accelerator_inst/r_start_init_control
-add wave -noupdate -expand -group Start -radix unsigned /functional_tb/accelerator_inst/w_status_control
+add wave -noupdate -expand -group Start -radix unsigned /functional_tb/accelerator_inst/r_start_init
 add wave -noupdate -expand -group Start -radix unsigned /functional_tb/accelerator_inst/r_start_adr
-add wave -noupdate -expand -group Start -radix unsigned /functional_tb/accelerator_inst/w_status_if
 add wave -noupdate -expand -group Start -radix unsigned /functional_tb/accelerator_inst/r_start_control
+add wave -noupdate -expand -group Start -radix unsigned /functional_tb/accelerator_inst/w_status_control
+add wave -noupdate -expand -group Start -radix unsigned /functional_tb/accelerator_inst/w_status_if
 add wave -noupdate -expand -group Start -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/r_done_wght
 add wave -noupdate -expand -group Start -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/r_done_iact
 add wave -noupdate -expand -group Start -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/w_empty_iact_f
@@ -23,14 +25,15 @@ add wave -noupdate -expand -group Start -radix unsigned /functional_tb/accelerat
 add wave -noupdate -expand -group Start -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/w_empty_wght_address_f
 add wave -noupdate -expand -group Start -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/w_full_wght_address_f
 
-add wave -noupdate -expand -group Control_static -radix unsigned  /functional_tb/accelerator_inst/control_inst/r_h2
-#add wave -noupdate -expand -group Control_static -radix unsigned /functional_tb/accelerator_inst/control_inst/r_tiles_y_last_tile_rows
-add wave -noupdate -expand -group Control_static -radix unsigned  /functional_tb/accelerator_inst/control_inst/r_w1
-add wave -noupdate -expand -group Control_static -radix unsigned  /functional_tb/accelerator_inst/control_inst/r_c1
-add wave -noupdate -expand -group Control_static -radix unsigned  /functional_tb/accelerator_inst/control_inst/r_c0w0
-add wave -noupdate -expand -group Control_static -radix unsigned  /functional_tb/accelerator_inst/control_inst/r_c0w0_last_c1
-add wave -noupdate -expand -group Control_static -radix unsigned  /functional_tb/accelerator_inst/w_c0
-add wave -noupdate -expand -group Control_static -radix unsigned  /functional_tb/accelerator_inst/w_c0_last_c1
+add wave -noupdate -expand -group Control_static -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/w_c1
+add wave -noupdate -expand -group Control_static -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/w_w1
+add wave -noupdate -expand -group Control_static -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/w_h2
+add wave -noupdate -expand -group Control_static -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/w_m0
+add wave -noupdate -expand -group Control_static -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/w_m0_dist
+add wave -noupdate -expand -group Control_static -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/w_c0
+add wave -noupdate -expand -group Control_static -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/w_c0_last_c1
+add wave -noupdate -expand -group Control_static -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/w_c0w0
+add wave -noupdate -expand -group Control_static -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/w_c0w0_last_c1
 
 add wave -noupdate -expand -group Scratchpad -radix unsigned  /functional_tb/accelerator_inst/w_dout_iact
 add wave -noupdate -expand -group Scratchpad -radix unsigned  /functional_tb/accelerator_inst/w_dout_iact_valid
@@ -63,50 +66,47 @@ add wave -noupdate -expand -group RAM_ADR -radix unsigned /functional_tb/acceler
 add wave -noupdate -expand -group RAM_ADR -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/ram_dp_psum/addra
 add wave -noupdate -expand -group RAM_ADR -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/ram_dp_psum/addrb
 
+set addr_gen_path "/functional_tb/accelerator_inst/control_address_generator_inst/g_address_generator/address_generator_inst"
+add wave -noupdate -expand -group ADR_iact -radix unsigned ${addr_gen_path}/o_address_iact_valid
+add wave -noupdate -expand -group ADR_iact -radix unsigned ${addr_gen_path}/o_address_iact
+add wave -noupdate -expand -group ADR_iact -radix unsigned ${addr_gen_path}/w_c0_iact
+add wave -noupdate -expand -group ADR_iact -radix unsigned ${addr_gen_path}/r_count_c0_iact
+add wave -noupdate -expand -group ADR_iact -radix unsigned ${addr_gen_path}/w_w1
+add wave -noupdate -expand -group ADR_iact -radix unsigned ${addr_gen_path}/r_count_w1_iact
+add wave -noupdate -expand -group ADR_iact -radix unsigned ${addr_gen_path}/w_c1
+add wave -noupdate -expand -group ADR_iact -radix unsigned ${addr_gen_path}/r_count_c1_iact
+add wave -noupdate -expand -group ADR_iact -radix unsigned ${addr_gen_path}/w_h2
+add wave -noupdate -expand -group ADR_iact -radix unsigned ${addr_gen_path}/r_count_h2_iact
+add wave -noupdate -expand -group ADR_iact -radix unsigned ${addr_gen_path}/r_index_h_iact
+add wave -noupdate -expand -group ADR_iact -radix unsigned ${addr_gen_path}/r_index_c_iact
+add wave -noupdate -expand -group ADR_iact -radix unsigned ${addr_gen_path}/r_index_c_last_iact
+add wave -noupdate -expand -group ADR_iact -radix unsigned ${addr_gen_path}/w_offset_mem_iact
+add wave -noupdate -expand -group ADR_iact -radix unsigned ${addr_gen_path}/r_data_valid_iact
+add wave -noupdate -expand -group ADR_iact -radix unsigned ${addr_gen_path}/r_iact_done
+add wave -noupdate -expand -group ADR_iact -radix unsigned ${addr_gen_path}/i_fifo_full_iact
+add wave -noupdate -expand -group ADR_iact -radix unsigned ${addr_gen_path}/o_address_iact
+add wave -noupdate -expand -group ADR_iact -radix unsigned ${addr_gen_path}/o_address_iact_valid
+add wave -noupdate -expand -group ADR_iact -radix unsigned ${addr_gen_path}/i_start
+add wave -noupdate -expand -group ADR_iact -radix unsigned ${addr_gen_path}/i_pause_iact
 
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/w_address_iact_valid
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/o_address_iact
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/w_C0_iact
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/r_count_c0_iact
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/w_W1
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/r_count_w1_iact
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/w_C1
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/r_count_c1_iact
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/w_H2
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/r_count_h2_iact
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/r_offset_c_iact
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/w_offset_mem_iact
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/r_offset_c_last_c1_iact
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/r_offset_c_last_h2_iact
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/r_index_c_iact
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/r_index_c_last_iact
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/r_data_valid_iact
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/r_iact_done
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/w_address_iact_valid(0)
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/w_buffer_full_iact
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/w_data_iact_valid(0)
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/w_data_iact(0)
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/i_start
-add wave -noupdate -expand -group ADR_iact -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/i_fifo_full_iact
-
-add wave -noupdate -expand -group ADR_wght -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/w_C0_wght
-add wave -noupdate -expand -group ADR_wght -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/r_count_c0_wght
-add wave -noupdate -expand -group ADR_wght -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/w_W1
-add wave -noupdate -expand -group ADR_wght -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/r_count_w1_wght
-add wave -noupdate -expand -group ADR_wght -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/w_C1
-add wave -noupdate -expand -group ADR_wght -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/r_count_c1_wght
-add wave -noupdate -expand -group ADR_wght -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/w_H2
-add wave -noupdate -expand -group ADR_wght -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/r_count_h2_wght
-add wave -noupdate -expand -group ADR_wght -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/r_offset_c_wght
-add wave -noupdate -expand -group ADR_wght -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/r_offset_c_last_c1_wght
-add wave -noupdate -expand -group ADR_wght -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/r_offset_c_last_h2_wght
-add wave -noupdate -expand -group ADR_wght -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/r_index_c_wght
-add wave -noupdate -expand -group ADR_wght -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/r_index_c_last_wght
-add wave -noupdate -expand -group ADR_wght -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/r_data_valid_wght
-add wave -noupdate -expand -group ADR_wght -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/r_wght_done
-add wave -noupdate -expand -group ADR_wght -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/w_address_wght_valid(0)
-add wave -noupdate -expand -group ADR_wght -radix unsigned /functional_tb/accelerator_inst/w_buffer_full_wght
-add wave -noupdate -expand -group ADR_wght -radix unsigned /functional_tb/accelerator_inst/address_generator_inst/i_start
+add wave -noupdate -expand -group ADR_wght -radix unsigned ${addr_gen_path}/o_address_wght_valid
+add wave -noupdate -expand -group ADR_wght -radix unsigned ${addr_gen_path}/w_c0_wght
+add wave -noupdate -expand -group ADR_wght -radix unsigned ${addr_gen_path}/r_count_c0_wght
+add wave -noupdate -expand -group ADR_wght -radix unsigned ${addr_gen_path}/w_w1
+add wave -noupdate -expand -group ADR_wght -radix unsigned ${addr_gen_path}/r_count_w1_wght
+add wave -noupdate -expand -group ADR_wght -radix unsigned ${addr_gen_path}/w_c1
+add wave -noupdate -expand -group ADR_wght -radix unsigned ${addr_gen_path}/r_count_c1_wght
+add wave -noupdate -expand -group ADR_wght -radix unsigned ${addr_gen_path}/w_h2
+add wave -noupdate -expand -group ADR_wght -radix unsigned ${addr_gen_path}/r_count_h2_wght
+add wave -noupdate -expand -group ADR_wght -radix unsigned ${addr_gen_path}/r_offset_c_wght
+add wave -noupdate -expand -group ADR_wght -radix unsigned ${addr_gen_path}/r_offset_c_last_c1_wght
+add wave -noupdate -expand -group ADR_wght -radix unsigned ${addr_gen_path}/r_offset_c_last_h2_wght
+add wave -noupdate -expand -group ADR_wght -radix unsigned ${addr_gen_path}/r_index_c_wght
+add wave -noupdate -expand -group ADR_wght -radix unsigned ${addr_gen_path}/r_index_c_last_wght
+add wave -noupdate -expand -group ADR_wght -radix unsigned ${addr_gen_path}/r_data_valid_wght
+add wave -noupdate -expand -group ADR_wght -radix unsigned ${addr_gen_path}/r_wght_done
+add wave -noupdate -expand -group ADR_wght -radix unsigned ${addr_gen_path}/i_fifo_full_wght
+add wave -noupdate -expand -group ADR_wght -radix unsigned ${addr_gen_path}/i_start
 
 add wave -noupdate -expand -group PSUM_OUTPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/i_psums
 add wave -noupdate -expand -group PSUM_OUTPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/i_psums_valid
@@ -177,38 +177,39 @@ add wave -noupdate -expand -group IACT_INPUT -radix decimal  /functional_tb/acce
 add wave -noupdate -expand -group IACT_INPUT -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_iact/i_update_offset
 add wave -noupdate -expand -group IACT_INPUT -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_iact/ram/ram_instance
 
-add wave -noupdate -expand -group Control -radix unsigned /functional_tb/accelerator_inst/control_inst/r_count_c0w0
-add wave -noupdate -expand -group Control -radix unsigned /functional_tb/accelerator_inst/control_inst/r_count_c1
-add wave -noupdate -expand -group Control -radix unsigned /functional_tb/accelerator_inst/control_inst/r_count_w1
-add wave -noupdate -expand -group Control -radix unsigned /functional_tb/accelerator_inst/control_inst/r_count_h2
-add wave -noupdate -expand -group Control -radix unsigned /functional_tb/accelerator_inst/control_inst/r_incr_w1
-add wave -noupdate -expand -group Control -radix unsigned /functional_tb/accelerator_inst/control_inst/r_state
-add wave -noupdate -expand -group Control -radix unsigned /functional_tb/accelerator_inst/control_inst/r_done
+add wave -noupdate -expand -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_count_c0w0
+add wave -noupdate -expand -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_count_c1
+add wave -noupdate -expand -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_count_w1
+add wave -noupdate -expand -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_count_h2
+add wave -noupdate -expand -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_incr_w1
+add wave -noupdate -expand -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_state
+add wave -noupdate -expand -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_done
 
-add wave -noupdate -expand -group {iact commands} -radix unsigned /functional_tb/accelerator_inst/control_inst/r_command_iact(0)
-add wave -noupdate -expand -group {iact commands} -radix unsigned /functional_tb/accelerator_inst/control_inst/r_read_offset_iact(0)
-add wave -noupdate -expand -group {iact commands} -radix unsigned /functional_tb/accelerator_inst/control_inst/r_update_offset_iact(0)
+add wave -noupdate -expand -group {iact commands} -radix unsigned /functional_tb/accelerator_inst/w_command_iact(0)
+add wave -noupdate -expand -group {iact commands} -radix unsigned /functional_tb/accelerator_inst/w_read_offset_iact(0)
+add wave -noupdate -expand -group {iact commands} -radix unsigned /functional_tb/accelerator_inst/w_update_offset_iact(0)
 
-add wave -noupdate -expand -group {wght commands} -radix unsigned /functional_tb/accelerator_inst/control_inst/r_command_wght(0)
-add wave -noupdate -expand -group {wght commands} -radix unsigned /functional_tb/accelerator_inst/control_inst/r_read_offset_wght(0)
-add wave -noupdate -expand -group {wght commands} -radix unsigned /functional_tb/accelerator_inst/control_inst/r_update_offset_wght(0)
+add wave -noupdate -expand -group {wght commands} -radix unsigned /functional_tb/accelerator_inst/w_command_wght(0)
+add wave -noupdate -expand -group {wght commands} -radix unsigned /functional_tb/accelerator_inst/w_read_offset_wght(0)
+add wave -noupdate -expand -group {wght commands} -radix unsigned /functional_tb/accelerator_inst/w_update_offset_wght(0)
 
-add wave -noupdate -expand -group {psum commands} -radix unsigned /functional_tb/accelerator_inst/control_inst/r_command_psum_d(0)
-add wave -noupdate -expand -group {psum commands} -radix unsigned /functional_tb/accelerator_inst/control_inst/r_read_offset_psum_d(0)
-add wave -noupdate -expand -group {psum commands} -radix unsigned /functional_tb/accelerator_inst/control_inst/r_update_offset_psum_d(0)
+add wave -noupdate -expand -group {psum commands} -radix unsigned /functional_tb/accelerator_inst/w_command_psum(0)
+add wave -noupdate -expand -group {psum commands} -radix unsigned /functional_tb/accelerator_inst/w_read_offset_psum(0)
+add wave -noupdate -expand -group {psum commands} -radix unsigned /functional_tb/accelerator_inst/w_update_offset_psum(0)
 
-add wave -noupdate -expand -group {Outputs} -radix symbolic /functional_tb/accelerator_inst/control_inst/r_command
-add wave -noupdate -expand -group {Outputs} -radix symbolic /functional_tb/accelerator_inst/control_inst/r_command_iact
-add wave -noupdate -expand -group {Outputs} -radix unsigned /functional_tb/accelerator_inst/control_inst/r_read_offset_iact
-add wave -noupdate -expand -group {Outputs} -radix symbolic /functional_tb/accelerator_inst/control_inst/r_command_psum
-add wave -noupdate -expand -group {Outputs} -radix unsigned /functional_tb/accelerator_inst/control_inst/r_read_offset_psum
-add wave -noupdate -expand -group {Outputs} -radix unsigned /functional_tb/accelerator_inst/control_inst/r_update_offset_psum
-add wave -noupdate -expand -group {Outputs} -radix symbolic /functional_tb/accelerator_inst/control_inst/r_command_wght
-add wave -noupdate -expand -group {Outputs} -radix unsigned /functional_tb/accelerator_inst/control_inst/r_read_offset_wght
+add wave -noupdate -expand -group {Outputs} -radix symbolic /functional_tb/accelerator_inst/w_command
+add wave -noupdate -expand -group {Outputs} -radix symbolic /functional_tb/accelerator_inst/w_command_iact
+add wave -noupdate -expand -group {Outputs} -radix unsigned /functional_tb/accelerator_inst/w_read_offset_iact
+add wave -noupdate -expand -group {Outputs} -radix symbolic /functional_tb/accelerator_inst/w_command_psum
+add wave -noupdate -expand -group {Outputs} -radix unsigned /functional_tb/accelerator_inst/w_read_offset_psum
+add wave -noupdate -expand -group {Outputs} -radix unsigned /functional_tb/accelerator_inst/w_update_offset_psum
+add wave -noupdate -expand -group {Outputs} -radix symbolic /functional_tb/accelerator_inst/w_command_wght
+add wave -noupdate -expand -group {Outputs} -radix unsigned /functional_tb/accelerator_inst/w_read_offset_wght
 
 set size_x 7
 set size_y 10
 proc get_pe_path {x y} {
+    global size_y
     if {$y > 0} {
         if {$y == $size_y-1} {
             set pe_name "pe_south"

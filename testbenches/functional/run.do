@@ -1,44 +1,78 @@
-###
-###
-###
+if { $::argc > 2 } {
+    echo "Usage: do run.do \[wave\]"
+    echo "Compile sources and run the simulation."
+    echo "Load wave_<wave>.do if exists, otherwise default to wave.do"
+    return
+}
 
-file mkdir "_run"
-file mkdir -p "questa_lib/work"
-transcript file "_run/transcript.txt"
-transcript on
+if { $::argc > 1 } {
+    set WAVE ${1}
+}
 
-###
+if { ! [info exists env(LAUNCH_GUI)] } {
+    set GUI 1
+} else {
+    set GUI $env(LAUNCH_GUI)
+}
+
+if { ! [info exists env(TB_DIR)] } {
+    if {[file exists "../../run.do"]} {
+        set TB_DIR [file dirname [file normalize "../../run.do"]]
+    } else {
+        set TB_DIR [file dirname [file normalize "."]]
+    }
+} else {
+    set TB_DIR $env(TB_DIR)
+}
+set HDL_DIR [file normalize "${TB_DIR}/../../hdl"]
+
+if { [info exists env(GENERICS)] } {
+    set generics $::env(GENERICS)
+} else {
+    set generics [list]
+}
+
+echo "using base dir ${TB_DIR}"
+echo "using hdl dir ${HDL_DIR}"
+
+file mkdir "_run/work" "_run/accel"
+
+if { ! $GUI } {
+    transcript file "_run/transcript.txt"
+    transcript on
+}
+
 ### create libraries
-###
+vlib _run/work
+vlib _run/accel
+vmap work _run/work
+vmap accel _run/accel
 
-vlib questa_lib/work
-vlib questa_lib/msim
-
-vlib questa_lib/msim/xil_defaultlib
-
-vmap xil_defaultlib questa_lib/msim/xil_defaultlib
-
-
-###
 ### compile sources
-###
+source "${TB_DIR}/sources.tcl"
 
-source sources.tcl
-
-###
 ### Optimize design
-###
+vopt {*}$generics -64 +acc -L accel -work accel accel.$SIM_TOP_LEVEL -o design_optimized
 
-vopt -64 +acc -L xil_defaultlib -work xil_defaultlib xil_defaultlib.$SIM_TOP_LEVEL -o design_optimized
-
-###
 ### initialize and run simulation
-###
-vsim -onfinish stop xil_defaultlib.design_optimized
+vsim -onfinish stop accel.design_optimized
 
-#vsim -onfinish stop -voptargs="+acc" $SIM_TOP_LEVEL
+if { $GUI } {
+    # load waveform from "wave_<NAME>.do" if it exists
+    set wave_filename "${TB_DIR}/wave.do"
+    if { [info exists WAVE] && [file exists ${wave_filename}]} {
+        set wave_filename "${TB_DIR}/wave_${WAVE}.do"
+    }
+    if { ! [info exists WAVE] || $WAVE != "none" } {
+        do ${wave_filename}
+    }
+}
 
-#source wave.do
-source wave_control_adr.do
+set StdArithNoWarnings 1
+set NumericStdNoWarnings 1
 
 run $SIM_TIME
+
+if { ! $GUI } {
+    exit
+}

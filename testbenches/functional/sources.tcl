@@ -1,37 +1,30 @@
-#ip
-#vcom -64 -2008 -work xil_defaultlib  \
-"../../reconfigurable-accelerator/reconfigurable-accelerator.gen/sources_1/ip/fifo_generator_0/fifo_generator_0_sim_netlist.vhdl" \
-"../../reconfigurable-accelerator/reconfigurable-accelerator.gen/sources_1/ip/mult_gen_0/mult_gen_0_sim_netlist.vhdl" \
-
-#design
-vcom -64 -2008 -work xil_defaultlib  \
-"../../hdl/acc.vhd" \
-"../../hdl/utilities.vhd" \
-"../../hdl/address_generator.vhd" \
-"../../hdl/address_generator_psum.vhd" \
-"../../hdl/control_init.vhd" \
-"../../hdl/control.vhd" \
-"../../hdl/control_address_generator.vhd" \
-"../../hdl/pe_array.vhd" \
-"../../hdl/demux.vhd" \
-"../../hdl/line_buffer.vhd" \
-"../../hdl/mult.vhd" \
-"../../hdl/mux.vhd" \
-"../../hdl/pe.vhd" \
-"../../hdl/gray.vhd" \
-"../../hdl/sync.vhd" \
-"../../hdl/fifos.vhd" \
-"../../hdl/ram_dp.vhd" \
-"../../hdl/accelerator.vhd" \
-"../../hdl/scratchpad.vhd" \
-"../../hdl/scratchpad_interface.vhd" \
-"../../hdl/rr_arbiter.vhd" \
-"../../hdl/onehot_binary.vhd" \
-
+vcom -64 -2008 -work accel \
+    "${HDL_DIR}/acc.vhd" \
+    "${HDL_DIR}/utilities.vhd" \
+    "${HDL_DIR}/address_generator.vhd" \
+    "${HDL_DIR}/address_generator_psum.vhd" \
+    "${HDL_DIR}/control_init.vhd" \
+    "${HDL_DIR}/control.vhd" \
+    "${HDL_DIR}/control_address_generator.vhd" \
+    "${HDL_DIR}/pe_array.vhd" \
+    "${HDL_DIR}/demux.vhd" \
+    "${HDL_DIR}/line_buffer.vhd" \
+    "${HDL_DIR}/mult.vhd" \
+    "${HDL_DIR}/mux.vhd" \
+    "${HDL_DIR}/pe.vhd" \
+    "${HDL_DIR}/gray.vhd" \
+    "${HDL_DIR}/sync.vhd" \
+    "${HDL_DIR}/fifos.vhd" \
+    "${HDL_DIR}/ram_dp.vhd" \
+    "${HDL_DIR}/accelerator.vhd" \
+    "${HDL_DIR}/scratchpad.vhd" \
+    "${HDL_DIR}/scratchpad_interface.vhd" \
+    "${HDL_DIR}/rr_arbiter.vhd" \
+    "${HDL_DIR}/onehot_binary.vhd"
 
 # testbench
-vcom -64 -2008 -work xil_defaultlib  \
-"src/functional.vhd" \
+vcom -64 -2008 -work accel \
+    "${TB_DIR}/src/functional_tb.vhd"
 
 set SIM_TIME "10 ms"
-set SIM_TOP_LEVEL "functional"
+set SIM_TOP_LEVEL "functional_tb"
