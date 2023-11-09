@@ -175,9 +175,9 @@ architecture behavioral of pe is
     signal w_iact_wght_valid : std_logic;
     signal w_data_mult_valid : std_logic;
 
-    signal r_sel_mult_psum  : std_logic;
-    signal r_sel_conv_gemm  : std_logic;
-    signal r_sel_iact_input : std_logic;
+    signal r_sel_mult_psum  : std_logic := '0';
+    signal r_sel_conv_gemm  : std_logic := '0';
+    signal r_sel_iact_input : std_logic := '0';
 
     signal r_command_read_psum_delay : std_logic;
     signal r_command_read_psum       : std_logic;
@@ -208,6 +208,7 @@ begin
         if not rstn then
             r_sel_mult_psum <= '0';
             r_sel_conv_gemm <= '0';
+            r_sel_iact_input <= '0';
         elsif rising_edge(clk) then
             if i_command = c_pe_conv_mult or i_command = c_pe_gemm_mult then
                 r_sel_mult_psum <= '0';
