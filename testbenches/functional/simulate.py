@@ -563,10 +563,6 @@ class Test:
 
         script_dir = Path(__file__).resolve().parent
         shutil.copyfile("modelsim.ini", self.test_dir / "modelsim.ini")
-        shutil.copyfile("run_batch.do", self.test_dir / "run_batch.do")
-        shutil.copyfile("run_batch2.do", self.test_dir / "run_batch2.do")
-        shutil.copyfile("sources_batch.tcl", self.test_dir / "sources_batch.tcl")
-        shutil.copyfile("wave_control_adr.do", self.test_dir / "wave_control_adr.do")
         if os.path.exists(self.test_dir / "modelsim.ini_lock"):
             os.remove(self.test_dir / "modelsim.ini_lock")
 
@@ -732,49 +728,9 @@ def run_test(setting):
 
 
 if __name__ == "__main__":
-    # # Define convolution parameters
-    # image_size = 32
-    # kernel_size = 3
-    # input_channels = 20
+    # Define convolution parameters
     output_channels = 3
     input_bits = 4
-
-    # # Define accelerator parameters
-    # size_x = 7
-    # size_y = 10
-    # line_length_iact = 64  # word length
-    # line_length_psum = 128  # word length
-    # line_length_wght = 64  # word length
-    # mem_size_iact = 16  # addressable memory size in bits
-    # mem_size_psum = 16  # addressable memory size in bits
-    # mem_size_wght = 16  # addressable memory size in bits
-    # iact_fifo_size = 15
-    # wght_fifo_size = 15
-    # psum_fifo_size = 128
-    # clk_period = 10000  # in ps
-    # clk_sp_period = [1000]  # in ps
-
-    # dataflow = [0, 1]
-
-    # image_size = [16, 17, 20, 21]
-    # kernel_size = [1, 3, 5, 7]
-    # input_channels = [10, 20, 30, 100]
-
-    # image_size = [16]
-    # kernel_size = [3]
-    # input_channels = [10]
-
-    # #image_size = [20]
-    # #kernel_size = [5]
-    # #input_channels = [10]
-
-    # #image_size = [16, 28, 42, 65]
-    # #kernel_size = [1, 3, 5, 7]
-
-    # # 18/1 21/7 20/7 17/7 18/7 16/7
-
-    # #image_size = [17]
-    # #kernel_size = [7]
 
     simulation = []
 
