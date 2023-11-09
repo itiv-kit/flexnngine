@@ -232,15 +232,15 @@ architecture rtl of scratchpad_interface is
 
     signal w_gnt_iact          : std_logic_vector(size_rows - 1 downto 0);
     signal w_gnt_iact_binary   : std_logic_vector(addr_width_rows - 1 downto 0);
-    signal r_gnt_iact_binary_d : std_logic_vector(addr_width_rows - 1 downto 0);
+    signal r_gnt_iact_binary_d : std_logic_vector(addr_width_rows - 1 downto 0) := (others => '0');
 
     signal w_gnt_wght          : std_logic_vector(size_y - 1 downto 0);
     signal w_gnt_wght_binary   : std_logic_vector(addr_width_y - 1 downto 0);
-    signal r_gnt_wght_binary_d : std_logic_vector(addr_width_y - 1 downto 0);
+    signal r_gnt_wght_binary_d : std_logic_vector(addr_width_y - 1 downto 0) := (others => '0');
 
     signal w_gnt_psum          : std_logic_vector(size_x - 1 downto 0);
     signal w_gnt_psum_binary   : std_logic_vector(addr_width_x - 1 downto 0);
-    signal r_gnt_psum_binary_d : std_logic_vector(addr_width_x - 1 downto 0);
+    signal r_gnt_psum_binary_d : std_logic_vector(addr_width_x - 1 downto 0) := (others => '0');
 
     signal w_address_iact : std_logic_vector(addr_width_iact_mem - 1 downto 0);
     signal w_address_wght : std_logic_vector(addr_width_wght_mem - 1 downto 0);
@@ -587,20 +587,6 @@ begin
 
     fifo_iact_address : for y in 0 to size_rows - 1 generate
 
-        /*fifo_iact_address : component fifo_generator_0
-            port map (
-                rst    => not rstn,
-                wr_clk => clk,
-                rd_clk => clk_sp,
-                din    => (fifo_width - 1 downto addr_width_iact_mem => '0') & i_address_iact(y),
-                wr_en  => i_address_iact_valid(y),
-                rd_en  => w_rd_en_iact_address_f(y),
-                dout   => w_dout_iact_address_f(y),
-                full   => w_full_iact_address_f(y),
-                empty  => w_empty_iact_address_f(y),
-                valid  => w_valid_iact_address_f(y)(0)
-            );*/
-
         fifo_iact_address : component dc_fifo
             generic map (
                 mem_size    => g_iact_address_fifo_size,
@@ -626,20 +612,6 @@ begin
     end generate fifo_iact_address;
 
     fifo_wght_address : for y in 0 to size_y - 1 generate
-
-        /*fifo_wght_address : component fifo_generator_0
-            port map (
-                rst    => not rstn,
-                wr_clk => clk,
-                rd_clk => clk_sp,
-                din    => (fifo_width - 1 downto addr_width_wght_mem => '0') & i_address_wght(y),
-                wr_en  => i_address_wght_valid(y),
-                rd_en  => w_rd_en_wght_address_f(y),
-                dout   => w_dout_wght_address_f(y),
-                full   => w_full_wght_address_f(y),
-                empty  => w_empty_wght_address_f(y),
-                valid  => w_valid_wght_address_f(y)(0)
-            );*/
 
         fifo_wght_address : component dc_fifo
             generic map (

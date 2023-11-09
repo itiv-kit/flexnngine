@@ -816,11 +816,11 @@ begin
 
     /*p_start : process(i_start) is
         begin
-    
+
             if i_start = '1' then
                 w_start <= '1';
             end if;
-    
+
     end process p_start;*/
 
     -- Do not stop when filling read/update pipeline
@@ -878,7 +878,7 @@ begin
         begin
 
             if not rstn then
-                
+
                 o_command(y, 0) <= c_pe_conv_mult;
                 o_command_iact(y, 0) <= c_lb_idle;
                 o_command_wght(y, 0) <= c_lb_idle;

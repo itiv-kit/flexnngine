@@ -244,6 +244,8 @@ architecture behav of dc_fifo is
     signal   slv_wrcnt, slv_wrcnt_rd : std_logic_vector(cnt_width - 1 downto 0);
     signal   slv_rdcnt, slv_rdcnt_wr : std_logic_vector(cnt_width - 1 downto 0);
 
+    signal r_dout : std_logic_vector(dout'range) := (dout'range => '0');
+
 begin
 
     wr_proc : process is
@@ -284,7 +286,7 @@ begin
         else
             valid <= '0';
             if rd_en = '1' and not empty_loc then
-                dout  <= memory(rdcnt);
+                r_dout <= memory(rdcnt);
                 valid <= '1';
                 if rdcnt = mem_size - 1 then
                     rdcnt <= 0;
@@ -295,6 +297,8 @@ begin
         end if;
 
     end process rd_proc;
+
+    dout <= r_dout;
 
     almost_full_loc <= rdcnt_wr = wrcnt + 2 or (rdcnt_wr = 0 and wrcnt = mem_size - 2) or (rdcnt_wr = 1 and wrcnt = mem_size - 1);
     full_loc        <= rdcnt_wr = wrcnt + 1 or (rdcnt_wr = 0 and wrcnt = mem_size - 1);
