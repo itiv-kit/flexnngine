@@ -200,11 +200,12 @@ begin
     o_c0_last_c1 <= w_c0_last_c1;
     o_c0         <= w_c0;
 
-    o_c1      <= w_c1;
-    o_w1      <= w_w1;
-    o_h2      <= w_h2;
-    o_m0      <= w_m0;
-    o_m0_dist <= w_m0_dist;
+    o_c1         <= w_c1;
+    o_w1         <= w_w1;
+    o_h2         <= w_h2;
+    o_m0         <= w_m0;
+    o_m0_dist    <= w_m0_dist;
+    o_m0_last_m1 <= w_m0_last_m1;
 
     i_start_d(0) <= '1' when i_start ='1';
     -- Do not stop when filling read/update pipeline
