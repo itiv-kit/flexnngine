@@ -543,7 +543,7 @@ begin
 
         file     outfile : text open write_mode is g_files_dir & "_output.txt";
         variable row     : line;
-        variable psum_ram_instance : ram_type;
+        variable ram     : ram_type;
 
     begin
 
@@ -575,11 +575,11 @@ begin
 
         wait for 1000 ns;
 
-        psum_ram_instance := << variable accelerator_inst.scratchpad_inst.ram_dp_psum.ram_instance : ram_type >>;
+        ram := << variable accelerator_inst.scratchpad_inst.ram_dp_psum.ram_instance : ram_type >>;
 
         for i in 0 to 2 ** addr_width_psum_mem - 1 loop
 
-            write(row, integer'image(to_integer(signed(psum_ram_instance(i)))));
+            write(row, integer'image(to_integer(signed(ram(i)))));
             writeline(outfile, row);
 
         end loop;

@@ -77,6 +77,7 @@ architecture syn of ram_dp is
 
     end function;
 
+    -- vsg_disable_next_line variable_007
     shared variable ram_instance : ram_type := init_file_or_zero(init_file);
 
 begin

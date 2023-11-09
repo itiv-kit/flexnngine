@@ -640,6 +640,7 @@ begin
     fifo_psum_out : for x in 0 to size_x - 1 generate
 
         /* TODO use feasible size for Psum FIFO */
+
         fifo_psum_out : component dc_fifo
             generic map (
                 mem_size    => g_psum_fifo_size,

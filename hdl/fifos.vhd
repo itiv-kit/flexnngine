@@ -287,7 +287,7 @@ begin
             valid <= '0';
             if rd_en = '1' and not empty_loc then
                 r_dout <= memory(rdcnt);
-                valid <= '1';
+                valid  <= '1';
                 if rdcnt = mem_size - 1 then
                     rdcnt <= 0;
                 else
