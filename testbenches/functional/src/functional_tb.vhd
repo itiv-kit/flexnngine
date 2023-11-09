@@ -52,7 +52,7 @@ entity functional_tb is
         g_clk    : integer := 10000;
         g_clk_sp : integer := 2000;
 
-        g_files_dir : string  := "test/image_size_20_kernel_size_1_c_30/";
+        g_files_dir : string  := "./";
         g_init_sp   : boolean := true;
 
         g_control_init : boolean  := false;
@@ -543,7 +543,7 @@ begin
 
         file     outfile : text open write_mode is g_files_dir & "_output.txt";
         variable row     : line;
-        variable psum_ram_instance : ram_type := << variable accelerator_inst.scratchpad_inst.ram_dp_psum.ram_instance : ram_type >>;
+        variable psum_ram_instance : ram_type;
 
     begin
 
@@ -574,6 +574,8 @@ begin
         end if;
 
         wait for 1000 ns;
+
+        psum_ram_instance := << variable accelerator_inst.scratchpad_inst.ram_dp_psum.ram_instance : ram_type >>;
 
         for i in 0 to 2 ** addr_width_psum_mem - 1 loop
 
