@@ -542,30 +542,11 @@ begin
     write_outputs : process is
 
         file     outfile : text open write_mode is g_files_dir & "_output.txt";
-        variable row     : line;
+        variable outline : line;
         variable ram     : ram_type;
+        variable idx     : integer;
 
     begin
-
-        /*wait until r_state = s_output;
-
-        output_while : while true loop
-
-            output_for : for j in 0 to w_m0 * w_h2 * (g_image_x - g_kernel_size + 1) loop
-
-                wait for 100 ns;
-
-                if r_state /= s_output then
-                    exit output_for;
-                end if;
-
-            end loop output_for;
-
-            if r_state = s_output then
-                exit output_while;
-            end if;
-
-        end loop output_while; */
 
         wait until r_done_processing = '1';
 
@@ -576,11 +557,19 @@ begin
         wait for 1000 ns;
 
         ram := << variable accelerator_inst.scratchpad_inst.ram_dp_psum.ram_instance : ram_type >>;
+        idx := 0;
 
-        for i in 0 to 2 ** addr_width_psum_mem - 1 loop
+        for row  in 0 to g_image_y - g_kernel_size loop
 
-            write(row, integer'image(to_integer(signed(ram(i)))));
-            writeline(outfile, row);
+            for pix in 0 to g_image_x - g_kernel_size loop
+
+                write(outline, integer'image(to_integer(signed(ram(idx)))));
+                write(outline, string'(" "));
+                idx := idx + 1;
+
+            end loop;
+
+            writeline(outfile, outline);
 
         end loop;
 

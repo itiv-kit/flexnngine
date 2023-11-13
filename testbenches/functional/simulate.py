@@ -590,22 +590,7 @@ class Test:
         try:
             # read actual output from file ../_output.txt
             actual_output = np.loadtxt(self.test_dir / "_output.txt")
-            # iterate over actual_output and store in 2d array every output_size values
             output_size = self.convolution.image_size - self.convolution.kernel_size + 1
-            actual_output_2d = np.zeros(
-                (actual_output.shape[0] // output_size, output_size)
-            )
-            for i in range(actual_output.shape[0] // output_size):
-                actual_output_2d[i] = actual_output[
-                    i * output_size : i * output_size + output_size
-                ]
-
-            np.savetxt(
-                self.test_dir / "_actual_output.txt",
-                actual_output_2d,
-                fmt="%d",
-                delimiter=" ",
-            )
 
             if self.accelerator.dataflow == 1:
                 index = 0
@@ -619,14 +604,14 @@ class Test:
                         index_actual_output = x*self.M0 + m0_count
                         index_convolution_stack = m0_count * max_x + x
                         #print("Index actual output: " , index_actual_output, "   Index convolution stack : ", index_convolution_stack, "   max_x=", max_x)
-                        if (all(actual_output_2d[index_actual_output, :]== self.convolved_images_stack[index_convolution_stack, :])== True):
+                        if (all(actual_output[index_actual_output, :]== self.convolved_images_stack[index_convolution_stack, :])== True):
                             #print(self.name + ": Row OK")
                             pass
                         else:
                             pass
                             print(
                                 self.name + ": ERR: got row",
-                                actual_output_2d[index_actual_output, :],
+                                actual_output[index_actual_output, :],
                             )
                             print(
                                 self.name + ": expected row",
@@ -642,78 +627,33 @@ class Test:
                             )
                             return False
             else:
-                index = 0
-                index_convolution_stack = 0
-                index_m = np.zeros(self.M0)
-                row_m = np.zeros(self.M0)
-                # compare expected output with actual output
-                for h2 in range(self.H2):
-                    for x in range(self.accelerator.size_x):
-                        for m0_count in range(self.M0):
-                            if index < self.convolution.image_size * self.M0:
-                                valid_rows = (
-                                    self.convolution.image_size
-                                    - (m0_count + 1) * self.convolution.kernel_size
-                                    + 1
-                                )
-                                pause_rows = self.convolution.kernel_size - 1
-                                start_row = m0_count * self.convolution.kernel_size
-                                if index_m[m0_count] == 0:
-                                    row_m[m0_count] = start_row
-                                # if index == 0:
-                                # print("valid_rows = ", valid_rows , " pause_rows = ", pause_rows, " start_row = ", start_row)
-                                if (
-                                    index_m[m0_count] < valid_rows
-                                    or index_m[m0_count] >= valid_rows + pause_rows
-                                ):
-                                    index_convolution_stack = int(
-                                        row_m[m0_count] + m0_count * output_size
-                                    )
-                                    index_actual_output = index
-                                    if (
-                                        all(
-                                            actual_output_2d[index_actual_output, :]
-                                            == self.convolved_images_stack[
-                                                index_convolution_stack, :
-                                            ]
-                                        )
-                                        == True
-                                    ):
-                                        #print(self.name + ": Row OK")
-                                        pass
-                                    else:
-                                        print(
-                                            self.name + ": err: got row",
-                                            actual_output_2d[index_actual_output, :],
-                                        )
-                                        print(
-                                            self.name + ": expected row",
-                                            self.convolved_images_stack[
-                                                index_convolution_stack, :
-                                            ],
-                                        )
-                                        print(
-                                            self.name + ": index_actual_output = ",
-                                            index_actual_output,
-                                            " index_convolution_stack = ",
-                                            index_convolution_stack,
-                                        )
-                                        return False
-                                    if row_m[m0_count] == output_size - 1:
-                                        row_m[m0_count] = 0
-                                    else:
-                                        row_m[m0_count] += 1
-                                index += 1
-                                index_m[m0_count] += 1
+                # TODO: find out why convolved images are "stacked", if for no reason then drop it
+                # un-stack the images and use the first image only
+                expected_output = self.convolved_images_stack[:output_size]
+
+                if expected_output.shape != actual_output.shape:
+                    print(f'{self.name}: shapes of expected ({expected_output.shape})')
+
+                if np.equal(actual_output, expected_output).all():
+                    print(f'{self.name}: Output matches!')
+                else:
+                    print(f'{self.name}: Output differs!')
+                    index = 0
+                    for actual_row, expected_row in zip(actual_output, expected_output):
+                        if not np.equal(actual_row, expected_row).all():
+                            print(f'{self.name}: first incorrect row {index}')
+                            print(f'{self.name}: got row {actual_row}')
+                            print(f'{self.name}: expected row {expected_row}')
+                            raise RuntimeError(f'row {index} is incorrect')
+                        index = index + 1
 
             print("Success: ", self.name)
             with open((self.test_dir / '_success.txt'), 'w') as f:
                 f.write('Simulated and output checked successfully!')
             return True
-        except IndexError as e:
-            print("Error while evaluating test: ", self.name, " : ", str(e))
+        except (IndexError, RuntimeError) as e:
+            print(f'Error while evaluating test: {self.name}: {e}')
             return False
-
 
 
 def run_test(setting):
