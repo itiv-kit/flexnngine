@@ -178,6 +178,7 @@ architecture behavioral of pe is
     signal r_sel_mult_psum  : std_logic := '0';
     signal r_sel_conv_gemm  : std_logic := '0';
     signal r_sel_iact_input : std_logic := '0';
+    signal w_sel_output     : std_logic;
 
     signal r_command_read_psum_delay : std_logic;
     signal r_command_read_psum       : std_logic;
@@ -462,68 +463,37 @@ begin
             z_o(0)    => w_data_in_iact_valid
         );
 
-    pe_output : if pe_north = false generate
+    pe_output_psum_sel : if pe_north = true generate
+        w_sel_output <= not r_sel_iact_input;
+    else generate
+        w_sel_output <= r_sel_conv_gemm;
+    end generate pe_output_psum_sel;
 
-        mux_output : component mux
-            generic map (
-                input_width   => data_width_psum,
-                input_num     => 2,
-                address_width => 1
-            )
-            port map (
-                v_i(0) => w_data_psum,
-                v_i(1) => r_data_iact_wide,
-                sel(0) => r_sel_conv_gemm,
-                z_o    => o_data_out
-            );
+    mux_output : component mux
+        generic map (
+            input_width   => data_width_psum,
+            input_num     => 2,
+            address_width => 1
+        )
+        port map (
+            v_i(0) => w_data_psum,
+            v_i(1) => r_data_iact_wide,
+            sel(0) => w_sel_output,
+            z_o    => o_data_out
+        );
 
-        mux_output_valid : component mux
-            generic map (
-                input_width   => 1,
-                input_num     => 2,
-                address_width => 1
-            )
-            port map (
-                v_i(0)(0) => r_command_read_psum_delay,
-                v_i(1)(0) => r_data_iact_wide_valid,
-                sel(0)    => r_sel_conv_gemm,
-                z_o(0)    => o_data_out_valid
-            );
-
-    end generate pe_output;
-
-    pe_output_psum : if pe_north = true generate
-
-        mux_output : component mux
-            generic map (
-                input_width   => data_width_psum,
-                input_num     => 2,
-                address_width => 1
-            )
-            port map (
-                v_i(0) => w_data_psum,
-                v_i(1) => r_data_iact_wide,
-                sel(0) => not r_sel_iact_input,
-                z_o    => o_data_out
-            );
-
-        mux_output_valid : component mux
-            generic map (
-                input_width   => 1,
-                input_num     => 2,
-                address_width => 1
-            )
-            port map (
-                v_i(0)(0) => r_command_read_psum_delay,
-                v_i(1)(0) => r_data_iact_wide_valid,
-                sel(0)    => not r_sel_iact_input,
-                z_o(0)    => o_data_out_valid
-            );
-
-    -- o_data_out_valid <= r_command_read_psum_delay;
-    -- o_data_out       <= w_data_psum;
-
-    end generate pe_output_psum;
+    mux_output_valid : component mux
+        generic map (
+            input_width   => 1,
+            input_num     => 2,
+            address_width => 1
+        )
+        port map (
+            v_i(0)(0) => r_command_read_psum_delay,
+            v_i(1)(0) => r_data_iact_wide_valid,
+            sel(0)    => w_sel_output,
+            z_o(0)    => o_data_out_valid
+        );
 
     demux_input : component demux
         generic map (
