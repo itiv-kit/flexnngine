@@ -26,6 +26,8 @@ package utilities is
 
     impure function read_file (file_name : string; num_col : integer; num_row : integer; num_channels : integer) return int_image3_t;
 
+    function and_reduce_2d(arr : in std_logic_row_col_t) return std_logic;
+
 end package utilities;
 
 package body utilities is
@@ -109,6 +111,17 @@ package body utilities is
 
         return v_input_image;
 
+    end function;
+
+    function and_reduce_2d(arr : in std_logic_row_col_t) return std_logic is
+        variable res : std_logic := '1';
+    begin
+        for y in arr'range(1) loop
+            for x in arr'range(2) loop
+                res := res and arr(y,x);
+            end loop;
+        end loop;
+        return res;
     end function;
 
 end package body utilities;

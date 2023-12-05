@@ -306,15 +306,8 @@ begin
     end generate psum_output;
 
     -- OUTPUT BUFFER FULL SIGNALS
-    /* TODO just concatenated for 3x3 atm*/
-
-    -- o_buffer_full_iact <= w_buffer_full_iact(0, 0); -- and w_buffer_full_iact(0, 1) and w_buffer_full_iact(0, 2) and w_buffer_full_iact(1, 0) and w_buffer_full_iact(1, 1) and w_buffer_full_iact(1, 2) and w_buffer_full_iact(2, 0) and w_buffer_full_iact(2, 1) and w_buffer_full_iact(2, 2);
-    o_buffer_full_psum <= w_buffer_full_psum(0, 0) and w_buffer_full_psum(0, 1) and w_buffer_full_psum(0, 2) and w_buffer_full_psum(1, 0) and w_buffer_full_psum(1, 1) and w_buffer_full_psum(1, 2) and w_buffer_full_psum(2, 0) and w_buffer_full_psum(2, 1) and w_buffer_full_psum(2, 2);
-    -- o_buffer_full_wght <= w_buffer_full_wght(0, 0); -- or w_buffer_full_wght(1, 0) or w_buffer_full_wght(2, 0) or w_buffer_full_wght(3, 0) or w_buffer_full_wght(4, 0); -- and w_buffer_full_wght(1, 2) and w_buffer_full_wght(2, 0) and w_buffer_full_wght(2, 1) and w_buffer_full_wght(2, 2);
-
-    -- o_buffer_full_next_iact <= w_buffer_full_next_iact(0, 0); -- and w_buffer_full_next_iact(0, 1) and w_buffer_full_next_iact(0, 2) and w_buffer_full_next_iact(1, 0) and w_buffer_full_next_iact(1, 1) and w_buffer_full_next_iact(1, 2) and w_buffer_full_next_iact(2, 0) and w_buffer_full_next_iact(2, 1) and w_buffer_full_next_iact(2, 2);
-    o_buffer_full_next_psum <= w_buffer_full_next_psum(0, 0) and w_buffer_full_next_psum(0, 1) and w_buffer_full_next_psum(0, 2) and w_buffer_full_next_psum(1, 0) and w_buffer_full_next_psum(1, 1) and w_buffer_full_next_psum(1, 2) and w_buffer_full_next_psum(2, 0) and w_buffer_full_next_psum(2, 1) and w_buffer_full_next_psum(2, 2);
-    -- <= w_buffer_full_next_wght(0, 0); -- and w_buffer_full_next_wght(0, 1) and w_buffer_full_next_wght(0, 2) and w_buffer_full_next_wght(1, 0) and w_buffer_full_next_wght(1, 1) and w_buffer_full_next_wght(1, 2) and w_buffer_full_next_wght(2, 0) and w_buffer_full_next_wght(2, 1) and w_buffer_full_next_wght(2, 2);
+    o_buffer_full_psum <= and_reduce_2d(w_buffer_full_psum);
+    o_buffer_full_next_psum <= and_reduce_2d(w_buffer_full_next_psum);
 
     -- GENERATE PE ---------
     -- Generate PE instances
