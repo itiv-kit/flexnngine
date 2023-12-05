@@ -5,6 +5,8 @@ vcom -64 -2008 -work accel \
     "${HDL_DIR}/address_generator_psum.vhd" \
     "${HDL_DIR}/control_init.vhd" \
     "${HDL_DIR}/control.vhd" \
+    "${HDL_DIR}/control_arch_rs.vhd" \
+    "${HDL_DIR}/control_arch_alt_rs.vhd" \
     "${HDL_DIR}/control_address_generator.vhd" \
     "${HDL_DIR}/pe_array.vhd" \
     "${HDL_DIR}/demux.vhd" \
