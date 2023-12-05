@@ -581,7 +581,7 @@ class Test:
                     cwd=self.test_dir,
                 )
             except CalledProcessError as e:
-                print("Error while running test: ", self.name, " : ", e.output)
+                print(f"Error while running test {self.name}: {e}")
                 return False
 
         return self._evaluate()
