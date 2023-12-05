@@ -33,7 +33,7 @@ begin
             if i_en = '0' then
                 o_result_valid <= '0';
             else
-                o_result       <= std_logic_vector(signed(i_data_a) * signed(i_data_b));
+                o_result       <= std_logic_vector(resize(signed(i_data_a) * signed(i_data_b), output_width));
                 o_result_valid <= '1';
             end if;
         end if;
