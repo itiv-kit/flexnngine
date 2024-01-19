@@ -306,7 +306,7 @@ begin
     end generate psum_output;
 
     -- OUTPUT BUFFER FULL SIGNALS
-    o_buffer_full_psum <= and_reduce_2d(w_buffer_full_psum);
+    o_buffer_full_psum      <= and_reduce_2d(w_buffer_full_psum);
     o_buffer_full_next_psum <= and_reduce_2d(w_buffer_full_next_psum);
 
     -- GENERATE PE ---------

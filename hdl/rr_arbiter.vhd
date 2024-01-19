@@ -28,7 +28,6 @@ begin
     w_double_gnt <= w_double_req and not std_logic_vector((unsigned(w_double_req) - unsigned(r_priority)));
 
     arbiter_pr : process (clk, rstn) is
-
     begin
 
         if not rstn then

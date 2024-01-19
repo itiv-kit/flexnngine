@@ -284,7 +284,6 @@ begin
     end process switch_state;
 
     p_command_counter : process (clk, rstn) is
-
     begin
 
         if not rstn then
