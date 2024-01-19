@@ -15,5 +15,5 @@ rule:
     disable: true
   component_019:
     disable: true
-  concurrent_007:
+  conditional_waveforms_001:
     allow_single_line: true
