@@ -5,18 +5,18 @@ use ieee.numeric_std.all;
 entity ACC_v1_0 is
   generic (
     -- Users to add parameters here
-    data_width_psum        : positive := 16;
-    data_width_iact        : positive := 8; -- Width of the input data (weights, iacts)
-    data_width_wght        : positive := 8;
-    addr_width_iact_mem    : positive := 15;
-    addr_width_psum_mem    : positive := 14;
-    addr_width_wght_mem    : positive := 15;
-    data_width_iact_port_a : positive := 32;
-    data_width_wght_port_a : positive := 32;
-    data_width_psum_port_a : positive := 32;
-    addr_width_iact_port_a : positive := 13;
-    addr_width_wght_port_a : positive := 13;
-    addr_width_psum_port_a : positive := 13;
+    data_width_psum          : positive := 16;
+    data_width_iact          : positive := 8; -- Width of the input data (weights, iacts)
+    data_width_wght          : positive := 8;
+    spad_addr_width_iact     : positive := 15;
+    spad_addr_width_wght     : positive := 15;
+    spad_addr_width_psum     : positive := 14;
+    spad_ext_addr_width_iact : positive := 13;
+    spad_ext_addr_width_wght : positive := 13;
+    spad_ext_addr_width_psum : positive := 13;
+    spad_ext_data_width_iact : positive := 32;
+    spad_ext_data_width_wght : positive := 32;
+    spad_ext_data_width_psum : positive := 32;
 
     -- Parameters of Axi Slave Bus Interface S00_AXI
     C_S00_AXI_DATA_WIDTH : integer := 32;
@@ -27,20 +27,21 @@ entity ACC_v1_0 is
     clk    : in std_logic;
     clk_sp : in std_logic;
 
-    o_dout_psum : out std_logic_vector(data_width_psum_port_a - 1 downto 0);
-    o_dout_iact : out std_logic_vector(data_width_iact_port_a - 1 downto 0);
-    o_dout_wght : out std_logic_vector(data_width_wght_port_a - 1 downto 0);
-
     i_write_en_iact : in std_logic;
     i_write_en_wght : in std_logic;
-    i_read_en_psum  : in std_logic;
+    i_write_en_psum : in std_logic;
 
-    i_write_adr_iact : in std_logic_vector(addr_width_iact_port_a - 1 downto 0);
-    i_write_adr_wght : in std_logic_vector(addr_width_wght_port_a - 1 downto 0);
-    i_read_adr_psum  : in std_logic_vector(addr_width_psum_port_a - 1 downto 0);
+    i_addr_iact : in std_logic_vector(spad_ext_addr_width_iact - 1 downto 0);
+    i_addr_wght : in std_logic_vector(spad_ext_addr_width_wght - 1 downto 0);
+    i_addr_psum : in std_logic_vector(spad_ext_addr_width_psum - 1 downto 0);
 
-    i_din_iact : in std_logic_vector(data_width_iact_port_a - 1 downto 0);
-    i_din_wght : in std_logic_vector(data_width_wght_port_a - 1 downto 0);
+    i_din_iact : in std_logic_vector(spad_ext_data_width_iact - 1 downto 0);
+    i_din_wght : in std_logic_vector(spad_ext_data_width_wght - 1 downto 0);
+    i_din_psum : in std_logic_vector(spad_ext_data_width_psum - 1 downto 0);
+
+    o_dout_iact : out std_logic_vector(spad_ext_data_width_iact - 1 downto 0);
+    o_dout_wght : out std_logic_vector(spad_ext_data_width_wght - 1 downto 0);
+    o_dout_psum : out std_logic_vector(spad_ext_data_width_psum - 1 downto 0);
 
     -- Ports of Axi Slave Bus Interface S00_AXI
     s00_axi_aclk    : in  std_logic;
@@ -130,44 +131,45 @@ architecture arch_imp of ACC_v1_0 is
       addr_width_y    : positive := 3;
       addr_width_x    : positive := 3;
 
-      data_width_iact     : positive := 8; -- Width of the input data (weights, iacts)
+      -- iact word size, pe line buffer length & matching offset addressing width
+      data_width_iact     : positive := 8;
       line_length_iact    : positive := 512;
       addr_width_iact     : positive := 9;
-      addr_width_iact_mem : positive := 15;
 
-      data_width_psum     : positive := 16; -- or 17??
+      -- psum word size, pe line buffer length & matching offset addressing width
+      data_width_psum     : positive := 16;
       line_length_psum    : positive := 1024;
       addr_width_psum     : positive := 10;
-      addr_width_psum_mem : positive := 15;
 
+      -- wght word size, pe line buffer length & matching offset addressing width
       data_width_wght     : positive := 8;
       line_length_wght    : positive := 512;
       addr_width_wght     : positive := 9;
-      addr_width_wght_mem : positive := 15;
 
-      data_width_iact_port_a : positive := 32;
-      data_width_wght_port_a : positive := 32;
-      data_width_psum_port_a : positive := 32;
-      addr_width_iact_port_a : positive := 10;
-      addr_width_wght_port_a : positive := 10;
-      addr_width_psum_port_a : positive := 10;
+      -- address widths scratchpad <-> pe array
+      spad_addr_width_iact : positive := 15;
+      spad_addr_width_wght : positive := 15;
+      spad_addr_width_psum : positive := 15;
+
+      -- address widths scratchpad <-> external, port_a is exposed as i/o on this module
+      spad_ext_addr_width_iact : positive := 13;
+      spad_ext_addr_width_wght : positive := 13;
+      spad_ext_addr_width_psum : positive := 14;
+      spad_ext_data_width_iact : positive := 32;
+      spad_ext_data_width_wght : positive := 32;
+      spad_ext_data_width_psum : positive := 32;
+
       fifo_width : positive := 16;
 
       g_iact_fifo_size : positive := 15;
       g_wght_fifo_size : positive := 15;
       g_psum_fifo_size : positive := 45;
 
-      g_channels    : positive := 28;
-      g_kernels     : positive := 10;
-      g_image_y     : positive := 14;
-      g_image_x     : positive := 14;
-      g_kernel_size : positive := 5;
-
       g_files_dir : string  := "";
       g_init_sp   : boolean := false;
 
-      g_control_init : boolean  := false;
-      g_dataflow     : integer  := 1
+      g_control_init : boolean := false;
+      g_dataflow     : integer := 1
     );
     port (
       clk  : in    std_logic;
@@ -178,43 +180,44 @@ architecture arch_imp of ACC_v1_0 is
       i_start_init : in    std_logic;
       i_start      : in    std_logic;
 
-      o_ready      : out std_logic;
-      o_done       : out std_logic;
-      o_status_sp     : out std_logic;
-      o_status_adr     : out std_logic;
-
-      o_dout_psum       : out   std_logic_vector(data_width_psum_port_a - 1 downto 0);
-      o_dout_iact       : out   std_logic_vector(data_width_iact_port_a - 1 downto 0);
-      o_dout_wght       : out   std_logic_vector(data_width_wght_port_a - 1 downto 0);
+      o_ready      : out   std_logic;
+      o_done       : out   std_logic;
+      o_status_sp  : out   std_logic;
+      o_status_adr : out   std_logic;
 
       i_write_en_iact : in    std_logic;
       i_write_en_wght : in    std_logic;
-      i_read_en_psum  : in    std_logic;
+      i_write_en_psum : in    std_logic;
 
-      i_write_adr_iact : in std_logic_vector(addr_width_iact_port_a - 1 downto 0);
-      i_write_adr_wght : in std_logic_vector(addr_width_wght_port_a - 1 downto 0);
-      i_read_adr_psum  : in std_logic_vector(addr_width_psum_port_a - 1 downto 0);
+      i_addr_iact : in    std_logic_vector(spad_ext_addr_width_iact - 1 downto 0);
+      i_addr_wght : in    std_logic_vector(spad_ext_addr_width_wght - 1 downto 0);
+      i_addr_psum : in    std_logic_vector(spad_ext_addr_width_psum - 1 downto 0);
 
-      i_din_iact : in    std_logic_vector(data_width_iact_port_a - 1 downto 0);
-      i_din_wght : in    std_logic_vector(data_width_wght_port_a - 1 downto 0);
+      i_din_iact : in    std_logic_vector(spad_ext_data_width_iact - 1 downto 0);
+      i_din_wght : in    std_logic_vector(spad_ext_data_width_wght - 1 downto 0);
+      i_din_psum : in    std_logic_vector(spad_ext_data_width_psum - 1 downto 0);
+
+      o_dout_iact : out   std_logic_vector(spad_ext_data_width_iact - 1 downto 0);
+      o_dout_wght : out   std_logic_vector(spad_ext_data_width_wght - 1 downto 0);
+      o_dout_psum : out   std_logic_vector(spad_ext_data_width_psum - 1 downto 0);
 
       -- modified to receive parameters via ports
-      i_channels    : in integer range 0 to 1023;
-      i_kernels     : in integer range 0 to 1023;
-      i_image_y     : in integer range 0 to 4095;
-      i_image_x     : in integer range 0 to 4095;
-      i_kernel_size : in integer range 0 to 31;
+      i_channels    : in    integer range 0 to 1023;
+      i_kernels     : in    integer range 0 to 1023;
+      i_image_y     : in    integer range 0 to 4095;
+      i_image_x     : in    integer range 0 to 4095;
+      i_kernel_size : in    integer range 0 to 31;
 
-      i_conv_param_c1             : in integer range 0 to 1023;
-      i_conv_param_w1             : in integer range 0 to 1023;
-      i_conv_param_h2             : in integer range 0 to 1023;
-      i_conv_param_m0             : in integer range 0 to 1023;
-      i_conv_param_m0_last_m1     : in integer range 0 to 1023;
-      i_conv_param_row_last_h2    : in integer range 0 to 1023;
-      i_conv_param_c0             : in integer range 0 to 1023;
-      i_conv_param_c0_last_c1     : in integer range 0 to 1023;
-      i_conv_param_c0w0           : in integer range 0 to 1023;
-      i_conv_param_c0w0_last_c1   : in integer range 0 to 1023
+      i_conv_param_c1           : in    integer range 0 to 1023;
+      i_conv_param_w1           : in    integer range 0 to 1023;
+      i_conv_param_h2           : in    integer range 0 to 1023;
+      i_conv_param_m0           : in    integer range 0 to 1023;
+      i_conv_param_m0_last_m1   : in    integer range 0 to 1023;
+      i_conv_param_row_last_h2  : in    integer range 0 to 1023;
+      i_conv_param_c0           : in    integer range 0 to 1023;
+      i_conv_param_c0_last_c1   : in    integer range 0 to 1023;
+      i_conv_param_c0w0         : in    integer range 0 to 1023;
+      i_conv_param_c0w0_last_c1 : in    integer range 0 to 1023
     );
   end component;
 
@@ -225,9 +228,6 @@ architecture arch_imp of ACC_v1_0 is
   signal status_sp  : std_logic;
   signal status_adr : std_logic;
   signal start_init : std_logic;
-  signal w_write_adr_iact : std_logic_vector(addr_width_iact_mem-1 downto addr_width_iact_mem-addr_width_iact_port_a);
-  signal w_write_adr_wght : std_logic_vector(addr_width_wght_mem-1 downto addr_width_wght_mem-addr_width_wght_port_a);
-  signal w_read_adr_psum  : std_logic_vector(addr_width_psum_mem-1 downto addr_width_psum_mem-addr_width_psum_port_a);
   signal channels    : integer range 0 to 1023;
   signal kernels     : integer range 0 to 1023;
   signal image_y     : integer range 0 to 4095;
@@ -295,19 +295,19 @@ begin
     S_AXI_RREADY  => s00_axi_rready
   );
 
-  ACC_inst : accelerator generic map (
+  accelerator_inst : accelerator generic map (
     data_width_psum => data_width_psum,
     data_width_iact => data_width_iact,
     data_width_wght => data_width_wght,
-    addr_width_iact_mem => addr_width_iact_mem,
-    addr_width_psum_mem => addr_width_psum_mem,
-    addr_width_wght_mem => addr_width_wght_mem,
-    data_width_iact_port_a => data_width_iact_port_a,
-    data_width_wght_port_a => data_width_wght_port_a,
-    data_width_psum_port_a => data_width_psum_port_a,
-    addr_width_iact_port_a => addr_width_iact_port_a,
-    addr_width_wght_port_a => addr_width_wght_port_a,
-    addr_width_psum_port_a => addr_width_psum_port_a
+    spad_addr_width_iact => spad_addr_width_iact,
+    spad_addr_width_psum => spad_addr_width_psum,
+    spad_addr_width_wght => spad_addr_width_wght,
+    spad_ext_data_width_iact => spad_ext_data_width_iact,
+    spad_ext_data_width_wght => spad_ext_data_width_wght,
+    spad_ext_data_width_psum => spad_ext_data_width_psum,
+    spad_ext_addr_width_iact => spad_ext_addr_width_iact,
+    spad_ext_addr_width_wght => spad_ext_addr_width_wght,
+    spad_ext_addr_width_psum => spad_ext_addr_width_psum
   ) port map (
     clk  => clk,
     rstn => rst,
@@ -322,20 +322,21 @@ begin
     o_status_sp  => status_sp,
     o_status_adr => status_adr,
 
-    o_dout_psum       => o_dout_psum,
-    o_dout_iact       => o_dout_iact,
-    o_dout_wght       => o_dout_wght,
-
     i_write_en_iact => i_write_en_iact,
     i_write_en_wght => i_write_en_wght,
-    i_read_en_psum  => i_read_en_psum,
+    i_write_en_psum => i_write_en_psum,
 
-    i_write_adr_iact => w_write_adr_iact,
-    i_write_adr_wght => w_write_adr_wght,
-    i_read_adr_psum  => w_read_adr_psum,
+    i_addr_iact => i_addr_iact,
+    i_addr_wght => i_addr_wght,
+    i_addr_psum => i_addr_psum,
 
     i_din_iact => i_din_iact,
     i_din_wght => i_din_wght,
+    i_din_psum => i_din_psum,
+
+    o_dout_psum => o_dout_psum,
+    o_dout_iact => o_dout_iact,
+    o_dout_wght => o_dout_wght,
 
     i_channels    => channels,
     i_kernels     => kernels,
@@ -354,8 +355,6 @@ begin
     i_conv_param_c0w0         => conv_param_c0w0,
     i_conv_param_c0w0_last_c1 => conv_param_c0w0_last_c1
   );
-
-
 
   -- Add user logic here
   start_init <= '0';

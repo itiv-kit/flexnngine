@@ -14,10 +14,10 @@ entity bytewrite_tdp_ram_rf is
     generic (
         size          : integer := 1024;
         addr_width    : integer := 10;
-        col_width     : integer := 9;
+        col_width     : integer := 8;
         nb_col        : integer := 4;
-        init_file     : string  := "../../../../ram.txt";
-        generate_init : boolean := false
+        initialize    : boolean := false;
+        init_file     : string  := ""
     );
     port (
         clka  : in    std_logic;
@@ -58,6 +58,9 @@ architecture byte_wr_ram_rf of bytewrite_tdp_ram_rf is
 
         end loop;
 
+        report "initialized " & integer'image(n_words) & " words of memory from " & mem_file_name
+            severity note;
+
         return temp_mem;
 
     end function;
@@ -65,7 +68,7 @@ architecture byte_wr_ram_rf of bytewrite_tdp_ram_rf is
     impure function init_file_or_zero (mem_file_name : in string) return ram_type is
     begin
 
-        if generate_init then
+        if initialize then
             return init_memory_wfile(mem_file_name);
         else
             return (others => (others => '0'));

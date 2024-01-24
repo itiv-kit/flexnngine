@@ -31,17 +31,17 @@ entity accelerator is
         addr_width_wght     : positive := 9;
 
         -- address widths scratchpad <-> pe array
-        addr_width_iact_mem : positive := 15;
-        addr_width_psum_mem : positive := 15;
-        addr_width_wght_mem : positive := 15;
+        spad_addr_width_iact : positive := 15;
+        spad_addr_width_wght : positive := 15;
+        spad_addr_width_psum : positive := 15;
 
         -- address widths scratchpad <-> external, port_a is exposed as i/o on this module
-        data_width_iact_port_a : positive := 32;
-        data_width_wght_port_a : positive := 32;
-        data_width_psum_port_a : positive := 32;
-        addr_width_iact_port_a : positive := 13;
-        addr_width_wght_port_a : positive := 13;
-        addr_width_psum_port_a : positive := 14;
+        spad_ext_addr_width_iact : positive := 13;
+        spad_ext_addr_width_wght : positive := 13;
+        spad_ext_addr_width_psum : positive := 14;
+        spad_ext_data_width_iact : positive := 32;
+        spad_ext_data_width_wght : positive := 32;
+        spad_ext_data_width_psum : positive := 32;
 
         fifo_width : positive := 16;
 
@@ -64,20 +64,21 @@ entity accelerator is
         i_start : in    std_logic;
         o_done  : out   std_logic;
 
-        o_dout_psum       : out   std_logic_vector(data_width_psum_port_a - 1 downto 0);
-        o_dout_iact       : out   std_logic_vector(data_width_iact_port_a - 1 downto 0);
-        o_dout_wght       : out   std_logic_vector(data_width_wght_port_a - 1 downto 0);
-
         i_write_en_iact : in    std_logic;
         i_write_en_wght : in    std_logic;
-        i_read_en_psum  : in    std_logic;
+        i_write_en_psum : in    std_logic;
 
-        i_write_adr_iact : in    std_logic_vector(addr_width_iact_port_a - 1 downto 0);
-        i_write_adr_wght : in    std_logic_vector(addr_width_wght_port_a - 1 downto 0);
-        i_read_adr_psum  : in    std_logic_vector(addr_width_psum_port_a - 1 downto 0);
+        i_addr_iact : in    std_logic_vector(spad_ext_addr_width_iact - 1 downto 0);
+        i_addr_wght : in    std_logic_vector(spad_ext_addr_width_wght - 1 downto 0);
+        i_addr_psum : in    std_logic_vector(spad_ext_addr_width_psum - 1 downto 0);
 
-        i_din_iact : in    std_logic_vector(data_width_iact_port_a - 1 downto 0);
-        i_din_wght : in    std_logic_vector(data_width_wght_port_a - 1 downto 0);
+        i_din_iact : in    std_logic_vector(spad_ext_data_width_iact - 1 downto 0);
+        i_din_wght : in    std_logic_vector(spad_ext_data_width_wght - 1 downto 0);
+        i_din_psum : in    std_logic_vector(spad_ext_data_width_psum - 1 downto 0);
+
+        o_dout_iact : out   std_logic_vector(spad_ext_data_width_iact - 1 downto 0);
+        o_dout_wght : out   std_logic_vector(spad_ext_data_width_wght - 1 downto 0);
+        o_dout_psum : out   std_logic_vector(spad_ext_data_width_psum - 1 downto 0);
 
         -- modified to receive parameters via ports
         i_channels    : in    integer range 0 to 1023;
@@ -137,13 +138,13 @@ architecture rtl of accelerator is
     signal w_psums       : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
     signal w_psums_valid : std_logic_vector(size_x - 1 downto 0);
 
-    signal w_write_adr_iact : std_logic_vector(addr_width_iact_mem - 1 downto 0);
-    signal w_write_adr_psum : std_logic_vector(addr_width_psum_mem - 1 downto 0);
-    signal w_write_adr_wght : std_logic_vector(addr_width_wght_mem - 1 downto 0);
+    signal w_write_adr_iact : std_logic_vector(spad_addr_width_iact - 1 downto 0);
+    signal w_write_adr_psum : std_logic_vector(spad_addr_width_psum - 1 downto 0);
+    signal w_write_adr_wght : std_logic_vector(spad_addr_width_wght - 1 downto 0);
 
-    signal w_read_adr_iact : std_logic_vector(addr_width_iact_mem - 1 downto 0);
-    signal w_read_adr_psum : std_logic_vector(addr_width_psum_mem - 1 downto 0);
-    signal w_read_adr_wght : std_logic_vector(addr_width_wght_mem - 1 downto 0);
+    signal w_read_adr_iact : std_logic_vector(spad_addr_width_iact - 1 downto 0);
+    signal w_read_adr_psum : std_logic_vector(spad_addr_width_psum - 1 downto 0);
+    signal w_read_adr_wght : std_logic_vector(spad_addr_width_wght - 1 downto 0);
 
     signal w_dout_iact : std_logic_vector(data_width_iact - 1 downto 0);
     signal w_dout_wght : std_logic_vector(data_width_wght - 1 downto 0);
@@ -153,7 +154,6 @@ architecture rtl of accelerator is
     signal w_write_suppress_psum : std_logic;
 
     signal w_read_en_iact : std_logic;
-    signal w_read_en_psum : std_logic;
     signal w_read_en_wght : std_logic;
 
     signal w_pause_iact : std_logic;
@@ -184,8 +184,8 @@ architecture rtl of accelerator is
     signal w_gnt_psum_binary_d : std_logic_vector(addr_width_x - 1 downto 0);
     signal w_empty_psum_fifo   : std_logic_vector(size_x - 1 downto 0);
 
-    signal w_address_iact       : array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
-    signal w_address_wght       : array_t(0 to size_y - 1)(addr_width_wght_mem - 1 downto 0);
+    signal w_address_iact       : array_t(0 to size_rows - 1)(spad_addr_width_iact - 1 downto 0);
+    signal w_address_wght       : array_t(0 to size_y - 1)(spad_addr_width_wght - 1 downto 0);
     signal w_address_iact_valid : std_logic_vector(size_rows - 1 downto 0);
     signal w_address_wght_valid : std_logic_vector(size_y - 1 downto 0);
 
@@ -272,9 +272,9 @@ begin
             addr_width_rows     => addr_width_rows,
             addr_width_y        => addr_width_y,
             addr_width_x        => addr_width_x,
-            addr_width_iact_mem => addr_width_iact_mem,
-            addr_width_wght_mem => addr_width_wght_mem,
-            addr_width_psum_mem => addr_width_psum_mem,
+            addr_width_iact_mem => spad_addr_width_iact,
+            addr_width_wght_mem => spad_addr_width_wght,
+            addr_width_psum_mem => spad_addr_width_psum,
             line_length_iact    => line_length_iact,
             addr_width_iact     => addr_width_iact,
             line_length_psum    => line_length_psum,
@@ -330,47 +330,49 @@ begin
 
     scratchpad_inst : entity accel.scratchpad
         generic map (
-            data_width_iact_a => data_width_iact_port_a,
-            addr_width_iact_a => addr_width_iact_port_a,
-            data_width_psum_a => data_width_psum_port_a,
-            addr_width_psum_a => addr_width_psum_port_a,
-            data_width_wght_a => data_width_wght_port_a,
-            addr_width_wght_a => addr_width_wght_port_a,
-            data_width_iact_b => data_width_iact,
-            addr_width_iact_b => addr_width_iact_mem,
-            data_width_psum_b => data_width_psum,
-            addr_width_psum_b => addr_width_psum_mem,
-            data_width_wght_b => data_width_wght,
-            addr_width_wght_b => addr_width_wght_mem,
-            generate_init     => g_init_sp,
-            g_files_dir       => g_files_dir
+            ext_data_width_iact => spad_ext_data_width_iact,
+            ext_addr_width_iact => spad_ext_addr_width_iact,
+            ext_data_width_psum => spad_ext_data_width_psum,
+            ext_addr_width_psum => spad_ext_addr_width_psum,
+            ext_data_width_wght => spad_ext_data_width_wght,
+            ext_addr_width_wght => spad_ext_addr_width_wght,
+            data_width_iact     => data_width_iact,
+            addr_width_iact     => spad_addr_width_iact,
+            data_width_psum     => data_width_psum,
+            addr_width_psum     => spad_addr_width_psum,
+            data_width_wght     => data_width_wght,
+            addr_width_wght     => spad_addr_width_wght,
+            initialize_mems     => g_init_sp,
+            g_files_dir         => g_files_dir
         )
         port map (
             clk             => clk_sp,
             rstn            => rstn,
-            write_adr_iact  => i_write_adr_iact,
-            write_adr_psum  => w_write_adr_psum,
-            write_adr_wght  => i_write_adr_wght,
+            -- internal access
             read_adr_iact   => w_read_adr_iact,
-            read_adr_psum   => i_read_adr_psum,
             read_adr_wght   => w_read_adr_wght,
-            write_en_iact   => i_write_en_iact,
-            write_en_psum   => w_write_en_psum and not w_write_suppress_psum,
-            write_en_wght   => i_write_en_wght,
+            write_adr_psum  => w_write_adr_psum,
             read_en_iact    => w_read_en_iact,
-            read_en_psum    => w_read_en_psum,
             read_en_wght    => w_read_en_wght,
-            din_iact        => i_din_iact,
-            din_psum        => w_din_psum,
-            din_wght        => i_din_wght,
-            dout_iact       => w_dout_iact,
-            dout_psum       => o_dout_psum,
-            dout_wght       => w_dout_wght,
-            bus_dout_iact   => o_dout_iact,
-            bus_dout_wght   => o_dout_wght,
+            write_en_psum   => w_write_en_psum and not w_write_suppress_psum,
             dout_iact_valid => w_dout_iact_valid,
-            dout_psum_valid => open,
-            dout_wght_valid => w_dout_wght_valid
+            dout_wght_valid => w_dout_wght_valid,
+            dout_iact       => w_dout_iact,
+            dout_wght       => w_dout_wght,
+            din_psum        => w_din_psum,
+            -- external access
+            ext_write_en_iact => i_write_en_iact,
+            ext_write_en_wght => i_write_en_wght,
+            ext_write_en_psum => i_write_en_psum,
+            ext_addr_iact     => i_addr_iact,
+            ext_addr_wght     => i_addr_wght,
+            ext_addr_psum     => i_addr_psum,
+            ext_din_iact      => i_din_iact,
+            ext_din_wght      => i_din_wght,
+            ext_din_psum      => i_din_psum,
+            ext_dout_iact     => o_dout_iact,
+            ext_dout_wght     => o_dout_wght,
+            ext_dout_psum     => o_dout_psum
         );
 
     scratchpad_interface_inst : entity accel.scratchpad_interface
@@ -384,15 +386,15 @@ begin
             data_width_iact     => data_width_iact,
             line_length_iact    => line_length_iact,
             addr_width_iact     => addr_width_iact,
-            addr_width_iact_mem => addr_width_iact_mem,
+            addr_width_iact_mem => spad_addr_width_iact,
             data_width_psum     => data_width_psum,
             line_length_psum    => line_length_psum,
             addr_width_psum     => addr_width_psum,
-            addr_width_psum_mem => addr_width_psum_mem,
+            addr_width_psum_mem => spad_addr_width_psum,
             data_width_wght     => data_width_wght,
             line_length_wght    => line_length_wght,
             addr_width_wght     => addr_width_wght,
-            addr_width_wght_mem => addr_width_wght_mem,
+            addr_width_wght_mem => spad_addr_width_wght,
             fifo_width          => fifo_width,
             g_iact_fifo_size    => g_iact_fifo_size,
             g_wght_fifo_size    => g_wght_fifo_size,
@@ -439,7 +441,7 @@ begin
             size_x          => size_x,
             size_y          => size_y,
             addr_width_x    => addr_width_x,
-            addr_width_psum => addr_width_psum_mem
+            addr_width_psum => spad_addr_width_psum
         )
         port map (
             clk                 => clk_sp,

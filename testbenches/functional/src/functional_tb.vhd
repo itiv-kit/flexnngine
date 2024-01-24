@@ -94,13 +94,6 @@ architecture imp of functional_tb is
     signal s_input_weights   : int_image_t(0 to g_kernel_size - 1, 0 to g_kernel_size * g_channels * g_h2 - 1); -- not *2 because kernel stays the same across tile_y
     signal s_expected_output : int_image_t(0 to g_image_y - g_kernel_size, 0 to g_image_x - g_kernel_size);
 
-    signal dout_psum       : std_logic_vector(data_width_psum - 1 downto 0);
-    signal dout_psum_valid : std_logic;
-    signal write_en_iact   : std_logic;
-    signal write_en_wght   : std_logic;
-    signal din_iact        : std_logic_vector(data_width_iact - 1 downto 0);
-    signal din_wght        : std_logic_vector(data_width_wght - 1 downto 0);
-
     type ram_type is array (0 to 2 ** addr_width_psum_mem - 1) of std_logic_vector(data_width_psum - 1 downto 0);
 
     signal r_iact_command     : command_lb_t;
@@ -135,67 +128,67 @@ begin
                                           '0';
     end generate g_psum_commands;
 
-    write_en_iact <= '0';
-    write_en_wght <= '0';
-    din_iact      <= (others => '0');
-    din_wght      <= (others => '0');
-
     accelerator_inst : entity accel.accelerator
         generic map (
-            size_x              => size_x,
-            size_y              => size_y,
-            size_rows           => size_rows,
-            addr_width_rows     => addr_width_rows,
-            addr_width_y        => addr_width_y,
-            addr_width_x        => addr_width_x,
-            data_width_iact     => data_width_iact,
-            line_length_iact    => line_length_iact,
-            addr_width_iact     => addr_width_iact,
-            addr_width_iact_mem => addr_width_iact_mem,
-            data_width_psum     => data_width_psum,
-            line_length_psum    => line_length_psum,
-            addr_width_psum     => addr_width_psum,
-            addr_width_psum_mem => addr_width_psum_mem,
-            data_width_wght     => data_width_wght,
-            line_length_wght    => line_length_wght,
-            addr_width_wght     => addr_width_wght,
-            addr_width_wght_mem => addr_width_wght_mem,
-            fifo_width          => fifo_width,
-            g_iact_fifo_size    => g_iact_fifo_size,
-            g_wght_fifo_size    => g_wght_fifo_size,
-            g_psum_fifo_size    => g_psum_fifo_size,
-            g_channels          => g_channels,
-            g_kernels           => g_kernels,
-            g_image_y           => g_image_y,
-            g_image_x           => g_image_x,
-            g_kernel_size       => g_kernel_size,
-            g_files_dir         => g_files_dir,
-            g_init_sp           => g_init_sp,
-            g_control_init      => g_control_init,
-            g_c1                => g_c1,
-            g_w1                => g_w1,
-            g_h2                => g_h2,
-            g_m0                => g_m0,
-            g_m0_last_m1        => g_m0_last_m1,
-            g_rows_last_h2      => g_rows_last_h2,
-            g_c0                => g_c0,
-            g_c0_last_c1        => g_c0_last_c1,
-            g_c0w0              => g_c0w0,
-            g_c0w0_last_c1      => g_c0w0_last_c1,
-            g_dataflow          => g_dataflow
+            size_x               => size_x,
+            size_y               => size_y,
+            size_rows            => size_rows,
+            addr_width_rows      => addr_width_rows,
+            addr_width_y         => addr_width_y,
+            addr_width_x         => addr_width_x,
+            data_width_iact      => data_width_iact,
+            line_length_iact     => line_length_iact,
+            addr_width_iact      => addr_width_iact,
+            spad_addr_width_iact => addr_width_iact_mem,
+            data_width_psum      => data_width_psum,
+            line_length_psum     => line_length_psum,
+            addr_width_psum      => addr_width_psum,
+            spad_addr_width_psum => addr_width_psum_mem,
+            data_width_wght      => data_width_wght,
+            line_length_wght     => line_length_wght,
+            addr_width_wght      => addr_width_wght,
+            spad_addr_width_wght => addr_width_wght_mem,
+            fifo_width           => fifo_width,
+            g_iact_fifo_size     => g_iact_fifo_size,
+            g_wght_fifo_size     => g_wght_fifo_size,
+            g_psum_fifo_size     => g_psum_fifo_size,
+            g_dataflow           => g_dataflow
         )
         port map (
-            clk               => clk,
-            rstn              => rstn,
-            clk_sp            => clk_sp,
-            i_start           => start,
-            o_done            => done,
-            o_dout_psum       => dout_psum,
-            o_dout_psum_valid => dout_psum_valid,
-            i_write_en_iact   => write_en_iact,
-            i_write_en_wght   => write_en_wght,
-            i_din_iact        => din_iact,
-            i_din_wght        => din_wght
+            clk      => clk,
+            rstn     => rstn,
+            clk_sp   => clk_sp,
+            i_start  => start,
+            o_done   => done,
+            -- memory i/o not used in this testbench
+            i_write_en_iact => '0',
+            i_write_en_wght => '0',
+            i_write_en_psum => '0',
+            i_addr_iact     => (others => '0'),
+            i_addr_wght     => (others => '0'),
+            i_addr_psum     => (others => '0'),
+            i_din_iact      => (others => '0'),
+            i_din_wght      => (others => '0'),
+            i_din_psum      => (others => '0'),
+            o_dout_iact     => open,
+            o_dout_wght     => open,
+            o_dout_psum     => open,
+            -- configuration parameters
+            i_channels                => g_channels,
+            i_kernels                 => g_kernels,
+            i_image_y                 => g_image_y,
+            i_image_x                 => g_image_x,
+            i_kernel_size             => g_kernel_size,
+            i_conv_param_c1           => g_c1,
+            i_conv_param_w1           => g_w1,
+            i_conv_param_h2           => g_h2,
+            i_conv_param_m0           => g_m0,
+            i_conv_param_m0_last_m1   => g_m0_last_m1,
+            i_conv_param_row_last_h2  => g_rows_last_h2,
+            i_conv_param_c0           => g_c0,
+            i_conv_param_c0_last_c1   => g_c0_last_c1,
+            i_conv_param_c0w0         => g_c0w0,
+            i_conv_param_c0w0_last_c1 => g_c0w0_last_c1
         );
 
     rstn_gen : process is
@@ -543,7 +536,7 @@ begin
         variable outline : line;
         variable idx     : integer;
 
-        alias ram is << variable accelerator_inst.scratchpad_inst.ram_dp_psum.ram_instance : ram_type >>;
+        alias ram is << variable accelerator_inst.scratchpad_inst.ram_psum.ram : ram_type >>;
 
     begin
 
