@@ -120,11 +120,7 @@ begin
         index     := to_integer(unsigned(read_adr_iact_buff(addr_width_iact_b - addr_width_iact_a - 1 downto 0)));
         dout_iact <= datab_iact(data_width_iact_b * (index + 1) - 1 downto data_width_iact_b * index);
 
-        if write_en_iact = '1' then
-            wea_iact <= (others => '1');
-        else
-            wea_iact <= (others => '0');
-        end if;
+        wea_iact <= (others => write_en_iact);
 
     end process iact;
 
@@ -139,11 +135,7 @@ begin
         index     := to_integer(unsigned(read_adr_wght_buff(addr_width_wght_b - addr_width_wght_a - 1 downto 0)));
         dout_wght <= datab_wght(data_width_wght_b * (index + 1) - 1 downto data_width_wght_b * index);
 
-        if write_en_wght = '1' then
-            wea_wght <= (others => '1');
-        else
-            wea_wght <= (others => '0');
-        end if;
+        wea_wght <= (others => write_en_wght);
 
     end process wght;
 

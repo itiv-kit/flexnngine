@@ -15,21 +15,27 @@ entity accelerator is
         addr_width_y    : positive := 3;
         addr_width_x    : positive := 3;
 
-        data_width_iact     : positive := 8; -- Width of the input data (weights, iacts)
+        -- iact word size, pe line buffer length & matching offset addressing width
+        data_width_iact     : positive := 8;
         line_length_iact    : positive := 512;
         addr_width_iact     : positive := 9;
-        addr_width_iact_mem : positive := 15;
 
-        data_width_psum     : positive := 16; -- or 17??
+        -- psum word size, pe line buffer length & matching offset addressing width
+        data_width_psum     : positive := 16;
         line_length_psum    : positive := 1024;
         addr_width_psum     : positive := 10;
-        addr_width_psum_mem : positive := 15;
 
+        -- wght word size, pe line buffer length & matching offset addressing width
         data_width_wght     : positive := 8;
         line_length_wght    : positive := 512;
         addr_width_wght     : positive := 9;
+
+        -- address widths scratchpad <-> pe array
+        addr_width_iact_mem : positive := 15;
+        addr_width_psum_mem : positive := 15;
         addr_width_wght_mem : positive := 15;
 
+        -- address widths scratchpad <-> external, port_a is exposed as i/o on this module
         data_width_iact_port_a : positive := 32;
         data_width_wght_port_a : positive := 32;
         data_width_psum_port_a : positive := 32;
