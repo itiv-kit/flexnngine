@@ -61,7 +61,6 @@ entity accelerator is
         o_dout_psum       : out   std_logic_vector(data_width_psum_port_a - 1 downto 0);
         o_dout_iact       : out   std_logic_vector(data_width_iact_port_a - 1 downto 0);
         o_dout_wght       : out   std_logic_vector(data_width_wght_port_a - 1 downto 0);
-        o_dout_psum_valid : out   std_logi;
 
         i_write_en_iact : in    std_logic;
         i_write_en_wght : in    std_logic;
@@ -364,7 +363,7 @@ begin
             bus_dout_iact   => o_dout_iact,
             bus_dout_wght   => o_dout_wght,
             dout_iact_valid => w_dout_iact_valid,
-            dout_psum_valid => o_dout_psum_valid,
+            dout_psum_valid => open,
             dout_wght_valid => w_dout_wght_valid
         );
 

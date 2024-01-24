@@ -31,8 +31,6 @@ entity ACC_v1_0 is
     o_dout_iact : out std_logic_vector(data_width_iact_port_a - 1 downto 0);
     o_dout_wght : out std_logic_vector(data_width_wght_port_a - 1 downto 0);
 
-    o_dout_psum_valid : out   std_logic;
-
     i_write_en_iact : in std_logic;
     i_write_en_wght : in std_logic;
     i_read_en_psum  : in std_logic;
@@ -188,7 +186,6 @@ architecture arch_imp of ACC_v1_0 is
       o_dout_psum       : out   std_logic_vector(data_width_psum_port_a - 1 downto 0);
       o_dout_iact       : out   std_logic_vector(data_width_iact_port_a - 1 downto 0);
       o_dout_wght       : out   std_logic_vector(data_width_wght_port_a - 1 downto 0);
-      o_dout_psum_valid : out   std_logic;
 
       i_write_en_iact : in    std_logic;
       i_write_en_wght : in    std_logic;
@@ -328,7 +325,6 @@ begin
     o_dout_psum       => o_dout_psum,
     o_dout_iact       => o_dout_iact,
     o_dout_wght       => o_dout_wght,
-    o_dout_psum_valid => o_dout_psum_valid,
 
     i_write_en_iact => i_write_en_iact,
     i_write_en_wght => i_write_en_wght,
