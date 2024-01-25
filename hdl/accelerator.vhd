@@ -64,9 +64,13 @@ entity accelerator is
         i_start : in    std_logic;
         o_done  : out   std_logic;
 
-        i_write_en_iact : in    std_logic;
-        i_write_en_wght : in    std_logic;
-        i_write_en_psum : in    std_logic;
+        i_en_iact : in    std_logic;
+        i_en_wght : in    std_logic;
+        i_en_psum : in    std_logic;
+
+        i_write_en_iact : in    std_logic_vector(spad_ext_data_width_iact/8 - 1 downto 0);
+        i_write_en_wght : in    std_logic_vector(spad_ext_data_width_wght/8 - 1 downto 0);
+        i_write_en_psum : in    std_logic_vector(spad_ext_data_width_psum/8 - 1 downto 0);
 
         i_addr_iact : in    std_logic_vector(spad_ext_addr_width_iact - 1 downto 0);
         i_addr_wght : in    std_logic_vector(spad_ext_addr_width_wght - 1 downto 0);
@@ -361,6 +365,9 @@ begin
             dout_wght       => w_dout_wght,
             din_psum        => w_din_psum,
             -- external access
+            ext_en_iact       => i_en_iact,
+            ext_en_wght       => i_en_wght,
+            ext_en_psum       => i_en_psum,
             ext_write_en_iact => i_write_en_iact,
             ext_write_en_wght => i_write_en_wght,
             ext_write_en_psum => i_write_en_psum,

@@ -27,9 +27,21 @@ entity ACC_v1_0 is
     clk    : in std_logic;
     clk_sp : in std_logic;
 
-    i_write_en_iact : in std_logic;
-    i_write_en_wght : in std_logic;
-    i_write_en_psum : in std_logic;
+    -- unused clk/rst ports to make up a valid Vivado interface spec (VLNV)
+    i_dummy_clk_iact : in std_logic;
+    i_dummy_rst_iact : in std_logic;
+    i_dummy_clk_wght : in std_logic;
+    i_dummy_rst_wght : in std_logic;
+    i_dummy_clk_psum : in std_logic;
+    i_dummy_rst_psum : in std_logic;
+
+    i_en_iact : in std_logic;
+    i_en_wght : in std_logic;
+    i_en_psum : in std_logic;
+
+    i_write_en_iact : in std_logic_vector(spad_ext_data_width_iact/8 - 1 downto 0);
+    i_write_en_wght : in std_logic_vector(spad_ext_data_width_wght/8 - 1 downto 0);
+    i_write_en_psum : in std_logic_vector(spad_ext_data_width_psum/8 - 1 downto 0);
 
     i_addr_iact : in std_logic_vector(spad_ext_addr_width_iact - 1 downto 0);
     i_addr_wght : in std_logic_vector(spad_ext_addr_width_wght - 1 downto 0);
@@ -185,9 +197,13 @@ architecture arch_imp of ACC_v1_0 is
       o_status_sp  : out   std_logic;
       o_status_adr : out   std_logic;
 
-      i_write_en_iact : in    std_logic;
-      i_write_en_wght : in    std_logic;
-      i_write_en_psum : in    std_logic;
+      i_en_iact : in    std_logic;
+      i_en_wght : in    std_logic;
+      i_en_psum : in    std_logic;
+
+      i_write_en_iact : in    std_logic_vector(spad_ext_data_width_iact/8 - 1 downto 0);
+      i_write_en_wght : in    std_logic_vector(spad_ext_data_width_wght/8 - 1 downto 0);
+      i_write_en_psum : in    std_logic_vector(spad_ext_data_width_psum/8 - 1 downto 0);
 
       i_addr_iact : in    std_logic_vector(spad_ext_addr_width_iact - 1 downto 0);
       i_addr_wght : in    std_logic_vector(spad_ext_addr_width_wght - 1 downto 0);
@@ -321,6 +337,10 @@ begin
     o_done       => done,
     o_status_sp  => status_sp,
     o_status_adr => status_adr,
+
+    i_en_iact => i_en_iact,
+    i_en_wght => i_en_wght,
+    i_en_psum => i_en_psum,
 
     i_write_en_iact => i_write_en_iact,
     i_write_en_wght => i_write_en_wght,

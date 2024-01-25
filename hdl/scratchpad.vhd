@@ -49,9 +49,13 @@ entity scratchpad is
         din_psum  : in    std_logic_vector(data_width_psum - 1 downto 0);
 
         -- external r/w access to scratchpad memories
-        ext_write_en_iact : in    std_logic;
-        ext_write_en_wght : in    std_logic;
-        ext_write_en_psum : in    std_logic;
+        ext_en_iact : in    std_logic;
+        ext_en_wght : in    std_logic;
+        ext_en_psum : in    std_logic;
+
+        ext_write_en_iact : in    std_logic_vector(ext_data_width_iact/8 - 1 downto 0);
+        ext_write_en_wght : in    std_logic_vector(ext_data_width_wght/8 - 1 downto 0);
+        ext_write_en_psum : in    std_logic_vector(ext_data_width_psum/8 - 1 downto 0);
 
         ext_addr_iact : in    std_logic_vector(ext_addr_width_iact - 1 downto 0);
         ext_addr_wght : in    std_logic_vector(ext_addr_width_wght - 1 downto 0);
@@ -69,21 +73,15 @@ end entity scratchpad;
 
 architecture rtl of scratchpad is
 
-    constant cols_iact : integer := ext_data_width_iact / data_width_iact;
-    constant cols_wght : integer := ext_data_width_wght / data_width_wght;
-    constant cols_psum : integer := ext_data_width_psum / data_width_psum;
+    constant cols_iact : integer := ext_data_width_iact / 8;
+    constant cols_wght : integer := ext_data_width_wght / 8;
+    constant cols_psum : integer := ext_data_width_psum / 8;
 
-    signal ena_iact            : std_logic                                        := '1';
     signal enb_iact            : std_logic                                        := '1';
-    signal ena_wght            : std_logic                                        := '1';
     signal enb_wght            : std_logic                                        := '1';
-    signal ena_psum            : std_logic                                        := '1';
     signal enb_psum            : std_logic                                        := '1';
-    signal wea_iact            : std_logic_vector(cols_iact - 1 downto 0)         := (others => '0');
     signal web_iact            : std_logic_vector(cols_iact - 1 downto 0)         := (others => '0');
-    signal wea_wght            : std_logic_vector(cols_wght - 1 downto 0)         := (others => '0');
     signal web_wght            : std_logic_vector(cols_wght - 1 downto 0)         := (others => '0');
-    signal wea_psum            : std_logic_vector(cols_psum - 1 downto 0)         := (others => '0');
     signal web_psum            : std_logic_vector(cols_psum - 1 downto 0)         := (others => '0');
     signal addrb_iact          : std_logic_vector(ext_addr_width_iact - 1 downto 0);
     signal datab_iact          : std_logic_vector(ext_data_width_iact - 1 downto 0);
@@ -93,20 +91,14 @@ architecture rtl of scratchpad is
     signal datab_psum          : std_logic_vector(ext_data_width_psum - 1 downto 0);
     signal read_adr_wght_buff  : std_logic_vector(addr_width_wght - 1 downto 0) := (others => '0');
     signal read_adr_iact_buff  : std_logic_vector(addr_width_iact - 1 downto 0) := (others => '0');
-    signal write_adr_psum_buff : std_logic_vector(addr_width_psum - 1 downto 0) := (others => '0');
 
 begin
+    enb_iact <= read_en_iact;
+    enb_wght <= read_en_wght;
 
+    -- bram/sram: data valid after one cycle
     dout_iact_valid <= read_en_iact when rising_edge(clk);
     dout_wght_valid <= read_en_wght when rising_edge(clk);
-
-    -- enable signals of RAM always high
-    ena_iact <= '1';
-    enb_iact <= '1';
-    ena_wght <= '1';
-    enb_wght <= '1';
-    ena_psum <= '1';
-    enb_psum <= '1';
 
     -- iact & wght never written to internally
     web_iact <= (others => '0');
@@ -115,7 +107,6 @@ begin
     -- addresses for portb
     addrb_iact <= read_adr_iact(addr_width_iact - 1 downto addr_width_iact - ext_addr_width_iact);
     addrb_wght <= read_adr_wght(addr_width_wght - 1 downto addr_width_wght - ext_addr_width_wght);
-    addrb_psum <= write_adr_psum_buff(addr_width_psum - 1 downto addr_width_psum - ext_addr_width_psum);
 
     read_adr_iact_buff <= read_adr_iact when rising_edge(clk);
 
@@ -143,11 +134,6 @@ begin
 
     end process wght;
 
-    -- external accesses always write all words
-    wea_iact <= (others => ext_write_en_iact);
-    wea_wght <= (others => ext_write_en_wght);
-    wea_psum <= (others => ext_write_en_psum);
-
     psum : process is
 
         variable index : integer;
@@ -157,12 +143,22 @@ begin
         wait until rising_edge(clk);
 
         index := to_integer(unsigned(write_adr_psum(addr_width_psum - ext_addr_width_psum - 1 downto 0)));
-        web_psum <= (others => '0');
+
+        addrb_psum <= write_adr_psum(addr_width_psum - 1 downto addr_width_psum - ext_addr_width_psum);
+        datab_psum <= din_psum & din_psum;
+        enb_psum   <= write_en_psum;
+        web_psum   <= (others => '0');
+
+        -- TODO: generalize, currently fixed for 32bit spad 8bit cols 16bit psums
         if write_en_psum = '1' then
+            if index = 1 then
+                web_psum <= "1100";
+            else
+                web_psum <= "0011";
+            end if;
             -- datab_psum <= (others => '0');
-            datab_psum(data_width_psum * (index + 1) - 1 downto data_width_psum * index) <= din_psum;
-            web_psum(index)                                                                  <= '1';
-            write_adr_psum_buff                                                              <= write_adr_psum;
+            -- datab_psum(data_width_psum * (index + 1) - 1 downto data_width_psum * index) <= din_psum;
+            -- web_psum(index)                                                              <= '1';
         end if;
 
     end process psum;
@@ -171,7 +167,7 @@ begin
         generic map (
             size          => 2 ** ext_addr_width_iact,
             addr_width    => ext_addr_width_iact,
-            col_width     => data_width_iact,
+            col_width     => 8,
             nb_col        => cols_iact,
             initialize    => initialize_mems,
             init_file     => g_files_dir & "_mem_iact.txt"
@@ -179,8 +175,8 @@ begin
         port map (
             -- external access
             clka  => clk,
-            ena   => ena_iact,
-            wea   => wea_iact,
+            ena   => ext_en_iact,
+            wea   => ext_write_en_iact,
             addra => ext_addr_iact,
             dia   => ext_din_iact,
             doa   => ext_dout_iact,
@@ -197,7 +193,7 @@ begin
         generic map (
             size          => 2 ** ext_addr_width_wght,
             addr_width    => ext_addr_width_wght,
-            col_width     => data_width_wght,
+            col_width     => 8,
             nb_col        => cols_wght,
             initialize    => initialize_mems,
             init_file     => g_files_dir & "_mem_wght_stack.txt"
@@ -205,8 +201,8 @@ begin
         port map (
             -- external access
             clka  => clk,
-            ena   => ena_wght,
-            wea   => wea_wght,
+            ena   => ext_en_wght,
+            wea   => ext_write_en_wght,
             addra => ext_addr_wght,
             dia   => ext_din_wght,
             doa   => ext_dout_wght,
@@ -223,7 +219,7 @@ begin
         generic map (
             size          => 2 ** ext_addr_width_psum,
             addr_width    => ext_addr_width_psum,
-            col_width     => data_width_psum,
+            col_width     => 8,
             nb_col        => cols_psum,
             initialize    => false,
             init_file     => g_files_dir & "_mem_psum.txt"
@@ -231,8 +227,8 @@ begin
         port map (
             -- external access
             clka  => clk,
-            ena   => ena_psum,
-            wea   => wea_psum,
+            ena   => ext_en_psum,
+            wea   => ext_write_en_psum,
             addra => ext_addr_psum,
             dia   => ext_din_psum,
             doa   => ext_dout_psum,
