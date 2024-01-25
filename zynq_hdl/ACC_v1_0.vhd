@@ -4,7 +4,6 @@ use ieee.numeric_std.all;
 
 entity ACC_v1_0 is
   generic (
-    -- Users to add parameters here
     data_width_psum          : positive := 16;
     data_width_iact          : positive := 8; -- Width of the input data (weights, iacts)
     data_width_wght          : positive := 8;
@@ -23,7 +22,6 @@ entity ACC_v1_0 is
     C_S00_AXI_ADDR_WIDTH : integer := 7
   );
   port (
-    -- Users to add ports here
     clk    : in std_logic;
     clk_sp : in std_logic;
 
@@ -259,6 +257,41 @@ architecture arch_imp of ACC_v1_0 is
   signal conv_param_c0_last_c1   : integer range 0 to 1023;
   signal conv_param_c0w0         : integer range 0 to 1023;
   signal conv_param_c0w0_last_c1 : integer range 0 to 1023;
+
+  attribute x_interface_mode      : string;
+  attribute x_interface_info      : string;
+  attribute x_interface_parameter : string;
+
+  attribute x_interface_parameter of i_dummy_clk_iact : signal is "XIL_INTERFACENAME bram_iact, MASTER_TYPE BRAM_CTRL, MEM_SIZE 8192, MEM_WIDTH 32, MEM_ECC NONE, READ_WRITE_MODE READ_WRITE, READ_LATENCY 1";
+  attribute x_interface_parameter of i_dummy_clk_wght : signal is "XIL_INTERFACENAME bram_wght, MASTER_TYPE BRAM_CTRL, MEM_SIZE 8192, MEM_WIDTH 32, MEM_ECC NONE, READ_WRITE_MODE READ_WRITE, READ_LATENCY 1";
+  attribute x_interface_parameter of i_dummy_clk_psum : signal is "XIL_INTERFACENAME bram_psum, MASTER_TYPE BRAM_CTRL, MEM_SIZE 16384, MEM_WIDTH 32, MEM_ECC NONE, READ_WRITE_MODE READ_WRITE, READ_LATENCY 1";
+
+  attribute x_interface_mode of i_dummy_clk_iact : signal is "Slave";
+  attribute x_interface_info of i_dummy_clk_iact : signal is "xilinx.com:interface:bram_rtl:1.0 bram_iact CLK";
+  attribute x_interface_info of i_dummy_rst_iact : signal is "xilinx.com:interface:bram_rtl:1.0 bram_iact RST";
+  attribute x_interface_info of i_en_iact        : signal is "xilinx.com:interface:bram_rtl:1.0 bram_iact EN";
+  attribute x_interface_info of i_write_en_iact  : signal is "xilinx.com:interface:bram_rtl:1.0 bram_iact WE";
+  attribute x_interface_info of i_addr_iact      : signal is "xilinx.com:interface:bram_rtl:1.0 bram_iact ADDR";
+  attribute x_interface_info of i_din_iact       : signal is "xilinx.com:interface:bram_rtl:1.0 bram_iact DIN";
+  attribute x_interface_info of o_dout_iact      : signal is "xilinx.com:interface:bram_rtl:1.0 bram_iact DOUT";
+
+  attribute x_interface_mode of i_dummy_clk_wght : signal is "Slave";
+  attribute x_interface_info of i_dummy_clk_wght : signal is "xilinx.com:interface:bram_rtl:1.0 bram_wght CLK";
+  attribute x_interface_info of i_dummy_rst_wght : signal is "xilinx.com:interface:bram_rtl:1.0 bram_wght RST";
+  attribute x_interface_info of i_en_wght        : signal is "xilinx.com:interface:bram_rtl:1.0 bram_wght EN";
+  attribute x_interface_info of i_write_en_wght  : signal is "xilinx.com:interface:bram_rtl:1.0 bram_wght WE";
+  attribute x_interface_info of i_addr_wght      : signal is "xilinx.com:interface:bram_rtl:1.0 bram_wght ADDR";
+  attribute x_interface_info of i_din_wght       : signal is "xilinx.com:interface:bram_rtl:1.0 bram_wght DIN";
+  attribute x_interface_info of o_dout_wght      : signal is "xilinx.com:interface:bram_rtl:1.0 bram_wght DOUT";
+
+  attribute x_interface_mode of i_dummy_clk_psum : signal is "Slave";
+  attribute x_interface_info of i_dummy_clk_psum : signal is "xilinx.com:interface:bram_rtl:1.0 bram_psum CLK";
+  attribute x_interface_info of i_dummy_rst_psum : signal is "xilinx.com:interface:bram_rtl:1.0 bram_psum RST";
+  attribute x_interface_info of i_en_psum        : signal is "xilinx.com:interface:bram_rtl:1.0 bram_psum EN";
+  attribute x_interface_info of i_write_en_psum  : signal is "xilinx.com:interface:bram_rtl:1.0 bram_psum WE";
+  attribute x_interface_info of i_addr_psum      : signal is "xilinx.com:interface:bram_rtl:1.0 bram_psum ADDR";
+  attribute x_interface_info of i_din_psum       : signal is "xilinx.com:interface:bram_rtl:1.0 bram_psum DIN";
+  attribute x_interface_info of o_dout_psum      : signal is "xilinx.com:interface:bram_rtl:1.0 bram_psum DOUT";
 
 begin
 
