@@ -235,7 +235,7 @@ architecture arch_imp of ACC_v1_0 is
     );
   end component;
 
-  signal rst        : std_logic;
+  signal rst, rstn  : std_logic;
   signal start      : std_logic;
   signal done       : std_logic;
   signal ready      : std_logic;
@@ -294,6 +294,9 @@ architecture arch_imp of ACC_v1_0 is
   attribute x_interface_info of o_dout_psum      : signal is "xilinx.com:interface:bram_rtl:1.0 bram_psum DOUT";
 
 begin
+
+  rstn <= not rst;
+  start_init <= '0'; -- unused by accelerator
 
 -- Instantiation of AXI Bus Interface S00_AXI
   ACC_v1_0_S00_AXI_inst : ACC_v1_0_S00_AXI generic map (
@@ -359,7 +362,7 @@ begin
     spad_ext_addr_width_psum => spad_ext_addr_width_psum
   ) port map (
     clk  => clk,
-    rstn => rst,
+    rstn => rstn,
 
     clk_sp => clk_sp,
 
@@ -408,10 +411,5 @@ begin
     i_conv_param_c0w0         => conv_param_c0w0,
     i_conv_param_c0w0_last_c1 => conv_param_c0w0_last_c1
   );
-
-  -- Add user logic here
-  start_init <= '0';
-
-  -- User logic ends
 
 end arch_imp;
