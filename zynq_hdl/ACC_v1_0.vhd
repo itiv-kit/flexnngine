@@ -7,12 +7,16 @@ entity ACC_v1_0 is
     data_width_psum          : positive := 16;
     data_width_iact          : positive := 8; -- Width of the input data (weights, iacts)
     data_width_wght          : positive := 8;
-    spad_addr_width_iact     : positive := 15;
-    spad_addr_width_wght     : positive := 15;
-    spad_addr_width_psum     : positive := 14;
-    spad_ext_addr_width_iact : positive := 13;
-    spad_ext_addr_width_wght : positive := 13;
-    spad_ext_addr_width_psum : positive := 13;
+
+    -- internal addresses are word wise (8 bit for iact/wght, 16 bit for psum)
+    spad_addr_width_iact     : positive := 16;
+    spad_addr_width_wght     : positive := 16;
+    spad_addr_width_psum     : positive := 16;
+
+    -- external addresses are byte wise
+    spad_ext_addr_width_iact : positive := 16;
+    spad_ext_addr_width_wght : positive := 16;
+    spad_ext_addr_width_psum : positive := 17;
     spad_ext_data_width_iact : positive := 32;
     spad_ext_data_width_wght : positive := 32;
     spad_ext_data_width_psum : positive := 32;
@@ -41,6 +45,7 @@ entity ACC_v1_0 is
     i_write_en_wght : in std_logic_vector(spad_ext_data_width_wght/8 - 1 downto 0);
     i_write_en_psum : in std_logic_vector(spad_ext_data_width_psum/8 - 1 downto 0);
 
+    -- external addresses are byte wise
     i_addr_iact : in std_logic_vector(spad_ext_addr_width_iact - 1 downto 0);
     i_addr_wght : in std_logic_vector(spad_ext_addr_width_wght - 1 downto 0);
     i_addr_psum : in std_logic_vector(spad_ext_addr_width_psum - 1 downto 0);
@@ -262,9 +267,9 @@ architecture arch_imp of ACC_v1_0 is
   attribute x_interface_info      : string;
   attribute x_interface_parameter : string;
 
-  attribute x_interface_parameter of i_dummy_clk_iact : signal is "XIL_INTERFACENAME bram_iact, MASTER_TYPE BRAM_CTRL, MEM_SIZE 8192, MEM_WIDTH 32, MEM_ECC NONE, READ_WRITE_MODE READ_WRITE, READ_LATENCY 1";
-  attribute x_interface_parameter of i_dummy_clk_wght : signal is "XIL_INTERFACENAME bram_wght, MASTER_TYPE BRAM_CTRL, MEM_SIZE 8192, MEM_WIDTH 32, MEM_ECC NONE, READ_WRITE_MODE READ_WRITE, READ_LATENCY 1";
-  attribute x_interface_parameter of i_dummy_clk_psum : signal is "XIL_INTERFACENAME bram_psum, MASTER_TYPE BRAM_CTRL, MEM_SIZE 16384, MEM_WIDTH 32, MEM_ECC NONE, READ_WRITE_MODE READ_WRITE, READ_LATENCY 1";
+  attribute x_interface_parameter of i_dummy_clk_iact : signal is "XIL_INTERFACENAME bram_iact, MASTER_TYPE BRAM_CTRL, MEM_SIZE 65536, MEM_WIDTH 32, MEM_ECC NONE, READ_WRITE_MODE READ_WRITE, READ_LATENCY 1";
+  attribute x_interface_parameter of i_dummy_clk_wght : signal is "XIL_INTERFACENAME bram_wght, MASTER_TYPE BRAM_CTRL, MEM_SIZE 65536, MEM_WIDTH 32, MEM_ECC NONE, READ_WRITE_MODE READ_WRITE, READ_LATENCY 1";
+  attribute x_interface_parameter of i_dummy_clk_psum : signal is "XIL_INTERFACENAME bram_psum, MASTER_TYPE BRAM_CTRL, MEM_SIZE 131072, MEM_WIDTH 32, MEM_ECC NONE, READ_WRITE_MODE READ_WRITE, READ_LATENCY 1";
 
   attribute x_interface_mode of i_dummy_clk_iact : signal is "Slave";
   attribute x_interface_info of i_dummy_clk_iact : signal is "xilinx.com:interface:bram_rtl:1.0 bram_iact CLK";
@@ -357,9 +362,9 @@ begin
     spad_ext_data_width_iact => spad_ext_data_width_iact,
     spad_ext_data_width_wght => spad_ext_data_width_wght,
     spad_ext_data_width_psum => spad_ext_data_width_psum,
-    spad_ext_addr_width_iact => spad_ext_addr_width_iact,
-    spad_ext_addr_width_wght => spad_ext_addr_width_wght,
-    spad_ext_addr_width_psum => spad_ext_addr_width_psum
+    spad_ext_addr_width_iact => spad_ext_addr_width_iact - 2,
+    spad_ext_addr_width_wght => spad_ext_addr_width_wght - 2,
+    spad_ext_addr_width_psum => spad_ext_addr_width_psum - 1
   ) port map (
     clk  => clk,
     rstn => rstn,
@@ -382,9 +387,9 @@ begin
     i_write_en_wght => i_write_en_wght,
     i_write_en_psum => i_write_en_psum,
 
-    i_addr_iact => i_addr_iact,
-    i_addr_wght => i_addr_wght,
-    i_addr_psum => i_addr_psum,
+    i_addr_iact => i_addr_iact(spad_ext_addr_width_iact - 1 downto 2),
+    i_addr_wght => i_addr_wght(spad_ext_addr_width_wght - 1 downto 2),
+    i_addr_psum => i_addr_psum(spad_ext_addr_width_psum - 1 downto 1),
 
     i_din_iact => i_din_iact,
     i_din_wght => i_din_wght,
