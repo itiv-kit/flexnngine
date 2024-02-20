@@ -45,17 +45,22 @@ architecture byte_wr_ram_rf of bytewrite_tdp_ram_rf is
         variable mem_line : line;
         variable temp_bv  : bit_vector(nb_col * col_width - 1 downto 0);
         variable temp_mem : ram_type;
+        variable n_words  : integer;
+        variable good     : boolean;
 
     begin
 
         temp_mem := (others => (others => '0'));
+        n_words := 0;
 
-        for i in ram_type'range loop
-
+        while not endfile(mem_file) loop
             readline(mem_file, mem_line);
-            read(mem_line, temp_bv);
-            temp_mem(i) := to_stdlogicvector(temp_bv);
-
+            loop
+                read(mem_line, temp_bv, good);
+                exit when not good;
+                temp_mem(n_words) := to_stdlogicvector(temp_bv);
+                n_words := n_words + 1;
+            end loop;
         end loop;
 
         report "initialized " & integer'image(n_words) & " words of memory from " & mem_file_name
