@@ -554,7 +554,7 @@ class Test:
             return self._evaluate()
         print("Running test: ", self.name)
         myenv = os.environ.copy()
-        myenv["LM_LICENSE_FILE"] = "1717@scclic2.scc.kit.edu"
+        myenv["LM_LICENSE_FILE"] = "1717@scclic2.itiv.kit.edu"
         myenv["library"] = self.test_dir.absolute()
         myenv["library_name"] = self.name
         myenv["GENERICS"] = " ".join(f'-g{x}={y}' for x,y in self.build_generics().items())
