@@ -4,9 +4,12 @@ use ieee.numeric_std.all;
 
 entity ACC_v1_0 is
   generic (
-    data_width_psum          : positive := 16;
+    size_x : positive := 5;
+    size_y : positive := 5;
+
     data_width_iact          : positive := 8; -- Width of the input data (weights, iacts)
     data_width_wght          : positive := 8;
+    data_width_psum          : positive := 16;
 
     -- internal addresses are word wise (8 bit for iact/wght, 16 bit for psum)
     spad_addr_width_iact     : positive := 16;
@@ -353,6 +356,9 @@ begin
   );
 
   accelerator_inst : accelerator generic map (
+    size_x    => size_x,
+    size_y    => size_y,
+    size_rows => size_x + size_y - 1,
     data_width_psum => data_width_psum,
     data_width_iact => data_width_iact,
     data_width_wght => data_width_wght,
