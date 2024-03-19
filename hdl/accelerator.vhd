@@ -415,23 +415,12 @@ architecture rtl of accelerator is
 
     component address_generator_psum is
         generic (
-            size_x    : positive := 5;
-            size_y    : positive := 5;
-            size_rows : positive := 9;
+            size_x : positive := 5;
+            size_y : positive := 5;
 
             addr_width_x : positive := 3;
 
-            line_length_iact    : positive := 512;
-            addr_width_iact     : positive := 9;
-            addr_width_iact_mem : positive := 15;
-
-            line_length_psum    : positive := 512;
-            addr_width_psum     : positive := 9;
-            addr_width_psum_mem : positive := 15;
-
-            line_length_wght    : positive := 512;
-            addr_width_wght     : positive := 9;
-            addr_width_wght_mem : positive := 15
+            addr_width_psum : positive := 15
         );
         port (
             clk  : in    std_logic;
@@ -439,15 +428,17 @@ architecture rtl of accelerator is
 
             i_start : in    std_logic;
 
-            i_w1         : in    integer range 0 to 1023;
-            i_m0         : in    integer range 0 to 1023;
-            i_new_output : in    std_logic;
+            i_w1          : in    integer range 0 to 1023;
+            i_m0          : in    integer range 0 to 1023;
+            i_kernel_size : in    integer range 0 to 32;
+            i_new_output  : in    std_logic;
 
             i_valid_psum_out    : in    std_logic_vector(size_x - 1 downto 0);
             i_gnt_psum_binary_d : in    std_logic_vector(addr_width_x - 1 downto 0);
             i_empty_psum_fifo   : in    std_logic_vector(size_x - 1 downto 0);
 
-            o_address_psum : out   std_logic_vector(addr_width_psum_mem - 1 downto 0)
+            o_address_psum : out   std_logic_vector(addr_width_psum - 1 downto 0);
+            o_suppress_out : out   std_logic
         );
     end component address_generator_psum;
 
@@ -499,7 +490,8 @@ architecture rtl of accelerator is
     signal w_read_adr_wght : std_logic_vector(addr_width_wght_mem - 1 downto 0);
 
     -- signal write_en_iact : std_logic;
-    signal w_write_en_psum : std_logic;
+    signal w_write_en_psum       : std_logic;
+    signal w_write_suppress_psum : std_logic;
     -- signal write_en_wght : std_logic;
 
     signal w_read_en_iact : std_logic;
@@ -735,7 +727,7 @@ begin
             read_adr_psum   => w_read_adr_psum,
             read_adr_wght   => w_read_adr_wght,
             write_en_iact   => i_write_en_iact,
-            write_en_psum   => w_write_en_psum,
+            write_en_psum   => w_write_en_psum and not w_write_suppress_psum,
             write_en_wght   => i_write_en_wght,
             read_en_iact    => w_read_en_iact,
             read_en_psum    => w_read_en_psum,
@@ -819,19 +811,10 @@ begin
 
     address_generator_psum_inst : component address_generator_psum
         generic map (
-            size_x              => size_x,
-            size_y              => size_y,
-            size_rows           => size_rows,
-            line_length_iact    => line_length_iact,
-            addr_width_iact     => addr_width_iact,
-            addr_width_iact_mem => addr_width_iact_mem,
-            addr_width_x        => addr_width_x,
-            line_length_psum    => line_length_psum,
-            addr_width_psum     => addr_width_psum,
-            addr_width_psum_mem => addr_width_psum_mem,
-            line_length_wght    => line_length_wght,
-            addr_width_wght     => addr_width_wght,
-            addr_width_wght_mem => addr_width_wght_mem
+            size_x          => size_x,
+            size_y          => size_y,
+            addr_width_x    => addr_width_x,
+            addr_width_psum => addr_width_psum_mem
         )
         port map (
             clk                 => clk_sp,
@@ -839,11 +822,13 @@ begin
             i_start             => r_start_adr,
             i_w1                => w_w1,
             i_m0                => w_m0,
+            i_kernel_size       => g_kernel_size,
             i_new_output        => w_new_output,
             i_valid_psum_out    => w_valid_psums_out,
             i_gnt_psum_binary_d => w_gnt_psum_binary_d,
             i_empty_psum_fifo   => w_empty_psum_fifo,
-            o_address_psum      => w_write_adr_psum
+            o_address_psum      => w_write_adr_psum,
+            o_suppress_out      => w_write_suppress_psum
         );
 
 end architecture rtl;

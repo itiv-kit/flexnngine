@@ -5,23 +5,12 @@ library ieee;
 
 entity address_generator_psum is
     generic (
-        size_x    : positive := 5;
-        size_y    : positive := 5;
-        size_rows : positive := 9;
+        size_x : positive := 5;
+        size_y : positive := 5;
 
         addr_width_x : positive := 3;
 
-        line_length_iact    : positive := 512;
-        addr_width_iact     : positive := 9;
-        addr_width_iact_mem : positive := 15;
-
-        line_length_psum    : positive := 512;
-        addr_width_psum     : positive := 9;
-        addr_width_psum_mem : positive := 15;
-
-        line_length_wght    : positive := 512;
-        addr_width_wght     : positive := 9;
-        addr_width_wght_mem : positive := 15
+        addr_width_psum : positive := 15
     );
     port (
         clk  : in    std_logic;
@@ -29,15 +18,17 @@ entity address_generator_psum is
 
         i_start : in    std_logic;
 
-        i_w1         : in    integer range 0 to 1023;
-        i_m0         : in    integer range 0 to 1023;
-        i_new_output : in    std_logic;
+        i_w1          : in    integer range 0 to 1023;
+        i_m0          : in    integer range 0 to 1023;
+        i_kernel_size : in    integer range 0 to 32;
+        i_new_output  : in    std_logic; -- currently unused
 
         i_valid_psum_out    : in    std_logic_vector(size_x - 1 downto 0);
         i_gnt_psum_binary_d : in    std_logic_vector(addr_width_x - 1 downto 0);
-        i_empty_psum_fifo   : in    std_logic_vector(size_x - 1 downto 0);
+        i_empty_psum_fifo   : in    std_logic_vector(size_x - 1 downto 0); -- currently unused
 
-        o_address_psum : out   std_logic_vector(addr_width_psum_mem - 1 downto 0)
+        o_address_psum : out   std_logic_vector(addr_width_psum - 1 downto 0);
+        o_suppress_out : out   std_logic
     );
 end entity address_generator_psum;
 
@@ -56,37 +47,29 @@ architecture rtl of address_generator_psum is
         );
     end component mux;
 
-    signal r_address_psum              : array_t(0 to size_x - 1)(addr_width_psum_mem - 1 downto 0);
-    signal r_address_offsets_psum      : array_t(0 to size_x - 1)(addr_width_psum_mem - 1 downto 0);
-    signal r_address_offsets_psum_done : std_logic;
-    signal r_address_offsets_count_x   : integer range 0 to size_x;
-    signal r_empty_fifo_d              : array_t(0 to 2)(size_x - 1 downto 0);
+    signal r_address_psum : array_t(0 to size_x - 1)(addr_width_psum - 1 downto 0);
 
     signal r_count_w1 : int_line_t(0 to size_x - 1);
-    signal r_start    : std_logic_vector(size_x - 1 downto 0);
+    signal r_count_m0 : int_line_t(0 to size_x - 1);
+    signal r_count_h2 : int_line_t(0 to size_x - 1);
 
-    signal r_test         : std_logic_vector(size_x - 1 downto 0);
-    signal r_delay_offset : std_logic_vector(100 downto 0); /* TODO depending on the clk_sp / clk factor */
+    signal r_start_delay  : std_logic;
+    signal r_start_event  : std_logic;
+    signal r_suppress_row : std_logic_vector(0 to size_x - 1);
+    signal r_suppress_col : std_logic_vector(0 to size_x - 1);
+    signal w_suppress_out : std_logic_vector(0 to size_x - 1);
 
-    signal r_w1m0 : integer; -- w1*m0, w1 = output width, m0 = RS: #kernels fitting accelerator y size / ARS: accelerator y size
-
-    /*signal r_output_row_valid          : std_logic_row_col_t(0 to i_m0, 0 to 1023);
-    signal r_address_psum_ms           : array_row_col_t(0 to size_x - 1, 0 to i_m0)(addr_width_psum_mem - 1 downto 0);
-    signal r_count_m0                  : int_line_t(0 to size_x - 1);
-    signal r_count_w1                   : int_line_t(0 to size_x - 1);
-    signal r_count_h2                  : int_line_t(0 to size_x - 1);
-    signal r_offset_m0                 : int_line_t(0 to 1023);
-    signal r_count_m0_init             : integer range 0 to 1023;
-    signal r_offset_m0_done            : std_logic;*/
+    signal r_image_size : integer; -- output image size per channel, currently rectangular images only = w1*w1
 
 begin
 
-    r_empty_fifo_d <= i_empty_psum_fifo & r_empty_fifo_d(0 to 1) when rising_edge(clk);
+    r_start_delay <= i_start when rising_edge(clk);
+    r_start_event <= i_start and not r_start_delay;
 
     -- Multiplex addresses for PE colums to interface the single Psum scratchpad
     mux_psum_adr : component mux
         generic map (
-            input_width   => addr_width_psum_mem,
+            input_width   => addr_width_psum,
             input_num     => size_x,
             address_width => addr_width_x
         )
@@ -96,114 +79,100 @@ begin
             z_o => o_address_psum
         );
 
-    /*-- Create output map of valid output rows
-    p_create_output_map : process(clk, rstn) is
-    begin
-
-        if not rstn then
-            r_count_m0_init <= 0;
-            r_offset_m0 <= (others => 0);
-            r_offset_m0_done <= '0';
-        elsif rising_edge(clk) then
-            if r_address_offsets_psum_done = '1' and r_offset_m0_done = '0' then
-                if r_count_m0_init /= i_m0 then
-                    r_offset_m0(r_count_m0_init + 1) <= r_offset_m0(r_count_m0_init) + (to_integer(unsigned(r_address_offsets_psum(size_x - 1))) + i_w1) * i_h2;
-                    r_count_m0_init <= r_count_m0_init + 1;
-                else
-                    r_offset_m0_done <= '1';
-                end if;
-            end if;
-        end if;
-
-    end process p_create_output_map;*/
+    w_suppress_out <= r_suppress_row or r_suppress_col;
+    o_suppress_out <= w_suppress_out(to_integer(unsigned(i_gnt_psum_binary_d)));
 
     p_address_psum_helper : process (clk, rstn) is
     begin
 
         if not rstn then
-            r_w1m0 <= 0;
         elsif rising_edge(clk) then
-            r_w1m0 <= i_w1 * i_m0;
+            r_image_size <= i_w1 * i_w1;
         end if;
 
     end process p_address_psum_helper;
 
-    -- Calculate offset for PE columns / output rows
-    p_calc_psum_offsets : process (clk, rstn) is
-    begin
-
-        if not rstn then
-            r_address_offsets_psum      <= (others => (others => '0'));
-            r_address_offsets_psum_done <= '0';
-            r_address_offsets_count_x   <= 0;
-            r_delay_offset              <= (others => '0');
-        elsif rising_edge(clk) then
-            r_delay_offset <= r_delay_offset(r_delay_offset'length - 2 downto 0) & '0';
-            if i_start = '1' and r_address_offsets_psum_done = '0' then
-                if r_address_offsets_count_x /= size_x - 1 then
-                    r_address_offsets_psum(r_address_offsets_count_x + 1) <= std_logic_vector(to_unsigned(to_integer(unsigned(r_address_offsets_psum(r_address_offsets_count_x)) + r_w1m0), addr_width_psum_mem));
-                    r_address_offsets_count_x                             <= r_address_offsets_count_x + 1;
-                else
-                    r_address_offsets_psum_done <= '1';
-                end if;
-            elsif r_address_offsets_psum_done = '1' and i_new_output = '1' and (or r_delay_offset = '0') then                                                                                                      -- i_command_psum = c_lb_shrink then /* TODO MAY BE TOO LATE FOR SMALL KERNELS? */
-                r_address_offsets_psum_done <= '0';                                                                                                                                                                -- Tile h2 change
-                r_address_offsets_count_x   <= 0;
-                r_address_offsets_psum(0)   <= std_logic_vector(to_unsigned(to_integer(unsigned(r_address_offsets_psum(size_x - 1)) + r_w1m0), addr_width_psum_mem));
-                r_delay_offset              <= r_delay_offset(r_delay_offset'length - 2 downto 0) & '1';
-            end if;
-        end if;
-
-    end process p_calc_psum_offsets;
-
-    -- Calculate address by adding '1' each time a valid output appears
-
     gen_counter : for x in 0 to size_x - 1 generate
 
         p_psum_counter : process (clk, rstn) is
+
+            variable v_count_w1 : integer; -- output channel counter
+            variable v_count_m0 : integer; -- output width counter
+            variable v_count_h2 : integer; -- output step counter (h2 = number of steps for whole image height)
+            variable v_cur_row  : integer; -- current row
+
         begin
+
+            v_count_w1 := r_count_w1(x);
+            v_count_m0 := r_count_m0(x);
+            v_count_h2 := r_count_h2(x);
 
             if not rstn then
                 r_address_psum(x) <= (others => '0');
-                r_start(x)        <= '1';
-                r_count_w1(x)     <= 0;
-                /*r_count_m0(x) <= 0;
-                r_count_h2(x) <= 0;*/
+                r_suppress_row(x) <= '0';
+                r_suppress_col(x) <= '0';
+
+                v_count_w1 := 0;
+                v_count_m0 := 0;
+                v_count_h2 := 0;
             elsif rising_edge(clk) then
-                if i_valid_psum_out(x) then
-                    r_address_psum(x) <= std_logic_vector(to_unsigned(to_integer(unsigned(r_address_psum(x))) + 1, addr_width_psum_mem));
-                    r_count_w1(x)     <= r_count_w1(x) + 1;
-                    /*if r_count_w1(x) = i_w1 - 1 then
-                        r_count_w1(x) <= 0;
-                        if r_count_m0(x) = i_m0 - 1 then
-                            r_count_h2(x) <= r_count_h2(x) + 1;
-                            r_count_m0(x) <= 0;
+                -- start of a totally new result, reset all counters
+                if r_start_event = '1' then
+                    v_cur_row         := x;
+                    r_address_psum(x) <= std_logic_vector(to_unsigned(v_cur_row * i_w1, addr_width_psum));
+                    v_count_m0        := 0;
+                    v_count_w1        := 0;
+                    v_count_h2        := 0;
+                -- common output of one pixel
+                elsif i_valid_psum_out(x) then
+                    if v_count_w1 = i_w1 - 1 then
+                        -- one row is done
+                        v_count_w1 := 0;
+
+                        if v_count_m0 = i_m0 - 1 then
+                            -- all kernels of this step done, prepare for next step
+                            v_count_m0 := 0;
+                            v_count_h2 := v_count_h2 + 1;
                         else
-                            r_count_m0(x) <= r_count_m0(x) + 1;
+                            -- advance to the next mapped kernel, set address to next output image and advance by mapped rows difference
+                            v_count_m0 := v_count_m0 + 1;
+                        end if;
+
+                        -- calculate the current row, taking m0 into account. wrap at input image size.
+                        v_cur_row := v_count_h2 * size_x + v_count_m0 * i_kernel_size + x;
+                        if v_cur_row >= i_w1 + i_kernel_size - 1 then
+                            v_cur_row := v_cur_row - (i_w1 + i_kernel_size - 1);
+                        end if;
+
+                        r_address_psum(x) <= std_logic_vector(to_unsigned(v_count_m0 * r_image_size + v_cur_row * i_w1, addr_width_psum));
+
+                        -- check condition to suppress the current row (when output row > output image rows = i_w1 - i_kernel_size)
+                        if v_cur_row > i_w1 - 1 then
+                            r_suppress_row(x) <= '1';
+                        else
+                            r_suppress_row(x) <= '0';
+                        end if;
+
+                        -- check condition to suppress a full column (on last step when total columns > i_w1) (unmapped PEs)
+                        -- could be moved up if v_cur_row calculation is split
+                        if v_count_h2 * size_x + x + 1 > i_w1 + i_kernel_size - 1 then
+                            r_suppress_col(x) <= '1';
+                        else
+                            r_suppress_col(x) <= '0';
                         end if;
                     else
-                        r_count_w1(x) <= r_count_w1(x) + 1;
-                    end if;*/
-                elsif ((and r_empty_fifo_d(0) = '1') and
-                       (and r_empty_fifo_d(1) = '1') and
-                       (and r_empty_fifo_d(2) = '1') and
-                       (r_count_w1(x) = r_w1m0) and i_start = '1') or
-                      (i_start = '1' and r_start(x) = '1' and r_address_offsets_psum_done = '1') then /* TODO Does that always make sense? Do not load when storing psums */
-                    -- "Load" address offset to start with.
-                    r_address_psum(x) <= r_address_offsets_psum(x);
-                    r_count_w1(x)     <= 0;
-                    r_start(x)        <= '0';
+                        -- we are within a image row
+                        v_count_w1        := v_count_w1 + 1;
+                        r_address_psum(x) <= std_logic_vector(to_unsigned(to_integer(unsigned(r_address_psum(x))) + 1, addr_width_psum));
+                    end if;
                 end if;
             end if;
 
-        end process p_psum_counter;
+            r_count_w1(x) <= v_count_w1;
+            r_count_m0(x) <= v_count_m0;
+            r_count_h2(x) <= v_count_h2;
 
-        r_test(x) <= '1' when ((and r_empty_fifo_d(0) = '1') and
-                                  (and r_empty_fifo_d(1) = '1') and
-                                  (and r_empty_fifo_d(2) = '1') and
-                                  (r_count_w1(x) = r_w1m0) and i_start = '1') or
-                                          (i_start = '1' and r_start(x) = '1' and r_address_offsets_psum_done = '1') else
-                     '0';
+        end process p_psum_counter;
 
     end generate gen_counter;
 
