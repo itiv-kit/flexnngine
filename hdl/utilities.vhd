@@ -115,9 +115,11 @@ package body utilities is
 
     function and_reduce_2d (arr : in std_logic_row_col_t) return std_logic is
 
-        variable res : std_logic := '1';
+        variable res : std_logic;
 
     begin
+
+        res := '1';
 
         for y in arr'range(1) loop
 
