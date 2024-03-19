@@ -194,3 +194,17 @@ pe_array_conv_5x5_channels_tb:
         - cd ..
         - vsim -c -do "../../ci/simulate.tcl"
         - cd ../..
+
+addr_gen_psum:
+    extends: .sim_test
+    stage: test_2
+    only:
+        changes:
+            - hdl/mux.vhd
+            - hdl/address_generator_psum.vhd
+            - hdl/ram_dp.vhd
+            - testbenches/address_generator_psum/src/address_generator_psum.tb
+            - .gitlab-ci.yml
+    script:
+        - cd testbenches/address_generator_psum
+        - vsim -c -do run.do
