@@ -25,7 +25,7 @@ image: gitlab.itiv.kit.edu:1443/itiv/docker/itiv-rocky8:latest
     tags:
         - modelsim
     before_script: &sim_test_before_script
-        - source /etc/profile.d/modules.sh && module load questa/2022.4
+        - source /etc/profile.d/modules.sh && module load questa/2023.4
 
 stages:
     - lint
