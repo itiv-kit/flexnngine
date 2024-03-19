@@ -26,6 +26,7 @@ architecture imp of address_generator_psum_tb is
 
     signal clk  : std_logic := '1';
     signal rstn : std_logic := '0';
+    signal done : boolean   := false;
 
     signal i_start             : std_logic;
     signal i_w1                : integer range 0 to 1023;
@@ -42,6 +43,8 @@ architecture imp of address_generator_psum_tb is
     signal tb_wen : std_logic                                 := '0';
     signal wen    : std_logic                                 := '0';
     signal din    : std_logic_vector(data_width - 1 downto 0) := (others => '0');
+
+    type ram_type is array (0 to 2 ** addr_width - 1) of std_logic_vector(data_width - 1 downto 0);
 
 begin
 
@@ -185,46 +188,44 @@ begin
 
         end loop;
 
+        done <= true;
+
     end process gen_output_data;
 
--- output_check : process is
--- begin
+    output_check : process is
 
---     output_loop_lines : for i in 0 to number_of_lines - 1 loop
+        variable idx    : integer;
+        variable expect : integer;
+        variable ram    : ram_type;
 
---         output_loop_pixels : for j in 0 to (line_length - kernel_size + 1) * kernel_size - 1 loop
+    begin
 
---             wait until rising_edge(clk);
+        wait until done;
 
---             -- If result is not valid, wait until next rising edge with valid results.
---             if data_out_valid = '0' then
---                 wait until rising_edge(clk) and data_out_valid = '1';
---             end if;
+        ram := << variable mem.ram_instance : ram_type >>;
 
---             assert data_out = std_logic_vector(to_signed(expected_output(i, j), data_width))
---                 report "Output wrong. Result is " & integer'image(to_integer(signed(data_out))) & " - should be "
---                        & integer'image(expected_output(i, j))
---                 severity failure;
+        for kernel in 0 to kernel_count - 1 loop
 
---             report "Got correct result " & integer'image(to_integer(signed(data_out)));
+            for pixel in 0 to image_width * image_width - 1 loop
 
---         end loop;
+                idx    := kernel * image_width * image_width + pixel;
+                expect := 1000 * kernel + pixel + 1;
 
---     end loop;
+                assert to_integer(unsigned(ram(idx))) = expect
+                    report "Output wrong. Expected " & integer'image(expect) & " at address "
+                           & integer'image(idx)
+                    severity failure;
 
---     wait until rising_edge(clk);
+                report "Correct pixel " & integer'image(expect) & " at address " & integer'image(idx);
 
---     -- Check if result valid signal is set to zero after calculations
---     assert data_out_valid = '0'
---         report "Result valid should be zero"
---         severity failure;
+            end loop;
 
---     wait for 90 ns;
+        end loop;
 
---     report "Output check is finished."
---         severity note;
---     finish;
+        report "Output is correct."
+            severity note;
+        finish;
 
--- end process output_check;
+    end process output_check;
 
 end architecture imp;
