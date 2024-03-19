@@ -20,8 +20,6 @@ image: gitlab.itiv.kit.edu:1443/itiv/docker/itiv-rocky8:latest
 
 .vsg_test:
     stage: lint
-    before_script:
-        - sudo pip3 install vsg
 
 .sim_test:
     tags:
