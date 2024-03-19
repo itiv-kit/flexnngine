@@ -559,17 +559,21 @@ begin
         ram := << variable accelerator_inst.scratchpad_inst.ram_dp_psum.ram_instance : ram_type >>;
         idx := 0;
 
-        for row  in 0 to g_image_y - g_kernel_size loop
+        for m0 in 0 to g_m0 - 1 loop
 
-            for pix in 0 to g_image_x - g_kernel_size loop
+            for row  in 0 to g_image_y - g_kernel_size loop
 
-                write(outline, integer'image(to_integer(signed(ram(idx)))));
-                write(outline, string'(" "));
-                idx := idx + 1;
+                for pix in 0 to g_image_x - g_kernel_size loop
+
+                    write(outline, integer'image(to_integer(signed(ram(idx)))));
+                    write(outline, string'(" "));
+                    idx := idx + 1;
+
+                end loop;
+
+                writeline(outfile, outline);
 
             end loop;
-
-            writeline(outfile, outline);
 
         end loop;
 

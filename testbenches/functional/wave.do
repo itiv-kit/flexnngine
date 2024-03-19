@@ -116,6 +116,21 @@ add wave -noupdate -group ADR_wght -radix unsigned ${addr_gen_path}/r_wght_done
 add wave -noupdate -group ADR_wght -radix unsigned ${addr_gen_path}/i_fifo_full_wght
 add wave -noupdate -group ADR_wght -radix unsigned ${addr_gen_path}/i_start
 
+add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/i_start
+add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/i_w1
+add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/i_m0
+add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/i_valid_psum_out
+add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/i_gnt_psum_binary_d
+add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/r_start_event
+add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/r_count_w1
+add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/r_count_m0
+add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/r_count_h2
+add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/r_address_psum
+add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/r_suppress_row
+add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/r_suppress_col
+add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/o_address_psum
+add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/o_suppress_out
+add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/w_write_adr_psum
 add wave -noupdate -group PSUM_OUTPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/i_psums
 add wave -noupdate -group PSUM_OUTPUT -radix binary   /functional_tb/accelerator_inst/scratchpad_interface_inst/i_psums_valid
 add wave -noupdate -group PSUM_OUTPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/w_gnt_psum_binary
@@ -126,13 +141,6 @@ add wave -noupdate -group PSUM_OUTPUT -radix decimal  /functional_tb/accelerator
 add wave -noupdate -group PSUM_OUTPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/w_valid_psum_out_f
 add wave -noupdate -group PSUM_OUTPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/w_valid_psum_out
 add wave -noupdate -group PSUM_OUTPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/w_rd_en_psum_out_f
-add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/r_address_offsets_psum
-add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/r_address_psum
-add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/i_empty_psum_fifo
-add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/r_address_offsets_psum_done
-add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/r_address_offsets_count_x
-add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/i_start
-add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/w_write_adr_psum
 #add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/ram_dp_psum/ram_instance
 
 add wave -noupdate -group {PE arr outputs} -radix signed /functional_tb/accelerator_inst/pe_array_inst/o_psums

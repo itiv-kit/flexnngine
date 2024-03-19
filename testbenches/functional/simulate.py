@@ -627,12 +627,10 @@ class Test:
                             )
                             return False
             else:
-                # TODO: find out why convolved images are "stacked", if for no reason then drop it
-                # un-stack the images and use the first image only
-                expected_output = self.convolved_images_stack[:output_size]
+                expected_output = self.convolved_images_stack
 
                 if expected_output.shape != actual_output.shape:
-                    print(f'{self.name}: shapes of expected ({expected_output.shape})')
+                    print(f'{self.name}: shape of expected ({expected_output.shape})')
 
                 if np.equal(actual_output, expected_output).all():
                     print(f'{self.name}: Output matches!')
