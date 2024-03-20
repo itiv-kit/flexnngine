@@ -227,8 +227,6 @@ architecture rtl of control_address_generator is
 
 begin
 
-    o_pause_iact <= '0';
-
     o_w1 <= w_w1;
     o_m0 <= w_m0;
 
@@ -270,6 +268,7 @@ begin
                 i_start_init         => i_start_init,
                 o_enable             => o_enable,
                 o_new_output         => o_new_output,
+                o_pause_iact         => o_pause_iact,
                 o_c1                 => w_c1,
                 o_w1                 => w_w1,
                 o_h2                 => w_h2,
@@ -333,6 +332,7 @@ begin
                 i_start_init         => i_start_init,
                 o_enable             => o_enable,
                 o_new_output         => o_new_output,
+                o_pause_iact         => o_pause_iact,
                 o_c1                 => w_c1,
                 o_w1                 => w_w1,
                 o_h2                 => w_h2,

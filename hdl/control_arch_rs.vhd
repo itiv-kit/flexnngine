@@ -114,6 +114,7 @@ architecture rs_dataflow of control is
 
 begin
 
+    o_pause_iact <= '0';
     o_new_output <= '1' when r_count_c0w0 = 2 and r_count_w1 = 0 and r_state = s_output else
                     '0';
 
