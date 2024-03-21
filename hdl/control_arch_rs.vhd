@@ -561,6 +561,7 @@ begin
         w_h2           <= g_h2;
         w_m0           <= g_m0;
         w_m0_dist      <= r_m0_dist;
+        w_m0_last_m1   <= 0; -- unused
         w_rows_last_h2 <= g_rows_last_h2;
         w_c0           <= g_c0;
         w_c0_last_c1   <= g_c0_last_c1;

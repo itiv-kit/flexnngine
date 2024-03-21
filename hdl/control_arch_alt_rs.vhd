@@ -73,6 +73,7 @@ architecture alternative_rs_dataflow of control is
     signal r_incr_w1 : std_logic;
 
     signal w_m0         : integer range 0 to 1023;
+    signal w_m0_dist    : array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
     signal w_m0_last_m1 : integer range 0 to 1023;
 
     type   t_state is (s_calculate, s_output, s_incr_c1, s_incr_h1);
@@ -124,6 +125,11 @@ begin
     o_w1 <= w_w1;
     o_h2 <= w_h2;
     o_m0 <= w_m0;
+
+    -- unused by alternative rs dataflow, so drive these with constant 0
+    w_m0_dist    <= (others => (others => '0'));
+    o_m0_dist    <= w_m0_dist;
+    o_m0_last_m1 <= w_m0_last_m1;
 
     p_start : process (clk, rstn) is
     begin
