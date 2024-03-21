@@ -16,7 +16,8 @@ entity address_generator_psum is
         clk  : in    std_logic;
         rstn : in    std_logic;
 
-        i_start : in    std_logic;
+        i_start    : in    std_logic;
+        i_dataflow : in    std_logic;
 
         i_w1          : in    integer range 0 to 1023;
         i_m0          : in    integer range 0 to 1023;
@@ -120,6 +121,8 @@ begin
                 if r_start_event = '1' then
                     v_cur_row         := x;
                     r_address_psum(x) <= std_logic_vector(to_unsigned(v_cur_row * i_w1, addr_width_psum));
+                    r_suppress_row(x) <= '0';
+                    r_suppress_col(x) <= '0';
                     v_count_m0        := 0;
                     v_count_w1        := 0;
                     v_count_h2        := 0;
@@ -138,8 +141,13 @@ begin
                             v_count_m0 := v_count_m0 + 1;
                         end if;
 
-                        -- calculate the current row, taking m0 into account. wrap at input image size.
-                        v_cur_row := v_count_h2 * size_x + v_count_m0 * i_kernel_size + x;
+                        -- calculate the current row, taking m0 into account for rs dataflow
+                        v_cur_row := v_count_h2 * size_x + x;
+                        if i_dataflow = '0' then
+                            v_cur_row := v_cur_row + v_count_m0 * i_kernel_size;
+                        end if;
+
+                        --  wrap at input image size
                         if v_cur_row >= i_w1 + i_kernel_size - 1 then
                             v_cur_row := v_cur_row - (i_w1 + i_kernel_size - 1);
                         end if;

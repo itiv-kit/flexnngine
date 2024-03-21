@@ -13,4 +13,4 @@ source sources.tcl
 vsim -onfinish stop -voptargs="+acc" $SIM_TOP_LEVEL
 source wave.do
 
-run $SIM_TIME
+run -all

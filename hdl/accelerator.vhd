@@ -426,7 +426,8 @@ architecture rtl of accelerator is
             clk  : in    std_logic;
             rstn : in    std_logic;
 
-            i_start : in    std_logic;
+            i_start    : in    std_logic;
+            i_dataflow : in    std_logic;
 
             i_w1          : in    integer range 0 to 1023;
             i_m0          : in    integer range 0 to 1023;
@@ -518,6 +519,7 @@ architecture rtl of accelerator is
     signal w_enable_if : std_logic;
 
     signal r_start_adr : std_logic;
+    signal w_dataflow  : std_logic;
 
     signal w_w1 : integer range 0 to 1023; /* TODO change range to sth. useful */
     signal w_m0 : integer range 0 to 1023;
@@ -529,7 +531,6 @@ architecture rtl of accelerator is
     signal r_kernel_size : integer range 0 to 32;   /* TODO change range to sth. useful */
 
     signal w_dout_iact_valid : std_logic;
-    -- signal dout_psum_valid : std_logic;
     signal w_dout_wght_valid : std_logic;
 
     signal w_fifo_iact_address_full : std_logic;
@@ -548,6 +549,8 @@ architecture rtl of accelerator is
     signal r_state : t_state;
 
 begin
+
+    w_dataflow <= '1' when g_dataflow > 0 else '0';
 
     /* TODO Debug */
     w_write_adr_iact <= (others => '0');
@@ -820,6 +823,7 @@ begin
             clk                 => clk_sp,
             rstn                => rstn,
             i_start             => r_start_adr,
+            i_dataflow          => w_dataflow,
             i_w1                => w_w1,
             i_m0                => w_m0,
             i_kernel_size       => g_kernel_size,

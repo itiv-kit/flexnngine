@@ -29,6 +29,7 @@ architecture imp of address_generator_psum_tb is
     signal done : boolean   := false;
 
     signal i_start             : std_logic;
+    signal i_dataflow          : std_logic;
     signal i_w1                : integer range 0 to 1023;
     signal i_m0                : integer range 0 to 1023;
     signal i_new_output        : std_logic;
@@ -59,6 +60,7 @@ begin
             clk                 => clk,
             rstn                => rstn,
             i_start             => i_start,
+            i_dataflow          => i_dataflow,
             i_w1                => i_w1,
             i_m0                => i_m0,
             i_kernel_size       => kernel_size,
@@ -113,7 +115,10 @@ begin
         i_start           <= '0';
         i_empty_psum_fifo <= (others => '1');
 
-        wait until rstn = '1';
+        if rstn = '0' then
+            wait until rstn = '1';
+        end if;
+
         wait for 150 ns;
 
         wait until rising_edge(clk);
@@ -121,16 +126,12 @@ begin
         i_w1    <= image_width;
         i_m0    <= 3;
 
-        wait until rising_edge(clk);
-        i_empty_psum_fifo <= (others => '0');
-
-        wait;
+        wait until done;
 
     end process gen_inputs;
 
     gen_output_data : process is
 
-        -- variable width_count : int_line_t(0 to size_x - 1) := (others => 0);
         variable start_row   : integer := 0;
         variable current_row : integer := 0;
 
@@ -141,54 +142,67 @@ begin
         i_gnt_psum_binary_d_int <= 0;
         i_valid_psum_out        <= (others => '0');
 
-        wait until rstn = '1' and i_start = '1';
+        for count_dataflow in 0 to 1 loop
 
-        -- TODO: do we need some kind of ready signal, like r_address_offsets_psum_done?
-        wait for 150 ns;
+            done       <= false;
+            i_dataflow <= '1' when count_dataflow = 1 else '0';
 
-        for step in 0 to (image_width + size_x - 1) / size_x loop
-
-            wait until rising_edge(clk);
-            i_new_output <= '1';
-
-            wait until rising_edge(clk);
-            i_new_output <= '0';
+            wait until rstn = '1' and i_start = '1';
 
             wait for 150 ns;
-            wait until rising_edge(clk);
 
-            for m0 in 0 to kernel_count - 1 loop
+            for step in 0 to (image_width + size_x - 1) / size_x loop
 
-                start_row := m0 * kernel_size;
+                wait until rising_edge(clk);
+                i_new_output <= '1';
 
-                for img_x in 0 to image_width - 1 loop
+                wait until rising_edge(clk);
+                i_new_output <= '0';
 
-                    for pe_x in 0 to size_x - 1 loop
+                wait for 150 ns;
+                wait until rising_edge(clk);
 
+                for m0 in 0 to kernel_count - 1 loop
+
+                    if i_dataflow = '1' then
+                        start_row := 0;
+                    else
+                        start_row := m0 * kernel_size;
+                    end if;
+
+                    for img_x in 0 to image_width - 1 loop
+
+                        for pe_x in 0 to size_x - 1 loop
+
+                            wait until rising_edge(clk);
+                            tb_wen      <= '1';
+                            current_row := (step * size_x + start_row + pe_x) mod (image_width + kernel_size - 1);
+                            -- dummy output data is generated as 1..x for each row, up to x*x. channels are + 1000 each
+                            din                     <= std_logic_vector(to_unsigned(current_row * image_width + img_x + 1000 * m0 + 10000 * count_dataflow + 1, data_width));
+                            i_gnt_psum_binary_d_int <= pe_x;
+                            i_valid_psum_out        <= (others => '0');
+                            i_valid_psum_out(pe_x)  <= '1';
+
+                        end loop;
+
+                        -- one cycle delay for after each burst
                         wait until rising_edge(clk);
-                        tb_wen      <= '1';
-                        current_row := (step * size_x + start_row + pe_x) mod (image_width + kernel_size - 1);
-                        -- dummy output data is generated as 1..x for each row, up to x*x. channels are + 1000 each
-                        din <= std_logic_vector(to_unsigned(current_row * image_width + img_x + 1000 * m0 + 1, data_width));
-                        -- width_count(pe_x) = width_count(pe_x) + 1;
-                        i_gnt_psum_binary_d_int <= pe_x;
-                        i_valid_psum_out        <= (pe_x => '1', others => '0');
+                        tb_wen                  <= '0';
+                        i_gnt_psum_binary_d_int <= 0;
+                        i_valid_psum_out        <= (others => '0');
 
                     end loop;
-
-                    -- one cycle delay for after each burst
-                    wait until rising_edge(clk);
-                    tb_wen                  <= '0';
-                    i_gnt_psum_binary_d_int <= 0;
-                    i_valid_psum_out        <= (others => '0');
 
                 end loop;
 
             end loop;
 
+            done <= true;
+            wait until rising_edge(clk);
+
         end loop;
 
-        done <= true;
+        finish;
 
     end process gen_output_data;
 
@@ -211,20 +225,23 @@ begin
                 idx    := kernel * image_width * image_width + pixel;
                 expect := 1000 * kernel + pixel + 1;
 
+                if i_dataflow = '1' then
+                    expect := expect + 10000;
+                end if;
+
                 assert to_integer(unsigned(ram(idx))) = expect
                     report "Output wrong. Expected " & integer'image(expect) & " at address "
                            & integer'image(idx)
                     severity failure;
 
-                report "Correct pixel " & integer'image(expect) & " at address " & integer'image(idx);
+            -- report "Correct pixel " & integer'image(expect) & " at address " & integer'image(idx);
 
             end loop;
 
         end loop;
 
-        report "Output is correct."
+        report "Output is correct for dataflow " & std_logic'image(i_dataflow)
             severity note;
-        finish;
 
     end process output_check;
 
