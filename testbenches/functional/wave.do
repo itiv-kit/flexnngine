@@ -74,7 +74,7 @@ add wave -noupdate -group FIFO_iact_address -radix unsigned /functional_tb/accel
 add wave -noupdate -group FIFO_iact_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/w_empty_iact_address_f
 add wave -noupdate -group FIFO_iact_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/o_fifo_iact_address_full
 
-set addr_gen_path "/functional_tb/accelerator_inst/control_address_generator_inst/g_address_generator/address_generator_inst"
+quietly set addr_gen_path "/functional_tb/accelerator_inst/control_address_generator_inst/g_address_generator/address_generator_inst"
 add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/o_address_iact_valid
 add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/o_address_iact
 add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/w_c0_iact
@@ -225,8 +225,8 @@ add wave -noupdate -group {Full control commands} -radix unsigned /functional_tb
 add wave -noupdate -group {Full control commands} -radix symbolic /functional_tb/accelerator_inst/w_command_wght
 add wave -noupdate -group {Full control commands} -radix unsigned /functional_tb/accelerator_inst/w_read_offset_wght
 
-set size_x 7
-set size_y 10
+quietly set size_x 7
+quietly set size_y 10
 proc get_pe_path {x y} {
     global size_y
     if {$y > 0} {
