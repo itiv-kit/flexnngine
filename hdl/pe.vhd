@@ -1,7 +1,9 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
-    use work.utilities.all;
+
+library accel;
+    use accel.utilities.all;
 
 entity pe is
     generic (
@@ -69,88 +71,6 @@ entity pe is
 end entity pe;
 
 architecture behavioral of pe is
-
-    component line_buffer is
-        generic (
-            line_length : positive := 7;
-            addr_width  : positive := 3;
-            data_width  : positive := 8;
-            psum_type   : boolean  := false
-        );
-        port (
-            clk                : in    std_logic;
-            rstn               : in    std_logic;
-            i_enable           : in    std_logic;
-            i_data             : in    std_logic_vector(data_width - 1 downto 0);
-            i_data_valid       : in    std_logic;
-            o_data             : out   std_logic_vector(data_width - 1 downto 0);
-            o_data_valid       : out   std_logic;
-            o_buffer_full      : out   std_logic;
-            o_buffer_full_next : out   std_logic;
-            i_update_val       : in    std_logic_vector(data_width - 1 downto 0);
-            i_update_offset    : in    std_logic_vector(addr_width - 1 downto 0);
-            i_read_offset      : in    std_logic_vector(addr_width - 1 downto 0);
-            i_command          : in    command_lb_t
-        );
-    end component line_buffer;
-
-    component mult is
-        generic (
-            input_width  : positive := 8;
-            output_width : positive := 16
-        );
-        port (
-            clk            : in    std_logic;
-            rstn           : in    std_logic;
-            i_en           : in    std_logic;
-            i_data_a       : in    std_logic_vector(input_width - 1 downto 0);
-            i_data_b       : in    std_logic_vector(input_width - 1 downto 0);
-            o_result       : out   std_logic_vector(output_width - 1 downto 0);
-            o_result_valid : out   std_logic
-        );
-    end component mult;
-
-    component acc is
-        generic (
-            input_width  : positive := 16;
-            output_width : positive := 17
-        );
-        port (
-            clk            : in    std_logic;
-            rstn           : in    std_logic;
-            i_en           : in    std_logic;
-            i_data_a       : in    std_logic_vector(input_width - 1 downto 0);
-            i_data_b       : in    std_logic_vector(input_width - 1 downto 0);
-            o_result       : out   std_logic_vector(output_width - 1 downto 0);
-            o_result_valid : out   std_logic
-        );
-    end component acc;
-
-    component mux is
-        generic (
-            input_width   : natural;
-            input_num     : natural;
-            address_width : natural
-        );
-        port (
-            v_i : in    array_t(0 to input_num - 1)(input_width - 1 downto 0);
-            sel : in    std_logic_vector(address_width - 1 downto 0);
-            z_o : out   std_logic_vector(input_width - 1 downto 0)
-        );
-    end component mux;
-
-    component demux is
-        generic (
-            output_width  : natural;
-            output_num    : natural;
-            address_width : natural
-        );
-        port (
-            v_i : in    std_logic_vector(output_width - 1 downto 0);
-            sel : in    std_logic_vector(address_width - 1 downto 0);
-            z_o : out   array_t(0 to output_num - 1)(output_width - 1 downto 0)
-        );
-    end component demux;
 
     signal w_data_iact            : std_logic_vector(data_width_iact - 1 downto 0);
     signal r_data_iact_wide       : std_logic_vector(data_width_psum - 1 downto 0);
@@ -312,7 +232,7 @@ begin
 
     end process data_delays;
 
-    line_buffer_iact : component line_buffer
+    line_buffer_iact : entity accel.line_buffer
         generic map (
             line_length => line_length_iact,
             addr_width  => addr_width_iact,
@@ -335,7 +255,7 @@ begin
             i_command          => i_command_iact
         );
 
-    line_buffer_psum : component line_buffer
+    line_buffer_psum : entity accel.line_buffer
         generic map (
             line_length => line_length_psum,
             addr_width  => addr_width_psum,
@@ -358,7 +278,7 @@ begin
             i_command          => i_command_psum
         );
 
-    line_buffer_wght : component line_buffer
+    line_buffer_wght : entity accel.line_buffer
         generic map (
             line_length => line_length_wght,
             addr_width  => addr_width_wght,
@@ -381,7 +301,7 @@ begin
             i_command          => i_command_wght
         );
 
-    mult_1 : component mult
+    mult_1 : entity accel.mult
         generic map (
             input_width  => data_width_iact,
             output_width => data_width_psum
@@ -396,7 +316,7 @@ begin
             o_result_valid => w_data_mult_valid
         );
 
-    acc_1 : component acc
+    acc_1 : entity accel.acc
         generic map (
             input_width  => data_width_psum,
             output_width => data_width_psum
@@ -411,7 +331,7 @@ begin
             o_result_valid => w_data_acc_out_valid
         );
 
-    mux_psum : component mux
+    mux_psum : entity accel.mux
         generic map (
             input_width   => data_width_psum,
             input_num     => 2,
@@ -424,7 +344,7 @@ begin
             z_o    => w_data_acc_in1
         );
 
-    mux_psum_valid : component mux
+    mux_psum_valid : entity accel.mux
         generic map (
             input_width   => 1,
             input_num     => 2,
@@ -437,7 +357,7 @@ begin
             z_o(0)    => w_data_acc_in1_valid
         );
 
-    mux_iact : component mux
+    mux_iact : entity accel.mux
         generic map (
             input_width   => data_width_iact,
             input_num     => 2,
@@ -450,7 +370,7 @@ begin
             z_o    => w_data_in_iact
         );
 
-    mux_iact_valid : component mux
+    mux_iact_valid : entity accel.mux
         generic map (
             input_width   => 1,
             input_num     => 2,
@@ -469,7 +389,7 @@ begin
         w_sel_output <= r_sel_conv_gemm;
     end generate pe_output_psum_sel;
 
-    mux_output : component mux
+    mux_output : entity accel.mux
         generic map (
             input_width   => data_width_psum,
             input_num     => 2,
@@ -482,7 +402,7 @@ begin
             z_o    => o_data_out
         );
 
-    mux_output_valid : component mux
+    mux_output_valid : entity accel.mux
         generic map (
             input_width   => 1,
             input_num     => 2,
@@ -495,7 +415,7 @@ begin
             z_o(0)    => o_data_out_valid
         );
 
-    demux_input : component demux
+    demux_input : entity accel.demux
         generic map (
             output_width  => data_width_psum,
             output_num    => 2,
@@ -508,7 +428,7 @@ begin
             z_o(1) => w_demux_input_iact
         );
 
-    demux_input_valid : component demux
+    demux_input_valid : entity accel.demux
         generic map (
             output_width  => 1,
             output_num    => 2,

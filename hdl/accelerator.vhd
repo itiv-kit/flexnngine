@@ -1,7 +1,9 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
-    use work.utilities.all;
+
+library accel;
+    use accel.utilities.all;
 
 entity accelerator is
     generic (
@@ -77,371 +79,6 @@ entity accelerator is
 end entity accelerator;
 
 architecture rtl of accelerator is
-
-    component pe_array is
-        generic (
-            size_x : positive := 3;
-            size_y : positive := 3;
-
-            size_rows : positive := 5;
-
-            data_width_iact  : positive := 8;
-            line_length_iact : positive := 32;
-            addr_width_iact  : positive := 5;
-
-            data_width_psum  : positive := 16;
-            line_length_psum : positive := 2048;
-            addr_width_psum  : positive := 11;
-
-            data_width_wght  : positive := 8;
-            line_length_wght : positive := 32;
-            addr_width_wght  : positive := 5
-        );
-        port (
-            clk  : in    std_logic;
-            rstn : in    std_logic;
-
-            i_preload_psum       : in    std_logic_vector(data_width_psum - 1 downto 0);
-            i_preload_psum_valid : in    std_logic;
-
-            i_enable       : in    std_logic;
-            i_command      : in    command_pe_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-            i_command_iact : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-            i_command_psum : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-            i_command_wght : in    command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-
-            i_data_iact : in    array_t (0 to size_rows - 1)(data_width_iact - 1 downto 0);
-            i_data_psum : in    std_logic_vector(data_width_psum - 1 downto 0);
-            i_data_wght : in    array_t (0 to size_y - 1)(data_width_wght - 1 downto 0);
-
-            i_data_iact_valid : in    std_logic_vector(size_rows - 1 downto 0);
-            i_data_psum_valid : in    std_logic;
-            i_data_wght_valid : in    std_logic_vector(size_y - 1 downto 0);
-
-            o_buffer_full_iact : out   std_logic_vector(size_rows - 1 downto 0);
-            o_buffer_full_psum : out   std_logic;
-            o_buffer_full_wght : out   std_logic_vector(size_y - 1 downto 0);
-
-            o_buffer_full_next_iact : out   std_logic_vector(size_rows - 1 downto 0);
-            o_buffer_full_next_psum : out   std_logic;
-            o_buffer_full_next_wght : out   std_logic_vector(size_y - 1 downto 0);
-
-            i_update_offset_iact : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
-            i_update_offset_psum : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
-            i_update_offset_wght : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
-
-            i_read_offset_iact : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
-            i_read_offset_psum : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
-            i_read_offset_wght : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
-
-            o_psums       : out   array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
-            o_psums_valid : out   std_logic_vector(size_x - 1 downto 0)
-        );
-    end component pe_array;
-
-    component control_address_generator is
-        generic (
-            size_x    : positive := 5;
-            size_y    : positive := 5;
-            size_rows : positive := 9;
-
-            addr_width_rows : positive := 4;
-            addr_width_y    : positive := 3;
-            addr_width_x    : positive := 3;
-
-            addr_width_iact_mem : positive := 15;
-            addr_width_wght_mem : positive := 15;
-            addr_width_psum_mem : positive := 15;
-
-            line_length_iact : positive := 512;
-            addr_width_iact  : positive := 9;
-            line_length_psum : positive := 512;
-            addr_width_psum  : positive := 9;
-            line_length_wght : positive := 512;
-            addr_width_wght  : positive := 9;
-
-            g_control_init : boolean  := false;
-            g_c1           : positive := 1;
-            g_w1           : positive := 1;
-            g_h2           : positive := 1;
-            g_m0           : positive := 1;
-            g_m0_last_m1   : positive := 1;
-            g_rows_last_h2 : positive := 1;
-            g_c0           : positive := 1;
-            g_c0_last_c1   : positive := 1;
-            g_c0w0         : positive := 1;
-            g_c0w0_last_c1 : positive := 1;
-            g_dataflow     : integer  := 1
-        );
-        port (
-            clk  : in    std_logic;
-            rstn : in    std_logic;
-
-            i_start      : in    std_logic;
-            i_start_init : in    std_logic;
-            i_start_adr  : in    std_logic;
-            i_enable_if  : in    std_logic;
-
-            o_status     : out   std_logic;
-            o_enable     : out   std_logic;
-            o_new_output : out   std_logic;
-            o_pause_iact : out   std_logic;
-
-            o_w1 : out   integer range 0 to 1023;
-            o_m0 : out   integer range 0 to 1023;
-
-            i_image_x : in    integer range 0 to 1023; --! size of input image
-            i_image_y : in    integer range 0 to 1023; --! size of input image
-
-            i_channels : in    integer range 0 to 4095; -- Number of input channels the image and kernels have
-            i_kernels  : in    integer range 0 to 4095; -- Number of kernels / output channels
-
-            i_kernel_size : in    integer range 0 to 32;
-
-            o_command      : out   command_pe_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-            o_command_iact : out   command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-            o_command_psum : out   command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-            o_command_wght : out   command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-
-            o_update_offset_iact : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
-            o_update_offset_psum : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
-            o_update_offset_wght : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
-
-            o_read_offset_iact : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
-            o_read_offset_psum : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
-            o_read_offset_wght : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
-
-            w_fifo_iact_address_full : in    std_logic;
-            w_fifo_wght_address_full : in    std_logic;
-
-            o_address_iact       : out   array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
-            o_address_wght       : out   array_t(0 to size_y - 1)(addr_width_wght_mem - 1 downto 0);
-            o_address_iact_valid : out   std_logic_vector(size_rows - 1 downto 0);
-            o_address_wght_valid : out   std_logic_vector(size_y - 1 downto 0)
-        );
-    end component control_address_generator;
-
-    component scratchpad_init is
-        generic (
-            data_width_iact : positive := 8;
-            addr_width_iact : positive := 15;
-
-            data_width_psum : positive := 16;
-            addr_width_psum : positive := 15;
-
-            data_width_wght : positive := 8;
-            addr_width_wght : positive := 15;
-
-            g_files_dir : string := ""
-        );
-        port (
-            clk  : in    std_logic;
-            rstn : in    std_logic;
-
-            write_adr_iact : in    std_logic_vector(addr_width_iact_mem - 1 downto 0);
-            write_adr_psum : in    std_logic_vector(addr_width_psum_mem - 1 downto 0);
-            write_adr_wght : in    std_logic_vector(addr_width_wght_mem - 1 downto 0);
-
-            read_adr_iact : in    std_logic_vector(addr_width_iact_mem - 1 downto 0);
-            read_adr_psum : in    std_logic_vector(addr_width_psum_mem - 1 downto 0);
-            read_adr_wght : in    std_logic_vector(addr_width_wght_mem - 1 downto 0);
-
-            write_en_iact : in    std_logic;
-            write_en_psum : in    std_logic;
-            write_en_wght : in    std_logic;
-
-            read_en_iact : in    std_logic;
-            read_en_psum : in    std_logic;
-            read_en_wght : in    std_logic;
-
-            din_iact : in    std_logic_vector(data_width_iact - 1 downto 0);
-            din_psum : in    std_logic_vector(data_width_psum - 1 downto 0);
-            din_wght : in    std_logic_vector(data_width_wght - 1 downto 0);
-
-            dout_iact : out   std_logic_vector(data_width_iact - 1 downto 0);
-            dout_psum : out   std_logic_vector(data_width_psum - 1 downto 0);
-            dout_wght : out   std_logic_vector(data_width_wght - 1 downto 0);
-
-            dout_iact_valid : out   std_logic;
-            dout_psum_valid : out   std_logic;
-            dout_wght_valid : out   std_logic
-        );
-    end component scratchpad_init;
-
-    component scratchpad is
-        generic (
-            data_width_iact : positive := 8;
-            addr_width_iact : positive := 15;
-
-            data_width_psum : positive := 16;
-            addr_width_psum : positive := 15;
-
-            data_width_wght : positive := 8;
-            addr_width_wght : positive := 15;
-
-            initialize_mems : boolean := false;
-            g_files_dir     : string  := ""
-        );
-        port (
-            clk  : in    std_logic;
-            rstn : in    std_logic;
-
-            write_adr_iact : in    std_logic_vector(addr_width_iact_mem - 1 downto 0);
-            write_adr_psum : in    std_logic_vector(addr_width_psum_mem - 1 downto 0);
-            write_adr_wght : in    std_logic_vector(addr_width_wght_mem - 1 downto 0);
-
-            read_adr_iact : in    std_logic_vector(addr_width_iact_mem - 1 downto 0);
-            read_adr_psum : in    std_logic_vector(addr_width_psum_mem - 1 downto 0);
-            read_adr_wght : in    std_logic_vector(addr_width_wght_mem - 1 downto 0);
-
-            write_en_iact : in    std_logic;
-            write_en_psum : in    std_logic;
-            write_en_wght : in    std_logic;
-
-            read_en_iact : in    std_logic;
-            read_en_psum : in    std_logic;
-            read_en_wght : in    std_logic;
-
-            din_iact : in    std_logic_vector(data_width_iact - 1 downto 0);
-            din_psum : in    std_logic_vector(data_width_psum - 1 downto 0);
-            din_wght : in    std_logic_vector(data_width_wght - 1 downto 0);
-
-            dout_iact : out   std_logic_vector(data_width_iact - 1 downto 0);
-            dout_psum : out   std_logic_vector(data_width_psum - 1 downto 0);
-            dout_wght : out   std_logic_vector(data_width_wght - 1 downto 0);
-
-            dout_iact_valid : out   std_logic;
-            dout_psum_valid : out   std_logic;
-            dout_wght_valid : out   std_logic
-        );
-    end component scratchpad;
-
-    component scratchpad_interface is
-        generic (
-            size_x    : positive := 5;
-            size_y    : positive := 5;
-            size_rows : positive := 9;
-
-            addr_width_rows : positive := 4;
-            addr_width_y    : positive := 3;
-            addr_width_x    : positive := 3;
-
-            data_width_iact     : positive := 8;
-            line_length_iact    : positive := 32;
-            addr_width_iact     : positive := 5;
-            addr_width_iact_mem : positive := 15;
-
-            data_width_psum     : positive := 16;
-            line_length_psum    : positive := 127;
-            addr_width_psum     : positive := 7;
-            addr_width_psum_mem : positive := 15;
-
-            data_width_wght     : positive := 8;
-            line_length_wght    : positive := 32;
-            addr_width_wght     : positive := 5;
-            addr_width_wght_mem : positive := 15;
-
-            fifo_width : positive := 15;
-
-            g_iact_fifo_size : positive := 15;
-            g_wght_fifo_size : positive := 15;
-            g_psum_fifo_size : positive := 45;
-
-            g_channels    : positive := 28;
-            g_image_y     : positive := 14;
-            g_image_x     : positive := 14;
-            g_kernel_size : positive := 5
-        );
-        port (
-            clk  : in    std_logic;
-            rstn : in    std_logic;
-
-            clk_sp : in    std_logic;
-
-            i_start  : in    std_logic;
-            o_status : out   std_logic;
-            o_enable : out   std_logic;
-
-            -- Data to and from Address generator
-            i_address_iact : in    array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
-            i_address_wght : in    array_t(0 to size_y - 1)(addr_width_wght_mem - 1 downto 0);
-
-            i_address_iact_valid : in    std_logic_vector(size_rows - 1 downto 0);
-            i_address_wght_valid : in    std_logic_vector(size_y - 1 downto 0);
-
-            o_fifo_iact_address_full : out   std_logic;
-            o_fifo_wght_address_full : out   std_logic;
-
-            o_valid_psums_out   : out   std_logic_vector(size_x - 1 downto 0);
-            o_gnt_psum_binary_d : out   std_logic_vector(addr_width_x - 1 downto 0);
-            o_empty_psum_fifo   : out   std_logic_vector(size_x - 1 downto 0);
-
-            -- Addresses to Scratchpad
-            o_address_iact : out   std_logic_vector(addr_width_iact_mem - 1 downto 0);
-            o_address_wght : out   std_logic_vector(addr_width_wght_mem - 1 downto 0);
-
-            o_address_iact_valid : out   std_logic;
-            o_address_wght_valid : out   std_logic;
-
-            o_write_en_psum : out   std_logic;
-            o_data_psum     : out   std_logic_vector(data_width_psum - 1 downto 0);
-
-            -- Data from Scratchpad
-            i_data_iact : in    std_logic_vector(data_width_iact - 1 downto 0);
-            i_data_wght : in    std_logic_vector(data_width_wght - 1 downto 0);
-
-            i_data_iact_valid : in    std_logic;
-            i_data_wght_valid : in    std_logic;
-
-            -- Data to PE array
-            o_data_iact : out   array_t(0 to size_rows - 1)(data_width_iact - 1 downto 0);
-            o_data_wght : out   array_t(0 to size_y - 1)(data_width_wght - 1 downto 0);
-
-            o_data_iact_valid : out   std_logic_vector(size_rows - 1 downto 0);
-            o_data_wght_valid : out   std_logic_vector(size_y - 1 downto 0);
-
-            -- Buffer full signals from PE array
-            i_buffer_full_iact : in    std_logic_vector(size_rows - 1 downto 0);
-            i_buffer_full_wght : in    std_logic_vector(size_y - 1 downto 0);
-
-            -- Data from PE array
-            i_psums       : in    array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
-            i_psums_valid : in    std_logic_vector(size_x - 1 downto 0);
-
-            -- Data from control
-            i_pause_iact : in    std_logic
-        );
-    end component scratchpad_interface;
-
-    component address_generator_psum is
-        generic (
-            size_x : positive := 5;
-            size_y : positive := 5;
-
-            addr_width_x : positive := 3;
-
-            addr_width_psum : positive := 15
-        );
-        port (
-            clk  : in    std_logic;
-            rstn : in    std_logic;
-
-            i_start    : in    std_logic;
-            i_dataflow : in    std_logic;
-
-            i_w1          : in    integer range 0 to 1023;
-            i_m0          : in    integer range 0 to 1023;
-            i_kernel_size : in    integer range 0 to 32;
-            i_new_output  : in    std_logic;
-
-            i_valid_psum_out    : in    std_logic_vector(size_x - 1 downto 0);
-            i_gnt_psum_binary_d : in    std_logic_vector(addr_width_x - 1 downto 0);
-            i_empty_psum_fifo   : in    std_logic_vector(size_x - 1 downto 0);
-
-            o_address_psum : out   std_logic_vector(addr_width_psum - 1 downto 0);
-            o_suppress_out : out   std_logic
-        );
-    end component address_generator_psum;
 
     signal w_preload_psum       : std_logic_vector(data_width_psum - 1 downto 0);
     signal w_preload_psum_valid : std_logic;
@@ -596,7 +233,7 @@ begin
 
     end process start_procedure;
 
-    pe_array_inst : component pe_array
+    pe_array_inst : entity accel.pe_array
         generic map (
             size_x           => size_x,
             size_y           => size_y,
@@ -643,7 +280,7 @@ begin
             o_psums_valid           => w_psums_valid
         );
 
-    control_address_generator_inst : component control_address_generator
+    control_address_generator_inst : entity accel.control_address_generator
         generic map (
             size_x              => size_x,
             size_y              => size_y,
@@ -709,7 +346,7 @@ begin
             o_address_wght_valid     => w_address_wght_valid
         );
 
-    scratchpad_inst : component scratchpad
+    scratchpad_inst : entity accel.scratchpad
         generic map (
             data_width_iact => data_width_iact,
             addr_width_iact => addr_width_iact_mem,
@@ -746,7 +383,7 @@ begin
             dout_wght_valid => w_dout_wght_valid
         );
 
-    scratchpad_interface_inst : component scratchpad_interface
+    scratchpad_interface_inst : entity accel.scratchpad_interface
         generic map (
             size_x              => size_x,
             size_y              => size_y,
@@ -812,7 +449,7 @@ begin
             i_pause_iact             => w_pause_iact
         );
 
-    address_generator_psum_inst : component address_generator_psum
+    address_generator_psum_inst : entity accel.address_generator_psum
         generic map (
             size_x          => size_x,
             size_y          => size_y,

@@ -1,7 +1,9 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
-    use work.utilities.all;
+
+library accel;
+    use accel.utilities.all;
 
 entity scratchpad_interface is
     generic (
@@ -103,98 +105,6 @@ entity scratchpad_interface is
 end entity scratchpad_interface;
 
 architecture rtl of scratchpad_interface is
-
-    /*component fifo_generator_0 is
-        port (
-            rst         : in    std_logic;
-            wr_clk      : in    std_logic;
-            rd_clk      : in    std_logic;
-            din         : in    std_logic_vector(15 downto 0);
-            wr_en       : in    std_logic;
-            rd_en       : in    std_logic;
-            dout        : out   std_logic_vector(15 downto 0);
-            full        : out   std_logic;
-            almost_full : out   std_logic;
-            empty       : out   std_logic;
-            valid       : out   std_logic
-        );
-    end component;*/
-
-    component dc_fifo is
-        generic (
-            mem_size    : positive;
-            stages      : positive := 3;
-            use_packets : boolean := false
-        );
-        port (
-            wr_clk : in    std_logic;
-            rst    : in    std_logic;
-
-            wr_en       : in    std_logic;
-            din         : in    std_logic_vector;
-            full        : out   std_logic;
-            almost_full : out   std_logic;
-            keep        : in    std_logic;
-            drop        : in    std_logic;
-
-            rd_clk : in    std_logic;
-
-            rd_en : in    std_logic;
-            dout  : out   std_logic_vector;
-            valid : out   std_logic;
-            empty : out   std_logic
-        );
-    end component;
-
-    component demux is
-        generic (
-            output_width  : natural := 8;
-            output_num    : natural := 2;
-            address_width : natural := 1
-        );
-        port (
-            v_i : in    std_logic_vector(output_width - 1 downto 0);
-            sel : in    std_logic_vector(address_width - 1 downto 0);
-            z_o : out   array_t(0 to output_num - 1)(output_width - 1 downto 0)
-        );
-    end component demux;
-
-    component mux is
-        generic (
-            input_width   : natural;
-            input_num     : natural;
-            address_width : natural
-        );
-        port (
-            v_i : in    array_t(0 to input_num - 1)(input_width - 1 downto 0);
-            sel : in    std_logic_vector(address_width - 1 downto 0);
-            z_o : out   std_logic_vector(input_width - 1 downto 0)
-        );
-    end component mux;
-
-    component rr_arbiter is
-        generic (
-            arbiter_width : positive := 9
-        );
-        port (
-            clk   : in    std_logic;
-            rstn  : in    std_logic;
-            i_req : in    std_logic_vector(arbiter_width - 1 downto 0);
-            o_gnt : out   std_logic_vector(arbiter_width - 1 downto 0)
-        );
-    end component rr_arbiter;
-
-    component onehot_binary is
-        generic (
-
-            onehot_width : positive := 9;
-            binary_width : positive := 4
-        );
-        port (
-            i_onehot : in    std_logic_vector(onehot_width - 1 downto 0);
-            o_binary : out   std_logic_vector(binary_width - 1 downto 0)
-        );
-    end component onehot_binary;
 
     signal r_sel_iact_fifo : std_logic_vector(addr_width_rows - 1 downto 0);
     signal r_sel_wght_fifo : std_logic_vector(addr_width_y - 1 downto 0);
@@ -365,7 +275,7 @@ begin
     o_fifo_iact_address_full <= or w_full_iact_address_f;
     o_fifo_wght_address_full <= or w_full_wght_address_f;
 
-    mux_iact_address : component mux
+    mux_iact_address : entity accel.mux
         generic map (
             input_width   => addr_width_iact_mem,
             input_num     => size_rows,
@@ -377,7 +287,7 @@ begin
             z_o => w_address_iact
         );
 
-    mux_wght_address : component mux
+    mux_wght_address : entity accel.mux
         generic map (
             input_width   => addr_width_wght_mem,
             input_num     => size_y,
@@ -389,7 +299,7 @@ begin
             z_o => w_address_wght
         );
 
-    mux_iact_address_valid : component mux
+    mux_iact_address_valid : entity accel.mux
         generic map (
             input_width   => 1,
             input_num     => size_rows,
@@ -401,7 +311,7 @@ begin
             z_o(0) => o_address_iact_valid
         );
 
-    mux_wght_address_valid : component mux
+    mux_wght_address_valid : entity accel.mux
         generic map (
             input_width   => 1,
             input_num     => size_y,
@@ -413,7 +323,7 @@ begin
             z_o(0) => o_address_wght_valid
         );
 
-    rr_arbiter_iact : component rr_arbiter
+    rr_arbiter_iact : entity accel.rr_arbiter
         generic map (
             arbiter_width => size_rows
         )
@@ -424,7 +334,7 @@ begin
             o_gnt => w_gnt_iact
         );
 
-    rr_arbiter_iact_binary : component onehot_binary
+    rr_arbiter_iact_binary : entity accel.onehot_binary
         generic map (
             onehot_width => size_rows,
             binary_width => addr_width_rows
@@ -434,7 +344,7 @@ begin
             o_binary => w_gnt_iact_binary
         );
 
-    rr_arbiter_wght : component rr_arbiter
+    rr_arbiter_wght : entity accel.rr_arbiter
         generic map (
             arbiter_width => size_y
         )
@@ -445,7 +355,7 @@ begin
             o_gnt => w_gnt_wght
         );
 
-    rr_arbiter_wght_binary : component onehot_binary
+    rr_arbiter_wght_binary : entity accel.onehot_binary
         generic map (
             onehot_width => size_y,
             binary_width => addr_width_y
@@ -455,7 +365,7 @@ begin
             o_binary => w_gnt_wght_binary
         );
 
-    demux_iact : component demux
+    demux_iact : entity accel.demux
         generic map (
             output_width  => 8,
             output_num    => size_rows,
@@ -467,7 +377,7 @@ begin
             z_o => w_demux_iact_out
         );
 
-    demux_iact_valid : component demux
+    demux_iact_valid : entity accel.demux
         generic map (
             output_width  => 1,
             output_num    => size_rows,
@@ -479,7 +389,7 @@ begin
             z_o    => w_demux_iact_out_valid
         );
 
-    demux_wght : component demux
+    demux_wght : entity accel.demux
         generic map (
             output_width  => 8,
             output_num    => size_y,
@@ -491,7 +401,7 @@ begin
             z_o => w_demux_wght_out
         );
 
-    demux_wght_valid : component demux
+    demux_wght_valid : entity accel.demux
         generic map (
             output_width  => 1,
             output_num    => size_y,
@@ -505,22 +415,7 @@ begin
 
     fifo_iact : for y in 0 to size_rows - 1 generate
 
-        /*fifo_iact : component fifo_generator_0
-            port map (
-                rst         => not rstn,
-                wr_clk      => clk_sp,
-                rd_clk      => clk,
-                din         => (data_width_psum - 1 downto data_width_iact => '0') & w_demux_iact_out(y),
-                wr_en       => w_demux_iact_out_valid(y)(0),
-                rd_en       => w_rd_en_iact_f(y),
-                dout        => w_dout_iact_f(y),
-                full        => w_full_iact_f(y),
-                almost_full => w_almost_full_iact_f(y),
-                empty       => w_empty_iact_f(y),
-                valid       => w_valid_iact_f(y)
-            );*/
-
-        fifo_iact : component dc_fifo
+        fifo_iact : entity accel.dc_fifo
             generic map (
                 mem_size    => g_iact_fifo_size,
                 stages      => 3,
@@ -546,22 +441,7 @@ begin
 
     fifo_wght : for y in 0 to size_y - 1 generate
 
-        /*fifo_wght : component fifo_generator_0
-            port map (
-                rst         => not rstn,
-                wr_clk      => clk_sp,
-                rd_clk      => clk,
-                din         => (data_width_psum - 1 downto data_width_wght => '0') & w_demux_wght_out(y),
-                wr_en       => w_demux_wght_out_valid(y)(0),
-                rd_en       => w_rd_en_wght_f(y),
-                dout        => w_dout_wght_f(y),
-                full        => w_full_wght_f(y),
-                almost_full => w_almost_full_wght_f(y),
-                empty       => w_empty_wght_f(y),
-                valid       => w_valid_wght_f(y)
-            );*/
-
-        fifo_wght : component dc_fifo
+        fifo_wght : entity accel.dc_fifo
             generic map (
                 mem_size    => g_wght_fifo_size,
                 stages      => 3,
@@ -587,7 +467,7 @@ begin
 
     fifo_iact_address : for y in 0 to size_rows - 1 generate
 
-        fifo_iact_address : component dc_fifo
+        fifo_iact_address : entity accel.dc_fifo
             generic map (
                 mem_size    => g_iact_address_fifo_size,
                 stages      => 3,
@@ -613,7 +493,7 @@ begin
 
     fifo_wght_address : for y in 0 to size_y - 1 generate
 
-        fifo_wght_address : component dc_fifo
+        fifo_wght_address : entity accel.dc_fifo
             generic map (
                 mem_size    => g_wght_address_fifo_size,
                 stages      => 3,
@@ -641,7 +521,7 @@ begin
 
         /* TODO use feasible size for Psum FIFO */
 
-        fifo_psum_out : component dc_fifo
+        fifo_psum_out : entity accel.dc_fifo
             generic map (
                 mem_size    => g_psum_fifo_size,
                 stages      => 3,
@@ -673,7 +553,7 @@ begin
 
     end generate g_psums_valid;
 
-    mux_psum_out : component mux
+    mux_psum_out : entity accel.mux
         generic map (
             input_width   => data_width_psum,
             input_num     => size_x,
@@ -689,7 +569,7 @@ begin
     o_gnt_psum_binary_d <= r_gnt_psum_binary_d;
     o_empty_psum_fifo   <= w_empty_psum_out_f;
 
-    mux_psum_out_valid : component mux
+    mux_psum_out_valid : entity accel.mux
         generic map (
             input_width   => 1,
             input_num     => size_x,
@@ -701,7 +581,7 @@ begin
             z_o(0) => o_write_en_psum
         );
 
-    rr_arbiter_psum : component rr_arbiter
+    rr_arbiter_psum : entity accel.rr_arbiter
         generic map (
             arbiter_width => size_x
         )
@@ -712,7 +592,7 @@ begin
             o_gnt => w_gnt_psum
         );
 
-    rr_arbiter_psum_binary : component onehot_binary
+    rr_arbiter_psum_binary : entity accel.onehot_binary
         generic map (
             onehot_width => size_x,
             binary_width => addr_width_x

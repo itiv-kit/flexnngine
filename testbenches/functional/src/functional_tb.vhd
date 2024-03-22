@@ -1,16 +1,18 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
-    use work.utilities.all;
-    use work.control;
-    use work.pe_array;
-    use work.address_generator;
-    use std.env.finish;
-    use std.env.stop;
     use ieee.math_real.ceil;
     use ieee.math_real.floor;
+    use std.env.finish;
+    use std.env.stop;
     use ieee.math_real.log2;
     use std.textio.all;
+
+library accel;
+    use accel.utilities.all;
+    use accel.control;
+    use accel.pe_array;
+    use accel.address_generator;
 
 entity functional_tb is
     generic (
@@ -172,7 +174,7 @@ begin
     din_iact      <= (others => '0');
     din_wght      <= (others => '0');
 
-    accelerator_inst : entity work.accelerator
+    accelerator_inst : entity accel.accelerator
         generic map (
             size_x              => size_x,
             size_y              => size_y,

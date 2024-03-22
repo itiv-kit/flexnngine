@@ -106,8 +106,8 @@ end architecture rtl;
 library ieee;
     use ieee.std_logic_1164.all;
 
-library work;
-    use work.sync.bit_sync;
+library accel;
+    use accel.sync.bit_sync;
 
 entity handshake_sync is
     generic (
@@ -146,7 +146,7 @@ begin
     -----------
     -- TX logic
     -----------
-    as : component bit_sync
+    as : entity accel.bit_sync
         generic map (
             stages => stages
         )
@@ -272,7 +272,7 @@ begin
     -----------
     -- RX logic
     -----------
-    rs : component bit_sync
+    rs : entity accel.bit_sync
         generic map (
             stages => stages
         )
@@ -311,8 +311,8 @@ end architecture rtl;
 library ieee;
     use ieee.std_logic_1164.all;
 
-library work;
-    use work.gray_code.all;
+library accel;
+    use accel.gray_code.all;
 
 entity gray_sync is
     generic (

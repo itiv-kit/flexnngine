@@ -1,7 +1,9 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
-    use work.utilities.all;
+
+library accel;
+    use accel.utilities.all;
 
 entity address_generator_psum is
     generic (
@@ -35,19 +37,6 @@ end entity address_generator_psum;
 
 architecture rtl of address_generator_psum is
 
-    component mux is
-        generic (
-            input_width   : natural;
-            input_num     : natural;
-            address_width : natural
-        );
-        port (
-            v_i : in    array_t(0 to input_num - 1)(input_width - 1 downto 0);
-            sel : in    std_logic_vector(address_width - 1 downto 0);
-            z_o : out   std_logic_vector(input_width - 1 downto 0)
-        );
-    end component mux;
-
     signal r_address_psum : array_t(0 to size_x - 1)(addr_width_psum - 1 downto 0);
 
     signal r_count_w1 : int_line_t(0 to size_x - 1);
@@ -68,7 +57,7 @@ begin
     r_start_event <= i_start and not r_start_delay;
 
     -- Multiplex addresses for PE colums to interface the single Psum scratchpad
-    mux_psum_adr : component mux
+    mux_psum_adr : entity accel.mux
         generic map (
             input_width   => addr_width_psum,
             input_num     => size_x,

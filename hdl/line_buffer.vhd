@@ -1,7 +1,9 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
-    use work.utilities.all;
+
+library accel;
+    use accel.utilities.all;
 
 --! This component buffers the pixels of one line in the input image
 --! The component implements a FIFO like buffer with a depth of #line_length.
@@ -33,25 +35,6 @@ entity line_buffer is
 end entity line_buffer;
 
 architecture rtl of line_buffer is
-
-    component ram_dp is
-        generic (
-            addr_width     : positive;
-            data_width     : positive;
-            use_output_reg : std_logic := '0'
-        );
-        port (
-            clk   : in    std_logic;
-            wena  : in    std_logic;
-            wenb  : in    std_logic;
-            addra : in    std_logic_vector(addr_width - 1 downto 0);
-            addrb : in    std_logic_vector(addr_width - 1 downto 0);
-            dina  : in    std_logic_vector(data_width - 1 downto 0);
-            dinb  : in    std_logic_vector(data_width - 1 downto 0);
-            douta : out   std_logic_vector(data_width - 1 downto 0);
-            doutb : out   std_logic_vector(data_width - 1 downto 0)
-        );
-    end component;
 
     -- input and output signals for the ram_dp
     signal r_wena  : std_logic;
@@ -149,7 +132,7 @@ begin
 
     end process read_update_empty;
 
-    ram : component ram_dp
+    ram : entity accel.ram_dp
         generic map (
             addr_width => addr_width,
             data_width => data_width

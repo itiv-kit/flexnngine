@@ -21,3 +21,5 @@ rule:
     disable: true
   procedure_013:
     disable: true
+  instantiation_034:
+     method: "entity"

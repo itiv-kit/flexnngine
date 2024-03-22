@@ -132,8 +132,8 @@ begin
 
     gen_output_data : process is
 
-        variable start_row   : integer := 0;
-        variable current_row : integer := 0;
+        variable start_row   : integer;
+        variable current_row : integer;
 
     begin
 

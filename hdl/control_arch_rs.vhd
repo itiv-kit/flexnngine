@@ -1,55 +1,11 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
-    use work.utilities.all;
+
+library accel;
+    use accel.utilities.all;
 
 architecture rs_dataflow of control is
-
-    component control_init is
-        generic (
-            size_x    : positive;
-            size_y    : positive;
-            size_rows : positive;
-
-            addr_width_rows : positive;
-            addr_width_y    : positive;
-            addr_width_x    : positive;
-
-            line_length_iact : positive;
-            addr_width_iact  : positive;
-            line_length_psum : positive;
-            addr_width_psum  : positive;
-            line_length_wght : positive;
-            addr_width_wght  : positive
-        );
-        port (
-            clk  : in    std_logic;
-            rstn : in    std_logic;
-
-            o_c1           : out   integer range 0 to 1023;
-            o_w1           : out   integer range 0 to 1023;
-            o_h2           : out   integer range 0 to 1023;
-            o_m0           : out   integer range 0 to 1023;
-            o_m0_dist      : out   array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
-            o_m0_last_m1   : out   integer range 0 to 1023;
-            o_rows_last_h2 : out   integer range 0 to 1023;
-            o_c0           : out   integer range 0 to 1023;
-            o_c0_last_c1   : out   integer range 0 to 1023;
-            o_c0w0         : out   integer range 0 to 1023;
-            o_c0w0_last_c1 : out   integer range 0 to 1023;
-
-            i_image_x     : in    integer range 0 to 1023;
-            i_image_y     : in    integer range 0 to 1023;
-            i_channels    : in    integer range 0 to 4095;
-            i_kernels     : in    integer range 0 to 4095;
-            i_kernel_size : in    integer range 0 to 32;
-
-            o_status : out   std_logic;
-            i_start  : in    std_logic
-        );
-    end component control_init;
-
-    for all : control_init use entity work.control_init (rs_dataflow);
 
     signal w_init_done : std_logic;
 
@@ -516,7 +472,7 @@ begin
 
     control_init_inst : if g_control_init = true generate
 
-        control_init_inst : component control_init
+        control_init_inst : entity accel.control_init(rs_dataflow)
             generic map (
                 size_x           => size_x,
                 size_y           => size_y,

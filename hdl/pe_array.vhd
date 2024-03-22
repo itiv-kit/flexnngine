@@ -1,7 +1,9 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
-    use work.utilities.all;
+
+library accel;
+    use accel.utilities.all;
 
 entity pe_array is
     generic (
@@ -65,84 +67,6 @@ entity pe_array is
 end entity pe_array;
 
 architecture behavioral of pe_array is
-
-    component pe is
-        generic (
-            data_width_iact  : positive := 8;
-            line_length_iact : positive := 7;
-            addr_width_iact  : positive := 3;
-
-            data_width_psum  : positive := 16;
-            line_length_psum : positive := 7;
-            addr_width_psum  : positive := 4;
-
-            data_width_wght  : positive := 8;
-            line_length_wght : positive := 7;
-            addr_width_wght  : positive := 3;
-
-            pe_north : boolean := false;
-            pe_south : boolean := false
-        );
-        port (
-            clk  : in    std_logic;
-            rstn : in    std_logic;
-
-            i_enable       : in    std_logic;
-            i_command      : in    command_pe_t;
-            i_command_iact : in    command_lb_t;
-            i_command_psum : in    command_lb_t;
-            i_command_wght : in    command_lb_t;
-
-            i_data_in_iact : in    std_logic_vector(data_width_iact - 1 downto 0);
-            i_data_in_psum : in    std_logic_vector(data_width_psum - 1 downto 0);
-            i_data_in_wght : in    std_logic_vector(data_width_wght - 1 downto 0);
-
-            i_data_in_iact_valid : in    std_logic;
-            i_data_in_psum_valid : in    std_logic;
-            i_data_in_wght_valid : in    std_logic;
-
-            o_buffer_full_iact : out   std_logic;
-            o_buffer_full_psum : out   std_logic;
-            o_buffer_full_wght : out   std_logic;
-
-            o_buffer_full_next_iact : out   std_logic;
-            o_buffer_full_next_psum : out   std_logic;
-            o_buffer_full_next_wght : out   std_logic;
-
-            i_update_offset_iact : in    std_logic_vector(addr_width_iact - 1 downto 0);
-            i_update_offset_psum : in    std_logic_vector(addr_width_psum - 1 downto 0);
-            i_update_offset_wght : in    std_logic_vector(addr_width_wght - 1 downto 0);
-
-            i_read_offset_iact : in    std_logic_vector(addr_width_iact - 1 downto 0);
-            i_read_offset_psum : in    std_logic_vector(addr_width_psum - 1 downto 0);
-            i_read_offset_wght : in    std_logic_vector(addr_width_wght - 1 downto 0);
-
-            o_data_out       : out   std_logic_vector(data_width_psum - 1 downto 0);
-            o_data_out_valid : out   std_logic;
-
-            i_data_in       : in    std_logic_vector(data_width_psum - 1 downto 0);
-            i_data_in_valid : in    std_logic;
-
-            o_data_out_iact : out   std_logic_vector(data_width_iact - 1 downto 0);
-            o_data_out_wght : out   std_logic_vector(data_width_wght - 1 downto 0);
-
-            o_data_out_iact_valid : out   std_logic;
-            o_data_out_wght_valid : out   std_logic
-        );
-    end component pe;
-
-    component mux is
-        generic (
-            input_width   : natural;
-            input_num     : natural;
-            address_width : natural
-        );
-        port (
-            v_i : in    array_t(0 to input_num - 1)(input_width - 1 downto 0);
-            sel : in    std_logic_vector(address_width - 1 downto 0);
-            z_o : out   std_logic_vector(input_width - 1 downto 0)
-        );
-    end component mux;
 
     signal w_data_in_iact : array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(data_width_iact - 1 downto 0);
     signal w_data_in_psum : array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(data_width_psum - 1 downto 0);
@@ -318,7 +242,7 @@ begin
 
             pe_north : if y = 0 generate
 
-                pe_inst : component pe
+                pe_inst : entity accel.pe
                     generic map (
                         data_width_iact  => data_width_iact,
                         line_length_iact => line_length_iact,
@@ -372,7 +296,7 @@ begin
 
             pe_south : if y = size_y - 1 generate
 
-                pe_inst : component pe
+                pe_inst : entity accel.pe
                     generic map (
                         data_width_iact  => data_width_iact,
                         line_length_iact => line_length_iact,
@@ -426,7 +350,7 @@ begin
 
             pe_middle : if (y /= size_y - 1) and (y /= 0) generate
 
-                pe_inst : component pe
+                pe_inst : entity accel.pe
                     generic map (
                         data_width_iact  => data_width_iact,
                         line_length_iact => line_length_iact,

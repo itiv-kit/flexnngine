@@ -1,7 +1,9 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
-    use work.utilities.all;
+
+library accel;
+    use accel.utilities.all;
 
 entity control_address_generator is
     generic (
@@ -87,135 +89,6 @@ end entity control_address_generator;
 
 architecture rtl of control_address_generator is
 
-    component control is
-        generic (
-            size_x    : positive := 5;
-            size_y    : positive := 5;
-            size_rows : positive := 9;
-
-            addr_width_rows : positive;
-            addr_width_y    : positive;
-            addr_width_x    : positive;
-
-            line_length_iact : positive := 512;
-            addr_width_iact  : positive := 9;
-            line_length_psum : positive := 512;
-            addr_width_psum  : positive := 9;
-            line_length_wght : positive := 512;
-            addr_width_wght  : positive := 9;
-
-            g_control_init : boolean  := true;
-            g_c1           : positive := 1;
-            g_w1           : positive := 1;
-            g_h2           : positive := 1;
-            g_m0           : positive := 1;
-            g_m0_last_m1   : positive := 1;
-            g_rows_last_h2 : positive := 1;
-            g_c0           : positive := 1;
-            g_c0_last_c1   : positive := 1;
-            g_c0w0         : positive := 1;
-            g_c0w0_last_c1 : positive := 1
-        );
-        port (
-            clk  : in    std_logic;
-            rstn : in    std_logic;
-
-            i_start      : in    std_logic;
-            i_start_init : in    std_logic;
-
-            o_enable     : out   std_logic;
-            o_new_output : out   std_logic;
-            o_status     : out   std_logic;
-            o_pause_iact : out   std_logic;
-
-            o_c1         : out   integer range 0 to 1023;
-            o_w1         : out   integer range 0 to 1023;
-            o_h2         : out   integer range 0 to 1023;
-            o_m0         : out   integer range 0 to 1023;
-            o_m0_dist    : out   array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
-            o_m0_last_m1 : out   integer range 0 to 1023;
-
-            o_c0         : out   integer range 0 to 1023;
-            o_c0_last_c1 : out   integer range 0 to 1023;
-
-            i_image_x : in    integer range 0 to 1023;
-            i_image_y : in    integer range 0 to 1023;
-
-            i_channels : in    integer range 0 to 4095;
-            i_kernels  : in    integer range 0 to 4095;
-
-            i_kernel_size : in    integer range 0 to 32;
-
-            o_command      : out   command_pe_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-            o_command_iact : out   command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-            o_command_psum : out   command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-            o_command_wght : out   command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
-
-            o_update_offset_iact : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
-            o_update_offset_psum : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
-            o_update_offset_wght : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
-
-            o_read_offset_iact : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_iact - 1 downto 0);
-            o_read_offset_psum : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
-            o_read_offset_wght : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0)
-        );
-    end component control;
-
-    component address_generator is
-        generic (
-            size_x    : positive := 5;
-            size_y    : positive := 5;
-            size_rows : positive := 9;
-
-            addr_width_rows : positive;
-            addr_width_y    : positive;
-            addr_width_x    : positive;
-
-            line_length_iact    : positive := 512;
-            addr_width_iact     : positive := 9;
-            addr_width_iact_mem : positive := 15;
-
-            line_length_psum    : positive := 512;
-            addr_width_psum     : positive := 9;
-            addr_width_psum_mem : positive := 15;
-
-            line_length_wght    : positive := 512;
-            addr_width_wght     : positive := 9;
-            addr_width_wght_mem : positive := 15
-        );
-        port (
-            clk  : in    std_logic;
-            rstn : in    std_logic;
-
-            i_start      : in    std_logic;
-            i_pause_iact : in    std_logic;
-
-            i_c1         : in    integer range 0 to 1023;
-            i_w1         : in    integer range 0 to 1023;
-            i_h2         : in    integer range 0 to 1023;
-            i_m0         : in    integer range 0 to 1023;
-            i_m0_dist    : in    array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
-            i_m0_last_m1 : in    integer range 0 to 1023;
-
-            i_c0         : in    integer range 0 to 1023;
-            i_c0_last_c1 : in    integer range 0 to 1023;
-
-            i_image_x     : in    integer range 0 to 1023;
-            i_image_y     : in    integer range 0 to 1023;
-            i_channels    : in    integer range 0 to 4095;
-            i_kernel_size : in    integer range 0 to 32;
-
-            i_fifo_full_iact : in    std_logic;
-            i_fifo_full_wght : in    std_logic;
-
-            o_address_iact : out   array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
-            o_address_wght : out   array_t(0 to size_y - 1)(addr_width_wght_mem - 1 downto 0);
-
-            o_address_iact_valid : out   std_logic_vector(size_rows - 1 downto 0);
-            o_address_wght_valid : out   std_logic_vector(size_y - 1 downto 0)
-        );
-    end component address_generator;
-
     signal w_c1         : integer range 0 to 1023;
     signal w_w1         : integer range 0 to 1023;
     signal w_h2         : integer range 0 to 1023;
@@ -231,10 +104,9 @@ begin
     o_m0 <= w_m0;
 
     g_control : if g_dataflow = 1 generate
-        for all : control use entity work.control (alternative_rs_dataflow);
     begin
 
-        control_inst : component control
+        control_inst : entity accel.control(alternative_rs_dataflow)
             generic map (
                 size_x           => size_x,
                 size_y           => size_y,
@@ -295,10 +167,9 @@ begin
             );
 
     else generate
-        for all : control use entity work.control (rs_dataflow);
     begin
 
-        control_inst : component control
+        control_inst : entity accel.control(rs_dataflow)
             generic map (
                 size_x           => size_x,
                 size_y           => size_y,
@@ -361,10 +232,9 @@ begin
     end generate g_control;
 
     g_address_generator : if g_dataflow = 1 generate
-        for all : address_generator use entity work.address_generator (alternative_rs_dataflow);
     begin
 
-        address_generator_inst : component address_generator
+        address_generator_inst : entity accel.address_generator(alternative_rs_dataflow)
             generic map (
                 size_x              => size_x,
                 size_y              => size_y,
@@ -408,10 +278,9 @@ begin
             );
 
     else generate
-        for all : address_generator use entity work.address_generator (rs_dataflow);
     begin
 
-        address_generator_inst : component address_generator
+        address_generator_inst : entity accel.address_generator(rs_dataflow)
             generic map (
                 size_x              => size_x,
                 size_y              => size_y,

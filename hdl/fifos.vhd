@@ -186,8 +186,8 @@ library ieee;
     use ieee.numeric_std.all;
     use ieee.math_real.all;
 
-library work;
-    use work.sync.gray_sync;
+library accel;
+    use accel.sync.gray_sync;
 
 entity dc_fifo is
     generic (
@@ -216,19 +216,6 @@ entity dc_fifo is
 end entity dc_fifo;
 
 architecture behav of dc_fifo is
-
-    component gray_sync is
-        generic (
-            stages : positive := 2
-        );
-        port (
-            src_clk : in    std_logic;
-            src_bin : in    std_logic_vector;
-
-            dst_clk : in    std_logic;
-            dst_bin : out   std_logic_vector
-        );
-    end component gray_sync;
 
     type   memory_t is array(0 to mem_size - 1) of std_logic_vector(din'length-1 downto 0);
     signal memory                : memory_t;
@@ -311,7 +298,7 @@ begin
     empty       <= '1' when empty_loc else
                    '0';
 
-    sync_wrcnt : component gray_sync
+    sync_wrcnt : entity accel.gray_sync
         generic map (
             stages => stages
         )
@@ -332,7 +319,7 @@ begin
 
     wrcnt_rd <= to_integer(unsigned(slv_wrcnt_rd));
 
-    sync_rdcnt : component gray_sync
+    sync_rdcnt : entity accel.gray_sync
         generic map (
             stages => stages
         )

@@ -52,10 +52,10 @@ vmap accel _run/accel
 source "${TB_DIR}/sources.tcl"
 
 ### Optimize design
-vopt {*}$generics -64 +acc -L accel -work accel accel.$SIM_TOP_LEVEL -o design_optimized
+vopt {*}$generics -64 +acc accel.$SIM_TOP_LEVEL -work accel -o ${SIM_TOP_LEVEL}_optimized
 
 ### initialize and run simulation
-vsim -onfinish stop accel.design_optimized
+vsim -64 -onfinish stop accel.${SIM_TOP_LEVEL}_optimized
 
 if { $GUI } {
     # load waveform from "wave_<NAME>.do" if it exists

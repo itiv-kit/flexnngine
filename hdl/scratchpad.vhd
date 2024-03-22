@@ -1,7 +1,9 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
-    use work.utilities.all;
+
+library accel;
+    use accel.utilities.all;
 
 entity scratchpad is
     generic (
@@ -53,37 +55,13 @@ end entity scratchpad;
 
 architecture rtl of scratchpad is
 
-    component ram_dp is
-        generic (
-            addr_width     : positive  := 2;
-            data_width     : positive  := 6;
-            use_output_reg : std_logic := '0'; --! Specifies if the output is buffered in a separate register
-            initialize     : boolean   := false;
-            init_file      : string    := ""
-        );
-        port (
-            clk : in    std_logic;
-
-            wena : in    std_logic;
-            --! Write enable for BRAM port A. If set to '1', the value on #dina will be written to position #addra in the RAM.
-            wenb : in    std_logic;
-            --! Write enable for BRAM port B. If set to '1', the value on #dinb will be written to position #addrb in the RAM.
-            addra : in    std_logic_vector(addr_width - 1 downto 0);
-            addrb : in    std_logic_vector(addr_width - 1 downto 0);
-            dina  : in    std_logic_vector(data_width - 1 downto 0);
-            dinb  : in    std_logic_vector(data_width - 1 downto 0);
-            douta : out   std_logic_vector(data_width - 1 downto 0);
-            doutb : out   std_logic_vector(data_width - 1 downto 0)
-        );
-    end component ram_dp;
-
 begin
 
     dout_iact_valid <= read_en_iact when rising_edge(clk);
     dout_psum_valid <= read_en_psum when rising_edge(clk);
     dout_wght_valid <= read_en_wght when rising_edge(clk);
 
-    ram_dp_iact : component ram_dp
+    ram_dp_iact : entity accel.ram_dp
         generic map (
             addr_width     => addr_width_iact,
             data_width     => data_width_iact,
@@ -103,7 +81,7 @@ begin
             doutb => dout_iact
         );
 
-    ram_dp_psum : component ram_dp
+    ram_dp_psum : entity accel.ram_dp
         generic map (
             addr_width     => addr_width_psum,
             data_width     => data_width_psum,
@@ -123,7 +101,7 @@ begin
             doutb => dout_psum
         );
 
-    ram_dp_wght : component ram_dp
+    ram_dp_wght : entity accel.ram_dp
         generic map (
             addr_width     => addr_width_wght,
             data_width     => data_width_wght,
