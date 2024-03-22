@@ -3,7 +3,9 @@ library ieee;
     use ieee.numeric_std.all;
     use std.env.finish;
     use std.env.stop;
-    use work.utilities.all;
+
+library accel;
+    use accel.utilities.all;
 
 --! This testbench can be used to test the pe component with a convolution.
 
@@ -25,64 +27,6 @@ entity pe_conv_tb is
 end entity pe_conv_tb;
 
 architecture imp of pe_conv_tb is
-
-    component pe is
-        generic (
-            data_width_iact  : positive := 8;
-            line_length_iact : positive := 7;
-            addr_width_iact  : positive := 3;
-
-            data_width_psum  : positive := 16;
-            line_length_psum : positive := 7;
-            addr_width_psum  : positive := 4;
-
-            data_width_wght  : positive := 8;
-            line_length_wght : positive := 7;
-            addr_width_wght  : positive := 3
-        );
-        port (
-            clk  : in    std_logic;
-            rstn : in    std_logic;
-
-            i_enable       : in    std_logic;
-            i_command      : in    command_pe_t;
-            i_command_iact : in    command_lb_t;
-            i_command_psum : in    command_lb_t;
-            i_command_wght : in    command_lb_t;
-
-            i_data_in_iact : in    std_logic_vector(data_width_iact - 1 downto 0);
-            i_data_in_psum : in    std_logic_vector(data_width_psum - 1 downto 0);
-            i_data_in_wght : in    std_logic_vector(data_width_wght - 1 downto 0);
-
-            i_data_in_iact_valid : in    std_logic;
-            i_data_in_psum_valid : in    std_logic;
-            i_data_in_wght_valid : in    std_logic;
-
-            o_buffer_full_iact : out   std_logic;
-            o_buffer_full_psum : out   std_logic;
-            o_buffer_full_wght : out   std_logic;
-
-            i_update_offset_iact : in    std_logic_vector(addr_width_iact - 1 downto 0);
-            i_update_offset_psum : in    std_logic_vector(addr_width_psum - 1 downto 0);
-            i_update_offset_wght : in    std_logic_vector(addr_width_wght - 1 downto 0);
-
-            i_read_offset_iact : in    std_logic_vector(addr_width_iact - 1 downto 0);
-            i_read_offset_psum : in    std_logic_vector(addr_width_psum - 1 downto 0);
-            i_read_offset_wght : in    std_logic_vector(addr_width_wght - 1 downto 0);
-
-            o_data_out       : out   std_logic_vector(data_width_psum - 1 downto 0);
-            o_data_out_valid : out   std_logic;
-
-            i_data_in       : in    std_logic_vector(data_width_psum - 1 downto 0);
-            i_data_in_valid : in    std_logic;
-
-            o_data_out_iact : out   std_logic_vector(data_width_iact - 1 downto 0);
-            o_data_out_wght : out   std_logic_vector(data_width_wght - 1 downto 0);
-
-            o_data_out_iact_valid : out   std_logic;
-            o_data_out_wght_valid : out   std_logic
-        );
-    end component pe;
 
     -- Testbench signals
 
@@ -174,7 +118,7 @@ architecture imp of pe_conv_tb is
 
 begin
 
-    pe_inst : component pe
+    pe_inst : entity accel.pe
         generic map (
             data_width_iact  => 8,
             line_length_iact => 7,
@@ -189,36 +133,39 @@ begin
             addr_width_wght  => 3
         )
         port map (
-            clk                   => clk,
-            rstn                  => rstn,
-            i_enable              => '1',
-            i_command             => command,
-            i_command_iact        => command_iact,
-            i_command_psum        => command_psum,
-            i_command_wght        => command_wght,
-            i_data_in_iact        => data_in_iact,
-            i_data_in_psum        => data_in_psum,
-            i_data_in_wght        => data_in_wght,
-            i_data_in_iact_valid  => data_in_iact_valid,
-            i_data_in_psum_valid  => data_in_psum_valid,
-            i_data_in_wght_valid  => data_in_wght_valid,
-            o_buffer_full_iact    => buffer_full_iact,
-            o_buffer_full_psum    => buffer_full_psum,
-            o_buffer_full_wght    => buffer_full_wght,
-            i_update_offset_iact  => update_offset_iact,
-            i_update_offset_psum  => update_offset_psum,
-            i_update_offset_wght  => update_offset_wght,
-            i_read_offset_iact    => read_offset_iact,
-            i_read_offset_psum    => read_offset_psum,
-            i_read_offset_wght    => read_offset_wght,
-            o_data_out            => data_out,
-            o_data_out_valid      => data_out_valid,
-            i_data_in             => (others => '0'),
-            i_data_in_valid       => '0',
-            o_data_out_iact       => open,
-            o_data_out_wght       => open,
-            o_data_out_iact_valid => open,
-            o_data_out_wght_valid => open
+            clk                     => clk,
+            rstn                    => rstn,
+            i_enable                => '1',
+            i_command               => command,
+            i_command_iact          => command_iact,
+            i_command_psum          => command_psum,
+            i_command_wght          => command_wght,
+            i_data_in_iact          => data_in_iact,
+            i_data_in_psum          => data_in_psum,
+            i_data_in_wght          => data_in_wght,
+            i_data_in_iact_valid    => data_in_iact_valid,
+            i_data_in_psum_valid    => data_in_psum_valid,
+            i_data_in_wght_valid    => data_in_wght_valid,
+            o_buffer_full_iact      => buffer_full_iact,
+            o_buffer_full_psum      => buffer_full_psum,
+            o_buffer_full_wght      => buffer_full_wght,
+            o_buffer_full_next_iact => open,
+            o_buffer_full_next_psum => open,
+            o_buffer_full_next_wght => open,
+            i_update_offset_iact    => update_offset_iact,
+            i_update_offset_psum    => update_offset_psum,
+            i_update_offset_wght    => update_offset_wght,
+            i_read_offset_iact      => read_offset_iact,
+            i_read_offset_psum      => read_offset_psum,
+            i_read_offset_wght      => read_offset_wght,
+            o_data_out              => data_out,
+            o_data_out_valid        => data_out_valid,
+            i_data_in               => (others => '0'),
+            i_data_in_valid         => '0',
+            o_data_out_iact         => open,
+            o_data_out_wght         => open,
+            o_data_out_iact_valid   => open,
+            o_data_out_wght_valid   => open
         );
 
     rstn_gen : process is

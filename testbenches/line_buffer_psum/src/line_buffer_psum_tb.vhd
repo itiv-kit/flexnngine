@@ -3,7 +3,9 @@ library ieee;
     use ieee.numeric_std.all;
     use std.env.finish;
     use std.env.stop;
-    use work.utilities.all;
+
+library accel;
+    use accel.utilities.all;
 
 --! Testbench for the line buffer
 
@@ -95,25 +97,26 @@ architecture imp of line_buffer_psum_tb is
 
 begin
 
-    line_buffer_inst : component line_buffer
+    line_buffer_inst : entity accel.line_buffer
         generic map (
             line_length => line_length,
             addr_width  => addr_width,
             data_width  => data_width
         )
         port map (
-            clk             => clk,
-            rstn            => rstn,
-            i_enable        => '1',
-            i_data          => data_in,
-            i_data_valid    => data_in_valid,
-            o_data          => data_out,
-            o_data_valid    => data_out_valid,
-            o_buffer_full   => buffer_full,
-            i_update_val    => update_val,
-            i_update_offset => update_offset,
-            i_read_offset   => read_offset,
-            i_command       => command
+            clk                => clk,
+            rstn               => rstn,
+            i_enable           => '1',
+            i_data             => data_in,
+            i_data_valid       => data_in_valid,
+            o_data             => data_out,
+            o_data_valid       => data_out_valid,
+            o_buffer_full      => buffer_full,
+            o_buffer_full_next => open,
+            i_update_val       => update_val,
+            i_update_offset    => update_offset,
+            i_read_offset      => read_offset,
+            i_command          => command
         );
 
     adder : process is

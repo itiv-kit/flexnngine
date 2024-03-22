@@ -3,7 +3,9 @@ library ieee;
     use ieee.numeric_std.all;
     use std.env.finish;
     use std.env.stop;
-    use work.utilities.all;
+
+library accel;
+    use accel.utilities.all;
 
 --! Testbench for the line buffer
 
@@ -23,28 +25,6 @@ entity line_buffer_wght_tb is
 end entity line_buffer_wght_tb;
 
 architecture imp of line_buffer_wght_tb is
-
-    component line_buffer is
-        generic (
-            line_length : positive := 7;
-            addr_width  : positive := 3;
-            data_width  : positive := 8
-        );
-        port (
-            clk             : in    std_logic;
-            rstn            : in    std_logic;
-            i_enable        : in    std_logic;
-            i_data          : in    std_logic_vector(data_width - 1 downto 0);
-            i_data_valid    : in    std_logic;
-            o_data          : out   std_logic_vector(data_width - 1 downto 0);
-            o_data_valid    : out   std_logic;
-            o_buffer_full   : out   std_logic;
-            i_update_val    : in    std_logic_vector(data_width - 1 downto 0);
-            i_update_offset : in    std_logic_vector(addr_width - 1 downto 0);
-            i_read_offset   : in    std_logic_vector(addr_width - 1 downto 0);
-            i_command       : in    command_lb_t
-        );
-    end component line_buffer;
 
     signal clk            : std_logic := '1';
     signal rstn           : std_logic;
@@ -91,25 +71,26 @@ architecture imp of line_buffer_wght_tb is
 
 begin
 
-    line_buffer_inst : component line_buffer
+    line_buffer_inst : entity accel.line_buffer
         generic map (
             line_length => line_length,
             addr_width  => addr_width,
             data_width  => data_width
         )
         port map (
-            clk             => clk,
-            rstn            => rstn,
-            i_enable        => '1',
-            i_data          => data_in,
-            i_data_valid    => data_in_valid,
-            o_data          => data_out,
-            o_data_valid    => data_out_valid,
-            o_buffer_full   => buffer_full,
-            i_update_val    => update_val,
-            i_update_offset => update_offset,
-            i_read_offset   => read_offset,
-            i_command       => command
+            clk                => clk,
+            rstn               => rstn,
+            i_enable           => '1',
+            i_data             => data_in,
+            i_data_valid       => data_in_valid,
+            o_data             => data_out,
+            o_data_valid       => data_out_valid,
+            o_buffer_full      => buffer_full,
+            o_buffer_full_next => open,
+            i_update_val       => update_val,
+            i_update_offset    => update_offset,
+            i_read_offset      => read_offset,
+            i_command          => command
         );
 
     adder : process is
