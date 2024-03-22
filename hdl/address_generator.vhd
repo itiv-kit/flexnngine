@@ -135,7 +135,7 @@ begin
 
     r_mapped_pe_rows <= i_params.m0 * i_params.kernel_size when rising_edge(clk);
 
-    iact_address_out : for i in 0 to size_rows - 1 generate
+    gen_iact_address_out : for i in 0 to size_rows - 1 generate
 
         -- o_address_iact(i)       <= std_logic_vector(to_unsigned(w_offset_mem_iact + i * i_params.image_x, addr_width_iact_mem));
         -- o_address_iact_valid(i) <= '1' when i_start = '1' and i_fifo_full_iact = '0' and r_iact_done = '0' else
@@ -167,9 +167,9 @@ begin
 
         end process iact_address_out;
 
-    end generate iact_address_out;
+    end generate gen_iact_address_out;
 
-    wght_address_out : for i in 0 to size_y - 1 generate
+    gen_wght_address_out : for i in 0 to size_y - 1 generate
 
         -- o_address_wght(i)       <= std_logic_vector(to_unsigned(w_offset_mem_wght + i * i_params.kernel_size, addr_width_iact_mem));
         -- o_address_wght_valid(i) <= '1' when i_start = '1' and i_fifo_full_wght = '0' and r_wght_done = '0' else
@@ -200,7 +200,7 @@ begin
 
         end process wght_address_out;
 
-    end generate wght_address_out;
+    end generate gen_wght_address_out;
 
     -- IACT
 
@@ -487,7 +487,7 @@ begin
     w_offset_mem_iact <= r_offset_c_iact * i_params.image_x + r_count_w1_iact;
     w_offset_mem_wght <= r_offset_c_wght * i_params.kernel_size + r_count_w1_wght;
 
-    iact_address_out : for i in 0 to size_rows - 1 generate
+    gen_iact_address_out : for i in 0 to size_rows - 1 generate
 
         -- o_address_iact(i)       <= std_logic_vector(to_unsigned(w_offset_mem_iact + i * i_params.image_x, addr_width_iact_mem));
         -- o_address_iact_valid(i) <= '1' when i_start = '1' and i_fifo_full_iact = '0' and r_iact_done = '0' else --
@@ -519,7 +519,7 @@ begin
 
         end process iact_address_out;
 
-    end generate iact_address_out;
+    end generate gen_iact_address_out;
 
     p_wght_address_helper : process (clk, rstn) is
     begin
@@ -532,7 +532,7 @@ begin
 
     end process p_wght_address_helper;
 
-    wght_address_out : for i in 0 to size_y - 1 generate
+    gen_wght_address_out : for i in 0 to size_y - 1 generate
 
         wght_address_out : process (clk, rstn) is
         begin
@@ -560,7 +560,7 @@ begin
 
         end process wght_address_out;
 
-    end generate wght_address_out;
+    end generate gen_wght_address_out;
 
     -- IACT
 

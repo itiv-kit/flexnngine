@@ -744,9 +744,9 @@ begin
 
     end process stimuli_commands;
 
-    output_check : for p in 0 to size_x - 1 generate
+    gen_output_check : for p in 0 to size_x - 1 generate
 
-        output_check_last_row : if p = size_x - 1 generate
+        gen_output_check_last_row : if p = size_x - 1 generate
 
             output_check : process is
 
@@ -802,9 +802,9 @@ begin
 
             end process output_check;
 
-        end generate output_check_last_row;
+        end generate gen_output_check_last_row;
 
-        output_check_other_rows : if p /= size_x - 1 generate
+        gen_output_check_other_rows : if p /= size_x - 1 generate
 
             output_check : process is
 
@@ -856,8 +856,8 @@ begin
 
             end process output_check;
 
-        end generate output_check_other_rows;
+        end generate gen_output_check_other_rows;
 
-    end generate output_check;
+    end generate gen_output_check;
 
 end architecture imp;

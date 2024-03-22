@@ -290,23 +290,23 @@ begin
     o_data_iact_valid <= w_valid_iact_f;
     o_data_wght_valid <= w_valid_wght_f;
 
-    pe_arr_iact : for i in 0 to size_rows - 1 generate
+    gen_pe_arr_iact : for i in 0 to size_rows - 1 generate
 
         o_data_iact(i) <= w_dout_iact_f(i);
 
         w_rd_en_iact_f(i) <= i_start and not w_empty_iact_f(i) and not r_pause_iact(i) and
                              not (i_buffer_full_next_iact(i) and (i_buffer_full_iact(i) or w_rd_en_iact_f_d(i)));
 
-    end generate pe_arr_iact;
+    end generate gen_pe_arr_iact;
 
-    pe_arr_wght : for i in 0 to size_y - 1 generate
+    gen_pe_arr_wght : for i in 0 to size_y - 1 generate
 
         o_data_wght(i) <= w_dout_wght_f(i);
 
         w_rd_en_wght_f(i) <= i_start and not w_empty_wght_f(i) and
                              not (i_buffer_full_next_wght(i) and (i_buffer_full_wght(i) or w_rd_en_wght_f_d(i)));
 
-    end generate pe_arr_wght;
+    end generate gen_pe_arr_wght;
 
     w_rd_en_iact_f_d <= w_rd_en_iact_f when rising_edge(clk);
     w_rd_en_wght_f_d <= w_rd_en_wght_f when rising_edge(clk);
@@ -469,7 +469,7 @@ begin
             z_o    => w_demux_wght_out_valid
         );
 
-    fifo_iact : for y in 0 to size_rows - 1 generate
+    gen_fifo_iact : for y in 0 to size_rows - 1 generate
 
         fifo_iact : entity accel.dc_fifo
             generic map (
@@ -497,9 +497,9 @@ begin
             report "push to full iact fifo " & integer'image(y)
             severity warning;
 
-    end generate fifo_iact;
+    end generate gen_fifo_iact;
 
-    fifo_wght : for y in 0 to size_y - 1 generate
+    gen_fifo_wght : for y in 0 to size_y - 1 generate
 
         fifo_wght : entity accel.dc_fifo
             generic map (
@@ -527,9 +527,9 @@ begin
             report "push to full wght fifo " & integer'image(y)
             severity warning;
 
-    end generate fifo_wght;
+    end generate gen_fifo_wght;
 
-    fifo_iact_address : for y in 0 to size_rows - 1 generate
+    gen_fifo_iact_address : for y in 0 to size_rows - 1 generate
 
         fifo_iact_address : entity accel.dc_fifo
             generic map (
@@ -557,9 +557,9 @@ begin
             report "push to full iact address fifo " & integer'image(y)
             severity warning;
 
-    end generate fifo_iact_address;
+    end generate gen_fifo_iact_address;
 
-    fifo_wght_address : for y in 0 to size_y - 1 generate
+    gen_fifo_wght_address : for y in 0 to size_y - 1 generate
 
         fifo_wght_address : entity accel.dc_fifo
             generic map (
@@ -587,9 +587,9 @@ begin
             report "push to full wght address fifo " & integer'image(y)
             severity warning;
 
-    end generate fifo_wght_address;
+    end generate gen_fifo_wght_address;
 
-    fifo_psum_out : for x in 0 to size_x - 1 generate
+    gen_fifo_psum_out : for x in 0 to size_x - 1 generate
 
         /* TODO use feasible size for Psum FIFO */
 
@@ -621,15 +621,15 @@ begin
             report "push to full psum fifo " & integer'image(x)
             severity warning;
 
-    end generate fifo_psum_out;
+    end generate gen_fifo_psum_out;
 
-    g_psums_valid : for i in 0 to size_x - 1 generate
+    gen_g_psums_valid : for i in 0 to size_x - 1 generate
 
         w_valid_psum_out(i)(0) <= w_valid_psum_out_f(i);
         w_psum_out(i)          <= w_dout_psum_out_f(i);
         w_rd_en_psum_out_f(i)  <= w_gnt_psum(i);
 
-    end generate g_psums_valid;
+    end generate gen_g_psums_valid;
 
     mux_psum_out : entity accel.mux
         generic map (
