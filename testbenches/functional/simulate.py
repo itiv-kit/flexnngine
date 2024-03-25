@@ -590,60 +590,23 @@ class Test:
         try:
             # read actual output from file ../_output.txt
             actual_output = np.loadtxt(self.test_dir / "_output.txt")
-            output_size = self.convolution.image_size - self.convolution.kernel_size + 1
+            expected_output = self.convolved_images_stack
 
-            if self.accelerator.dataflow == 1:
-                index = 0
-                index_convolution_stack = 0
-                index_m = np.zeros(self.M0)
-                row_m = np.zeros(self.M0)
-                # compare expected output with actual output
-                max_x = self.convolution.image_size - self.convolution.kernel_size + 1
-                for x in range(max_x):
-                    for m0_count in range(self.M0):
-                        index_actual_output = x*self.M0 + m0_count
-                        index_convolution_stack = m0_count * max_x + x
-                        #print("Index actual output: " , index_actual_output, "   Index convolution stack : ", index_convolution_stack, "   max_x=", max_x)
-                        if (all(actual_output[index_actual_output, :]== self.convolved_images_stack[index_convolution_stack, :])== True):
-                            #print(self.name + ": Row OK")
-                            pass
-                        else:
-                            pass
-                            print(
-                                self.name + ": ERR: got row",
-                                actual_output[index_actual_output, :],
-                            )
-                            print(
-                                self.name + ": expected row",
-                                self.convolved_images_stack[
-                                    index_convolution_stack, :
-                                ],
-                            )
-                            print(
-                                self.name + ": index_actual_output = ",
-                                index_actual_output,
-                                " index_convolution_stack = ",
-                                index_convolution_stack,
-                            )
-                            return False
+            if expected_output.shape != actual_output.shape:
+                print(f'{self.name}: shape of expected ({expected_output.shape})')
+
+            if np.equal(actual_output, expected_output).all():
+                print(f'{self.name}: Output matches!')
             else:
-                expected_output = self.convolved_images_stack
-
-                if expected_output.shape != actual_output.shape:
-                    print(f'{self.name}: shape of expected ({expected_output.shape})')
-
-                if np.equal(actual_output, expected_output).all():
-                    print(f'{self.name}: Output matches!')
-                else:
-                    print(f'{self.name}: Output differs!')
-                    index = 0
-                    for actual_row, expected_row in zip(actual_output, expected_output):
-                        if not np.equal(actual_row, expected_row).all():
-                            print(f'{self.name}: first incorrect row {index}')
-                            print(f'{self.name}: got row {actual_row}')
-                            print(f'{self.name}: expected row {expected_row}')
-                            raise RuntimeError(f'row {index} is incorrect')
-                        index = index + 1
+                print(f'{self.name}: Output differs!')
+                index = 0
+                for actual_row, expected_row in zip(actual_output, expected_output):
+                    if not np.equal(actual_row, expected_row).all():
+                        print(f'{self.name}: first incorrect row {index}')
+                        print(f'{self.name}: got row {actual_row}')
+                        print(f'{self.name}: expected row {expected_row}')
+                        raise RuntimeError(f'row {index} is incorrect')
+                    index = index + 1
 
             print("Success: ", self.name)
             with open((self.test_dir / '_success.txt'), 'w') as f:
