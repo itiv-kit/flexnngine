@@ -94,7 +94,17 @@ architecture imp of functional_tb is
     signal s_input_weights   : int_image_t(0 to g_kernel_size - 1, 0 to g_kernel_size * g_channels * g_h2 - 1); -- not *2 because kernel stays the same across tile_y
     signal s_expected_output : int_image_t(0 to g_image_y - g_kernel_size, 0 to g_image_x - g_kernel_size);
 
-    type ram_type is array (0 to 2 ** addr_width_psum_mem - 1) of std_logic_vector(data_width_psum - 1 downto 0);
+    constant spad_ext_addr_width_iact : integer := addr_width_iact_mem - 2;
+    constant spad_ext_addr_width_psum : integer := addr_width_psum_mem - 1;
+    constant spad_ext_addr_width_wght : integer := addr_width_wght_mem - 2;
+    constant spad_ext_data_width_iact : integer := 32;
+    constant spad_ext_data_width_psum : integer := 32;
+    constant spad_ext_data_width_wght : integer := 32;
+    constant iact_words_per_mem_word  : integer := 2 ** (spad_ext_data_width_iact / addr_width_iact_mem);
+    constant psum_words_per_mem_word  : integer := 2 ** (spad_ext_data_width_psum / addr_width_psum_mem);
+    constant wght_words_per_mem_word  : integer := 2 ** (spad_ext_data_width_wght / addr_width_wght_mem);
+
+    type ram_type is array (0 to 2 ** spad_ext_addr_width_psum - 1) of std_logic_vector(spad_ext_data_width_psum - 1 downto 0);
 
     signal r_iact_command     : command_lb_t;
     signal r_iact_read_offset : std_logic_vector(addr_width_iact - 1 downto 0);
@@ -130,29 +140,35 @@ begin
 
     accelerator_inst : entity accel.accelerator
         generic map (
-            size_x               => size_x,
-            size_y               => size_y,
-            size_rows            => size_rows,
-            addr_width_rows      => addr_width_rows,
-            addr_width_y         => addr_width_y,
-            addr_width_x         => addr_width_x,
-            data_width_iact      => data_width_iact,
-            line_length_iact     => line_length_iact,
-            addr_width_iact      => addr_width_iact,
-            spad_addr_width_iact => addr_width_iact_mem,
-            data_width_psum      => data_width_psum,
-            line_length_psum     => line_length_psum,
-            addr_width_psum      => addr_width_psum,
-            spad_addr_width_psum => addr_width_psum_mem,
-            data_width_wght      => data_width_wght,
-            line_length_wght     => line_length_wght,
-            addr_width_wght      => addr_width_wght,
-            spad_addr_width_wght => addr_width_wght_mem,
-            fifo_width           => fifo_width,
-            g_iact_fifo_size     => g_iact_fifo_size,
-            g_wght_fifo_size     => g_wght_fifo_size,
-            g_psum_fifo_size     => g_psum_fifo_size,
-            g_dataflow           => g_dataflow
+            size_x                   => size_x,
+            size_y                   => size_y,
+            size_rows                => size_rows,
+            addr_width_rows          => addr_width_rows,
+            addr_width_y             => addr_width_y,
+            addr_width_x             => addr_width_x,
+            data_width_iact          => data_width_iact,
+            line_length_iact         => line_length_iact,
+            addr_width_iact          => addr_width_iact,
+            spad_addr_width_iact     => addr_width_iact_mem,
+            data_width_psum          => data_width_psum,
+            line_length_psum         => line_length_psum,
+            addr_width_psum          => addr_width_psum,
+            spad_addr_width_psum     => addr_width_psum_mem,
+            data_width_wght          => data_width_wght,
+            line_length_wght         => line_length_wght,
+            addr_width_wght          => addr_width_wght,
+            spad_addr_width_wght     => addr_width_wght_mem,
+            spad_ext_addr_width_iact => spad_ext_addr_width_iact,
+            spad_ext_addr_width_psum => spad_ext_addr_width_psum,
+            spad_ext_addr_width_wght => spad_ext_addr_width_wght,
+            spad_ext_data_width_iact => spad_ext_data_width_iact,
+            spad_ext_data_width_psum => spad_ext_data_width_psum,
+            spad_ext_data_width_wght => spad_ext_data_width_wght,
+            fifo_width               => fifo_width,
+            g_iact_fifo_size         => g_iact_fifo_size,
+            g_wght_fifo_size         => g_wght_fifo_size,
+            g_psum_fifo_size         => g_psum_fifo_size,
+            g_dataflow               => g_dataflow
         )
         port map (
             clk      => clk,
@@ -535,9 +551,11 @@ begin
 
     write_outputs : process is
 
-        file     outfile : text open write_mode is g_files_dir & "_output.txt";
-        variable outline : line;
-        variable idx     : integer;
+        file     outfile  : text open write_mode is g_files_dir & "_output.txt";
+        variable outline  : line;
+        variable idx      : integer;
+        variable word_idx : integer;
+        variable data     : std_logic_vector(data_width_psum - 1 downto 0);
 
         alias ram is << variable accelerator_inst.scratchpad_inst.ram_psum.ram : ram_type >>;
 
@@ -549,17 +567,25 @@ begin
 
         wait for 1000 ns;
 
-        idx := 0;
+        idx      := 0;
+        word_idx := 0;
 
         for m0 in 0 to g_m0 - 1 loop
 
-            for row  in 0 to g_image_y - g_kernel_size loop
+            for row in 0 to g_image_y - g_kernel_size loop
 
                 for pix in 0 to g_image_x - g_kernel_size loop
 
-                    write(outline, integer'image(to_integer(signed(ram(idx)))));
+                    data := ram(idx)(data_width_psum * (word_idx + 1) - 1 downto data_width_psum * word_idx);
+                    write(outline, integer'image(to_integer(signed(data))));
                     write(outline, string'(" "));
-                    idx := idx + 1;
+
+                    if word_idx = psum_words_per_mem_word - 1 then
+                        word_idx := 0;
+                        idx      := idx + 1;
+                    else
+                        word_idx := word_idx + 1;
+                    end if;
 
                 end loop;
 

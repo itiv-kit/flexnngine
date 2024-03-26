@@ -69,6 +69,19 @@ class Setting:
         self.accelerator = accelerator
         self.start_gui = start_gui
 
+def write_memory_file_int8_wordsize8(filename, image):
+    with open(filename, "w") as f:
+        pixels = image.flatten().astype(np.int8)
+        for pixel in pixels:
+            f.write(f'{pixel&0xff:08b}\n')
+
+def write_memory_file_int8_wordsize32(filename, image):
+    with open(filename, "w") as f:
+        pixels = image.flatten().astype(np.int8)
+        num_words = math.ceil(pixels.size / 4)
+        pixels.resize(num_words * 4)
+        for nibble in np.split(pixels, num_words):
+            f.write(''.join([f'{x&0xff:08b}' for x in reversed(nibble)])+'\n')
 
 class Test:
     def __init__(self, name, convolution, accelerator, gui=True):
@@ -79,13 +92,13 @@ class Test:
         self.test_dir = None
 
     def generate_test(self, test_name, test_dir):
-        print("Generating test: ", test_name)
+        print(f'Generating test: {test_name}')
         test_dir.mkdir(parents=True, exist_ok=True)
         self.test_dir = test_dir
         return self._generate_stimuli()
 
     def _generate_stimuli(self):
-        print("Generating stimuli for test: ", self.name)
+        print(f'Generating stimuli for test: {self.name}')
         # Generate input activations
         # Generate weights
         # Generate expected output activations
@@ -386,105 +399,21 @@ class Test:
 
         # save mem files
         # save image as 8-bit binary values in _mem_iact.txt in two's complement
-        with open(self.test_dir / "_mem_iact.txt", "w") as f:
-            for i in range(
-                self.convolution.image_size * self.convolution.input_channels
-            ):
-                for j in range(self.convolution.image_size):
-                    f.write("{0:08b} ".format(image[i][j] & 0xFF) + "\n")
-
-        with open(self.test_dir / "_mem_iact_dec.txt", "w") as f:
-            for i in range(
-                self.convolution.image_size * self.convolution.input_channels
-            ):
-                for j in range(self.convolution.image_size):
-                    f.write(str(image[i][j]) + "\n")
-
-        # print("Pixels : " + str(image.shape[0] * image.shape[1]))
+        # write_memory_file_int8_wordsize8(self.test_dir / "_mem_iact.txt", image)
+        write_memory_file_int8_wordsize32(self.test_dir / "_mem_iact.txt", image)
 
         # save kernel as 8-bit binary values in _mem_wght.txt in two's complement
-        with open(self.test_dir / "_mem_wght.txt", "w") as f:
-            for i in range(
-                self.convolution.kernel_size * self.convolution.input_channels
-            ):
-                for j in range(self.convolution.kernel_size):
-                    f.write("{0:08b} ".format(kernel[i][j] & 0xFF) + "\n")
+        # write_memory_file_int8_wordsize8(self.test_dir / "_mem_wght.txt", kernel)
+        write_memory_file_int8_wordsize32(self.test_dir / "_mem_wght.txt", kernel)
 
         # save kernels as 8-bit binary values in _mem_wght_stack.txt in two's complement
-        with open(self.test_dir / "_mem_wght_stack.txt", "w") as f:
-            for i in range(
-                self.convolution.kernel_size * self.convolution.input_channels * self.M0
-            ):
-                for j in range(self.convolution.kernel_size):
-                    f.write("{0:08b} ".format(kernels_stack[i][j] & 0xFF) + "\n")
+        # write_memory_file_int8_wordsize8(self.test_dir / "_mem_wght_stack.txt", kernels_stack)
+        write_memory_file_int8_wordsize32(self.test_dir / "_mem_wght_stack.txt", kernels_stack)
 
         # save empty file as _mem_psum.txt
         with open(self.test_dir / "_mem_psum.txt", "w") as f:
             pass
 
-        # reorder image to be able to check iact input
-        image_tmp = image
-        image = np.zeros(
-            (
-                size_rows,
-                self.convolution.image_size * self.convolution.input_channels * self.H2,
-            )
-        )
-        column = 0
-        # print("Reordered shape : ", image.shape)
-        for tile_y in range(self.H2):
-            # print("tile_y = ", tile_y)
-            # print("############################")
-            # print("############################")
-            # print("############################")
-            for tile_c in range(self.C1):
-                if tile_c == self.C1 - 1:
-                    c0 = self.C0_last_c1
-                else:
-                    c0 = self.C0
-                # print(c0)
-                for i in range(self.convolution.image_size):
-                    for c in range(c0):
-                        # print("c = ", c)
-                        # print("tile_c = ", tile_c)
-                        channel = c + tile_c * self.C0
-                        for h in range(size_rows):
-                            h_ = tile_y * self.accelerator.size_x + h
-                            while h_ >= self.convolution.image_size:
-                                h_ -= self.convolution.image_size
-                            index = channel * self.convolution.image_size + h_
-                            # print(
-                            #     "Address : c=",
-                            #     c,
-                            #     " tile_c=",
-                            #     tile_c,
-                            #     " tile_y=",
-                            #     tile_y,
-                            #     " index=",
-                            #     index,
-                            #     " channel=",
-                            #     channel,
-                            #     " x=",
-                            #     i,
-                            #     " h=",
-                            #     h,
-                            #     " h_=",
-                            #     h_,
-                            # )
-                            if index >= image_tmp.shape[0]:
-                                image[h, column] = 0
-                                print("err ---")
-                            else:
-                                image[h, column] = image_tmp[index, i]
-                        column += 1
-
-                        # image[:, column] = image_tmp[index : index + size_rows  , i]
-                        # column += 1
-        # print("image shape : ", image.shape)
-        # np.savetxt('_kernel_reordered.txt', kernel, fmt='%d', delimiter=' ')
-        np.savetxt(
-            self.test_dir / "_image_reordered_2.txt", image, fmt="%d", delimiter=" "
-        )
         return True
 
     def _convolution2d(self, image, kernel, bias):
@@ -501,9 +430,9 @@ class Test:
                     )
         else:
             print("Kernel size is not equal")
-            print("Kernel size is: ", m, n)
-            print("Kernel is: ", kernel)
-            print("Image size is: ", image.shape)
+            print("Kernel size is:", m, n)
+            print("Kernel is:", kernel)
+            print("Image size is:", image.shape)
         return new_image
 
     def build_generics(self):
