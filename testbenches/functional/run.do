@@ -19,7 +19,7 @@ if { ! [info exists env(TB_DIR)] } {
     if {[file exists "../../run.do"]} {
         set TB_DIR [file dirname [file normalize "../../run.do"]]
     } else {
-        set TB_DIR [file dirname [file normalize "."]]
+        set TB_DIR [file normalize "."]
     }
 } else {
     set TB_DIR $env(TB_DIR)
@@ -31,9 +31,6 @@ if { [info exists env(GENERICS)] } {
 } else {
     set generics [list]
 }
-
-echo "using base dir ${TB_DIR}"
-echo "using hdl dir ${HDL_DIR}"
 
 file mkdir "_run/work" "_run/accel"
 

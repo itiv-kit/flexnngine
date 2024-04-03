@@ -1,3 +1,4 @@
+# design
 vcom -64 -2008 -work accel \
     "${HDL_DIR}/utilities.vhd" \
     "${HDL_DIR}/gray.vhd" \
