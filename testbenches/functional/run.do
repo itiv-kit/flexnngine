@@ -48,7 +48,7 @@ setup_generic "$TB_DIR" "$RUN_DIR"
 compile_sources
 
 ### compile the testbench to the default library as well
-compile_vhdl_sources $DEFAULT_LIBRARY [list "${TB_DIR}/src/line_buffer_iact_tb.vhd"]
+compile_vhdl_sources $DEFAULT_LIBRARY [list "${TB_DIR}/src/${SIM_TOP_LEVEL}.vhd"]
 
 ### Optimize design
 vopt {*}$generics -64 +acc $DEFAULT_LIBRARY.$SIM_TOP_LEVEL -work $DEFAULT_LIBRARY -o ${SIM_TOP_LEVEL}_optimized

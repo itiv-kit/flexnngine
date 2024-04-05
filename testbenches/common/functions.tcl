@@ -48,7 +48,7 @@ proc setup_generic {tb_dir run_dir} {
     setup_libraries "${run_dir}"
 }
 
-proc compile_sources {{unit_names [list]} {library ""}} {
+proc compile_sources {{unit_names {}} {library ""}} {
     global HDL_FILE_NAMES
     global COMPILE_OPTIONS
     global DEFAULT_LIBRARY
