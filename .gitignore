@@ -25,6 +25,7 @@ cov*/
 transcript*
 sc_dpiheader.h
 vsim.dbg
+testbenches/*/modelsim.ini
 
 #ignore v4p
 *.v4p
