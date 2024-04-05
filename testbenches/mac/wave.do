@@ -6,7 +6,8 @@ add wave -noupdate /mac_tb/rstn
 add wave -noupdate /mac_tb/en
 add wave -noupdate /mac_tb/result_valid
 add wave -radix decimal -noupdate /mac_tb/data_in_a
-add wave -radix decimal -noupdate /mac_tb/data_in_b
+add wave -radix decimal -noupdate /mac_tb/data_in_w
+add wave -radix decimal -noupdate /mac_tb/data_in_acc
 add wave -radix decimal -noupdate /mac_tb/result
 
 

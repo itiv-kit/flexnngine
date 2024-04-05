@@ -10,7 +10,7 @@ library ieee;
 --! The image as well as commands are fed into the pe_array
 --! Convolution outputs are validated
 
-entity pe_array_conv_3x3_tb is
+entity pe_array_conv_3x3_wide_tb is
     generic (
         size_x    : positive := 3;
         size_y    : positive := 3;
@@ -38,9 +38,9 @@ entity pe_array_conv_3x3_tb is
 
         kernel_size : positive := 3 --! 3 pixel kernel
     );
-end entity pe_array_conv_3x3_tb;
+end entity pe_array_conv_3x3_wide_tb;
 
-architecture imp of pe_array_conv_3x3_tb is
+architecture imp of pe_array_conv_3x3_wide_tb is
 
     component pe_array is
         generic (

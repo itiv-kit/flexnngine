@@ -15,44 +15,46 @@ if { ! [info exists env(LAUNCH_GUI)] } {
     set GUI $env(LAUNCH_GUI)
 }
 
-if { ! [info exists env(TB_DIR)] } {
-    if {[file exists "../../run.do"]} {
-        set TB_DIR [file dirname [file normalize "../../run.do"]]
-    } else {
-        set TB_DIR [file normalize "."]
-    }
-} else {
-    set TB_DIR $env(TB_DIR)
-}
-set HDL_DIR [file normalize "${TB_DIR}/../../hdl"]
-
 if { [info exists env(GENERICS)] } {
     set generics $::env(GENERICS)
 } else {
     set generics [list]
 }
 
-file mkdir "_run/work" "_run/accel"
+set SIM_TIME "10 ms"
+set SIM_TOP_LEVEL "functional_tb"
+set RUN_DIR [file normalize "."]
 
-if { ! $GUI } {
-    transcript file "_run/transcript.txt"
-    transcript on
+if { [info exists env(TB_DIR)] } {
+    set TB_DIR $env(TB_DIR)
+} else {
+    # set TB_DIR [file dirname [info script]]
+    # since questa does not support [info script] properly, search for run.do manually
+    set CANDIDATE "run.do"
+    for {set i 0} {$i < 5} {incr i} {
+        if {[file exists "$CANDIDATE"]} {
+            set TB_DIR [file dirname [file normalize "$CANDIDATE"]]
+            break
+        } else {
+            set CANDIDATE "../${CANDIDATE}"
+        }
+    }
 }
+source "${TB_DIR}/../common/functions.tcl"
 
-### create libraries
-vlib _run/work
-vlib _run/accel
-vmap work _run/work
-vmap accel _run/accel
+setup_generic "$TB_DIR" "$RUN_DIR"
 
-### compile sources
-source "${TB_DIR}/sources.tcl"
+### compile all sources to the default library
+compile_sources
+
+### compile the testbench to the default library as well
+compile_vhdl_sources $DEFAULT_LIBRARY [list "${TB_DIR}/src/line_buffer_iact_tb.vhd"]
 
 ### Optimize design
-vopt {*}$generics -64 +acc accel.$SIM_TOP_LEVEL -work accel -o ${SIM_TOP_LEVEL}_optimized
+vopt {*}$generics -64 +acc $DEFAULT_LIBRARY.$SIM_TOP_LEVEL -work $DEFAULT_LIBRARY -o ${SIM_TOP_LEVEL}_optimized
 
 ### initialize and run simulation
-vsim -64 -onfinish stop accel.${SIM_TOP_LEVEL}_optimized
+vsim -64 -onfinish stop $DEFAULT_LIBRARY.${SIM_TOP_LEVEL}_optimized
 
 if { $GUI } {
     # load waveform from "wave_<NAME>.do" if it exists

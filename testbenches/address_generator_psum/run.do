@@ -1,16 +1,8 @@
-file mkdir "_run"
-transcript file "_run/transcript.txt"
-transcript on
+set SIM_TIME "15 us"
+set SIM_TOP_LEVEL "address_generator_psum_tb"
+set SIM_UNIT_NAMES [list utilities mux ram_dp address_generator_psum]
+set TB_DIR [file normalize "."]
+set RUN_DIR $TB_DIR
 
-vlib _run/work
-vmap work _run/work
-
-vlib _run/accel
-vmap accel _run/accel
-
-source sources.tcl
-
-vsim -onfinish stop -voptargs="+acc" $SIM_TOP_LEVEL
-source wave.do
-
-run -all
+source "${TB_DIR}/../common/functions.tcl"
+sim_generic

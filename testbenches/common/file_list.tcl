@@ -1,5 +1,5 @@
-# design
-vcom -64 -2008 -work accel \
+global HDL_FILE_NAMES
+set HDL_FILE_NAMES [list \
     "${HDL_DIR}/utilities.vhd" \
     "${HDL_DIR}/gray.vhd" \
     "${HDL_DIR}/sync.vhd" \
@@ -7,6 +7,7 @@ vcom -64 -2008 -work accel \
     "${HDL_DIR}/acc.vhd" \
     "${HDL_DIR}/demux.vhd" \
     "${HDL_DIR}/mult.vhd" \
+    "${HDL_DIR}/mac.vhd" \
     "${HDL_DIR}/mux.vhd" \
     "${HDL_DIR}/onehot_binary.vhd" \
     "${HDL_DIR}/ram_dp.vhd" \
@@ -23,11 +24,5 @@ vcom -64 -2008 -work accel \
     "${HDL_DIR}/control_address_generator.vhd" \
     "${HDL_DIR}/control_arch_rs.vhd" \
     "${HDL_DIR}/control_arch_alt_rs.vhd" \
-    "${HDL_DIR}/accelerator.vhd"
-
-# testbench
-vcom -64 -2008 -work accel \
-    "${TB_DIR}/src/functional_tb.vhd"
-
-set SIM_TIME "10 ms"
-set SIM_TOP_LEVEL "functional_tb"
+    "${HDL_DIR}/accelerator.vhd" \
+]

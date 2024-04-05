@@ -1,33 +1,8 @@
-###
-###
-###
+set SIM_TIME "10 us"
+set SIM_TOP_LEVEL "pe_conv_tb"
+set SIM_UNIT_NAMES [list utilities ram_dp line_buffer demux mult acc mux pe]
+set TB_DIR [file normalize "."]
+set RUN_DIR $TB_DIR
 
-file mkdir "_run"
-transcript file "_run/transcript.txt"
-transcript on
-
-###
-###
-###
-
-set axi_filter_dma_v1_00_a _run/work
-
-###
-### create libraries
-###
-
-vlib $axi_filter_dma_v1_00_a
-vmap axi_filter_dma_v1_00_a $axi_filter_dma_v1_00_a
-
-###
-### compile sources
-###
-
-source sources.tcl
-
-# initialize and run simulation
-vsim -onfinish stop -voptargs="+acc" $SIM_TOP_LEVEL
-source wave.do
-
-run $SIM_TIME
-
+source "${TB_DIR}/../common/functions.tcl"
+sim_generic

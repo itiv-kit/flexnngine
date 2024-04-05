@@ -15,21 +15,21 @@ add wave -noupdate -expand -group {Line_Buffer Input} -radix unsigned /line_buff
 add wave -noupdate -expand -group Line_Buffer_Output -radix unsigned /line_buffer_iact_tb/data_out
 add wave -noupdate -expand -group Line_Buffer_Output -radix unsigned /line_buffer_iact_tb/data_out_valid
 
-add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/pointer_head_s
-add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/pointer_tail_s
-add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/buffer_full
-add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/buffer_full_next
-add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/fill_count
-add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/buffer_full_df
-add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/fifo_empty_s
-add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/read_command/pointer_read_v
-add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/read_offset
-add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/command
-add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/v_x
+add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/r_pointer_head
+add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/r_pointer_tail
+add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/r_fill_count
+add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/r_fifo_empty_s
+add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/r_data_out_valid
+add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/r_forward_update_delay
+add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/buffer_full
+add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/w_read_offset
+add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/w_forward_update
+add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/read_command/v_pointer_read
+add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/read_command/v_offset
+add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/line_buffer_inst/i_command
 add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/s_x
-add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/v_y
 add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/s_y
-add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/v_done
+add wave -noupdate -expand -group Line_Buffer_internal /line_buffer_iact_tb/s_done
 
 add wave -noupdate -expand -group RAM_internal -radix unsigned /line_buffer_iact_tb/line_buffer_inst/ram/ram_instance
 

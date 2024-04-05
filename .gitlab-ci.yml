@@ -58,11 +58,11 @@ test-mac:
         changes:
             - hdl/mac.vhd
             - hdl/utilities.vhd
-            - testbenches/mac/src/*
+            - testbenches/mac/**
             - .gitlab-ci.yml
     script:
-        - cd ./testbenches/mac
-        - vsim -c -do "../../ci/simulate.tcl"
+        - cd testbenches/mac
+        - vsim -batch -nolog -do "../../ci/simulate.tcl"
         - cd ../..
 
 test-line-buffer-iact:
@@ -73,11 +73,11 @@ test-line-buffer-iact:
             - hdl/line_buffer.vhd
             - hdl/ram_dp.vhd
             - hdl/utilities.vhd
-            - testbenches/line_buffer_iact/src/*
+            - testbenches/line_buffer_iact/**
             - .gitlab-ci.yml
     script:
-        - cd ./testbenches/line_buffer_iact
-        - vsim -c -do "../../ci/simulate.tcl"
+        - cd testbenches/line_buffer_iact
+        - vsim -batch -nolog -do "../../ci/simulate.tcl"
         - cd ../..
 
 test-line-buffer-psum:
@@ -88,11 +88,11 @@ test-line-buffer-psum:
             - hdl/line_buffer.vhd
             - hdl/ram_dp.vhd
             - hdl/utilities.vhd
-            - testbenches/line_buffer_psum/src/*
+            - testbenches/line_buffer_psum/**
             - .gitlab-ci.yml
     script:
-        - cd ./testbenches/line_buffer_psum
-        - vsim -c -do "../../ci/simulate.tcl"
+        - cd testbenches/line_buffer_psum
+        - vsim -batch -nolog -do "../../ci/simulate.tcl"
         - cd ../..
 
 test-line-buffer-wght:
@@ -103,11 +103,11 @@ test-line-buffer-wght:
             - hdl/line_buffer.vhd
             - hdl/ram_dp.vhd
             - hdl/utilities.vhd
-            - testbenches/line_buffer_wght/src/*
+            - testbenches/line_buffer_wght/**
             - .gitlab-ci.yml
     script:
-        - cd ./testbenches/line_buffer_wght
-        - vsim -c -do "../../ci/simulate.tcl"
+        - cd testbenches/line_buffer_wght
+        - vsim -batch -nolog -do "../../ci/simulate.tcl"
         - cd ../..
 
 test-pe-conv:
@@ -122,11 +122,11 @@ test-pe-conv:
             - hdl/add.vhd
             - hdl/ram_dp.vhd
             - hdl/utilities.vhd
-            - testbenches/pe_conv/src/*
+            - testbenches/pe_conv/**
             - .gitlab-ci.yml
     script:
-        - cd ./testbenches/pe_conv
-        - vsim -c -do "../../ci/simulate.tcl"
+        - cd testbenches/pe_conv
+        - vsim -batch -nolog -do "../../ci/simulate.tcl"
         - cd ../..
 
 test-pe-array-conv-3x3:
@@ -142,11 +142,11 @@ test-pe-array-conv-3x3:
             - hdl/ram_dp.vhd
             - hdl/pe_array.vhd
             - hdl/utilities.vhd
-            - testbenches/pe_array_conv_3x3/src/*
+            - testbenches/pe_array_conv_3x3/**
             - .gitlab-ci.yml
     script:
-        - cd ./testbenches/pe_array_conv_3x3
-        - vsim -c -do "../../ci/simulate.tcl"
+        - cd testbenches/pe_array_conv_3x3
+        - vsim -batch -nolog -do "../../ci/simulate.tcl"
         - cd ../..
 
 test-pe-array-conv-3x3-wide:
@@ -162,11 +162,11 @@ test-pe-array-conv-3x3-wide:
             - hdl/ram_dp.vhd
             - hdl/pe_array.vhd
             - hdl/utilities.vhd
-            - testbenches/pe_array_conv_3x3_wide/src/*
+            - testbenches/pe_array_conv_3x3_wide/**
             - .gitlab-ci.yml
     script:
-        - cd ./testbenches/pe_array_conv_3x3
-        - vsim -c -do "../../ci/simulate.tcl"
+        - cd testbenches/pe_array_conv_3x3
+        - vsim -batch -nolog -do "../../ci/simulate.tcl"
         - cd ../..
 
 pe_array_conv_5x5_channels_tb:
@@ -182,17 +182,17 @@ pe_array_conv_5x5_channels_tb:
             - hdl/ram_dp.vhd
             - hdl/pe_array.vhd
             - hdl/utilities.vhd
-            - testbenches/pe_array_conv_5x5_channels_size/src/*
+            - testbenches/pe_array_conv_5x5_channels_size/**
             - .gitlab-ci.yml
     before_script:
         - *sim_test_before_script
         - pip3 install --user numpy
-        - cd ./testbenches/pe_array_conv_5x5_channels_size/src
+        - cd testbenches/pe_array_conv_5x5_channels_size/src
         - python3 stimuli.py
         - python3 program.py
     script:
         - cd ..
-        - vsim -c -do "../../ci/simulate.tcl"
+        - vsim -batch -nolog -do "../../ci/simulate.tcl"
         - cd ../..
 
 addr_gen_psum:
@@ -207,4 +207,4 @@ addr_gen_psum:
             - .gitlab-ci.yml
     script:
         - cd testbenches/address_generator_psum
-        - vsim -c -do run.do
+        - vsim -batch -nolog -do "../../ci/simulate.tcl"
