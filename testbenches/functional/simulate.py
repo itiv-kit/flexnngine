@@ -553,6 +553,7 @@ class Test:
             print("Test already passed. Only re-evaluating results.")
             return self._evaluate()
         print("Running test: ", self.name)
+
         myenv = os.environ.copy()
         myenv["LM_LICENSE_FILE"] = "1717@scclic2.itiv.kit.edu"
         myenv["library"] = self.test_dir.absolute()
@@ -562,10 +563,6 @@ class Test:
         myenv["LAUNCH_GUI"] = str(int(sim.start_gui))
 
         script_dir = Path(__file__).resolve().parent
-        shutil.copyfile("modelsim.ini", self.test_dir / "modelsim.ini")
-        if os.path.exists(self.test_dir / "modelsim.ini_lock"):
-            os.remove(self.test_dir / "modelsim.ini_lock")
-
         simulator = "/tools/cadence/mentor/2020-21/RHELx86/QUESTA-CORE-PRIME_2020.4/questasim/bin/vsim"
         arguments = []
         if not self.gui:
