@@ -31,8 +31,7 @@ entity address_generator is
         clk  : in    std_logic;
         rstn : in    std_logic;
 
-        i_start      : in    std_logic;
-        i_pause_iact : in    std_logic;
+        i_start : in    std_logic;
 
         i_c1         : in    integer range 0 to 1023;
         i_w1         : in    integer range 0 to 1023;
@@ -530,7 +529,7 @@ begin
                 o_address_iact_valid(i) <= '0';
                 o_address_iact(i)       <= (others => '0');
                 if i >= size_y - 1 then
-                    if i_start = '1' and i_fifo_full_iact = '0' and r_iact_done = '0' and r_delay_iact_valid(i) = '0' and i_pause_iact = '0' then
+                    if i_start = '1' and i_fifo_full_iact = '0' and r_iact_done = '0' and r_delay_iact_valid(i) = '0' then
                         r_delay_iact_valid(i)   <= '1';
                         o_address_iact_valid(i) <= '1';
                         o_address_iact(i)       <= std_logic_vector(to_unsigned(w_offset_mem_iact + (i - size_y + 1) * i_image_x, addr_width_iact_mem));
@@ -617,7 +616,7 @@ begin
             r_iact_done <= '0';
         elsif rising_edge(clk) then
             if i_start = '1' then
-                if i_fifo_full_iact = '0' and or r_delay_iact_valid = '0' and i_pause_iact = '0' then
+                if i_fifo_full_iact = '0' and or r_delay_iact_valid = '0' then
                     r_data_valid_iact <= '1';
 
                     if r_count_h2_iact /= w_h2 then

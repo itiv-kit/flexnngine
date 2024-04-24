@@ -24,7 +24,6 @@ entity address_generator_psum is
         i_w1          : in    integer range 0 to 1023;
         i_m0          : in    integer range 0 to 1023;
         i_kernel_size : in    integer range 0 to 32;
-        i_new_output  : in    std_logic; -- currently unused
 
         i_valid_psum_out    : in    std_logic_vector(size_x - 1 downto 0);
         i_gnt_psum_binary_d : in    std_logic_vector(addr_width_x - 1 downto 0);

@@ -50,7 +50,6 @@ entity scratchpad_interface is
         clk_sp : in    std_logic;
 
         i_start  : in    std_logic;
-        o_status : out   std_logic;
         o_enable : out   std_logic;
 
         -- Data to and from Address generator
@@ -169,12 +168,14 @@ architecture rtl of scratchpad_interface is
     signal r_pause_iact : std_logic_vector(size_rows - 1 downto 0);
     signal r_startup    : std_logic_vector(10 downto 0); /* TODO Depending on clk_sp / clk factor */
 
+    signal r_preload_fifos_done : std_logic;
+
 begin
 
     -- Delay i_pause_iact signal for to propagate through array
     r_pause_iact(size_rows - 1 downto 0) <= r_pause_iact(size_rows - 2 downto size_y - 1) & i_pause_iact & (size_y - 2 downto 0 => '0') when rising_edge(clk);
 
-    -- Create enable signal for PEs. Enable if first values in buffer (o_status) and one of three conditions fulfilled:
+    -- Create enable signal for PEs. Enable if first values in buffer (r_preload_fifos_done) and one of three conditions fulfilled:
     -- 1. Input activations "done" and all wght FIFOs not empty
     -- 2. Weights "done" and all iact FIFOs not empty
     -- 3. All wght and iact FIFOs not empty
@@ -186,7 +187,7 @@ begin
             r_done_wght <= '0';
             r_done_iact <= '0';
         elsif rising_edge(clk) then
-            if o_status = '1' then
+            if r_preload_fifos_done = '1' then
                 if (and w_empty_wght_address_f) and (and w_empty_wght_f) then
                     r_done_wght <= '1';
                 else
@@ -220,16 +221,12 @@ begin
     begin
 
         if not rstn then
-            o_status  <= '0';
-            r_startup <= (others => '0');
+            r_preload_fifos_done <= '0';
+            r_startup            <= (others => '0');
         elsif rising_edge(clk) then
-            r_startup <= r_startup(9 downto 0) & '0';
-            if or w_empty_iact_f(size_rows - 1 downto size_y - 1) = '0' then
-                r_startup <= r_startup(9 downto 0) & '1';
-                /* o_status <= '1';*/
-            end if;
+            r_startup <= r_startup(9 downto 0) & not (or w_empty_iact_f(size_rows - 1 downto size_y - 1));
             if and r_startup = '1' then
-                o_status <= '1';
+                r_preload_fifos_done <= '1';
             end if;
         end if;
 

@@ -7,7 +7,9 @@ library accel;
 
 architecture alternative_rs_dataflow of control is
 
-    signal w_init_done : std_logic;
+    signal r_state      : t_control_state;
+    signal w_start_init : std_logic;
+    signal r_init_done  : std_logic;
 
     signal r_count_c0w0 : integer range 0 to 2048; -- range 0 to 511
     signal r_count_c1   : integer range 0 to 1023;
@@ -33,9 +35,6 @@ architecture alternative_rs_dataflow of control is
     signal w_m0_dist    : array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
     signal w_m0_last_m1 : integer range 0 to 1023;
 
-    type   t_state is (s_calculate, s_output, s_incr_c1, s_incr_h1);
-    signal r_state : t_state;
-
     signal r_command_iact       : command_lb_array_t(0 to size_y);
     signal r_read_offset_iact   : array_t(0 to size_y)(addr_width_iact - 1 downto 0);
     signal r_update_offset_iact : array_t(0 to size_y)(addr_width_iact - 1 downto 0);
@@ -60,20 +59,14 @@ architecture alternative_rs_dataflow of control is
 
     signal r_command : command_pe_array_t(0 to size_y);
 
-    signal w_start : std_logic;
-
-    signal r_done : std_logic;
-
 begin
-
-    o_new_output <= '1' when r_count_c0w0 = 2 and r_count_w1 = 0 and r_state = s_output else
-                    '0';
 
     r_command_psum_d       <= r_command_psum when rising_edge(clk);
     r_read_offset_psum_d   <= r_read_offset_psum when rising_edge(clk);
     r_update_offset_psum_d <= r_update_offset_psum when rising_edge(clk);
 
-    o_status <= w_init_done;
+    w_start_init <= '1' when r_state = s_init else '0';
+    o_done       <= '1' when r_state = s_done else '0';
 
     o_c0_last_c1 <= w_c0_last_c1;
     o_c0         <= w_c0;
@@ -88,31 +81,8 @@ begin
     o_m0_dist    <= w_m0_dist;
     o_m0_last_m1 <= w_m0_last_m1;
 
-    p_start : process (clk, rstn) is
-    begin
-
-        if not rstn then
-            w_start <= '0';
-        elsif rising_edge(clk) then
-            if i_start = '1' then
-                w_start <= '1';
-            end if;
-        end if;
-
-    end process p_start;
-
-    /*p_start : process(i_start) is
-        begin
-
-            if i_start = '1' then
-                w_start <= '1';
-            end if;
-
-    end process p_start;*/
-
     -- Do not stop when filling read/update pipeline
-    o_enable <= i_start when r_count_c0w0 > 1 and r_state /= s_output else
-                '1' when w_start = '1' else
+    o_enable <= i_enable_if when r_state /= s_output else -- r_count_c0w0 > 1 and
                 '1' when r_state = s_output else
                 '0';
 
@@ -242,6 +212,10 @@ begin
                 w_mux_update_offset_psum <= r_update_offset_psum_d;
                 w_mux_command_psum       <= r_command_psum_d;
 
+            when others =>
+
+                null;
+
         end case;
 
     end process switch_state;
@@ -250,88 +224,118 @@ begin
     begin
 
         if not rstn then
+            o_init_done  <= '0';
             r_count_h2   <= 0;
             r_count_w1   <= 0;
             r_count_c1   <= 0;
             r_count_c0w0 <= 0;
             r_incr_w1    <= '0';
-            r_state      <= s_calculate;
-            r_done       <= '0';
+            r_state      <= s_idle;
         elsif rising_edge(clk) then
-            if w_init_done = '1' and o_enable = '1' then
-                if r_state = s_calculate then
-                    r_incr_w1 <= '0';
-                    if r_count_h2 /= w_h2 then
-                        if r_count_h1 /= i_kernel_size then
-                            if r_count_c1 /= w_c1 then
-                                if r_count_w1 /= w_w1 then
-                                    -- if (r_command_counter /= r_commands_per_tile - 1) or (r_command_counter /= r_commands_last_tile_c - 1) then
-                                    if not((r_count_c0w0 = w_c0w0 - 1 and r_count_c1 /= w_c1 - 1) or (r_count_c0w0 = w_c0w0_last_c1 - 1 and r_count_c1 = w_c1 - 1)) then
-                                        r_count_c0w0 <= r_count_c0w0 + 1;
-                                        r_incr_w1    <= '0';
-                                    else
-                                        -- shift kernel - increment w1
-                                        if r_incr_w1 = '1' then
-                                            r_count_w1   <= r_count_w1 + 1;
-                                            r_count_c0w0 <= 0;
+
+            case r_state is
+
+                when s_idle =>
+
+                    o_init_done <= '0';
+
+                    if i_start = '1' then
+                        r_state <= s_init;
+                    end if;
+
+                when s_init =>
+
+                    if r_init_done = '1' then
+                        o_init_done <= '1';
+                        r_state     <= s_calculate;
+                    end if;
+
+                when s_calculate =>
+
+                    if o_enable = '1' then
+                        r_incr_w1 <= '0';
+                        if r_count_h2 /= w_h2 then
+                            if r_count_h1 /= i_kernel_size then
+                                if r_count_c1 /= w_c1 then
+                                    if r_count_w1 /= w_w1 then
+                                        if not((r_count_c0w0 = w_c0w0 - 1 and r_count_c1 /= w_c1 - 1) or
+                                               (r_count_c0w0 = w_c0w0_last_c1 - 1 and r_count_c1 = w_c1 - 1)) then
+                                            r_count_c0w0 <= r_count_c0w0 + 1;
                                             r_incr_w1    <= '0';
                                         else
-                                            r_incr_w1 <= '1';
+                                            -- shift kernel - increment w1
+                                            if r_incr_w1 = '1' then
+                                                r_count_w1   <= r_count_w1 + 1;
+                                                r_count_c0w0 <= 0;
+                                                r_incr_w1    <= '0';
+                                            else
+                                                r_incr_w1 <= '1';
+                                            end if;
+                                        end if;
+                                    else
+                                        -- Increment c1
+                                        -- Don't reset psums, but remove values from iact & wght buffers
+                                        r_count_c1 <= r_count_c1 + 1;
+                                        r_count_w1 <= 0;
+
+                                        if r_count_c1 /= w_c1 - 1 then
+                                            -- Only perform iact & wght shrink if not last c1 done!
+                                            r_state <= s_incr_c1;
+                                        else
+                                            -- Increment h1, process next kernel row
+                                            r_state    <= s_incr_h1;
+                                            r_count_h1 <= r_count_h1 + 1;
+                                            r_count_c1 <= 0;
                                         end if;
                                     end if;
                                 else
-                                    -- Increment c1
-                                    -- Don't reset psums, but remove values from iact & wght buffers
-                                    r_count_c1 <= r_count_c1 + 1;
-                                    r_count_w1 <= 0;
-
-                                    if r_count_c1 /= w_c1 - 1 then
-                                        -- Only perform iact & wght shrink if not last c1 done!
-                                        r_state <= s_incr_c1;
-                                    else
-                                        -- Increment h1, process next kernel row
-                                        r_state    <= s_incr_h1;
-                                        r_count_h1 <= r_count_h1 + 1;
-                                        r_count_c1 <= 0;
-                                    end if;
                                 end if;
                             else
+                            -- Switch to output state done in incr_h1 state
                             end if;
                         else
-                        -- Switch to output state done in incr_h1 state
+                        -- DONE for now (not tiled for PSUM Line Buffer Length)
                         end if;
-                    else
-                    -- DONE for now (not tiled for PSUM Line Buffer Length)
                     end if;
-                elsif r_state = s_incr_c1 then
-                    -- Delay counter after shrinking for new values to arrive in the buffer
-                    if r_count_w1 /= 2 then
-                        r_count_w1 <= r_count_w1 + 1;
-                    else
-                        r_count_w1   <= 0;
-                        r_count_c0w0 <= 0;
-                        r_state      <= s_calculate;
+
+                when s_incr_c1 =>
+
+                    if o_enable = '1' then
+                        -- Delay counter after shrinking for new values to arrive in the buffer
+                        if r_count_w1 /= 2 then
+                            r_count_w1 <= r_count_w1 + 1;
+                        else
+                            r_count_w1   <= 0;
+                            r_count_c0w0 <= 0;
+                            r_state      <= s_calculate;
+                        end if;
                     end if;
-                elsif r_state = s_incr_h1 then
-                    -- Delay counter after shrinking for new values to arrive in the buffer
-                    if r_count_w1 /= 2 then
-                        r_count_w1 <= r_count_w1 + 1;
-                    elsif r_count_h1 = i_kernel_size then
-                        -- Increment h2
-                        -- Output intermediate results. Reset Psum and Iact buffer. Wait.
-                        r_count_w1   <= 0;
-                        r_count_c0w0 <= 0;
-                        r_count_h1   <= 0;
-                        r_count_h2   <= r_count_h2 + 1;
-                        r_state      <= s_output;
-                    else
-                        r_count_w1   <= 0;
-                        r_count_c0w0 <= 0;
-                        r_state      <= s_calculate;
+
+                when s_incr_h1 =>
+
+                    if o_enable = '1' then
+                        -- Delay counter after shrinking for new values to arrive in the buffer
+                        if r_count_w1 /= 2 then
+                            r_count_w1 <= r_count_w1 + 1;
+                        elsif r_count_h1 = i_kernel_size then
+                            -- Increment h2
+                            -- Output intermediate results. Reset Psum and Iact buffer. Wait.
+                            r_count_w1   <= 0;
+                            r_count_c0w0 <= 0;
+                            r_count_h1   <= 0;
+                            r_count_h2   <= r_count_h2 + 1;
+                            r_state      <= s_output;
+                        else
+                            r_count_w1   <= 0;
+                            r_count_c0w0 <= 0;
+                            r_state      <= s_calculate;
+                        end if;
                     end if;
-                elsif r_state = s_output then
+
+                when s_output =>
+
                     -- Command counter for output commands (psum accumulation and psum read)
-                    if r_count_c0w0 /= w_m0 + 4 then                                                                                                                     -- i_kernel_size + w_m0 then /* TODO Change to allow for multiple kernel data to be output */
+                    if r_count_c0w0 /= w_m0 + 4 then -- i_kernel_size + w_m0 then /* TODO Change to allow for multiple kernel data to be output */
                         if r_count_w1 /= w_w1 - 1 then
                             r_count_w1 <= r_count_w1 + 1;
                         else
@@ -340,11 +344,11 @@ begin
                         end if;
                     else
                         -- Delay counter after shrinking for new values to arrive in the buffer
-                        if r_count_w1 /= 2 then                                                                                                                          -- r_W1 - 1 then /* TODO changed - check! */
+                        if r_count_w1 /= 2 then -- r_W1 - 1 then /* TODO changed - check! */
                             r_count_w1 <= r_count_w1 + 1;
                         elsif r_count_h2 = w_h2 then
                             -- All h2 done and output
-                            r_done <= '1';
+                            r_state <= s_done;
                         else
                             r_count_c1   <= 0;
                             r_count_w1   <= 0;
@@ -353,8 +357,15 @@ begin
                         end if;
                     -- Output done, reset psum etc?
                     end if;
-                end if;
-            end if;
+
+                when s_done =>
+
+                    if i_start = '0' then
+                        r_state <= s_idle;
+                    end if;
+
+            end case;
+
         end if;
 
     end process p_command_counter;
@@ -366,11 +377,13 @@ begin
             r_command_iact       <= (others => c_lb_idle);
             r_read_offset_iact   <= (others => (others => '0'));
             r_update_offset_iact <= (others => (others => '0'));
-        elsif rising_edge(clk) then
+        elsif rising_edge(clk) and o_enable = '1' then
             r_update_offset_iact <= (others => (others => '0'));
 
-            if w_init_done = '1' and o_enable = '1' then
-                if r_state = s_calculate then
+            case r_state is
+
+                when s_calculate =>
+
                     if r_incr_w1 = '1' then
                         -- shift kernel - increment w1
                         if r_count_c1 /= w_c1 - 1 then
@@ -381,17 +394,15 @@ begin
                         r_command_iact <= (others => c_lb_shrink);
                     elsif r_count_w1 = w_w1 then
                         -- Tile y change
-
                         r_command_iact     <= (others => c_lb_idle);
                         r_read_offset_iact <= (others => (others => '0'));
                     else
                         r_command_iact     <= (others => c_lb_read);
                         r_read_offset_iact <= (others => std_logic_vector(to_unsigned(r_count_c0w0, addr_width_iact)));
                     end if;
-                -- command_iact <=
-                -- update_offset_iact <=
-                -- read_offset_iact <=
-                elsif r_state = s_incr_c1 then
+
+                when s_incr_c1 =>
+
                     r_command_iact     <= (others => c_lb_idle);
                     r_read_offset_iact <= (others => (others => '0'));
 
@@ -399,7 +410,9 @@ begin
                         r_command_iact     <= (others => c_lb_shrink);
                         r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * w_c0 - w_c0, addr_width_iact)));
                     end if;
-                elsif r_state = s_incr_h1 then
+
+                when s_incr_h1 =>
+
                     r_command_iact     <= (others => c_lb_idle);
                     r_read_offset_iact <= (others => (others => '0'));
 
@@ -407,7 +420,9 @@ begin
                         r_command_iact     <= (others => c_lb_shrink);
                         r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * w_c0_last_c1 - w_c0_last_c1, addr_width_iact)));
                     end if;
-                elsif r_state = s_output then
+
+                when s_output =>
+
                     r_command_iact     <= (others => c_lb_idle);
                     r_read_offset_iact <= (others => (others => '0'));
 
@@ -420,8 +435,13 @@ begin
                         -- r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * i_channels - i_channels, addr_width_iact)));
                         end if;
                     end if;
-                end if;
-            end if;
+
+                when others =>
+
+                    null;
+
+            end case;
+
         end if;
 
     end process p_iact_commands;
@@ -433,11 +453,13 @@ begin
             r_command_wght       <= (others => c_lb_idle);
             r_read_offset_wght   <= (others => (others => '0'));
             r_update_offset_wght <= (others => (others => '0'));
-        elsif rising_edge(clk) then
+        elsif rising_edge(clk) and o_enable = '1' then
             r_update_offset_wght <= (others => (others => '0'));
 
-            if w_init_done = '1' and o_enable = '1' then
-                if r_state = s_calculate then
+            case r_state is
+
+                when s_calculate =>
+
                     if r_incr_w1 = '1' then
                         -- shift kernel - increment w1
                         r_command_wght     <= (others => c_lb_idle);
@@ -451,7 +473,9 @@ begin
                         r_command_wght     <= (others => c_lb_read);
                         r_read_offset_wght <= (others => std_logic_vector(to_unsigned(r_count_c0w0, addr_width_wght)));
                     end if;
-                elsif r_state = s_incr_c1 then
+
+                when s_incr_c1 =>
+
                     r_command_wght     <= (others => c_lb_idle);
                     r_read_offset_wght <= (others => (others => '0'));
 
@@ -459,7 +483,9 @@ begin
                         r_command_wght     <= (others => c_lb_shrink);
                         r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_kernel_size * o_c0, addr_width_wght)));
                     end if;
-                elsif r_state = s_incr_h1 then
+
+                when s_incr_h1 =>
+
                     r_command_wght     <= (others => c_lb_idle);
                     r_read_offset_wght <= (others => (others => '0'));
 
@@ -467,7 +493,9 @@ begin
                         r_command_wght     <= (others => c_lb_shrink);
                         r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_kernel_size * o_c0_last_c1, addr_width_wght)));
                     end if;
-                elsif r_state = s_output then
+
+                when s_output =>
+
                     r_command_wght <= (others => c_lb_idle);
 
                     /*if w_c1 > 1 then
@@ -476,8 +504,13 @@ begin
                             r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_kernel_size * o_c0_last_c1, addr_width_wght)));
                         end if;
                     end if;*/
-                end if;
-            end if;
+
+                when others =>
+
+                    null;
+
+            end case;
+
         end if;
 
     end process p_wght_commands;
@@ -495,11 +528,11 @@ begin
             elsif rising_edge(clk) then
                 if r_state = s_output then
                     if r_count_c0w0 = i + 2 then
-                        r_command(i) <= c_pe_conv_mult;            -- c_pe_gemm_psum;
+                        r_command(i) <= c_pe_conv_mult; -- c_pe_gemm_psum;
                     elsif r_count_c0w0 > size_y + 3 then
                         r_command(i) <= c_pe_gemm_mult;
                     elsif r_count_w1 = 2 and r_count_c0w0 > 1 then
-                        r_command(i) <= c_pe_conv_pass;            -- c_pe_gemm_psum;
+                        r_command(i) <= c_pe_conv_pass; -- c_pe_gemm_psum;
                     else
                     -- r_command(i) <= c_pe_conv_psum;
                     end if;
@@ -518,9 +551,12 @@ begin
                 r_command_psum(i)       <= c_lb_idle;
                 r_read_offset_psum(i)   <= (others => '0');
                 r_update_offset_psum(i) <= (others => '0');
-            elsif rising_edge(clk) then
-                if w_init_done = '1' and o_enable = '1' then
-                    if r_state = s_calculate then
+            elsif rising_edge(clk) and o_enable = '1' then
+
+                case r_state is
+
+                    when s_calculate =>
+
                         if r_incr_w1 = '1' then
                             -- shift kernel - increment w1
                             r_command_psum(i)       <= c_lb_idle;
@@ -536,11 +572,15 @@ begin
                             r_read_offset_psum(i)   <= std_logic_vector(to_unsigned(r_count_w1, addr_width_psum));
                             r_update_offset_psum(i) <= r_read_offset_psum(i);
                         end if;
-                    elsif r_state = s_incr_c1 or r_state = s_incr_h1 then
+
+                    when s_incr_c1 | s_incr_h1 =>
+
                         r_command_psum(i)       <= c_lb_idle;
                         r_read_offset_psum(i)   <= (others => '0');
                         r_update_offset_psum(i) <= (others => '0');
-                    elsif r_state = s_output then
+
+                    when s_output =>
+
                         if i < w_m0 * i_kernel_size then
                         end if;
                         r_command_psum(i)       <= c_lb_idle;
@@ -555,7 +595,6 @@ begin
                             end if;
                         else
                             -- Sum psums vertically across accelerator. Different kernels summed to their top row respectively
-                            --
 
                             if r_count_c0w0 = i + 2 then
                                 r_command_psum(i) <= c_lb_read;
@@ -572,8 +611,13 @@ begin
                             r_read_offset_psum(i)   <= std_logic_vector(to_unsigned(r_count_w1, addr_width_psum));
                             r_update_offset_psum(i) <= std_logic_vector(to_unsigned(r_count_w1, addr_width_psum));
                         end if;
-                    end if;
-                end if;
+
+                    when others =>
+
+                        null;
+
+                end case;
+
             end if;
 
         end process p_psum_commands;
@@ -600,8 +644,8 @@ begin
             port map (
                 clk            => clk,
                 rstn           => rstn,
-                o_status       => w_init_done,
-                i_start        => i_start_init,
+                o_status       => r_init_done,
+                i_start        => w_start_init,
                 o_c1           => w_c1,
                 o_w1           => w_w1,
                 o_h2           => w_h2,
@@ -631,7 +675,7 @@ begin
         w_c0_last_c1   <= g_c0_last_c1;
         w_c0w0         <= g_c0w0;
         w_c0w0_last_c1 <= g_c0w0_last_c1;
-        w_init_done    <= '1';
+        r_init_done    <= '1';
 
     end generate control_init_inst;
 

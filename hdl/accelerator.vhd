@@ -64,8 +64,8 @@ entity accelerator is
 
         clk_sp : in    std_logic;
 
-        i_start_init : in    std_logic;
-        i_start      : in    std_logic;
+        i_start : in    std_logic;
+        o_done  : out   std_logic;
 
         o_dout_psum       : out   std_logic_vector(data_width_psum - 1 downto 0);
         o_dout_psum_valid : out   std_logic;
@@ -88,10 +88,7 @@ architecture rtl of accelerator is
     signal w_command_psum : command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
     signal w_command_wght : command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
 
-    type delay_array_t is array (natural range <>) of array_t;
-
     signal w_data_iact       : array_t (0 to size_rows - 1)(data_width_iact - 1 downto 0);
-    signal w_data_iact_delay : delay_array_t (0 to 3)(0 to size_rows - 1)(data_width_iact - 1 downto 0);
     signal w_data_iact_array : array_t (0 to size_rows - 1)(data_width_iact - 1 downto 0);
     signal w_data_psum       : std_logic_vector(data_width_psum - 1 downto 0);
     signal w_data_wght       : array_t (0 to size_y - 1)(data_width_wght - 1 downto 0);
@@ -127,36 +124,25 @@ architecture rtl of accelerator is
     signal w_read_adr_psum : std_logic_vector(addr_width_psum_mem - 1 downto 0);
     signal w_read_adr_wght : std_logic_vector(addr_width_wght_mem - 1 downto 0);
 
-    -- signal write_en_iact : std_logic;
+    signal w_dout_iact : std_logic_vector(data_width_iact - 1 downto 0);
+    signal w_dout_wght : std_logic_vector(data_width_wght - 1 downto 0);
+    signal w_din_psum  : std_logic_vector(data_width_psum - 1 downto 0);
+
     signal w_write_en_psum       : std_logic;
     signal w_write_suppress_psum : std_logic;
-    -- signal write_en_wght : std_logic;
 
     signal w_read_en_iact : std_logic;
     signal w_read_en_psum : std_logic;
     signal w_read_en_wght : std_logic;
 
-    signal w_new_output : std_logic;
     signal w_pause_iact : std_logic;
 
-    -- signal din_iact : std_logic_vector(data_width_iact - 1 downto 0);
-    signal w_din_psum : std_logic_vector(data_width_psum - 1 downto 0);
-    -- signal din_wght : std_logic_vector(data_width_wght - 1 downto 0);
+    signal w_control_init_done : std_logic;
 
-    signal w_dout_iact : std_logic_vector(data_width_iact - 1 downto 0);
-    -- signal dout_psum : std_logic_vector(data_width_psum - 1 downto 0);
-    signal w_dout_wght : std_logic_vector(data_width_wght - 1 downto 0);
-
-    signal w_status_control : std_logic;
-    signal r_start_control  : std_logic;
-    signal r_start_init     : std_logic;
-
-    signal w_status_if : std_logic;
     signal w_enable    : std_logic;
     signal w_enable_if : std_logic;
 
-    signal r_start_adr : std_logic;
-    signal w_dataflow  : std_logic;
+    signal w_dataflow : std_logic;
 
     signal w_w1 : integer range 0 to 1023; /* TODO change range to sth. useful */
     signal w_m0 : integer range 0 to 1023;
@@ -182,9 +168,6 @@ architecture rtl of accelerator is
     signal w_address_iact_valid : std_logic_vector(size_rows - 1 downto 0);
     signal w_address_wght_valid : std_logic_vector(size_y - 1 downto 0);
 
-    type   t_state is (s_idle, s_init_started, s_load_fifo_started, s_processing);
-    signal r_state : t_state;
-
 begin
 
     w_dataflow <= '1' when g_dataflow > 0 else '0';
@@ -198,37 +181,17 @@ begin
     begin
 
         if not rstn then
-            r_start_control <= '0';
-            r_start_init    <= '0';
-            r_start_adr     <= '0';
-
             r_image_x     <= 0;
             r_image_y     <= 0;
             r_channels    <= 0;
             r_kernels     <= 0;
             r_kernel_size <= 0;
-
-            r_state <= s_idle;
         elsif rising_edge(clk) then
-            if i_start = '1' or r_state /= s_idle then
-                r_image_x     <= g_image_x;
-                r_image_y     <= g_image_y;
-                r_channels    <= g_channels;
-                r_kernels     <= g_kernels;
-                r_kernel_size <= g_kernel_size;
-
-                if r_state = s_idle then
-                    r_state      <= s_init_started;
-                    r_start_init <= '1';
-                elsif w_status_control then
-                    r_state     <= s_load_fifo_started;
-                    r_start_adr <= '1';
-                    if w_status_if = '1' then
-                        r_start_control <= '1';
-                        r_state         <= s_processing;
-                    end if;
-                end if;
-            end if;
+            r_image_x     <= g_image_x;
+            r_image_y     <= g_image_y;
+            r_channels    <= g_channels;
+            r_kernels     <= g_kernels;
+            r_kernel_size <= g_kernel_size;
         end if;
 
     end process start_procedure;
@@ -314,13 +277,11 @@ begin
             clk                      => clk,
             rstn                     => rstn,
             i_start                  => i_start,
-            i_start_init             => r_start_init,
-            i_start_adr              => r_start_adr,
             i_enable_if              => w_enable_if,
-            o_status                 => w_status_control,
+            o_init_done              => w_control_init_done,
             o_enable                 => w_enable,
-            o_new_output             => w_new_output,
             o_pause_iact             => w_pause_iact,
+            o_done                   => o_done,
             o_w1                     => w_w1,
             o_m0                     => w_m0,
             i_image_x                => r_image_x,
@@ -416,8 +377,7 @@ begin
             clk                      => clk,
             rstn                     => rstn,
             clk_sp                   => clk_sp,
-            i_start                  => r_start_adr,
-            o_status                 => w_status_if,
+            i_start                  => w_control_init_done,
             o_enable                 => w_enable_if,
             i_address_iact           => w_address_iact,
             i_address_wght           => w_address_wght,
@@ -459,12 +419,11 @@ begin
         port map (
             clk                 => clk_sp,
             rstn                => rstn,
-            i_start             => r_start_adr,
+            i_start             => w_control_init_done,
             i_dataflow          => w_dataflow,
             i_w1                => w_w1,
             i_m0                => w_m0,
             i_kernel_size       => g_kernel_size,
-            i_new_output        => w_new_output,
             i_valid_psum_out    => w_valid_psums_out,
             i_gnt_psum_binary_d => w_gnt_psum_binary_d,
             i_empty_psum_fifo   => w_empty_psum_fifo,

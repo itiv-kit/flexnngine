@@ -206,13 +206,13 @@ begin
                             tx_reg_en  <= '1';
                         end if;
 
-                    when send =>                -- wait for rx side to assert ack
+                    when send => -- wait for rx side to assert ack
 
                         if ack_tx = '1' then
                             next_state := done;
                         end if;
 
-                    when done =>                -- wait for rx side to deassert ack
+                    when done => -- wait for rx side to deassert ack
 
                         if ack_tx = '0' then
                             next_state := idle;

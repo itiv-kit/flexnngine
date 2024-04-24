@@ -78,8 +78,8 @@ architecture imp of functional_tb is
     signal clk_sp : std_logic := '0';
     signal rstn   : std_logic;
 
-    signal start      : std_logic;
-    signal start_init : std_logic;
+    signal start : std_logic;
+    signal done  : std_logic;
 
     signal o_psums           : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
     signal o_psums_valid     : std_logic_vector(size_x - 1 downto 0);
@@ -99,36 +99,19 @@ architecture imp of functional_tb is
     signal din_iact        : std_logic_vector(data_width_iact - 1 downto 0);
     signal din_wght        : std_logic_vector(data_width_wght - 1 downto 0);
 
-    signal start_adr : std_logic;
-    signal w_m0      : integer;
-
     type ram_type is array (0 to 2 ** addr_width_psum_mem - 1) of std_logic_vector(data_width_psum - 1 downto 0);
 
-    type t_state_pe is (s_calculate, s_output, s_incr_c1, s_incr_h1);
     type t_state_accelerator is (s_idle, s_init_started, s_load_fifo_started, s_processing);
-
-    signal r_state : t_state_pe;
 
     signal r_iact_command     : command_lb_t;
     signal r_iact_read_offset : std_logic_vector(addr_width_iact - 1 downto 0);
     signal r_shrink_sum       : integer;
 
     -- Signals for evaluation
-    signal r_data_wght_valid           : std_logic_vector(size_y - 1 downto 0);
-    signal r_data_iact_valid           : std_logic_vector(size_rows - 1 downto 0);
-    signal r_status_sp_interface       : std_logic;
-    signal r_state_accelerator         : t_state_accelerator;
-    signal r_enable_pe_array           : std_logic;
-    signal r_preload_fifos_done        : std_logic;
     signal r_psum_commands_tmp         : command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
     signal r_psum_commands             : command_lb_array_t(0 to size_y - 1);
     signal r_psum_commands_read        : std_logic_vector(size_y - 1 downto 0);
     signal r_psum_commands_read_update : std_logic_vector(size_y - 1 downto 0);
-    signal r_done_processing           : std_logic;
-    signal r_empty_psum_fifo           : std_logic_vector(size_x - 1 downto 0);
-    signal r_preload_fifos_started     : std_logic;
-    signal r_write_en_psum             : std_logic;
-    signal r_data_out_valid            : std_logic_vector(size_x - 1 downto 0);
 
 begin
 
@@ -142,17 +125,7 @@ begin
     r_iact_command     <= << signal accelerator_inst.pe_array_inst.pe_inst_y(0).pe_inst_x(0).pe_north.pe_inst.line_buffer_iact.i_command : command_lb_t >>;
     r_iact_read_offset <= << signal accelerator_inst.pe_array_inst.pe_inst_y(0).pe_inst_x(0).pe_north.pe_inst.line_buffer_iact.i_read_offset : std_logic_vector(addr_width_iact - 1 downto 0) >>;
 
-    w_m0      <= << signal accelerator_inst.w_m0 : integer range 0 to 1023>>;
-    start_adr <= << signal accelerator_inst.control_address_generator_inst.g_address_generator.address_generator_inst.i_start : std_logic>>;
-    r_state   <= << signal accelerator_inst.control_address_generator_inst.g_control.control_inst.r_state : t_state_pe>>;
-
-    -- Signals for evaluation
-    r_status_sp_interface   <= << signal accelerator_inst.scratchpad_interface_inst.o_status : std_logic>>;
-    r_enable_pe_array       <= << signal accelerator_inst.pe_array_inst.i_enable : std_logic>>;
-    r_preload_fifos_done    <= '1' when rising_edge(r_enable_pe_array);
-    r_preload_fifos_started <= '1' when r_state_accelerator = s_load_fifo_started;
-    r_psum_commands_tmp     <= << signal accelerator_inst.control_address_generator_inst.g_control.control_inst.o_command_psum : command_lb_row_col_t >>;
-    r_data_out_valid        <= << signal accelerator_inst.pe_array_inst.o_psums_valid : std_logic_vector(size_x - 1 downto 0)>>;
+    r_psum_commands_tmp <= << signal accelerator_inst.control_address_generator_inst.g_control.control_inst.o_command_psum : command_lb_row_col_t >>;
 
     g_psum_commands : for y in 0 to size_y - 1 generate
         r_psum_commands(y)             <= r_psum_commands_tmp(y,0);
@@ -161,13 +134,6 @@ begin
         r_psum_commands_read_update(y) <= '1' when r_psum_commands(y) = c_lb_read_update else
                                           '0';
     end generate g_psum_commands;
-
-    r_done_processing   <= << signal accelerator_inst.control_address_generator_inst.g_control.control_inst.r_done : std_logic>>;
-    r_empty_psum_fifo   <= << signal accelerator_inst.address_generator_psum_inst.i_empty_psum_fifo : std_logic_vector(size_x - 1 downto 0)>>;
-    r_state_accelerator <= << signal accelerator_inst.r_state : t_state_accelerator>>;
-    r_data_iact_valid   <= << signal accelerator_inst.scratchpad_interface_inst.o_data_iact_valid : std_logic_vector(size_rows - 1 downto 0)>>;
-    r_data_wght_valid   <= << signal accelerator_inst.scratchpad_interface_inst.o_data_wght_valid : std_logic_vector(size_y - 1 downto 0)>>;
-    r_write_en_psum     <= << signal accelerator_inst.scratchpad_interface_inst.o_write_en_psum : std_logic>>;
 
     write_en_iact <= '0';
     write_en_wght <= '0';
@@ -222,8 +188,8 @@ begin
             clk               => clk,
             rstn              => rstn,
             clk_sp            => clk_sp,
-            i_start_init      => start_init,
             i_start           => start,
+            o_done            => done,
             o_dout_psum       => dout_psum,
             o_dout_psum_valid => dout_psum_valid,
             i_write_en_iact   => write_en_iact,
@@ -241,6 +207,11 @@ begin
         rstn  <= '1';
         wait for 20 ns;
         start <= '1';
+
+        wait until done = '1';
+        wait for 100 ns;
+        start <= '0';
+
         wait;
 
     end process rstn_gen;
@@ -400,6 +371,17 @@ begin
         file     outfile : text open write_mode is g_files_dir & "_eval_status.txt";
         variable row     : line;
 
+        -- Signals for evaluation
+        alias r_state                 is << signal accelerator_inst.control_address_generator_inst.g_control.control_inst.r_state : t_control_state >>;
+        alias r_preload_fifos_started is << signal accelerator_inst.scratchpad_interface_inst.i_start : std_logic >>;
+        alias r_preload_fifos_done    is << signal accelerator_inst.scratchpad_interface_inst.r_preload_fifos_done : std_logic >>;
+        alias r_write_en_psum         is << signal accelerator_inst.scratchpad_interface_inst.o_write_en_psum : std_logic >>;
+        alias r_empty_psum_fifo       is << signal accelerator_inst.address_generator_psum_inst.i_empty_psum_fifo : std_logic_vector(size_x - 1 downto 0) >>;
+        alias r_data_iact_valid       is << signal accelerator_inst.scratchpad_interface_inst.o_data_iact_valid : std_logic_vector(size_rows - 1 downto 0) >>;
+        alias r_data_wght_valid       is << signal accelerator_inst.scratchpad_interface_inst.o_data_wght_valid : std_logic_vector(size_y - 1 downto 0) >>;
+        alias r_enable_pe_array       is << signal accelerator_inst.pe_array_inst.i_enable : std_logic >>;
+        alias r_data_out_valid        is << signal accelerator_inst.pe_array_inst.o_psums_valid : std_logic_vector(size_x - 1 downto 0) >>;
+
     begin
 
         if not rstn then
@@ -425,7 +407,7 @@ begin
                                 report "What else?!"
                                 severity failure;
                         end if;
-                    elsif r_state = s_output and r_done_processing = '0' then
+                    elsif r_state = s_output and done = '0' then
                         if or r_psum_commands_read = '1' and or r_psum_commands_read_update = '0' then
                             -- Output data / Output and pass
                             write(row, integer'image(12));
@@ -443,7 +425,7 @@ begin
                             write(row, integer'image(10));
                             write(row, string'("  "));
                         end if;
-                    elsif r_state = s_output and r_done_processing = '1' and (and r_empty_psum_fifo = '0') then
+                    elsif r_state = s_output and done = '1' and (and r_empty_psum_fifo = '0') then
                         -- Output done, still writing results to Spad
                         write(row, integer'image(13));
                         write(row, string'("  "));
@@ -478,7 +460,7 @@ begin
                 if or r_data_iact_valid = '1' then
                     write(row, integer'image(40));
                     write(row, string'("  "));
-                elsif r_state /= s_output or r_done_processing = '0' or (r_done_processing = '1' and (and r_empty_psum_fifo = '0')) then
+                elsif r_state /= s_output or done = '0' or (done = '1' and (and r_empty_psum_fifo = '0')) then
                     write(row, integer'image(41));
                     write(row, string'("  "));
                 end if;
@@ -507,7 +489,7 @@ begin
                 if or r_data_wght_valid = '1' then
                     write(row, integer'image(50));
                     write(row, string'("  "));
-                elsif r_state /= s_output or r_done_processing = '0' or (r_done_processing = '1' and (and r_empty_psum_fifo = '0')) then
+                elsif r_state /= s_output or done = '0' or (done = '1' and (and r_empty_psum_fifo = '0')) then
                     write(row, integer'image(51));
                     write(row, string'("  "));
                 end if;
@@ -516,12 +498,12 @@ begin
                 if r_write_en_psum = '1' then
                     write(row, integer'image(60));
                     write(row, string'("  "));
-                elsif r_state /= s_output or r_done_processing = '0' or (r_done_processing = '1' and (and r_empty_psum_fifo = '0')) then
+                elsif r_state /= s_output or done = '0' or (done = '1' and (and r_empty_psum_fifo = '0')) then
                     write(row, integer'image(61));
                     write(row, string'("  "));
                 end if;
 
-                /*if r_status_sp_interface = '1' and r_enable_pe_array = '0' then
+                /*if r_preload_fifos_done = '1' and r_enable_pe_array = '0' then
 
                     -- Preloading FIFOs
                     write(row, integer'image(0));
@@ -545,20 +527,16 @@ begin
 
         file     outfile : text open write_mode is g_files_dir & "_output.txt";
         variable outline : line;
-        variable ram     : ram_type;
         variable idx     : integer;
+
+        alias ram is << variable accelerator_inst.scratchpad_inst.ram_dp_psum.ram_instance : ram_type >>;
 
     begin
 
-        wait until r_done_processing = '1';
-
-        if and r_empty_psum_fifo = '0' then
-            wait until and r_empty_psum_fifo = '1';
-        end if;
+        wait until done = '1';
 
         wait for 1000 ns;
 
-        ram := << variable accelerator_inst.scratchpad_inst.ram_dp_psum.ram_instance : ram_type >>;
         idx := 0;
 
         for m0 in 0 to g_m0 - 1 loop

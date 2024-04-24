@@ -43,15 +43,13 @@ entity control_address_generator is
         clk  : in    std_logic;
         rstn : in    std_logic;
 
-        i_start      : in    std_logic;
-        i_start_init : in    std_logic;
-        i_start_adr  : in    std_logic;
-        i_enable_if  : in    std_logic;
+        i_start     : in    std_logic;
+        i_enable_if : in    std_logic;
 
-        o_status     : out   std_logic;
+        o_init_done  : out   std_logic;
         o_enable     : out   std_logic;
-        o_new_output : out   std_logic;
         o_pause_iact : out   std_logic;
+        o_done       : out   std_logic;
 
         o_w1 : out   integer range 0 to 1023;
         o_m0 : out   integer range 0 to 1023;
@@ -89,6 +87,8 @@ end entity control_address_generator;
 
 architecture rtl of control_address_generator is
 
+    signal w_control_init_done : std_logic;
+
     signal w_c1         : integer range 0 to 1023;
     signal w_w1         : integer range 0 to 1023;
     signal w_h2         : integer range 0 to 1023;
@@ -99,6 +99,8 @@ architecture rtl of control_address_generator is
     signal w_c0_last_c1 : integer range 0 to 1023;
 
 begin
+
+    o_init_done <= w_control_init_done;
 
     o_w1 <= w_w1;
     o_m0 <= w_m0;
@@ -135,11 +137,11 @@ begin
             port map (
                 clk                  => clk,
                 rstn                 => rstn,
-                o_status             => o_status,
-                i_start              => i_enable_if,
-                i_start_init         => i_start_init,
+                o_init_done          => w_control_init_done,
+                i_start              => i_start,
+                o_done               => o_done,
+                i_enable_if          => i_enable_if,
                 o_enable             => o_enable,
-                o_new_output         => o_new_output,
                 o_pause_iact         => o_pause_iact,
                 o_c1                 => w_c1,
                 o_w1                 => w_w1,
@@ -198,11 +200,11 @@ begin
             port map (
                 clk                  => clk,
                 rstn                 => rstn,
-                o_status             => o_status,
-                i_start              => i_enable_if,
-                i_start_init         => i_start_init,
+                o_init_done          => w_control_init_done,
+                i_start              => i_start,
+                o_done               => o_done,
+                i_enable_if          => i_enable_if,
                 o_enable             => o_enable,
-                o_new_output         => o_new_output,
                 o_pause_iact         => o_pause_iact,
                 o_c1                 => w_c1,
                 o_w1                 => w_w1,
@@ -255,8 +257,7 @@ begin
             port map (
                 clk                  => clk,
                 rstn                 => rstn,
-                i_start              => i_start_adr,
-                i_pause_iact         => '0',
+                i_start              => w_control_init_done,
                 i_c1                 => w_c1,
                 i_w1                 => w_w1,
                 i_h2                 => w_h2,
@@ -301,8 +302,7 @@ begin
             port map (
                 clk                  => clk,
                 rstn                 => rstn,
-                i_start              => i_start_adr,
-                i_pause_iact         => '0',
+                i_start              => w_control_init_done,
                 i_c1                 => w_c1,
                 i_w1                 => w_w1,
                 i_h2                 => w_h2,

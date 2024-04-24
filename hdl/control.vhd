@@ -38,13 +38,13 @@ entity control is
         clk  : in    std_logic;
         rstn : in    std_logic;
 
-        i_start      : in    std_logic;
-        i_start_init : in    std_logic;
+        i_start     : in    std_logic;
+        i_enable_if : in    std_logic; -- enable signal from scratchpad interface (0 when stalling)
 
+        o_init_done  : out   std_logic;
         o_enable     : out   std_logic;
-        o_new_output : out   std_logic;
-        o_status     : out   std_logic;
         o_pause_iact : out   std_logic;
+        o_done       : out   std_logic;
 
         o_c1         : out   integer range 0 to 1023;
         o_w1         : out   integer range 0 to 1023;

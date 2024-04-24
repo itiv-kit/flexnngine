@@ -4,6 +4,8 @@ library ieee;
 
 package utilities is
 
+    type t_control_state is (s_idle, s_init, s_calculate, s_output, s_incr_c1, s_incr_h1, s_done);
+
     type std_logic_row_col_t is array (natural  range <>, natural range <>) of std_logic;
 
     type array_t is array (natural range <>) of std_logic_vector;

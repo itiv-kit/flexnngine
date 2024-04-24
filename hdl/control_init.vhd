@@ -225,11 +225,11 @@ begin
             if i_start and r_init_m0_done and not r_init_h2_done then
                 r_h2_tmp <= r_h2_tmp + size_x;
 
-                if r_h2_tmp >= (i_image_y - i_kernel_size + 1) and r_m0 = 1 then      -- one kernel vertically
+                if r_h2_tmp >= (i_image_y - i_kernel_size + 1) and r_m0 = 1 then -- one kernel vertically
                     -- Tiling done
                     r_rows_last_h2 <= r_h2_tmp - (i_image_y - 2 * i_kernel_size + 1);
                     r_init_h2_done <= '1';
-                elsif r_h2_tmp >= i_image_y then                                      -- more than one kernel vertically
+                elsif r_h2_tmp >= i_image_y then -- more than one kernel vertically
                     -- Tiling done
                     r_rows_last_h2 <= r_h2_tmp - (i_image_y - 2 * i_kernel_size + 1);
                     r_init_h2_done <= '1';
