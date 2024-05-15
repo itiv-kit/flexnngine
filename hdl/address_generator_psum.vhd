@@ -92,19 +92,19 @@ begin
 
         begin
 
-            v_count_w1 := r_count_w1(x);
-            v_count_m0 := r_count_m0(x);
-            v_count_h2 := r_count_h2(x);
-
             if not rstn then
                 r_address_psum(x) <= (others => '0');
                 r_suppress_row(x) <= '0';
                 r_suppress_col(x) <= '0';
 
-                v_count_w1 := 0;
-                v_count_m0 := 0;
-                v_count_h2 := 0;
+                r_count_w1(x) <= 0;
+                r_count_m0(x) <= 0;
+                r_count_h2(x) <= 0;
             elsif rising_edge(clk) then
+                v_count_w1 := r_count_w1(x);
+                v_count_m0 := r_count_m0(x);
+                v_count_h2 := r_count_h2(x);
+
                 -- start of a totally new result, reset all counters
                 if r_start_event = '1' then
                     v_cur_row         := x;
@@ -162,11 +162,11 @@ begin
                         r_address_psum(x) <= std_logic_vector(to_unsigned(to_integer(unsigned(r_address_psum(x))) + 1, addr_width_psum));
                     end if;
                 end if;
-            end if;
 
-            r_count_w1(x) <= v_count_w1;
-            r_count_m0(x) <= v_count_m0;
-            r_count_h2(x) <= v_count_h2;
+                r_count_w1(x) <= v_count_w1;
+                r_count_m0(x) <= v_count_m0;
+                r_count_h2(x) <= v_count_h2;
+            end if;
 
         end process p_psum_counter;
 
