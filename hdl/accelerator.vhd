@@ -31,14 +31,14 @@ entity accelerator is
         addr_width_wght     : positive := 9;
 
         -- address widths scratchpad <-> pe array
-        spad_addr_width_iact : positive := 15;
-        spad_addr_width_wght : positive := 15;
-        spad_addr_width_psum : positive := 15;
+        spad_addr_width_iact : positive := 15; -- word size data_width_iact
+        spad_addr_width_wght : positive := 15; -- word size data_width_wght
+        spad_addr_width_psum : positive := 15; -- word size data_width_psum
 
         -- address widths scratchpad <-> external, port_a is exposed as i/o on this module
-        spad_ext_addr_width_iact : positive := 13;
-        spad_ext_addr_width_wght : positive := 13;
-        spad_ext_addr_width_psum : positive := 14;
+        spad_ext_addr_width_iact : positive := 13; -- word size spad_ext_data_width_iact
+        spad_ext_addr_width_wght : positive := 13; -- word size spad_ext_data_width_wght
+        spad_ext_addr_width_psum : positive := 14; -- word size spad_ext_data_width_psum
         spad_ext_data_width_iact : positive := 32;
         spad_ext_data_width_wght : positive := 32;
         spad_ext_data_width_psum : positive := 32;

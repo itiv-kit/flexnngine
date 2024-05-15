@@ -29,7 +29,7 @@ entity functional_tb is
         addr_width_iact     : positive := 6;
         addr_width_iact_mem : positive := 16;
 
-        data_width_psum     : positive := 16; -- or 17??
+        data_width_psum     : positive := 16;
         line_length_psum    : positive := 128;
         addr_width_psum     : positive := 7;
         addr_width_psum_mem : positive := 16;

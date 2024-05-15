@@ -17,9 +17,9 @@ entity ACC_v1_0 is
     spad_addr_width_psum     : positive := 16;
 
     -- external addresses are byte wise
-    spad_ext_addr_width_iact : positive := 16;
-    spad_ext_addr_width_wght : positive := 16;
-    spad_ext_addr_width_psum : positive := 17;
+    spad_axi_addr_width_iact : positive := 16;
+    spad_axi_addr_width_wght : positive := 16;
+    spad_axi_addr_width_psum : positive := 17;
     spad_ext_data_width_iact : positive := 32;
     spad_ext_data_width_wght : positive := 32;
     spad_ext_data_width_psum : positive := 32;
@@ -49,9 +49,9 @@ entity ACC_v1_0 is
     i_write_en_psum : in std_logic_vector(spad_ext_data_width_psum/8 - 1 downto 0);
 
     -- external addresses are byte wise
-    i_addr_iact : in std_logic_vector(spad_ext_addr_width_iact - 1 downto 0);
-    i_addr_wght : in std_logic_vector(spad_ext_addr_width_wght - 1 downto 0);
-    i_addr_psum : in std_logic_vector(spad_ext_addr_width_psum - 1 downto 0);
+    i_addr_iact : in std_logic_vector(spad_axi_addr_width_iact - 1 downto 0);
+    i_addr_wght : in std_logic_vector(spad_axi_addr_width_wght - 1 downto 0);
+    i_addr_psum : in std_logic_vector(spad_axi_addr_width_psum - 1 downto 0);
 
     i_din_iact : in std_logic_vector(spad_ext_data_width_iact - 1 downto 0);
     i_din_wght : in std_logic_vector(spad_ext_data_width_wght - 1 downto 0);
@@ -368,9 +368,9 @@ begin
     spad_ext_data_width_iact => spad_ext_data_width_iact,
     spad_ext_data_width_wght => spad_ext_data_width_wght,
     spad_ext_data_width_psum => spad_ext_data_width_psum,
-    spad_ext_addr_width_iact => spad_ext_addr_width_iact - 2,
-    spad_ext_addr_width_wght => spad_ext_addr_width_wght - 2,
-    spad_ext_addr_width_psum => spad_ext_addr_width_psum - 1
+    spad_ext_addr_width_iact => spad_axi_addr_width_iact - 2, -- convert byte-wise addresses to 32bit-word-wise
+    spad_ext_addr_width_wght => spad_axi_addr_width_wght - 2, -- convert byte-wise addresses to 32bit-word-wise
+    spad_ext_addr_width_psum => spad_axi_addr_width_psum - 2  -- convert byte-wise addresses to 32bit-word-wise
   ) port map (
     clk  => clk,
     rstn => rstn,
@@ -393,9 +393,9 @@ begin
     i_write_en_wght => i_write_en_wght,
     i_write_en_psum => i_write_en_psum,
 
-    i_addr_iact => i_addr_iact(spad_ext_addr_width_iact - 1 downto 2),
-    i_addr_wght => i_addr_wght(spad_ext_addr_width_wght - 1 downto 2),
-    i_addr_psum => i_addr_psum(spad_ext_addr_width_psum - 1 downto 1),
+    i_addr_iact => i_addr_iact(spad_axi_addr_width_iact - 1 downto 2),
+    i_addr_wght => i_addr_wght(spad_axi_addr_width_wght - 1 downto 2),
+    i_addr_psum => i_addr_psum(spad_axi_addr_width_psum - 1 downto 2),
 
     i_din_iact => i_din_iact,
     i_din_wght => i_din_wght,

@@ -8,13 +8,13 @@ library accel;
 entity scratchpad is
     generic (
         ext_data_width_iact : positive := 32;
-        ext_addr_width_iact : positive := 15;
+        ext_addr_width_iact : positive := 13;
 
         ext_data_width_psum : positive := 32;
-        ext_addr_width_psum : positive := 15;
+        ext_addr_width_psum : positive := 14;
 
         ext_data_width_wght : positive := 32;
-        ext_addr_width_wght : positive := 15;
+        ext_addr_width_wght : positive := 13;
 
         data_width_iact : positive := 8;
         addr_width_iact : positive := 15;
