@@ -249,17 +249,17 @@ proc get_pe_path {x y} {
 # line buffer fill counts
 for {set y 0} {$y < 5} {incr y} {
     set pe_path [get_pe_path 0 $y]
-    add wave -noupdate -group Fill_Counts -radix decimal ${pe_path}/line_buffer_iact/r_fill_count
-    add wave -noupdate -group Fill_Counts -radix decimal ${pe_path}/line_buffer_iact/i_read_offset
-    add wave -noupdate -group Fill_Counts -radix decimal ${pe_path}/line_buffer_wght/r_fill_count
-    add wave -noupdate -group Fill_Counts -radix decimal ${pe_path}/line_buffer_wght/i_read_offset
+    add wave -noupdate -group Fill_Counts -radix unsigned -label "PE_${y}_0 iact r_fill_count"  ${pe_path}/line_buffer_iact/r_fill_count
+    add wave -noupdate -group Fill_Counts -radix unsigned -label "PE_${y}_0 iact i_read_offset" ${pe_path}/line_buffer_iact/i_read_offset
+    add wave -noupdate -group Fill_Counts -radix unsigned -label "PE_${y}_0 wght r_fill_count"  ${pe_path}/line_buffer_wght/r_fill_count
+    add wave -noupdate -group Fill_Counts -radix unsigned -label "PE_${y}_0 wght i_read_offset" ${pe_path}/line_buffer_wght/i_read_offset
 }
 for {set x 1} {$x < 5} {incr x} {
     set pe_path [get_pe_path $x 0]
-    add wave -noupdate -group Fill_Counts -radix decimal ${pe_path}/line_buffer_iact/r_fill_count
-    add wave -noupdate -group Fill_Counts -radix decimal ${pe_path}/line_buffer_iact/i_read_offset
-    add wave -noupdate -group Fill_Counts -radix decimal ${pe_path}/line_buffer_wght/r_fill_count
-    add wave -noupdate -group Fill_Counts -radix decimal ${pe_path}/line_buffer_wght/i_read_offset
+    add wave -noupdate -group Fill_Counts -radix unsigned -label "PE_0_${x} iact r_fill_count"  ${pe_path}/line_buffer_iact/r_fill_count
+    add wave -noupdate -group Fill_Counts -radix unsigned -label "PE_0_${x} iact i_read_offset" ${pe_path}/line_buffer_iact/i_read_offset
+    add wave -noupdate -group Fill_Counts -radix unsigned -label "PE_0_${x} wght r_fill_count"  ${pe_path}/line_buffer_wght/r_fill_count
+    add wave -noupdate -group Fill_Counts -radix unsigned -label "PE_0_${x} wght i_read_offset" ${pe_path}/line_buffer_wght/i_read_offset
 }
 
 # line buffer memory i/o of individual PEs

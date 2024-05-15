@@ -54,8 +54,9 @@ entity functional_tb is
         g_clk    : time := 10 ns;
         g_clk_sp : time := 2 ns;
 
-        g_files_dir : string  := "./";
-        g_init_sp   : boolean := true;
+        g_files_dir  : string   := "./";
+        g_init_sp    : boolean  := true;
+        g_iterations : positive := 1;
 
         g_control_init : boolean  := false;
         g_c1           : positive := 1;
@@ -78,8 +79,9 @@ architecture imp of functional_tb is
     signal clk_sp : std_logic := '0';
     signal rstn   : std_logic;
 
-    signal start : std_logic;
-    signal done  : std_logic;
+    signal start       : std_logic;
+    signal done        : std_logic;
+    signal output_done : boolean;
 
     signal o_psums           : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
     signal o_psums_valid     : std_logic_vector(size_x - 1 downto 0);
@@ -100,8 +102,6 @@ architecture imp of functional_tb is
     signal din_wght        : std_logic_vector(data_width_wght - 1 downto 0);
 
     type ram_type is array (0 to 2 ** addr_width_psum_mem - 1) of std_logic_vector(data_width_psum - 1 downto 0);
-
-    type t_state_accelerator is (s_idle, s_init_started, s_load_fifo_started, s_processing);
 
     signal r_iact_command     : command_lb_t;
     signal r_iact_read_offset : std_logic_vector(addr_width_iact - 1 downto 0);
@@ -203,14 +203,28 @@ begin
 
         rstn  <= '0';
         start <= '0';
-        wait for 100 ns;
-        rstn  <= '1';
-        wait for 20 ns;
-        start <= '1';
 
-        wait until done = '1';
         wait for 100 ns;
-        start <= '0';
+        wait until rising_edge(clk);
+        rstn <= '1';
+
+        wait for 20 ns;
+
+        for iteration in 1 to g_iterations loop
+
+            wait until rising_edge(clk);
+            start <= '1';
+
+            wait until done = '1' and output_done;
+            wait for 100 ns;
+            wait until rising_edge(clk);
+            start <= '0';
+
+            wait for 100 ns;
+
+        end loop;
+
+        finish;
 
         wait;
 
@@ -533,6 +547,8 @@ begin
 
     begin
 
+        output_done <= false;
+
         wait until done = '1';
 
         wait for 1000 ns;
@@ -559,9 +575,10 @@ begin
 
         report "Writing outputs is finished."
             severity note;
-        finish;
 
-        wait;
+        output_done <= true;
+
+        wait until done = '0';
 
     end process write_outputs;
 
