@@ -20,9 +20,7 @@ entity control is
         line_length_psum : positive := 512;
         addr_width_psum  : positive := 9;
         line_length_wght : positive := 512;
-        addr_width_wght  : positive := 9;
-
-        g_control_init : boolean := true
+        addr_width_wght  : positive := 9
     );
     port (
         clk  : in    std_logic;
@@ -36,15 +34,7 @@ entity control is
         o_pause_iact : out   std_logic;
         o_done       : out   std_logic;
 
-        o_c1         : out   integer range 0 to 1023;
-        o_w1         : out   integer range 0 to 1023;
-        o_h2         : out   integer range 0 to 1023;
-        o_m0         : out   integer range 0 to 1023;
         o_m0_dist    : out   array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
-        o_m0_last_m1 : out   integer range 0 to 1023;
-
-        o_c0         : out   integer range 0 to 1023;
-        o_c0_last_c1 : out   integer range 0 to 1023;
 
         i_image_x : in    integer range 0 to 1023; --! size of input image
         i_image_y : in    integer range 0 to 1023; --! size of input image

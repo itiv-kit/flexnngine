@@ -185,9 +185,7 @@ architecture arch_imp of ACC_v1_0 is
 
       g_files_dir : string  := "";
       g_init_sp   : boolean := false;
-
-      g_control_init : boolean := false;
-      g_dataflow     : integer := 1
+      g_dataflow  : integer := 1
     );
     port (
       clk  : in    std_logic;

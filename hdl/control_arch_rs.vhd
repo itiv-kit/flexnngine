@@ -7,9 +7,8 @@ library accel;
 
 architecture rs_dataflow of control is
 
-    signal r_state      : t_control_state;
-    signal w_start_init : std_logic;
-    signal r_init_done  : std_logic;
+    signal r_state     : t_control_state;
+    signal r_init_done : std_logic;
 
     signal r_count_c0w0 : integer; -- range 0 to 511
     signal r_count_c1   : integer range 0 to 1023;
@@ -31,7 +30,6 @@ architecture rs_dataflow of control is
     signal r_incr_w1 : std_logic;
 
     signal w_m0         : integer range 0 to 1023;
-    signal w_m0_dist    : array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
     signal w_m0_last_m1 : integer range 0 to 1023;
 
     signal r_command_iact       : command_lb_array_t(0 to size_y);
@@ -64,22 +62,9 @@ architecture rs_dataflow of control is
 
 begin
 
-    r_command_psum_d       <= r_command_psum when rising_edge(clk);
-    r_read_offset_psum_d   <= r_read_offset_psum when rising_edge(clk);
-    r_update_offset_psum_d <= r_update_offset_psum when rising_edge(clk);
-
-    w_start_init <= '1' when r_state = s_init else '0';
-    o_done       <= '1' when r_state = s_done else '0';
-
-    o_c0_last_c1 <= w_c0_last_c1;
-    o_c0         <= w_c0;
-
-    o_c1         <= w_c1;
-    o_w1         <= w_w1;
-    o_h2         <= w_h2;
-    o_m0         <= w_m0;
-    o_m0_dist    <= w_m0_dist;
-    o_m0_last_m1 <= w_m0_last_m1;
+    o_done      <= '1' when r_state = s_done else '0';
+    o_m0_dist   <= r_m0_dist;
+    o_init_done <= r_init_done;
 
     -- Generate enable signal for PE array, propagate input fifo status from scratchpad interface
     -- Do not stop when filling read/update pipeline
@@ -89,6 +74,10 @@ begin
                 '0';
 
     o_pause_iact <= '0';
+
+    r_command_psum_d       <= r_command_psum when rising_edge(clk);
+    r_read_offset_psum_d   <= r_read_offset_psum when rising_edge(clk);
+    r_update_offset_psum_d <= r_update_offset_psum when rising_edge(clk);
 
     gen_delay_y : for y in 0 to size_y - 1 generate
 
@@ -396,16 +385,18 @@ begin
 
                         if r_count_w1 = 0 then
                             r_command_wght     <= (others => c_lb_shrink);
-                            r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_kernel_size * o_c0, addr_width_wght)));
+                            r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_kernel_size * w_c0, addr_width_wght)));
                         end if;
 
                     when s_output =>
 
                         r_command_wght <= (others => c_lb_idle);
 
-                        if r_count_c0w0 = 0 and r_count_w1 = 0 then
-                            r_command_wght     <= (others => c_lb_shrink);
-                            r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_kernel_size * o_c0_last_c1, addr_width_wght)));
+                        if w_c1 > 1 then
+                            if r_count_c0w0 = 0 and r_count_w1 = 0 then
+                                r_command_wght     <= (others => c_lb_shrink);
+                                r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_kernel_size * w_c0_last_c1, addr_width_wght)));
+                            end if;
                         end if;
 
                     when others =>
@@ -421,7 +412,7 @@ begin
 
     g_psum_pe_commands : for i in 0 to size_y - 1 generate
 
-        w_output_sequence(i) <= (i - (to_integer(unsigned(w_m0_dist(i)))) * i_kernel_size + i_kernel_size);
+        w_output_sequence(i) <= (i - (to_integer(unsigned(r_m0_dist(i)))) * i_kernel_size + i_kernel_size);
 
         -- Commands to control dataflow within PE (psum / mult / passthrough)
         p_command : process (clk, rstn) is
@@ -437,10 +428,10 @@ begin
 
                         if r_count_w1 = 1 and r_count_c0w0 < i_kernel_size then
                             r_command(i) <= c_pe_conv_psum;
-                        elsif to_integer(unsigned(w_m0_dist(i))) = 0 then
+                        elsif to_integer(unsigned(r_m0_dist(i))) = 0 then
                             r_command(i) <= c_pe_conv_psum;
                         elsif r_count_c0w0 > i_kernel_size then
-                            if w_output_sequence(i) = i_kernel_size - r_count_c0w0 - 1 + to_integer(unsigned(w_m0_dist(i))) then
+                            if w_output_sequence(i) = i_kernel_size - r_count_c0w0 - 1 + to_integer(unsigned(r_m0_dist(i))) then
                                 r_command(i) <= c_pe_conv_psum;
                             elsif r_count_w1 = 2 then
                                 r_command(i) <= c_pe_conv_pass;
@@ -521,7 +512,7 @@ begin
                                     r_command_psum(i) <= c_lb_read_update;
                                 elsif r_count_c0w0 = i_kernel_size then
                                     r_command_psum(i) <= c_lb_idle;
-                                elsif w_output_sequence(i) = i_kernel_size - r_count_c0w0 - 1 + to_integer(unsigned(w_m0_dist(i))) and r_count_c0w0 >= i_kernel_size + 1 then
+                                elsif w_output_sequence(i) = i_kernel_size - r_count_c0w0 - 1 + to_integer(unsigned(r_m0_dist(i))) and r_count_c0w0 >= i_kernel_size + 1 then
                                     r_command_psum(i) <= c_lb_read;
                                 else
                                     r_command_psum(i) <= c_lb_idle;
@@ -544,100 +535,54 @@ begin
 
     end generate g_psum_pe_commands;
 
-    control_init_inst : if g_control_init = true generate
+    w_c1           <= i_c1;
+    w_w1           <= i_w1;
+    w_h2           <= i_h2;
+    w_m0           <= i_m0;
+    w_m0_last_m1   <= 0; -- unused
+    w_rows_last_h2 <= i_rows_last_h2;
+    w_c0           <= i_c0;
+    w_c0_last_c1   <= i_c0_last_c1;
+    w_c0w0         <= i_c0w0;
+    w_c0w0_last_c1 <= i_c0w0_last_c1;
 
-        control_init_inst : entity accel.control_init(rs_dataflow)
-            generic map (
-                size_x           => size_x,
-                size_y           => size_y,
-                size_rows        => size_rows,
-                addr_width_rows  => addr_width_rows,
-                addr_width_y     => addr_width_y,
-                addr_width_x     => addr_width_x,
-                line_length_iact => line_length_iact,
-                addr_width_iact  => addr_width_iact,
-                line_length_psum => line_length_psum,
-                addr_width_psum  => addr_width_psum,
-                line_length_wght => line_length_wght,
-                addr_width_wght  => addr_width_wght
-            )
-            port map (
-                clk            => clk,
-                rstn           => rstn,
-                o_status       => o_init_done,
-                i_start        => w_start_init,
-                o_c1           => w_c1,
-                o_w1           => w_w1,
-                o_h2           => w_h2,
-                o_m0           => w_m0,
-                o_m0_dist      => w_m0_dist,
-                o_m0_last_m1   => w_m0_last_m1,
-                o_rows_last_h2 => w_rows_last_h2,
-                o_c0           => w_c0,
-                o_c0_last_c1   => w_c0_last_c1,
-                o_c0w0         => w_c0w0,
-                o_c0w0_last_c1 => w_c0w0_last_c1,
-                i_image_x      => i_image_x,
-                i_image_y      => i_image_y,
-                i_channels     => i_channels,
-                i_kernels      => i_kernels,
-                i_kernel_size  => i_kernel_size
-            );
+    p_init_m0_dist : process (clk, rstn) is
 
-    else generate
+        variable v_m0_count : integer range 0 to size_y + 1;
 
-        w_c1           <= i_c1;
-        w_w1           <= i_w1;
-        w_h2           <= i_h2;
-        w_m0           <= i_m0;
-        w_m0_dist      <= r_m0_dist;
-        w_m0_last_m1   <= 0; -- unused
-        w_rows_last_h2 <= i_rows_last_h2;
-        w_c0           <= i_c0;
-        w_c0_last_c1   <= i_c0_last_c1;
-        w_c0w0         <= i_c0w0;
-        w_c0w0_last_c1 <= i_c0w0_last_c1;
-        o_init_done    <= r_init_done;
+    begin
 
-        p_init_m0_dist : process (clk, rstn) is
-
-            variable v_m0_count : integer range 0 to size_y + 1;
-
-        begin
-
-            if not rstn then
+        if not rstn then
+            r_m0_count_idx    <= 0;
+            r_m0_count_kernel <= 0;
+            v_m0_count        := 1;
+            r_m0_dist         <= (others => (others => '0'));
+            r_init_done       <= '0';
+        elsif rising_edge(clk) then
+            if r_state = s_idle then
                 r_m0_count_idx    <= 0;
                 r_m0_count_kernel <= 0;
                 v_m0_count        := 1;
-                r_m0_dist         <= (others => (others => '0'));
                 r_init_done       <= '0';
-            elsif rising_edge(clk) then
-                if r_state = s_idle then
-                    r_m0_count_idx    <= 0;
-                    r_m0_count_kernel <= 0;
-                    v_m0_count        := 1;
-                    r_init_done       <= '0';
-                elsif r_state = s_init then
-                    if r_m0_count_idx /= size_y then
-                        r_m0_count_idx <= r_m0_count_idx + 1;
-                        if r_m0_count_kernel /= i_kernel_size then
-                            r_m0_count_kernel         <= r_m0_count_kernel + 1;
-                            r_m0_dist(r_m0_count_idx) <= std_logic_vector(to_unsigned(v_m0_count, addr_width_y));
-                        else
-                            if r_m0_count_idx + i_kernel_size <= size_y then -- check if one more kernel can be mapped
-                                r_m0_count_kernel         <= 1;
-                                v_m0_count                := v_m0_count + 1;
-                                r_m0_dist(r_m0_count_idx) <= std_logic_vector(to_unsigned(v_m0_count, addr_width_y));
-                            end if;
-                        end if;
+            elsif r_state = s_init then
+                if r_m0_count_idx /= size_y then
+                    r_m0_count_idx <= r_m0_count_idx + 1;
+                    if r_m0_count_kernel /= i_kernel_size then
+                        r_m0_count_kernel         <= r_m0_count_kernel + 1;
+                        r_m0_dist(r_m0_count_idx) <= std_logic_vector(to_unsigned(v_m0_count, addr_width_y));
                     else
-                        r_init_done <= '1';
+                        if r_m0_count_idx + i_kernel_size <= size_y then -- check if one more kernel can be mapped
+                            r_m0_count_kernel         <= 1;
+                            v_m0_count                := v_m0_count + 1;
+                            r_m0_dist(r_m0_count_idx) <= std_logic_vector(to_unsigned(v_m0_count, addr_width_y));
+                        end if;
                     end if;
+                else
+                    r_init_done <= '1';
                 end if;
             end if;
+        end if;
 
-        end process p_init_m0_dist;
-
-    end generate control_init_inst;
+    end process p_init_m0_dist;
 
 end architecture rs_dataflow;

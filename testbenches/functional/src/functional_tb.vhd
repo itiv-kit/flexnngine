@@ -58,7 +58,6 @@ entity functional_tb is
         g_init_sp    : boolean  := true;
         g_iterations : positive := 1;
 
-        g_control_init : boolean  := false;
         g_c1           : positive := 1;
         g_w1           : positive := 1;
         g_h2           : positive := 1;

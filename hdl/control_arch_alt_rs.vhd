@@ -8,7 +8,6 @@ library accel;
 architecture alternative_rs_dataflow of control is
 
     signal r_state      : t_control_state;
-    signal w_start_init : std_logic;
     signal r_init_done  : std_logic;
 
     signal r_count_c0w0 : integer range 0 to 2048; -- range 0 to 511
@@ -32,7 +31,7 @@ architecture alternative_rs_dataflow of control is
     signal r_incr_w1 : std_logic;
 
     signal w_m0         : integer range 0 to 1023;
-    signal w_m0_dist    : array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
+    signal r_m0_dist    : array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
     signal w_m0_last_m1 : integer range 0 to 1023;
 
     signal r_command_iact       : command_lb_array_t(0 to size_y);
@@ -61,24 +60,11 @@ architecture alternative_rs_dataflow of control is
 
 begin
 
-    r_command_psum_d       <= r_command_psum when rising_edge(clk);
-    r_read_offset_psum_d   <= r_read_offset_psum when rising_edge(clk);
-    r_update_offset_psum_d <= r_update_offset_psum when rising_edge(clk);
-
-    w_start_init <= '1' when r_state = s_init else '0';
     o_done       <= '1' when r_state = s_done else '0';
 
-    o_c0_last_c1 <= w_c0_last_c1;
-    o_c0         <= w_c0;
-    o_c1         <= w_c1;
-    o_w1         <= w_w1;
-    o_h2         <= w_h2;
-    o_m0         <= w_m0;
-
-    -- unused by alternative rs dataflow, so drive these with constant 0
-    w_m0_dist    <= (others => (others => '0'));
-    o_m0_dist    <= w_m0_dist;
-    o_m0_last_m1 <= w_m0_last_m1;
+    -- unused by alternative rs dataflow, so drive with constant 0
+    r_m0_dist <= (others => (others => '0'));
+    o_m0_dist <= r_m0_dist;
 
     -- Do not stop when filling read/update pipeline
     o_enable <= i_enable_if when r_state /= s_output else -- r_count_c0w0 > 1 and
@@ -87,6 +73,10 @@ begin
 
     o_pause_iact <= '1' when r_state = s_output else
                     '0';
+
+    r_command_psum_d       <= r_command_psum when rising_edge(clk);
+    r_read_offset_psum_d   <= r_read_offset_psum when rising_edge(clk);
+    r_update_offset_psum_d <= r_update_offset_psum when rising_edge(clk);
 
     gen_delay_y : for y in 0 to size_y - 1 generate
 
@@ -244,10 +234,9 @@ begin
 
                 when s_init =>
 
-                    if r_init_done = '1' then
-                        o_init_done <= '1';
-                        r_state     <= s_calculate;
-                    end if;
+                    -- no initialization necessary for alternative rs
+                    o_init_done <= '1';
+                    r_state     <= s_calculate;
 
                 when s_calculate =>
 
@@ -480,7 +469,7 @@ begin
 
                     if r_count_w1 = 0 then
                         r_command_wght     <= (others => c_lb_shrink);
-                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_kernel_size * o_c0, addr_width_wght)));
+                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_kernel_size * w_c0, addr_width_wght)));
                     end if;
 
                 when s_incr_h1 =>
@@ -490,7 +479,7 @@ begin
 
                     if r_count_w1 = 0 then
                         r_command_wght     <= (others => c_lb_shrink);
-                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_kernel_size * o_c0_last_c1, addr_width_wght)));
+                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_kernel_size * w_c0_last_c1, addr_width_wght)));
                     end if;
 
                 when s_output =>
@@ -623,59 +612,16 @@ begin
 
     end generate g_psum_pe_commands;
 
-    control_init_inst : if g_control_init = true generate
-
-        control_init_inst : entity accel.control_init(alternative_rs_dataflow)
-            generic map (
-                size_x           => size_x,
-                size_y           => size_y,
-                size_rows        => size_rows,
-                addr_width_rows  => addr_width_rows,
-                addr_width_y     => addr_width_y,
-                addr_width_x     => addr_width_x,
-                line_length_iact => line_length_iact,
-                addr_width_iact  => addr_width_iact,
-                line_length_psum => line_length_psum,
-                addr_width_psum  => addr_width_psum,
-                line_length_wght => line_length_wght,
-                addr_width_wght  => addr_width_wght
-            )
-            port map (
-                clk            => clk,
-                rstn           => rstn,
-                o_status       => r_init_done,
-                i_start        => w_start_init,
-                o_c1           => w_c1,
-                o_w1           => w_w1,
-                o_h2           => w_h2,
-                o_m0           => w_m0,
-                o_m0_last_m1   => w_m0_last_m1,
-                o_rows_last_h2 => w_rows_last_h2,
-                o_c0           => w_c0,
-                o_c0_last_c1   => w_c0_last_c1,
-                o_c0w0         => w_c0w0,
-                o_c0w0_last_c1 => w_c0w0_last_c1,
-                i_image_x      => i_image_x,
-                i_image_y      => i_image_y,
-                i_channels     => i_channels,
-                i_kernels      => i_kernels,
-                i_kernel_size  => i_kernel_size
-            );
-
-    else generate
-
-        w_c1           <= i_c1;
-        w_w1           <= i_w1;
-        w_h2           <= i_h2;
-        w_m0           <= i_m0;
-        w_m0_last_m1   <= i_m0_last_m1;
-        w_rows_last_h2 <= i_rows_last_h2;
-        w_c0           <= i_c0;
-        w_c0_last_c1   <= i_c0_last_c1;
-        w_c0w0         <= i_c0w0;
-        w_c0w0_last_c1 <= i_c0w0_last_c1;
-        r_init_done    <= '1';
-
-    end generate control_init_inst;
+    w_c1           <= i_c1;
+    w_w1           <= i_w1;
+    w_h2           <= i_h2;
+    w_m0           <= i_m0;
+    w_m0_last_m1   <= i_m0_last_m1;
+    w_rows_last_h2 <= i_rows_last_h2;
+    w_c0           <= i_c0;
+    w_c0_last_c1   <= i_c0_last_c1;
+    w_c0w0         <= i_c0w0;
+    w_c0w0_last_c1 <= i_c0w0_last_c1;
+    r_init_done    <= '1';
 
 end architecture alternative_rs_dataflow;

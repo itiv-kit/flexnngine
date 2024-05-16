@@ -26,7 +26,6 @@ entity control_address_generator is
         line_length_wght : positive := 64;
         addr_width_wght  : positive := 6;
 
-        g_control_init : boolean := false;
         g_dataflow : integer := 1
     );
     port (
@@ -40,9 +39,6 @@ entity control_address_generator is
         o_enable     : out   std_logic;
         o_pause_iact : out   std_logic;
         o_done       : out   std_logic;
-
-        o_w1 : out   integer range 0 to 1023;
-        o_m0 : out   integer range 0 to 1023;
 
         i_image_x : in    integer range 0 to 1023; --! size of input image
         i_image_y : in    integer range 0 to 1023; --! size of input image
@@ -90,21 +86,11 @@ architecture rtl of control_address_generator is
 
     signal w_control_init_done : std_logic;
 
-    signal w_c1         : integer range 0 to 1023;
-    signal w_w1         : integer range 0 to 1023;
-    signal w_h2         : integer range 0 to 1023;
-    signal w_m0         : integer range 0 to 1023;
     signal w_m0_dist    : array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
-    signal w_m0_last_m1 : integer range 0 to 1023;
-    signal w_c0         : integer range 0 to 1023;
-    signal w_c0_last_c1 : integer range 0 to 1023;
 
 begin
 
     o_init_done <= w_control_init_done;
-
-    o_w1 <= w_w1;
-    o_m0 <= w_m0;
 
     g_control : if g_dataflow = 1 generate
     begin
@@ -122,8 +108,7 @@ begin
                 line_length_psum => line_length_psum,
                 addr_width_psum  => addr_width_psum,
                 line_length_wght => line_length_wght,
-                addr_width_wght  => addr_width_wght,
-                g_control_init   => g_control_init
+                addr_width_wght  => addr_width_wght
             )
             port map (
                 clk                  => clk,
@@ -134,14 +119,7 @@ begin
                 i_enable_if          => i_enable_if,
                 o_enable             => o_enable,
                 o_pause_iact         => o_pause_iact,
-                o_c1                 => w_c1,
-                o_w1                 => w_w1,
-                o_h2                 => w_h2,
-                o_m0                 => w_m0,
                 o_m0_dist            => w_m0_dist,
-                o_m0_last_m1         => w_m0_last_m1,
-                o_c0                 => w_c0,
-                o_c0_last_c1         => w_c0_last_c1,
                 i_image_x            => i_image_x,
                 i_image_y            => i_image_y,
                 i_channels           => i_channels,
@@ -185,8 +163,7 @@ begin
                 line_length_psum => line_length_psum,
                 addr_width_psum  => addr_width_psum,
                 line_length_wght => line_length_wght,
-                addr_width_wght  => addr_width_wght,
-                g_control_init   => g_control_init
+                addr_width_wght  => addr_width_wght
             )
             port map (
                 clk                  => clk,
@@ -197,14 +174,7 @@ begin
                 i_enable_if          => i_enable_if,
                 o_enable             => o_enable,
                 o_pause_iact         => o_pause_iact,
-                o_c1                 => w_c1,
-                o_w1                 => w_w1,
-                o_h2                 => w_h2,
-                o_m0                 => w_m0,
                 o_m0_dist            => w_m0_dist,
-                o_m0_last_m1         => w_m0_last_m1,
-                o_c0                 => w_c0,
-                o_c0_last_c1         => w_c0_last_c1,
                 i_image_x            => i_image_x,
                 i_image_y            => i_image_y,
                 i_channels           => i_channels,
@@ -259,14 +229,14 @@ begin
                 clk                  => clk,
                 rstn                 => rstn,
                 i_start              => w_control_init_done,
-                i_c1                 => w_c1,
-                i_w1                 => w_w1,
-                i_h2                 => w_h2,
-                i_m0                 => w_m0,
+                i_c1                 => i_c1,
+                i_w1                 => i_w1,
+                i_h2                 => i_h2,
+                i_m0                 => i_m0,
                 i_m0_dist            => w_m0_dist,
-                i_m0_last_m1         => w_m0_last_m1,
-                i_c0                 => w_c0,
-                i_c0_last_c1         => w_c0_last_c1,
+                i_m0_last_m1         => i_m0_last_m1,
+                i_c0                 => i_c0,
+                i_c0_last_c1         => i_c0_last_c1,
                 i_image_x            => i_image_x,
                 i_image_y            => i_image_y,
                 i_channels           => i_channels,
@@ -304,14 +274,14 @@ begin
                 clk                  => clk,
                 rstn                 => rstn,
                 i_start              => w_control_init_done,
-                i_c1                 => w_c1,
-                i_w1                 => w_w1,
-                i_h2                 => w_h2,
-                i_m0                 => w_m0,
+                i_c1                 => i_c1,
+                i_w1                 => i_w1,
+                i_h2                 => i_h2,
+                i_m0                 => i_m0,
                 i_m0_dist            => w_m0_dist,
-                i_m0_last_m1         => w_m0_last_m1,
-                i_c0                 => w_c0,
-                i_c0_last_c1         => w_c0_last_c1,
+                i_m0_last_m1         => i_m0_last_m1,
+                i_c0                 => i_c0,
+                i_c0_last_c1         => i_c0_last_c1,
                 i_image_x            => i_image_x,
                 i_image_y            => i_image_y,
                 i_channels           => i_channels,

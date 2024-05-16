@@ -459,7 +459,6 @@ class Test:
             'g_iact_fifo_size':    self.accelerator.iact_fifo_size,
             'g_wght_fifo_size':    self.accelerator.wght_fifo_size,
             'g_psum_fifo_size':    self.accelerator.psum_fifo_size,
-            'g_control_init':      False,
             'g_c1':                self.C1,
             'g_w1':                self.W1,
             'g_h2':                self.H2,

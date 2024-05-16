@@ -51,9 +51,7 @@ entity accelerator is
 
         g_files_dir : string  := "";
         g_init_sp   : boolean := false;
-
-        g_control_init : boolean := false;
-        g_dataflow     : integer := 1
+        g_dataflow  : integer := 1
     );
     port (
         clk  : in    std_logic;
@@ -169,9 +167,6 @@ architecture rtl of accelerator is
 
     signal w_dataflow : std_logic;
 
-    signal w_w1 : integer range 0 to 1023; /* TODO change range to sth. useful */
-    signal w_m0 : integer range 0 to 1023;
-
     signal r_image_x     : integer range 0 to 1023; /* TODO change range to sth. useful */
     signal r_image_y     : integer range 0 to 1023; /* TODO change range to sth. useful */
     signal r_channels    : integer range 0 to 4095; /* TODO change range to sth. useful */
@@ -285,7 +280,6 @@ begin
             addr_width_psum     => addr_width_psum,
             line_length_wght    => line_length_wght,
             addr_width_wght     => addr_width_wght,
-            g_control_init      => g_control_init,
             g_dataflow          => g_dataflow
         )
         port map (
@@ -297,8 +291,6 @@ begin
             o_enable                 => w_enable,
             o_pause_iact             => w_pause_iact,
             o_done                   => o_done,
-            o_w1                     => w_w1,
-            o_m0                     => w_m0,
             i_image_x                => r_image_x,
             i_image_y                => r_image_y,
             i_channels               => r_channels,
@@ -455,8 +447,8 @@ begin
             rstn                => rstn,
             i_start             => w_control_init_done,
             i_dataflow          => w_dataflow,
-            i_w1                => w_w1,
-            i_m0                => w_m0,
+            i_w1                => i_conv_param_w1,
+            i_m0                => i_conv_param_m0,
             i_kernel_size       => i_kernel_size,
             i_valid_psum_out    => w_valid_psums_out,
             i_gnt_psum_binary_d => w_gnt_psum_binary_d,
