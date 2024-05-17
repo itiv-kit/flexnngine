@@ -2,6 +2,9 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library accel;
+use accel.utilities.parameters_t;
+
 entity ACC_v1_0 is
   generic (
     size_x : positive := 5;
@@ -94,27 +97,10 @@ architecture arch_imp of ACC_v1_0 is
       C_S_AXI_ADDR_WIDTH : integer := 7
     );
     port (
-      o_channels    : out integer range 0 to 1023;
-      o_kernels     : out integer range 0 to 1023;
-      o_image_y     : out integer range 0 to 4095;
-      o_image_x     : out integer range 0 to 4095;
-      o_kernel_size : out integer range 0 to 31;
-      o_conv_param_c1           : out integer range 0 to 1023;
-      o_conv_param_w1           : out integer range 0 to 1023;
-      o_conv_param_h2           : out integer range 0 to 1023;
-      o_conv_param_m0           : out integer range 0 to 1023;
-      o_conv_param_m0_last_m1   : out integer range 0 to 1023;
-      o_conv_param_row_last_h2  : out integer range 0 to 1023;
-      o_conv_param_c0           : out integer range 0 to 1023;
-      o_conv_param_c0_last_c1   : out integer range 0 to 1023;
-      o_conv_param_c0w0         : out integer range 0 to 1023;
-      o_conv_param_c0w0_last_c1 : out integer range 0 to 1023;
-      o_rst         : out std_logic;
-      o_start       : out std_logic;
-      i_done        : in std_logic;
-      i_ready       : in std_logic;
-      i_status_sp   : in std_logic;
-      i_status_adr  : in std_logic;
+      o_rst         : out   std_logic;
+      o_start       : out   std_logic;
+      i_done        : in    std_logic;
+      o_params      : out   parameters_t;
       S_AXI_ACLK    : in std_logic;
       S_AXI_ARESETN : in std_logic;
       S_AXI_AWADDR  : in std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
@@ -165,14 +151,14 @@ architecture arch_imp of ACC_v1_0 is
       addr_width_wght     : positive := 9;
 
       -- address widths scratchpad <-> pe array
-      spad_addr_width_iact : positive := 15;
-      spad_addr_width_wght : positive := 15;
-      spad_addr_width_psum : positive := 15;
+      spad_addr_width_iact : positive := 15; -- word size data_width_iact
+      spad_addr_width_wght : positive := 15; -- word size data_width_wght
+      spad_addr_width_psum : positive := 15; -- word size data_width_psum
 
       -- address widths scratchpad <-> external, port_a is exposed as i/o on this module
-      spad_ext_addr_width_iact : positive := 13;
-      spad_ext_addr_width_wght : positive := 13;
-      spad_ext_addr_width_psum : positive := 14;
+      spad_ext_addr_width_iact : positive := 13; -- word size spad_ext_data_width_iact
+      spad_ext_addr_width_wght : positive := 13; -- word size spad_ext_data_width_wght
+      spad_ext_addr_width_psum : positive := 14; -- word size spad_ext_data_width_psum
       spad_ext_data_width_iact : positive := 32;
       spad_ext_data_width_wght : positive := 32;
       spad_ext_data_width_psum : positive := 32;
@@ -193,13 +179,9 @@ architecture arch_imp of ACC_v1_0 is
 
       clk_sp : in    std_logic;
 
-      i_start_init : in    std_logic;
-      i_start      : in    std_logic;
-
-      o_ready      : out   std_logic;
-      o_done       : out   std_logic;
-      o_status_sp  : out   std_logic;
-      o_status_adr : out   std_logic;
+      i_start  : in    std_logic;
+      o_done   : out   std_logic;
+      i_params : in    parameters_t;
 
       i_en_iact : in    std_logic;
       i_en_wght : in    std_logic;
@@ -219,50 +201,14 @@ architecture arch_imp of ACC_v1_0 is
 
       o_dout_iact : out   std_logic_vector(spad_ext_data_width_iact - 1 downto 0);
       o_dout_wght : out   std_logic_vector(spad_ext_data_width_wght - 1 downto 0);
-      o_dout_psum : out   std_logic_vector(spad_ext_data_width_psum - 1 downto 0);
-
-      -- modified to receive parameters via ports
-      i_channels    : in    integer range 0 to 1023;
-      i_kernels     : in    integer range 0 to 1023;
-      i_image_y     : in    integer range 0 to 4095;
-      i_image_x     : in    integer range 0 to 4095;
-      i_kernel_size : in    integer range 0 to 31;
-
-      i_conv_param_c1           : in    integer range 0 to 1023;
-      i_conv_param_w1           : in    integer range 0 to 1023;
-      i_conv_param_h2           : in    integer range 0 to 1023;
-      i_conv_param_m0           : in    integer range 0 to 1023;
-      i_conv_param_m0_last_m1   : in    integer range 0 to 1023;
-      i_conv_param_row_last_h2  : in    integer range 0 to 1023;
-      i_conv_param_c0           : in    integer range 0 to 1023;
-      i_conv_param_c0_last_c1   : in    integer range 0 to 1023;
-      i_conv_param_c0w0         : in    integer range 0 to 1023;
-      i_conv_param_c0w0_last_c1 : in    integer range 0 to 1023
+      o_dout_psum : out   std_logic_vector(spad_ext_data_width_psum - 1 downto 0)
     );
   end component;
 
-  signal rst, rstn  : std_logic;
-  signal start      : std_logic;
-  signal done       : std_logic;
-  signal ready      : std_logic;
-  signal status_sp  : std_logic;
-  signal status_adr : std_logic;
-  signal start_init : std_logic;
-  signal channels    : integer range 0 to 1023;
-  signal kernels     : integer range 0 to 1023;
-  signal image_y     : integer range 0 to 4095;
-  signal image_x     : integer range 0 to 4095;
-  signal kernel_size : integer range 0 to 31;
-  signal conv_param_c1           : integer range 0 to 1023;
-  signal conv_param_w1           : integer range 0 to 1023;
-  signal conv_param_h2           : integer range 0 to 1023;
-  signal conv_param_m0           : integer range 0 to 1023;
-  signal conv_param_m0_last_m1   : integer range 0 to 1023;
-  signal conv_param_row_last_h2  : integer range 0 to 1023;
-  signal conv_param_c0           : integer range 0 to 1023;
-  signal conv_param_c0_last_c1   : integer range 0 to 1023;
-  signal conv_param_c0w0         : integer range 0 to 1023;
-  signal conv_param_c0w0_last_c1 : integer range 0 to 1023;
+  signal rst, rstn : std_logic;
+  signal start     : std_logic;
+  signal done      : std_logic;
+  signal params    : parameters_t;
 
   attribute x_interface_mode      : string;
   attribute x_interface_info      : string;
@@ -302,7 +248,6 @@ architecture arch_imp of ACC_v1_0 is
 begin
 
   rstn <= not rst;
-  start_init <= '0'; -- unused by accelerator
 
 -- Instantiation of AXI Bus Interface S00_AXI
   ACC_v1_0_S00_AXI_inst : ACC_v1_0_S00_AXI generic map (
@@ -311,25 +256,8 @@ begin
   ) port map (
     o_rst         => rst,
     o_start       => start,
-    o_channels    => channels,
-    o_kernels     => kernels,
-    o_image_y     => image_y,
-    o_image_x     => image_x,
-    o_kernel_size => kernel_size,
-    o_conv_param_c1 => conv_param_c1,
-    o_conv_param_w1 => conv_param_w1,
-    o_conv_param_h2 => conv_param_h2,
-    o_conv_param_m0 => conv_param_m0,
-    o_conv_param_m0_last_m1   => conv_param_m0_last_m1,
-    o_conv_param_row_last_h2  => conv_param_row_last_h2,
-    o_conv_param_c0           => conv_param_c0,
-    o_conv_param_c0_last_c1   => conv_param_c0_last_c1,
-    o_conv_param_c0w0         => conv_param_c0w0,
-    o_conv_param_c0w0_last_c1 => conv_param_c0w0_last_c1,
     i_done        => done,
-    i_ready       => ready,
-    i_status_sp   => status_sp,
-    i_status_adr  => status_adr,
+    o_params      => params,
     S_AXI_ACLK    => s00_axi_aclk,
     S_AXI_ARESETN => s00_axi_aresetn,
     S_AXI_AWADDR  => s00_axi_awaddr,
@@ -375,13 +303,9 @@ begin
 
     clk_sp => clk_sp,
 
-    i_start_init => start_init,
-    i_start      => start,
-
-    o_ready      => ready,
-    o_done       => done,
-    o_status_sp  => status_sp,
-    o_status_adr => status_adr,
+    i_start  => start,
+    o_done   => done,
+    i_params => params,
 
     i_en_iact => i_en_iact,
     i_en_wght => i_en_wght,
@@ -401,24 +325,7 @@ begin
 
     o_dout_psum => o_dout_psum,
     o_dout_iact => o_dout_iact,
-    o_dout_wght => o_dout_wght,
-
-    i_channels    => channels,
-    i_kernels     => kernels,
-    i_image_y     => image_y,
-    i_image_x     => image_x,
-    i_kernel_size => kernel_size,
-
-    i_conv_param_c1           => conv_param_c1,
-    i_conv_param_w1           => conv_param_w1,
-    i_conv_param_h2           => conv_param_h2,
-    i_conv_param_m0           => conv_param_m0,
-    i_conv_param_m0_last_m1   => conv_param_m0_last_m1,
-    i_conv_param_row_last_h2  => conv_param_row_last_h2,
-    i_conv_param_c0           => conv_param_c0,
-    i_conv_param_c0_last_c1   => conv_param_c0_last_c1,
-    i_conv_param_c0w0         => conv_param_c0w0,
-    i_conv_param_c0w0_last_c1 => conv_param_c0w0_last_c1
+    o_dout_wght => o_dout_wght
   );
 
 end arch_imp;

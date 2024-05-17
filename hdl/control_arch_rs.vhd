@@ -26,11 +26,9 @@ architecture rs_dataflow of control is
 
     signal w_w1 : integer range 0 to 1023;
     signal w_c1 : integer range 0 to 1023;
+    signal w_m0 : integer range 0 to 1023;
 
     signal r_incr_w1 : std_logic;
-
-    signal w_m0         : integer range 0 to 1023;
-    signal w_m0_last_m1 : integer range 0 to 1023;
 
     signal r_command_iact       : command_lb_array_t(0 to size_y);
     signal r_read_offset_iact   : array_t(0 to size_y)(addr_width_iact - 1 downto 0);
@@ -245,7 +243,7 @@ begin
                 when s_output =>
 
                     -- Command counter for output commands (psum accumulation and psum read)
-                    if r_count_c0w0 /= i_kernel_size + w_m0 + 1 then -- i_kernel_size + w_m0 then /* TODO Change to allow for multiple kernel data to be output */
+                    if r_count_c0w0 /= i_params.kernel_size + w_m0 + 1 then -- i_params.kernel_size + w_m0 then /* TODO Change to allow for multiple kernel data to be output */
                         if r_count_w1 /= w_w1 - 1 then
                             r_count_w1 <= r_count_w1 + 1;
                         else
@@ -320,7 +318,7 @@ begin
 
                         if r_count_w1 = 0 then
                             r_command_iact     <= (others => c_lb_shrink);
-                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * w_c0 - w_c0, addr_width_iact)));
+                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0 - w_c0, addr_width_iact)));
                         end if;
 
                     when s_output =>
@@ -331,10 +329,10 @@ begin
                         if r_count_c0w0 = 0 and r_count_w1 = 0 then
                             if w_c1 > 1 then
                                 r_command_iact     <= (others => c_lb_shrink);
-                                r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * w_c0_last_c1 - w_c0_last_c1, addr_width_iact)));
+                                r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0_last_c1 - w_c0_last_c1, addr_width_iact)));
                             else
                                 r_command_iact     <= (others => c_lb_shrink);
-                                r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * i_channels - i_channels, addr_width_iact)));
+                                r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * i_params.channels - i_params.channels, addr_width_iact)));
                             end if;
                         end if;
 
@@ -385,7 +383,7 @@ begin
 
                         if r_count_w1 = 0 then
                             r_command_wght     <= (others => c_lb_shrink);
-                            r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_kernel_size * w_c0, addr_width_wght)));
+                            r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0, addr_width_wght)));
                         end if;
 
                     when s_output =>
@@ -395,7 +393,7 @@ begin
                         if w_c1 > 1 then
                             if r_count_c0w0 = 0 and r_count_w1 = 0 then
                                 r_command_wght     <= (others => c_lb_shrink);
-                                r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_kernel_size * w_c0_last_c1, addr_width_wght)));
+                                r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0_last_c1, addr_width_wght)));
                             end if;
                         end if;
 
@@ -412,7 +410,7 @@ begin
 
     g_psum_pe_commands : for i in 0 to size_y - 1 generate
 
-        w_output_sequence(i) <= (i - (to_integer(unsigned(r_m0_dist(i)))) * i_kernel_size + i_kernel_size);
+        w_output_sequence(i) <= (i - (to_integer(unsigned(r_m0_dist(i)))) * i_params.kernel_size + i_params.kernel_size);
 
         -- Commands to control dataflow within PE (psum / mult / passthrough)
         p_command : process (clk, rstn) is
@@ -426,12 +424,12 @@ begin
 
                     when s_output =>
 
-                        if r_count_w1 = 1 and r_count_c0w0 < i_kernel_size then
+                        if r_count_w1 = 1 and r_count_c0w0 < i_params.kernel_size then
                             r_command(i) <= c_pe_conv_psum;
                         elsif to_integer(unsigned(r_m0_dist(i))) = 0 then
                             r_command(i) <= c_pe_conv_psum;
-                        elsif r_count_c0w0 > i_kernel_size then
-                            if w_output_sequence(i) = i_kernel_size - r_count_c0w0 - 1 + to_integer(unsigned(r_m0_dist(i))) then
+                        elsif r_count_c0w0 > i_params.kernel_size then
+                            if w_output_sequence(i) = i_params.kernel_size - r_count_c0w0 - 1 + to_integer(unsigned(r_m0_dist(i))) then
                                 r_command(i) <= c_pe_conv_psum;
                             elsif r_count_w1 = 2 then
                                 r_command(i) <= c_pe_conv_pass;
@@ -497,22 +495,22 @@ begin
                             r_read_offset_psum(i)   <= (others => '0');
                             r_update_offset_psum(i) <= (others => '0');
 
-                            if r_count_c0w0 = i_kernel_size + w_m0 then /* TODO prob. change i_kernel_size + w_m0*/
+                            if r_count_c0w0 = i_params.kernel_size + w_m0 then /* TODO prob. change i_params.kernel_size + w_m0*/
                                 -- Remove all stored psums, new tile (h1)
                                 if r_count_w1 = 0 then
                                     r_command_psum(i)     <= c_lb_shrink;
-                                    r_read_offset_psum(i) <= std_logic_vector(to_unsigned(i_image_x - i_kernel_size + 1, addr_width_psum));
+                                    r_read_offset_psum(i) <= std_logic_vector(to_unsigned(i_params.image_x - i_params.kernel_size + 1, addr_width_psum));
                                 end if;
                             else
                                 -- Sum psums vertically across accelerator. Different kernels summed to their top row respectively
 
-                                if w_output_sequence(i) = i_kernel_size - r_count_c0w0 - 1 and r_count_c0w0 < i_kernel_size + 1 then
+                                if w_output_sequence(i) = i_params.kernel_size - r_count_c0w0 - 1 and r_count_c0w0 < i_params.kernel_size + 1 then
                                     r_command_psum(i) <= c_lb_read;
-                                elsif w_output_sequence(i) = i_kernel_size - r_count_c0w0 - 2 and r_count_c0w0 < i_kernel_size + 1 then
+                                elsif w_output_sequence(i) = i_params.kernel_size - r_count_c0w0 - 2 and r_count_c0w0 < i_params.kernel_size + 1 then
                                     r_command_psum(i) <= c_lb_read_update;
-                                elsif r_count_c0w0 = i_kernel_size then
+                                elsif r_count_c0w0 = i_params.kernel_size then
                                     r_command_psum(i) <= c_lb_idle;
-                                elsif w_output_sequence(i) = i_kernel_size - r_count_c0w0 - 1 + to_integer(unsigned(r_m0_dist(i))) and r_count_c0w0 >= i_kernel_size + 1 then
+                                elsif w_output_sequence(i) = i_params.kernel_size - r_count_c0w0 - 1 + to_integer(unsigned(r_m0_dist(i))) and r_count_c0w0 >= i_params.kernel_size + 1 then
                                     r_command_psum(i) <= c_lb_read;
                                 else
                                     r_command_psum(i) <= c_lb_idle;
@@ -535,16 +533,15 @@ begin
 
     end generate g_psum_pe_commands;
 
-    w_c1           <= i_c1;
-    w_w1           <= i_w1;
-    w_h2           <= i_h2;
-    w_m0           <= i_m0;
-    w_m0_last_m1   <= 0; -- unused
-    w_rows_last_h2 <= i_rows_last_h2;
-    w_c0           <= i_c0;
-    w_c0_last_c1   <= i_c0_last_c1;
-    w_c0w0         <= i_c0w0;
-    w_c0w0_last_c1 <= i_c0w0_last_c1;
+    w_c1           <= i_params.c1;
+    w_w1           <= i_params.w1;
+    w_h2           <= i_params.h2;
+    w_m0           <= i_params.m0;
+    w_rows_last_h2 <= i_params.rows_last_h2;
+    w_c0           <= i_params.c0;
+    w_c0_last_c1   <= i_params.c0_last_c1;
+    w_c0w0         <= i_params.c0w0;
+    w_c0w0_last_c1 <= i_params.c0w0_last_c1;
 
     p_init_m0_dist : process (clk, rstn) is
 
@@ -567,11 +564,11 @@ begin
             elsif r_state = s_init then
                 if r_m0_count_idx /= size_y then
                     r_m0_count_idx <= r_m0_count_idx + 1;
-                    if r_m0_count_kernel /= i_kernel_size then
+                    if r_m0_count_kernel /= i_params.kernel_size then
                         r_m0_count_kernel         <= r_m0_count_kernel + 1;
                         r_m0_dist(r_m0_count_idx) <= std_logic_vector(to_unsigned(v_m0_count, addr_width_y));
                     else
-                        if r_m0_count_idx + i_kernel_size <= size_y then -- check if one more kernel can be mapped
+                        if r_m0_count_idx + i_params.kernel_size <= size_y then -- check if one more kernel can be mapped
                             r_m0_count_kernel         <= 1;
                             v_m0_count                := v_m0_count + 1;
                             r_m0_dist(r_m0_count_idx) <= std_logic_vector(to_unsigned(v_m0_count, addr_width_y));

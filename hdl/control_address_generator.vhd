@@ -40,13 +40,7 @@ entity control_address_generator is
         o_pause_iact : out   std_logic;
         o_done       : out   std_logic;
 
-        i_image_x : in    integer range 0 to 1023; --! size of input image
-        i_image_y : in    integer range 0 to 1023; --! size of input image
-
-        i_channels : in    integer range 0 to 4095; -- Number of input channels the image and kernels have
-        i_kernels  : in    integer range 0 to 4095; -- Number of kernels / output channels
-
-        i_kernel_size : in    integer range 0 to 32;
+        i_params : in    parameters_t;
 
         o_command      : out   command_pe_row_col_t(0 to size_y - 1, 0 to size_x - 1);
         o_command_iact : out   command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);
@@ -67,18 +61,7 @@ entity control_address_generator is
         o_address_iact       : out   array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
         o_address_wght       : out   array_t(0 to size_y - 1)(addr_width_wght_mem - 1 downto 0);
         o_address_iact_valid : out   std_logic_vector(size_rows - 1 downto 0);
-        o_address_wght_valid : out   std_logic_vector(size_y - 1 downto 0);
-
-        i_c1           : in    integer range 0 to 1023;
-        i_w1           : in    integer range 0 to 1023;
-        i_h2           : in    integer range 0 to 1023;
-        i_m0           : in    integer range 0 to 1023;
-        i_m0_last_m1   : in    integer range 0 to 1023;
-        i_rows_last_h2 : in    integer range 0 to 1023;
-        i_c0           : in    integer range 0 to 1023;
-        i_c0_last_c1   : in    integer range 0 to 1023;
-        i_c0w0         : in    integer range 0 to 1023;
-        i_c0w0_last_c1 : in    integer range 0 to 1023
+        o_address_wght_valid : out   std_logic_vector(size_y - 1 downto 0)
     );
 end entity control_address_generator;
 
@@ -86,7 +69,7 @@ architecture rtl of control_address_generator is
 
     signal w_control_init_done : std_logic;
 
-    signal w_m0_dist    : array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
+    signal w_m0_dist : array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
 
 begin
 
@@ -119,12 +102,8 @@ begin
                 i_enable_if          => i_enable_if,
                 o_enable             => o_enable,
                 o_pause_iact         => o_pause_iact,
+                i_params             => i_params,
                 o_m0_dist            => w_m0_dist,
-                i_image_x            => i_image_x,
-                i_image_y            => i_image_y,
-                i_channels           => i_channels,
-                i_kernels            => i_kernels,
-                i_kernel_size        => i_kernel_size,
                 o_command            => o_command,
                 o_command_iact       => o_command_iact,
                 o_command_psum       => o_command_psum,
@@ -134,17 +113,7 @@ begin
                 o_update_offset_wght => o_update_offset_wght,
                 o_read_offset_iact   => o_read_offset_iact,
                 o_read_offset_psum   => o_read_offset_psum,
-                o_read_offset_wght   => o_read_offset_wght,
-                i_c1                 => i_c1,
-                i_w1                 => i_w1,
-                i_h2                 => i_h2,
-                i_m0                 => i_m0,
-                i_m0_last_m1         => i_m0_last_m1,
-                i_rows_last_h2       => i_rows_last_h2,
-                i_c0                 => i_c0,
-                i_c0_last_c1         => i_c0_last_c1,
-                i_c0w0               => i_c0w0,
-                i_c0w0_last_c1       => i_c0w0_last_c1
+                o_read_offset_wght   => o_read_offset_wght
             );
 
     else generate
@@ -174,12 +143,8 @@ begin
                 i_enable_if          => i_enable_if,
                 o_enable             => o_enable,
                 o_pause_iact         => o_pause_iact,
+                i_params             => i_params,
                 o_m0_dist            => w_m0_dist,
-                i_image_x            => i_image_x,
-                i_image_y            => i_image_y,
-                i_channels           => i_channels,
-                i_kernels            => i_kernels,
-                i_kernel_size        => i_kernel_size,
                 o_command            => o_command,
                 o_command_iact       => o_command_iact,
                 o_command_psum       => o_command_psum,
@@ -189,17 +154,7 @@ begin
                 o_update_offset_wght => o_update_offset_wght,
                 o_read_offset_iact   => o_read_offset_iact,
                 o_read_offset_psum   => o_read_offset_psum,
-                o_read_offset_wght   => o_read_offset_wght,
-                i_c1                 => i_c1,
-                i_w1                 => i_w1,
-                i_h2                 => i_h2,
-                i_m0                 => i_m0,
-                i_m0_last_m1         => i_m0_last_m1,
-                i_rows_last_h2       => i_rows_last_h2,
-                i_c0                 => i_c0,
-                i_c0_last_c1         => i_c0_last_c1,
-                i_c0w0               => i_c0w0,
-                i_c0w0_last_c1       => i_c0w0_last_c1
+                o_read_offset_wght   => o_read_offset_wght
             );
 
     end generate g_control;
@@ -229,18 +184,8 @@ begin
                 clk                  => clk,
                 rstn                 => rstn,
                 i_start              => w_control_init_done,
-                i_c1                 => i_c1,
-                i_w1                 => i_w1,
-                i_h2                 => i_h2,
-                i_m0                 => i_m0,
+                i_params             => i_params,
                 i_m0_dist            => w_m0_dist,
-                i_m0_last_m1         => i_m0_last_m1,
-                i_c0                 => i_c0,
-                i_c0_last_c1         => i_c0_last_c1,
-                i_image_x            => i_image_x,
-                i_image_y            => i_image_y,
-                i_channels           => i_channels,
-                i_kernel_size        => i_kernel_size,
                 i_fifo_full_iact     => w_fifo_iact_address_full,
                 i_fifo_full_wght     => w_fifo_wght_address_full,
                 o_address_iact       => o_address_iact,
@@ -274,18 +219,8 @@ begin
                 clk                  => clk,
                 rstn                 => rstn,
                 i_start              => w_control_init_done,
-                i_c1                 => i_c1,
-                i_w1                 => i_w1,
-                i_h2                 => i_h2,
-                i_m0                 => i_m0,
+                i_params             => i_params,
                 i_m0_dist            => w_m0_dist,
-                i_m0_last_m1         => i_m0_last_m1,
-                i_c0                 => i_c0,
-                i_c0_last_c1         => i_c0_last_c1,
-                i_image_x            => i_image_x,
-                i_image_y            => i_image_y,
-                i_channels           => i_channels,
-                i_kernel_size        => i_kernel_size,
                 i_fifo_full_iact     => w_fifo_iact_address_full,
                 i_fifo_full_wght     => w_fifo_wght_address_full,
                 o_address_iact       => o_address_iact,

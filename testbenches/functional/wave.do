@@ -5,6 +5,7 @@ quietly WaveActivateNextPane {} 0
 
 add wave -noupdate -expand -group Testbench -radix unsigned /functional_tb/clk
 add wave -noupdate -expand -group Testbench -radix unsigned /functional_tb/rstn
+add wave -noupdate -group Testbench -radix unsigned /functional_tb/params
 
 add wave -noupdate -group Start -radix unsigned /functional_tb/accelerator_inst/i_start
 add wave -noupdate -group Start -radix unsigned /functional_tb/accelerator_inst/o_done
@@ -26,16 +27,6 @@ add wave -noupdate -group Start -radix unsigned -label "spadif w_empty_iact_addr
 add wave -noupdate -group Start -radix unsigned -label "spadif w_full_iact_address_f"  /functional_tb/accelerator_inst/scratchpad_interface_inst/w_full_iact_address_f
 add wave -noupdate -group Start -radix unsigned -label "spadif w_empty_wght_address_f" /functional_tb/accelerator_inst/scratchpad_interface_inst/w_empty_wght_address_f
 add wave -noupdate -group Start -radix unsigned -label "spadif w_full_wght_address_f"  /functional_tb/accelerator_inst/scratchpad_interface_inst/w_full_wght_address_f
-
-add wave -noupdate -group Control_static -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/w_c1
-add wave -noupdate -group Control_static -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/w_w1
-add wave -noupdate -group Control_static -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/w_h2
-add wave -noupdate -group Control_static -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/w_m0
-add wave -noupdate -group Control_static -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_m0_dist
-add wave -noupdate -group Control_static -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/w_c0
-add wave -noupdate -group Control_static -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/w_c0_last_c1
-add wave -noupdate -group Control_static -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/w_c0w0
-add wave -noupdate -group Control_static -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/w_c0w0_last_c1
 
 add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/read_en_iact
 add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/read_adr_iact

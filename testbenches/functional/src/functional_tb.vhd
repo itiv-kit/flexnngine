@@ -82,6 +82,8 @@ architecture imp of functional_tb is
     signal done        : std_logic;
     signal output_done : boolean;
 
+    signal params : parameters_t;
+
     signal o_psums           : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
     signal o_psums_valid     : std_logic_vector(size_x - 1 downto 0);
     signal i_data_iact       : array_t (0 to size_rows - 1)(data_width_iact - 1 downto 0);
@@ -137,6 +139,22 @@ begin
                                           '0';
     end generate g_psum_commands;
 
+    params.channels     <= g_channels;
+    params.kernels      <= g_kernels;
+    params.image_y      <= g_image_y;
+    params.image_x      <= g_image_x;
+    params.kernel_size  <= g_kernel_size;
+    params.c1           <= g_c1;
+    params.w1           <= g_w1;
+    params.h2           <= g_h2;
+    params.m0           <= g_m0;
+    params.m0_last_m1   <= g_m0_last_m1;
+    params.rows_last_h2 <= g_rows_last_h2;
+    params.c0           <= g_c0;
+    params.c0_last_c1   <= g_c0_last_c1;
+    params.c0w0         <= g_c0w0;
+    params.c0w0_last_c1 <= g_c0w0_last_c1;
+
     accelerator_inst : entity accel.accelerator
         generic map (
             size_x                   => size_x,
@@ -175,6 +193,7 @@ begin
             clk_sp   => clk_sp,
             i_start  => start,
             o_done   => done,
+            i_params => params,
             -- memory i/o not used in this testbench
             i_en_iact       => '0',
             i_en_wght       => '0',
@@ -190,23 +209,7 @@ begin
             i_din_psum      => (others => '0'),
             o_dout_iact     => open,
             o_dout_wght     => open,
-            o_dout_psum     => open,
-            -- configuration parameters
-            i_channels                => g_channels,
-            i_kernels                 => g_kernels,
-            i_image_y                 => g_image_y,
-            i_image_x                 => g_image_x,
-            i_kernel_size             => g_kernel_size,
-            i_conv_param_c1           => g_c1,
-            i_conv_param_w1           => g_w1,
-            i_conv_param_h2           => g_h2,
-            i_conv_param_m0           => g_m0,
-            i_conv_param_m0_last_m1   => g_m0_last_m1,
-            i_conv_param_row_last_h2  => g_rows_last_h2,
-            i_conv_param_c0           => g_c0,
-            i_conv_param_c0_last_c1   => g_c0_last_c1,
-            i_conv_param_c0w0         => g_c0w0,
-            i_conv_param_c0w0_last_c1 => g_c0w0_last_c1
+            o_dout_psum     => open
         );
 
     rstn_gen : process is

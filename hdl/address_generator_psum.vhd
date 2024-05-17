@@ -20,10 +20,7 @@ entity address_generator_psum is
 
         i_start    : in    std_logic;
         i_dataflow : in    std_logic;
-
-        i_w1          : in    integer range 0 to 1023;
-        i_m0          : in    integer range 0 to 1023;
-        i_kernel_size : in    integer range 0 to 32;
+        i_params   : in    parameters_t;
 
         i_valid_psum_out    : in    std_logic_vector(size_x - 1 downto 0);
         i_gnt_psum_binary_d : in    std_logic_vector(addr_width_x - 1 downto 0);
@@ -76,7 +73,7 @@ begin
 
         if not rstn then
         elsif rising_edge(clk) then
-            r_image_size <= i_w1 * i_w1;
+            r_image_size <= i_params.w1 * i_params.w1;
         end if;
 
     end process p_address_psum_helper;
@@ -108,7 +105,7 @@ begin
                 -- start of a totally new result, reset all counters
                 if r_start_event = '1' then
                     v_cur_row         := x;
-                    r_address_psum(x) <= std_logic_vector(to_unsigned(v_cur_row * i_w1, addr_width_psum));
+                    r_address_psum(x) <= std_logic_vector(to_unsigned(v_cur_row * i_params.w1, addr_width_psum));
                     r_suppress_row(x) <= '0';
                     r_suppress_col(x) <= '0';
                     v_count_m0        := 0;
@@ -116,11 +113,11 @@ begin
                     v_count_h2        := 0;
                 -- common output of one pixel
                 elsif i_valid_psum_out(x) then
-                    if v_count_w1 = i_w1 - 1 then
+                    if v_count_w1 = i_params.w1 - 1 then
                         -- one row is done
                         v_count_w1 := 0;
 
-                        if v_count_m0 = i_m0 - 1 then
+                        if v_count_m0 = i_params.m0 - 1 then
                             -- all kernels of this step done, prepare for next step
                             v_count_m0 := 0;
                             v_count_h2 := v_count_h2 + 1;
@@ -132,26 +129,26 @@ begin
                         -- calculate the current row, taking m0 into account for rs dataflow
                         v_cur_row := v_count_h2 * size_x + x;
                         if i_dataflow = '0' then
-                            v_cur_row := v_cur_row + v_count_m0 * i_kernel_size;
+                            v_cur_row := v_cur_row + v_count_m0 * i_params.kernel_size;
                         end if;
 
                         --  wrap at input image size
-                        if v_cur_row >= i_w1 + i_kernel_size - 1 then
-                            v_cur_row := v_cur_row - (i_w1 + i_kernel_size - 1);
+                        if v_cur_row >= i_params.w1 + i_params.kernel_size - 1 then
+                            v_cur_row := v_cur_row - (i_params.w1 + i_params.kernel_size - 1);
                         end if;
 
-                        r_address_psum(x) <= std_logic_vector(to_unsigned(v_count_m0 * r_image_size + v_cur_row * i_w1, addr_width_psum));
+                        r_address_psum(x) <= std_logic_vector(to_unsigned(v_count_m0 * r_image_size + v_cur_row * i_params.w1, addr_width_psum));
 
-                        -- check condition to suppress the current row (when output row > output image rows = i_w1 - i_kernel_size)
-                        if v_cur_row > i_w1 - 1 then
+                        -- check condition to suppress the current row (when output row > output image rows = i_params.w1 - i_params.kernel_size)
+                        if v_cur_row > i_params.w1 - 1 then
                             r_suppress_row(x) <= '1';
                         else
                             r_suppress_row(x) <= '0';
                         end if;
 
-                        -- check condition to suppress a full column (on last step when total columns > i_w1) (unmapped PEs)
+                        -- check condition to suppress a full column (on last step when total columns > i_params.w1) (unmapped PEs)
                         -- could be moved up if v_cur_row calculation is split
-                        if v_count_h2 * size_x + x + 1 > i_w1 + i_kernel_size - 1 then
+                        if v_count_h2 * size_x + x + 1 > i_params.w1 + i_params.kernel_size - 1 then
                             r_suppress_col(x) <= '1';
                         else
                             r_suppress_col(x) <= '0';

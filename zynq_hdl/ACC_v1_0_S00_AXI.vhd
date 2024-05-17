@@ -2,6 +2,9 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library accel;
+use accel.utilities.parameters_t;
+
 entity ACC_v1_0_S00_AXI is
   generic (
     -- Users to add parameters here
@@ -17,30 +20,10 @@ entity ACC_v1_0_S00_AXI is
   );
   port (
     -- Users to add ports here
-    o_rst   : out std_logic;
-    o_start : out std_logic;
-
-    o_channels    : out integer range 0 to 1023;
-    o_kernels     : out integer range 0 to 1023;
-    o_image_y     : out integer range 0 to 4095;
-    o_image_x     : out integer range 0 to 4095;
-    o_kernel_size : out integer range 0 to 31;
-
-    o_conv_param_c1           : out integer range 0 to 1023;
-    o_conv_param_w1           : out integer range 0 to 1023;
-    o_conv_param_h2           : out integer range 0 to 1023;
-    o_conv_param_m0           : out integer range 0 to 1023;
-    o_conv_param_m0_last_m1   : out integer range 0 to 1023;
-    o_conv_param_row_last_h2  : out integer range 0 to 1023;
-    o_conv_param_c0           : out integer range 0 to 1023;
-    o_conv_param_c0_last_c1   : out integer range 0 to 1023;
-    o_conv_param_c0w0         : out integer range 0 to 1023;
-    o_conv_param_c0w0_last_c1 : out integer range 0 to 1023;
-
-    i_done       : in std_logic;
-    i_ready      : in std_logic;
-    i_status_sp  : in std_logic;
-    i_status_adr : in std_logic;
+    o_rst    : out   std_logic;
+    o_start  : out   std_logic;
+    i_done   : in    std_logic;
+    o_params : out   parameters_t;
     -- User ports ends
 
     -- Global Clock Signal
@@ -237,9 +220,6 @@ begin
       else
         -- drive read-only and static registers
         slv_regs(1)(0) <= i_done;
-        slv_regs(1)(1) <= i_ready;
-        slv_regs(1)(2) <= i_status_sp;
-        slv_regs(1)(3) <= i_status_adr;
         slv_regs(31) <= MAGIC_REG_VALUE;
 
         loc_addr := unsigned(axi_awaddr(ADDR_LSB + OPT_MEM_ADDR_BITS downto ADDR_LSB));
@@ -374,22 +354,21 @@ begin
   o_rst   <= slv_regs(0)(0);
   o_start <= slv_regs(0)(1);
 
-  o_channels    <= to_integer(unsigned(slv_regs(2)( 9 downto 0)));
-  o_kernels     <= to_integer(unsigned(slv_regs(3)( 9 downto 0)));
-  o_image_y     <= to_integer(unsigned(slv_regs(4)(11 downto 0)));
-  o_image_x     <= to_integer(unsigned(slv_regs(5)(11 downto 0)));
-  o_kernel_size <= to_integer(unsigned(slv_regs(6)( 4 downto 0)));
-
-  o_conv_param_c1             <= to_integer(unsigned(slv_regs( 7)(9 downto 0)));
-  o_conv_param_w1             <= to_integer(unsigned(slv_regs( 8)(9 downto 0)));
-  o_conv_param_h2             <= to_integer(unsigned(slv_regs( 9)(9 downto 0)));
-  o_conv_param_m0             <= to_integer(unsigned(slv_regs(10)(9 downto 0)));
-  o_conv_param_m0_last_m1     <= to_integer(unsigned(slv_regs(11)(9 downto 0)));
-  o_conv_param_row_last_h2    <= to_integer(unsigned(slv_regs(12)(9 downto 0)));
-  o_conv_param_c0             <= to_integer(unsigned(slv_regs(13)(9 downto 0)));
-  o_conv_param_c0_last_c1     <= to_integer(unsigned(slv_regs(14)(9 downto 0)));
-  o_conv_param_c0w0           <= to_integer(unsigned(slv_regs(15)(9 downto 0)));
-  o_conv_param_c0w0_last_c1   <= to_integer(unsigned(slv_regs(16)(9 downto 0)));
+  o_params.channels     <= to_integer(unsigned(slv_regs( 2)( 9 downto 0)));
+  o_params.kernels      <= to_integer(unsigned(slv_regs( 3)( 9 downto 0)));
+  o_params.image_y      <= to_integer(unsigned(slv_regs( 4)(11 downto 0)));
+  o_params.image_x      <= to_integer(unsigned(slv_regs( 5)(11 downto 0)));
+  o_params.kernel_size  <= to_integer(unsigned(slv_regs( 6)( 4 downto 0)));
+  o_params.c1           <= to_integer(unsigned(slv_regs( 7)( 9 downto 0)));
+  o_params.w1           <= to_integer(unsigned(slv_regs( 8)( 9 downto 0)));
+  o_params.h2           <= to_integer(unsigned(slv_regs( 9)( 9 downto 0)));
+  o_params.m0           <= to_integer(unsigned(slv_regs(10)( 9 downto 0)));
+  o_params.m0_last_m1   <= to_integer(unsigned(slv_regs(11)( 9 downto 0)));
+  o_params.rows_last_h2 <= to_integer(unsigned(slv_regs(12)( 9 downto 0)));
+  o_params.c0           <= to_integer(unsigned(slv_regs(13)( 9 downto 0)));
+  o_params.c0_last_c1   <= to_integer(unsigned(slv_regs(14)( 9 downto 0)));
+  o_params.c0w0         <= to_integer(unsigned(slv_regs(15)( 9 downto 0)));
+  o_params.c0w0_last_c1 <= to_integer(unsigned(slv_regs(16)( 9 downto 0)));
   -- User logic ends
 
 end arch_imp;

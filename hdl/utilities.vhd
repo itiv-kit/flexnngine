@@ -30,6 +30,24 @@ package utilities is
 
     function and_reduce_2d (arr : in std_logic_row_col_t) return std_logic;
 
+    type parameters_t is record
+        channels     : integer range 0 to 1023;
+        kernels      : integer range 0 to 1023;
+        image_y      : integer range 0 to 4095;
+        image_x      : integer range 0 to 4095;
+        kernel_size  : integer range 0 to 31;
+        c1           : integer range 0 to 1023;
+        w1           : integer range 0 to 1023;
+        h2           : integer range 0 to 1023;
+        m0           : integer range 0 to 1023;
+        m0_last_m1   : integer range 0 to 1023;
+        rows_last_h2 : integer range 0 to 1023;
+        c0           : integer range 0 to 1023;
+        c0_last_c1   : integer range 0 to 1023;
+        c0w0         : integer range 0 to 1023;
+        c0w0_last_c1 : integer range 0 to 1023;
+    end record parameters_t;
+
 end package utilities;
 
 package body utilities is

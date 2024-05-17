@@ -7,8 +7,7 @@ library accel;
 
 architecture alternative_rs_dataflow of control is
 
-    signal r_state      : t_control_state;
-    signal r_init_done  : std_logic;
+    signal r_state : t_control_state;
 
     signal r_count_c0w0 : integer range 0 to 2048; -- range 0 to 511
     signal r_count_c1   : integer range 0 to 1023;
@@ -243,7 +242,7 @@ begin
                     if o_enable = '1' then
                         r_incr_w1 <= '0';
                         if r_count_h2 /= w_h2 then
-                            if r_count_h1 /= i_kernel_size then
+                            if r_count_h1 /= i_params.kernel_size then
                                 if r_count_c1 /= w_c1 then
                                     if r_count_w1 /= w_w1 then
                                         if not((r_count_c0w0 = w_c0w0 - 1 and r_count_c1 /= w_c1 - 1) or
@@ -305,7 +304,7 @@ begin
                         -- Delay counter after shrinking for new values to arrive in the buffer
                         if r_count_w1 /= 2 then
                             r_count_w1 <= r_count_w1 + 1;
-                        elsif r_count_h1 = i_kernel_size then
+                        elsif r_count_h1 = i_params.kernel_size then
                             -- Increment h2
                             -- Output intermediate results. Reset Psum and Iact buffer. Wait.
                             r_count_w1   <= 0;
@@ -323,7 +322,7 @@ begin
                 when s_output =>
 
                     -- Command counter for output commands (psum accumulation and psum read)
-                    if r_count_c0w0 /= w_m0 + 4 then -- i_kernel_size + w_m0 then /* TODO Change to allow for multiple kernel data to be output */
+                    if r_count_c0w0 /= w_m0 + 4 then -- i_params.kernel_size + w_m0 then /* TODO Change to allow for multiple kernel data to be output */
                         if r_count_w1 /= w_w1 - 1 then
                             r_count_w1 <= r_count_w1 + 1;
                         else
@@ -396,7 +395,7 @@ begin
 
                     if r_count_w1 = 0 then
                         r_command_iact     <= (others => c_lb_shrink);
-                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * w_c0 - w_c0, addr_width_iact)));
+                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0 - w_c0, addr_width_iact)));
                     end if;
 
                 when s_incr_h1 =>
@@ -406,7 +405,7 @@ begin
 
                     if r_count_w1 = 0 then
                         r_command_iact     <= (others => c_lb_shrink);
-                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * w_c0_last_c1 - w_c0_last_c1, addr_width_iact)));
+                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0_last_c1 - w_c0_last_c1, addr_width_iact)));
                     end if;
 
                 when s_output =>
@@ -417,10 +416,10 @@ begin
                     if r_count_c0w0 = 0 and r_count_w1 = 0 then
                         if w_c1 > 1 then
                         -- r_command_iact     <= (others => c_lb_shrink);
-                        -- r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * w_c0_last_c1 - w_c0_last_c1, addr_width_iact)));
+                        -- r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0_last_c1 - w_c0_last_c1, addr_width_iact)));
                         else
                         -- r_command_iact     <= (others => c_lb_shrink);
-                        -- r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_kernel_size * i_channels - i_channels, addr_width_iact)));
+                        -- r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * i_params.channels - i_params.channels, addr_width_iact)));
                         end if;
                     end if;
 
@@ -469,7 +468,7 @@ begin
 
                     if r_count_w1 = 0 then
                         r_command_wght     <= (others => c_lb_shrink);
-                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_kernel_size * w_c0, addr_width_wght)));
+                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0, addr_width_wght)));
                     end if;
 
                 when s_incr_h1 =>
@@ -479,7 +478,7 @@ begin
 
                     if r_count_w1 = 0 then
                         r_command_wght     <= (others => c_lb_shrink);
-                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_kernel_size * w_c0_last_c1, addr_width_wght)));
+                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0_last_c1, addr_width_wght)));
                     end if;
 
                 when s_output =>
@@ -489,7 +488,7 @@ begin
                     /*if w_c1 > 1 then
                         if r_count_c0w0 = 0 and r_count_w1 = 0 then
                             r_command_wght     <= (others => c_lb_shrink);
-                            r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_kernel_size * o_c0_last_c1, addr_width_wght)));
+                            r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * o_c0_last_c1, addr_width_wght)));
                         end if;
                     end if;*/
 
@@ -569,7 +568,7 @@ begin
 
                     when s_output =>
 
-                        if i < w_m0 * i_kernel_size then
+                        if i < w_m0 * i_params.kernel_size then
                         end if;
                         r_command_psum(i)       <= c_lb_idle;
                         r_read_offset_psum(i)   <= (others => '0');
@@ -579,18 +578,18 @@ begin
                             -- Remove all stored psums, new tile (h1)
                             if r_count_w1 = 0 then
                                 r_command_psum(i)     <= c_lb_shrink;
-                                r_read_offset_psum(i) <= std_logic_vector(to_unsigned(i_image_x - i_kernel_size + 1, addr_width_psum));
+                                r_read_offset_psum(i) <= std_logic_vector(to_unsigned(i_params.image_x - i_params.kernel_size + 1, addr_width_psum));
                             end if;
                         else
                             -- Sum psums vertically across accelerator. Different kernels summed to their top row respectively
 
                             if r_count_c0w0 = i + 2 then
                                 r_command_psum(i) <= c_lb_read;
-                            /*elsif w_output_sequence(i) = i_kernel_size - r_count_c0w0 - 2 and r_count_c0w0 < i_kernel_size + 1 then
+                            /*elsif w_output_sequence(i) = i_params.kernel_size - r_count_c0w0 - 2 and r_count_c0w0 < i_params.kernel_size + 1 then
                                 r_command_psum(i) <= c_lb_read_update;
-                            elsif r_count_c0w0 = i_kernel_size then
+                            elsif r_count_c0w0 = i_params.kernel_size then
                                 r_command_psum(i) <= c_lb_idle;
-                            elsif w_output_sequence(i) = i_kernel_size - r_count_c0w0 - 1 + i and r_count_c0w0 >= i_kernel_size + 1 then
+                            elsif w_output_sequence(i) = i_params.kernel_size - r_count_c0w0 - 1 + i and r_count_c0w0 >= i_params.kernel_size + 1 then
                                 r_command_psum(i) <= c_lb_read;*/
                             else
                                 r_command_psum(i) <= c_lb_idle;
@@ -612,16 +611,15 @@ begin
 
     end generate g_psum_pe_commands;
 
-    w_c1           <= i_c1;
-    w_w1           <= i_w1;
-    w_h2           <= i_h2;
-    w_m0           <= i_m0;
-    w_m0_last_m1   <= i_m0_last_m1;
-    w_rows_last_h2 <= i_rows_last_h2;
-    w_c0           <= i_c0;
-    w_c0_last_c1   <= i_c0_last_c1;
-    w_c0w0         <= i_c0w0;
-    w_c0w0_last_c1 <= i_c0w0_last_c1;
-    r_init_done    <= '1';
+    w_c1           <= i_params.c1;
+    w_w1           <= i_params.w1;
+    w_h2           <= i_params.h2;
+    w_m0           <= i_params.m0;
+    w_m0_last_m1   <= i_params.m0_last_m1;
+    w_rows_last_h2 <= i_params.rows_last_h2;
+    w_c0           <= i_params.c0;
+    w_c0_last_c1   <= i_params.c0_last_c1;
+    w_c0w0         <= i_params.c0w0;
+    w_c0w0_last_c1 <= i_params.c0w0_last_c1;
 
 end architecture alternative_rs_dataflow;

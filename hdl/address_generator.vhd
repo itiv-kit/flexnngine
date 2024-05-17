@@ -31,22 +31,9 @@ entity address_generator is
         clk  : in    std_logic;
         rstn : in    std_logic;
 
-        i_start : in    std_logic;
-
-        i_c1         : in    integer range 0 to 1023;
-        i_w1         : in    integer range 0 to 1023;
-        i_h2         : in    integer range 0 to 1023;
-        i_m0         : in    integer range 0 to 1023;
-        i_m0_dist    : in    array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
-        i_m0_last_m1 : in    integer range 0 to 1023;
-
-        i_c0         : in    integer range 0 to 1023;
-        i_c0_last_c1 : in    integer range 0 to 1023;
-
-        i_image_x     : in    integer range 0 to 1023; --! size of input image
-        i_image_y     : in    integer range 0 to 1023; --! size of input image
-        i_channels    : in    integer range 0 to 4095; -- Number of input channels the image and kernels have
-        i_kernel_size : in    integer range 0 to 32;
+        i_start   : in    std_logic;
+        i_params  : in    parameters_t;
+        i_m0_dist : in    array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
 
         i_fifo_full_iact : in    std_logic;
         i_fifo_full_wght : in    std_logic;
@@ -133,23 +120,23 @@ architecture rs_dataflow of address_generator is
 
 begin
 
-    w_c1      <= i_c1;
-    w_w1      <= i_image_x;
-    w_h2      <= i_h2;
-    w_w1_wght <= i_kernel_size;
+    w_c1      <= i_params.c1;
+    w_w1      <= i_params.image_x;
+    w_h2      <= i_params.h2;
+    w_w1_wght <= i_params.kernel_size;
 
-    w_c0_iact <= i_c0 when r_count_c1_iact /= w_c1 - 1 else
-                 i_c0_last_c1;
+    w_c0_iact <= i_params.c0 when r_count_c1_iact /= w_c1 - 1 else
+                 i_params.c0_last_c1;
 
-    w_c0_wght <= i_c0 when r_count_c1_wght /= w_c1 - 1 else
-                 i_c0_last_c1;
+    w_c0_wght <= i_params.c0 when r_count_c1_wght /= w_c1 - 1 else
+                 i_params.c0_last_c1;
 
-    w_offset_mem_iact <= r_offset_c_iact * i_image_x + r_count_w1_iact;
-    w_offset_mem_wght <= r_offset_c_wght * i_kernel_size + r_count_w1_wght;
+    w_offset_mem_iact <= r_offset_c_iact * i_params.image_x + r_count_w1_iact;
+    w_offset_mem_wght <= r_offset_c_wght * i_params.kernel_size + r_count_w1_wght;
 
     iact_address_out : for i in 0 to size_rows - 1 generate
 
-        /*o_address_iact(i)     <= std_logic_vector(to_unsigned(w_offset_mem_iact + i * i_image_x, addr_width_iact_mem));
+        /*o_address_iact(i)     <= std_logic_vector(to_unsigned(w_offset_mem_iact + i * i_params.image_x, addr_width_iact_mem));
         o_address_iact_valid(i) <= '1' when i_start = '1' and i_fifo_full_iact = '0' and r_iact_done = '0' else --
                                    '0';*/
 
@@ -165,11 +152,11 @@ begin
                 if i_start = '1' and i_fifo_full_iact = '0' and r_iact_done = '0' and r_delay_iact_valid(i) = '0' then
                     r_delay_iact_valid(i)   <= '1';
                     o_address_iact_valid(i) <= '1';
-                    if r_index_h_iact + i < i_image_y then
-                        o_address_iact(i) <= std_logic_vector(to_unsigned(r_count_w1_iact + i_image_x * (r_index_h_iact + i) + (i_image_x * i_image_x) * (r_index_c_iact), addr_width_iact_mem));
-                    -- o_address_iact(i) <= std_logic_vector(to_unsigned(w_offset_mem_iact + i * i_image_x, addr_width_iact_mem));
+                    if r_index_h_iact + i < i_params.image_y then
+                        o_address_iact(i) <= std_logic_vector(to_unsigned(r_count_w1_iact + i_params.image_x * (r_index_h_iact + i) + (i_params.image_x * i_params.image_x) * (r_index_c_iact), addr_width_iact_mem));
+                    -- o_address_iact(i) <= std_logic_vector(to_unsigned(w_offset_mem_iact + i * i_params.image_x, addr_width_iact_mem));
                     else
-                        o_address_iact(i) <= std_logic_vector(to_unsigned(r_count_w1_iact + i_image_x * (r_index_h_iact + i - i_image_x) + (i_image_x * i_image_x) * (r_index_c_iact), addr_width_iact_mem));
+                        o_address_iact(i) <= std_logic_vector(to_unsigned(r_count_w1_iact + i_params.image_x * (r_index_h_iact + i - i_params.image_x) + (i_params.image_x * i_params.image_x) * (r_index_c_iact), addr_width_iact_mem));
                     end if;
                 else
                     o_address_iact_valid(i) <= '0';
@@ -183,7 +170,7 @@ begin
 
     wght_address_out : for i in 0 to size_y - 1 generate
 
-        /*o_address_wght(i)       <= std_logic_vector(to_unsigned(w_offset_mem_wght + i * i_kernel_size, addr_width_iact_mem));
+        /*o_address_wght(i)       <= std_logic_vector(to_unsigned(w_offset_mem_wght + i * i_params.kernel_size, addr_width_iact_mem));
         o_address_wght_valid(i) <= '1' when i_start = '1' and i_fifo_full_wght = '0' and r_wght_done = '0' else --
                                    '0';*/
 
@@ -201,12 +188,12 @@ begin
                 if i_start = '1' and i_fifo_full_wght = '0' and r_wght_done = '0' and r_delay_wght_valid(i) = '0' then
                     o_address_wght_valid(i) <= '1';
                     r_delay_wght_valid(i)   <= '1';
-                    -- o_address_wght(i)       <= std_logic_vector(to_unsigned(w_offset_mem_wght + i * i_kernel_size, addr_width_wght_mem));
-                    if i < i_m0 * i_kernel_size then
-                        o_address_wght(i) <= std_logic_vector(to_unsigned(w_offset_mem_wght + (i - (to_integer(unsigned(i_m0_dist(i)))) * i_kernel_size + i_kernel_size) * i_kernel_size +
-                                                                          ((to_integer(unsigned(i_m0_dist(i))) - 1) * i_kernel_size * i_kernel_size * i_channels), addr_width_wght_mem));
-                        r_test_wght(i)    <= (i - (to_integer(unsigned(i_m0_dist(i)))) * i_kernel_size + i_kernel_size);
-                        r_test_wght2(i)   <= ((to_integer(unsigned(i_m0_dist(i))) - 1) * i_kernel_size * i_kernel_size * i_channels);
+                    -- o_address_wght(i)       <= std_logic_vector(to_unsigned(w_offset_mem_wght + i * i_params.kernel_size, addr_width_wght_mem));
+                    if i < i_params.m0 * i_params.kernel_size then
+                        o_address_wght(i) <= std_logic_vector(to_unsigned(w_offset_mem_wght + (i - (to_integer(unsigned(i_m0_dist(i)))) * i_params.kernel_size + i_params.kernel_size) * i_params.kernel_size +
+                                                                          ((to_integer(unsigned(i_m0_dist(i))) - 1) * i_params.kernel_size * i_params.kernel_size * i_params.channels), addr_width_wght_mem));
+                        r_test_wght(i)    <= (i - (to_integer(unsigned(i_m0_dist(i)))) * i_params.kernel_size + i_params.kernel_size);
+                        r_test_wght2(i)   <= ((to_integer(unsigned(i_m0_dist(i))) - 1) * i_params.kernel_size * i_params.kernel_size * i_params.channels);
                     end if;
                 else
                     o_address_wght_valid(i) <= '0';
@@ -248,7 +235,7 @@ begin
 
                 if r_count_c0_iact /= w_c0_iact - 1 then
                     r_count_c0_iact <= r_count_c0_iact + 1;
-                    r_offset_c_iact <= r_offset_c_iact + i_image_x;
+                    r_offset_c_iact <= r_offset_c_iact + i_params.image_x;
                     r_index_c_iact  <= r_index_c_iact + 1;
                 else
                     r_count_c0_iact <= 0;
@@ -259,7 +246,7 @@ begin
                         r_count_w1_iact <= r_count_w1_iact + 1;
 
                         if r_count_w1_iact = w_w1 - 2 then
-                            r_offset_c_last_c1_iact <= r_offset_c_iact + i_image_x;
+                            r_offset_c_last_c1_iact <= r_offset_c_iact + i_params.image_x;
                             r_index_c_last_iact     <= r_index_c_iact + 1;
                         end if;
                     else
@@ -339,11 +326,11 @@ begin
 
                 if r_count_c0_wght /= w_c0_wght - 1 then
                     r_count_c0_wght <= r_count_c0_wght + 1;
-                    r_offset_c_wght <= r_offset_c_wght + i_kernel_size;
+                    r_offset_c_wght <= r_offset_c_wght + i_params.kernel_size;
                     r_index_c_wght  <= r_index_c_wght + 1;
                 else
                     r_count_c0_wght <= 0;
-                    if i_kernel_size /= 1 then
+                    if i_params.kernel_size /= 1 then
                         r_offset_c_wght <= r_offset_c_last_c1_wght;
                     else
                         -- For kernel size 1, no w1 tiling. Just increase offset
@@ -355,7 +342,7 @@ begin
                         r_count_w1_wght <= r_count_w1_wght + 1;
 
                         if r_count_w1_wght = w_w1_wght - 2 then
-                            r_offset_c_last_c1_wght <= r_offset_c_wght + i_kernel_size;
+                            r_offset_c_last_c1_wght <= r_offset_c_wght + i_params.kernel_size;
                             r_index_c_last_wght     <= r_index_c_wght + 1;
                         end if;
                     else
@@ -416,7 +403,7 @@ begin
         elsif rising_edge(clk) then
             if i_start = '1' and not r_address_offsets_psum_done = '1' then
                 if r_address_offsets_count_x /= size_x - 1 then
-                    r_address_offsets_psum(r_address_offsets_count_x + 1) <= std_logic_vector(to_unsigned(to_integer(unsigned(r_address_offsets_psum(r_address_offsets_count_x)) + i_w1), addr_width_psum_mem));
+                    r_address_offsets_psum(r_address_offsets_count_x + 1) <= std_logic_vector(to_unsigned(to_integer(unsigned(r_address_offsets_psum(r_address_offsets_count_x)) + i_params.w1), addr_width_psum_mem));
                     r_address_offsets_count_x                             <= r_address_offsets_count_x + 1;
                 else
                     r_address_offsets_psum_done <= '1';
@@ -518,23 +505,23 @@ architecture alternative_rs_dataflow of address_generator is
 
 begin
 
-    w_c1      <= i_c1;
-    w_w1      <= i_image_x;
-    w_h2      <= i_h2;
-    w_w1_wght <= i_kernel_size;
+    w_c1      <= i_params.c1;
+    w_w1      <= i_params.image_x;
+    w_h2      <= i_params.h2;
+    w_w1_wght <= i_params.kernel_size;
 
-    w_c0_iact <= i_c0 when r_count_c1_iact /= w_c1 - 1 else
-                 i_c0_last_c1;
+    w_c0_iact <= i_params.c0 when r_count_c1_iact /= w_c1 - 1 else
+                 i_params.c0_last_c1;
 
-    w_c0_wght <= i_c0 when r_count_c1_wght /= w_c1 - 1 else
-                 i_c0_last_c1;
+    w_c0_wght <= i_params.c0 when r_count_c1_wght /= w_c1 - 1 else
+                 i_params.c0_last_c1;
 
-    w_offset_mem_iact <= r_offset_c_iact * i_image_x + r_count_w1_iact;
-    w_offset_mem_wght <= r_offset_c_wght * i_kernel_size + r_count_w1_wght;
+    w_offset_mem_iact <= r_offset_c_iact * i_params.image_x + r_count_w1_iact;
+    w_offset_mem_wght <= r_offset_c_wght * i_params.kernel_size + r_count_w1_wght;
 
     iact_address_out : for i in 0 to size_rows - 1 generate
 
-        /*o_address_iact(i)     <= std_logic_vector(to_unsigned(w_offset_mem_iact + i * i_image_x, addr_width_iact_mem));
+        /*o_address_iact(i)     <= std_logic_vector(to_unsigned(w_offset_mem_iact + i * i_params.image_x, addr_width_iact_mem));
         o_address_iact_valid(i) <= '1' when i_start = '1' and i_fifo_full_iact = '0' and r_iact_done = '0' else --
                                    '0';*/
 
@@ -553,7 +540,7 @@ begin
                     if i_start = '1' and i_fifo_full_iact = '0' and r_iact_done = '0' and r_delay_iact_valid(i) = '0' then
                         r_delay_iact_valid(i)   <= '1';
                         o_address_iact_valid(i) <= '1';
-                        o_address_iact(i)       <= std_logic_vector(to_unsigned(w_offset_mem_iact + (i - size_y + 1) * i_image_x, addr_width_iact_mem));
+                        o_address_iact(i)       <= std_logic_vector(to_unsigned(w_offset_mem_iact + (i - size_y + 1) * i_params.image_x, addr_width_iact_mem));
                     else
                         r_delay_iact_valid(i)   <= '0';
                         o_address_iact_valid(i) <= '0';
@@ -572,7 +559,7 @@ begin
         if not rstn then
             r_ckk <= 0;
         elsif rising_edge(clk) then
-            r_ckk <= i_kernel_size * i_kernel_size * i_channels;
+            r_ckk <= i_params.kernel_size * i_params.kernel_size * i_params.channels;
         end if;
 
     end process p_wght_address_helper;
@@ -595,11 +582,11 @@ begin
                 if i_start = '1' and i_fifo_full_wght = '0' and r_wght_done = '0' and r_delay_wght_valid(i) = '0' then
                     o_address_wght_valid(i) <= '1';
                     r_delay_wght_valid(i)   <= '1';
-                    -- o_address_wght(i)       <= std_logic_vector(to_unsigned(w_offset_mem_wght + i * i_kernel_size, addr_width_wght_mem));
-                    if i < i_m0 * i_kernel_size then
-                        o_address_wght(i) <= std_logic_vector(to_unsigned(w_offset_mem_wght + r_ckki(i) + r_count_h1_wght * i_kernel_size, addr_width_wght_mem)); -- channel offset + kernel offset + row offset
-                        /* r_test_wght(i)    <= (i - i_kernel_size + i_kernel_size);
-                         r_test_wght2(i)   <= (i * i_kernel_size * i_kernel_size * i_channels);*/
+                    -- o_address_wght(i)       <= std_logic_vector(to_unsigned(w_offset_mem_wght + i * i_params.kernel_size, addr_width_wght_mem));
+                    if i < i_params.m0 * i_params.kernel_size then
+                        o_address_wght(i) <= std_logic_vector(to_unsigned(w_offset_mem_wght + r_ckki(i) + r_count_h1_wght * i_params.kernel_size, addr_width_wght_mem)); -- channel offset + kernel offset + row offset
+                        /* r_test_wght(i)    <= (i - i_params.kernel_size + i_params.kernel_size);
+                         r_test_wght2(i)   <= (i * i_params.kernel_size * i_params.kernel_size * i_params.channels);*/
                     end if;
                 else
                     o_address_wght_valid(i) <= '0';
@@ -643,7 +630,7 @@ begin
 
                 if r_count_c0_iact /= w_c0_iact - 1 then
                     r_count_c0_iact <= r_count_c0_iact + 1;
-                    r_offset_c_iact <= r_offset_c_iact + i_image_x;
+                    r_offset_c_iact <= r_offset_c_iact + i_params.image_x;
                     r_index_c_iact  <= r_index_c_iact + 1;
                 else
                     r_count_c0_iact <= 0;
@@ -654,7 +641,7 @@ begin
                         r_count_w1_iact <= r_count_w1_iact + 1;
 
                         if r_count_w1_iact = w_w1 - 2 then
-                            r_offset_c_last_c1_iact <= r_offset_c_iact + i_image_x;
+                            r_offset_c_last_c1_iact <= r_offset_c_iact + i_params.image_x;
                             r_index_c_last_iact     <= r_index_c_iact + 1;
                         end if;
                     else
@@ -668,9 +655,9 @@ begin
                             r_index_c_last_iact <= 0;
                             r_offset_c_iact     <= r_offset_c_last_h2_iact + r_count_h1_iact + 1;
 
-                            if r_count_h1_iact /= i_kernel_size - 1 then
+                            if r_count_h1_iact /= i_params.kernel_size - 1 then
                                 r_count_h1_iact         <= r_count_h1_iact + 1;
-                                r_offset_c_last_h1_iact <= r_offset_c_last_h1_iact + i_image_x;
+                                r_offset_c_last_h1_iact <= r_offset_c_last_h1_iact + i_params.image_x;
                                 r_offset_c_last_c1_iact <= r_offset_c_last_h2_iact + r_count_h1_iact + 1;
                             else
                                 r_count_h1_iact         <= 0;
@@ -747,11 +734,11 @@ begin
 
                 if r_count_c0_wght /= w_c0_wght - 1 then
                     r_count_c0_wght <= r_count_c0_wght + 1;
-                    r_offset_c_wght <= r_offset_c_wght + i_kernel_size;
+                    r_offset_c_wght <= r_offset_c_wght + i_params.kernel_size;
                     r_index_c_wght  <= r_index_c_wght + 1;
                 else
                     r_count_c0_wght <= 0;
-                    if i_kernel_size /= 1 then
+                    if i_params.kernel_size /= 1 then
                         r_offset_c_wght <= r_offset_c_last_c1_wght;
                     else
                         -- For kernel size 1, no w1 tiling. Just increase offset
@@ -763,7 +750,7 @@ begin
                         r_count_w1_wght <= r_count_w1_wght + 1;
 
                         if r_count_w1_wght = w_w1_wght - 2 then
-                            r_offset_c_last_c1_wght <= r_offset_c_wght + i_kernel_size;
+                            r_offset_c_last_c1_wght <= r_offset_c_wght + i_params.kernel_size;
                             r_index_c_last_wght     <= r_index_c_wght + 1;
                         end if;
                     else
@@ -777,7 +764,7 @@ begin
                             r_index_c_last_wght <= 0;
                             r_offset_c_wght     <= 0;
 
-                            if r_count_h1_wght /= i_kernel_size - 1 then
+                            if r_count_h1_wght /= i_params.kernel_size - 1 then
                                 r_count_h1_wght         <= r_count_h1_wght + 1;
                                 r_offset_c_last_c1_wght <= 0;
                             else
@@ -836,7 +823,7 @@ begin
         elsif rising_edge(clk) then
             if i_start = '1' and not r_address_offsets_psum_done = '1' then
                 if r_address_offsets_count_x /= size_x - 1 then
-                    r_address_offsets_psum(r_address_offsets_count_x + 1) <= std_logic_vector(to_unsigned(to_integer(unsigned(r_address_offsets_psum(r_address_offsets_count_x)) + i_w1), addr_width_psum_mem));
+                    r_address_offsets_psum(r_address_offsets_count_x + 1) <= std_logic_vector(to_unsigned(to_integer(unsigned(r_address_offsets_psum(r_address_offsets_count_x)) + i_params.w1), addr_width_psum_mem));
                     r_address_offsets_count_x                             <= r_address_offsets_count_x + 1;
                 else
                     r_address_offsets_psum_done <= '1';

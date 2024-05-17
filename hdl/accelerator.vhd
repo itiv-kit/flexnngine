@@ -59,8 +59,9 @@ entity accelerator is
 
         clk_sp : in    std_logic;
 
-        i_start : in    std_logic;
-        o_done  : out   std_logic;
+        i_start  : in    std_logic;
+        o_done   : out   std_logic;
+        i_params : in    parameters_t;
 
         i_en_iact : in    std_logic;
         i_en_wght : in    std_logic;
@@ -80,25 +81,7 @@ entity accelerator is
 
         o_dout_iact : out   std_logic_vector(spad_ext_data_width_iact - 1 downto 0);
         o_dout_wght : out   std_logic_vector(spad_ext_data_width_wght - 1 downto 0);
-        o_dout_psum : out   std_logic_vector(spad_ext_data_width_psum - 1 downto 0);
-
-        -- modified to receive parameters via ports
-        i_channels    : in    integer range 0 to 1023;
-        i_kernels     : in    integer range 0 to 1023;
-        i_image_y     : in    integer range 0 to 4095;
-        i_image_x     : in    integer range 0 to 4095;
-        i_kernel_size : in    integer range 0 to 31;
-
-        i_conv_param_c1           : in    integer range 0 to 1023;
-        i_conv_param_w1           : in    integer range 0 to 1023;
-        i_conv_param_h2           : in    integer range 0 to 1023;
-        i_conv_param_m0           : in    integer range 0 to 1023;
-        i_conv_param_m0_last_m1   : in    integer range 0 to 1023;
-        i_conv_param_row_last_h2  : in    integer range 0 to 1023;
-        i_conv_param_c0           : in    integer range 0 to 1023;
-        i_conv_param_c0_last_c1   : in    integer range 0 to 1023;
-        i_conv_param_c0w0         : in    integer range 0 to 1023;
-        i_conv_param_c0w0_last_c1 : in    integer range 0 to 1023
+        o_dout_psum : out   std_logic_vector(spad_ext_data_width_psum - 1 downto 0)
     );
 end entity accelerator;
 
@@ -140,13 +123,9 @@ architecture rtl of accelerator is
     signal w_psums       : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
     signal w_psums_valid : std_logic_vector(size_x - 1 downto 0);
 
-    signal w_write_adr_iact : std_logic_vector(spad_addr_width_iact - 1 downto 0);
+    signal w_read_adr_iact  : std_logic_vector(spad_addr_width_iact - 1 downto 0);
+    signal w_read_adr_wght  : std_logic_vector(spad_addr_width_wght - 1 downto 0);
     signal w_write_adr_psum : std_logic_vector(spad_addr_width_psum - 1 downto 0);
-    signal w_write_adr_wght : std_logic_vector(spad_addr_width_wght - 1 downto 0);
-
-    signal w_read_adr_iact : std_logic_vector(spad_addr_width_iact - 1 downto 0);
-    signal w_read_adr_psum : std_logic_vector(spad_addr_width_psum - 1 downto 0);
-    signal w_read_adr_wght : std_logic_vector(spad_addr_width_wght - 1 downto 0);
 
     signal w_dout_iact : std_logic_vector(data_width_iact - 1 downto 0);
     signal w_dout_wght : std_logic_vector(data_width_wght - 1 downto 0);
@@ -167,12 +146,6 @@ architecture rtl of accelerator is
 
     signal w_dataflow : std_logic;
 
-    signal r_image_x     : integer range 0 to 1023; /* TODO change range to sth. useful */
-    signal r_image_y     : integer range 0 to 1023; /* TODO change range to sth. useful */
-    signal r_channels    : integer range 0 to 4095; /* TODO change range to sth. useful */
-    signal r_kernels     : integer range 0 to 4095; /* TODO change range to sth. useful */
-    signal r_kernel_size : integer range 0 to 32;   /* TODO change range to sth. useful */
-
     signal w_dout_iact_valid : std_logic;
     signal w_dout_wght_valid : std_logic;
 
@@ -191,30 +164,6 @@ architecture rtl of accelerator is
 begin
 
     w_dataflow <= '1' when g_dataflow > 0 else '0';
-
-    /* TODO Debug */
-    w_write_adr_iact <= (others => '0');
-    w_write_adr_wght <= (others => '0');
-    w_read_adr_psum  <= (others => '0');
-
-    start_procedure : process (clk, rstn) is
-    begin
-
-        if not rstn then
-            r_image_x     <= 0;
-            r_image_y     <= 0;
-            r_channels    <= 0;
-            r_kernels     <= 0;
-            r_kernel_size <= 0;
-        elsif rising_edge(clk) then
-            r_image_x     <= i_image_x;
-            r_image_y     <= i_image_y;
-            r_channels    <= i_channels;
-            r_kernels     <= i_kernels;
-            r_kernel_size <= i_kernel_size;
-        end if;
-
-    end process start_procedure;
 
     pe_array_inst : entity accel.pe_array
         generic map (
@@ -291,11 +240,7 @@ begin
             o_enable                 => w_enable,
             o_pause_iact             => w_pause_iact,
             o_done                   => o_done,
-            i_image_x                => r_image_x,
-            i_image_y                => r_image_y,
-            i_channels               => r_channels,
-            i_kernels                => r_kernels,
-            i_kernel_size            => r_kernel_size,
+            i_params                 => i_params,
             o_command                => w_command,
             o_command_iact           => w_command_iact,
             o_command_psum           => w_command_psum,
@@ -311,17 +256,7 @@ begin
             o_address_iact           => w_address_iact,
             o_address_wght           => w_address_wght,
             o_address_iact_valid     => w_address_iact_valid,
-            o_address_wght_valid     => w_address_wght_valid,
-            i_c1                     => i_conv_param_c1,
-            i_w1                     => i_conv_param_w1,
-            i_h2                     => i_conv_param_h2,
-            i_m0                     => i_conv_param_m0,
-            i_m0_last_m1             => i_conv_param_m0_last_m1,
-            i_rows_last_h2           => i_conv_param_row_last_h2,
-            i_c0                     => i_conv_param_c0,
-            i_c0_last_c1             => i_conv_param_c0_last_c1,
-            i_c0w0                   => i_conv_param_c0w0,
-            i_c0w0_last_c1           => i_conv_param_c0w0_last_c1
+            o_address_wght_valid     => w_address_wght_valid
         );
 
     scratchpad_inst : entity accel.scratchpad
@@ -447,9 +382,7 @@ begin
             rstn                => rstn,
             i_start             => w_control_init_done,
             i_dataflow          => w_dataflow,
-            i_w1                => i_conv_param_w1,
-            i_m0                => i_conv_param_m0,
-            i_kernel_size       => i_kernel_size,
+            i_params            => i_params,
             i_valid_psum_out    => w_valid_psums_out,
             i_gnt_psum_binary_d => w_gnt_psum_binary_d,
             i_empty_psum_fifo   => w_empty_psum_fifo,
