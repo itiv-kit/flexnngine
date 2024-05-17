@@ -94,11 +94,11 @@ add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/w_offset_mem
 add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/r_data_valid_iact
 add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/r_iact_done
 add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/i_fifo_full_iact
-add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/o_address_iact
-add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/o_address_iact_valid
+add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/r_delay_iact_valid
 add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/i_start
 
 add wave -noupdate -group ADR_wght -radix unsigned ${addr_gen_path}/o_address_wght_valid
+add wave -noupdate -group ADR_wght -radix unsigned ${addr_gen_path}/o_address_wght
 add wave -noupdate -group ADR_wght -radix unsigned ${addr_gen_path}/w_c0_wght
 add wave -noupdate -group ADR_wght -radix unsigned ${addr_gen_path}/r_count_c0_wght
 add wave -noupdate -group ADR_wght -radix unsigned ${addr_gen_path}/w_w1

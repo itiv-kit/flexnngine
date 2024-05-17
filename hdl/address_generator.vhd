@@ -241,59 +241,69 @@ begin
 
             r_iact_done <= '0';
         elsif rising_edge(clk) then
-            if i_start = '1' then
-                if i_fifo_full_iact = '0' and or r_delay_iact_valid = '0' then
-                    r_data_valid_iact <= '1';
+            r_data_valid_iact <= '0';
 
-                    if r_count_h2_iact /= w_h2 then
-                        if r_count_c0_iact /= w_c0_iact - 1 then
-                            r_count_c0_iact <= r_count_c0_iact + 1;
-                            r_offset_c_iact <= r_offset_c_iact + i_image_x;
-                            r_index_c_iact  <= r_index_c_iact + 1;
-                        else
-                            r_count_c0_iact <= 0;
-                            r_offset_c_iact <= r_offset_c_last_c1_iact;
-                            r_index_c_iact  <= r_index_c_last_iact;
+            if i_start = '1' and r_iact_done = '0' and i_fifo_full_iact = '0' and or r_delay_iact_valid = '0' then
+                r_data_valid_iact <= '1';
 
-                            if r_count_w1_iact /= w_w1 - 1 then
-                                r_count_w1_iact <= r_count_w1_iact + 1;
+                if r_count_c0_iact /= w_c0_iact - 1 then
+                    r_count_c0_iact <= r_count_c0_iact + 1;
+                    r_offset_c_iact <= r_offset_c_iact + i_image_x;
+                    r_index_c_iact  <= r_index_c_iact + 1;
+                else
+                    r_count_c0_iact <= 0;
+                    r_offset_c_iact <= r_offset_c_last_c1_iact;
+                    r_index_c_iact  <= r_index_c_last_iact;
 
-                                if r_count_w1_iact = w_w1 - 2 then
-                                    r_offset_c_last_c1_iact <= r_offset_c_iact + i_image_x;
-                                    r_index_c_last_iact     <= r_index_c_iact + 1;
-                                end if;
-                            else
-                                r_count_w1_iact <= 0;
+                    if r_count_w1_iact /= w_w1 - 1 then
+                        r_count_w1_iact <= r_count_w1_iact + 1;
 
-                                if r_count_c1_iact /= w_c1 - 1 then
-                                    r_count_c1_iact <= r_count_c1_iact + 1;
-                                else
-                                    r_count_c1_iact     <= 0;
-                                    r_index_c_iact      <= 0;
-                                    r_index_c_last_iact <= 0;
-                                    r_offset_c_iact     <= r_offset_c_last_h2_iact + size_x;
-
-                                    if r_count_h2_iact /= w_h2 then
-                                        r_count_h2_iact         <= r_count_h2_iact + 1;
-                                        r_index_h_iact          <= r_index_h_iact + size_x;
-                                        r_offset_c_last_h2_iact <= r_offset_c_last_h2_iact + size_x;
-                                        r_offset_c_last_c1_iact <= r_offset_c_last_h2_iact + size_x;
-                                    else
-                                        r_data_valid_iact <= '0';
-                                        r_iact_done       <= '1';
-                                    -- END
-                                    end if;
-                                end if;
-                            end if;
+                        if r_count_w1_iact = w_w1 - 2 then
+                            r_offset_c_last_c1_iact <= r_offset_c_iact + i_image_x;
+                            r_index_c_last_iact     <= r_index_c_iact + 1;
                         end if;
                     else
-                        r_data_valid_iact <= '0';
-                        r_iact_done       <= '1';
+                        r_count_w1_iact <= 0;
+
+                        if r_count_c1_iact /= w_c1 - 1 then
+                            r_count_c1_iact <= r_count_c1_iact + 1;
+                        else
+                            r_count_c1_iact     <= 0;
+                            r_index_c_iact      <= 0;
+                            r_index_c_last_iact <= 0;
+                            r_offset_c_iact     <= r_offset_c_last_h2_iact + size_x;
+
+                            if r_count_h2_iact /= w_h2 - 1 then
+                                r_count_h2_iact         <= r_count_h2_iact + 1;
+                                r_index_h_iact          <= r_index_h_iact + size_x;
+                                r_offset_c_last_h2_iact <= r_offset_c_last_h2_iact + size_x;
+                                r_offset_c_last_c1_iact <= r_offset_c_last_h2_iact + size_x;
+                            else
+                                r_data_valid_iact <= '0';
+                                r_iact_done       <= '1';
+                            end if;
+                        end if;
                     end if;
-                else
-                    r_data_valid_iact <= '0';
                 end if;
-            else
+            end if;
+
+            if i_start = '0' and r_iact_done = '1' then
+                -- reset when i_start is deasserted
+                r_iact_done <= '0';
+
+                r_count_c0_iact <= 0;
+                r_count_c1_iact <= 0;
+                r_count_h2_iact <= 0;
+                r_count_w1_iact <= 0;
+                r_index_h_iact  <= 0;
+
+                r_offset_c_iact         <= 0;
+                r_offset_c_last_c1_iact <= 0;
+                r_offset_c_last_h2_iact <= 0;
+
+                r_index_c_iact      <= 0;
+                r_index_c_last_iact <= 0;
+
                 r_data_valid_iact <= '0';
             end if;
         end if;
@@ -322,64 +332,72 @@ begin
 
             r_wght_done <= '0';
         elsif rising_edge(clk) then
-            if i_start = '1' then
-                if i_fifo_full_wght = '0' and or r_delay_wght_valid = '0' then
-                    r_data_valid_wght <= '1';
+            r_data_valid_wght <= '0';
 
-                    if r_count_h2_wght /= w_h2 then
-                        if r_count_c0_wght /= w_c0_wght - 1 then
-                            r_count_c0_wght <= r_count_c0_wght + 1;
-                            r_offset_c_wght <= r_offset_c_wght + i_kernel_size;
-                            r_index_c_wght  <= r_index_c_wght + 1;
-                        else
-                            r_count_c0_wght <= 0;
-                            if i_kernel_size /= 1 then
-                                r_offset_c_wght <= r_offset_c_last_c1_wght;
-                            else
-                                -- For kernel size 1, no w1 tiling. Just increase offset
-                                r_offset_c_wght <= r_offset_c_wght + 1;
-                            end if;
-                            r_index_c_wght <= r_index_c_last_wght;
+            if i_start = '1' and r_wght_done = '0' and i_fifo_full_wght = '0' and or r_delay_wght_valid = '0' then
+                r_data_valid_wght <= '1';
 
-                            if r_count_w1_wght /= w_w1_wght - 1 then
-                                r_count_w1_wght <= r_count_w1_wght + 1;
+                if r_count_c0_wght /= w_c0_wght - 1 then
+                    r_count_c0_wght <= r_count_c0_wght + 1;
+                    r_offset_c_wght <= r_offset_c_wght + i_kernel_size;
+                    r_index_c_wght  <= r_index_c_wght + 1;
+                else
+                    r_count_c0_wght <= 0;
+                    if i_kernel_size /= 1 then
+                        r_offset_c_wght <= r_offset_c_last_c1_wght;
+                    else
+                        -- For kernel size 1, no w1 tiling. Just increase offset
+                        r_offset_c_wght <= r_offset_c_wght + 1;
+                    end if;
+                    r_index_c_wght <= r_index_c_last_wght;
 
-                                if r_count_w1_wght = w_w1_wght - 2 then
-                                    r_offset_c_last_c1_wght <= r_offset_c_wght + i_kernel_size;
-                                    r_index_c_last_wght     <= r_index_c_wght + 1;
-                                end if;
-                            else
-                                r_count_w1_wght <= 0;
+                    if r_count_w1_wght /= w_w1_wght - 1 then
+                        r_count_w1_wght <= r_count_w1_wght + 1;
 
-                                if r_count_c1_wght /= w_c1 - 1 then
-                                    r_count_c1_wght <= r_count_c1_wght + 1;
-                                else
-                                    r_count_c1_wght     <= 0;
-                                    r_index_c_wght      <= 0;
-                                    r_index_c_last_wght <= 0;
-                                    r_offset_c_wght     <= 0;
-
-                                    if r_count_h2_wght /= w_h2 then
-                                        r_count_h2_wght         <= r_count_h2_wght + 1;
-                                        r_offset_c_last_c1_wght <= 0;
-                                    else
-                                        -- END
-                                        r_data_valid_wght <= '0';
-                                        r_wght_done       <= '1';
-                                    end if;
-                                end if;
-                            end if;
+                        if r_count_w1_wght = w_w1_wght - 2 then
+                            r_offset_c_last_c1_wght <= r_offset_c_wght + i_kernel_size;
+                            r_index_c_last_wght     <= r_index_c_wght + 1;
                         end if;
                     else
-                        r_data_valid_wght <= '0';
-                        r_wght_done       <= '1';
+                        r_count_w1_wght <= 0;
+
+                        if r_count_c1_wght /= w_c1 - 1 then
+                            r_count_c1_wght <= r_count_c1_wght + 1;
+                        else
+                            r_count_c1_wght     <= 0;
+                            r_index_c_wght      <= 0;
+                            r_index_c_last_wght <= 0;
+                            r_offset_c_wght     <= 0;
+
+                            if r_count_h2_wght /= w_h2 - 1 then
+                                r_count_h2_wght         <= r_count_h2_wght + 1;
+                                r_offset_c_last_c1_wght <= 0;
+                            else
+                                r_data_valid_wght <= '0';
+                                r_wght_done       <= '1';
+                            end if;
+                        end if;
                     end if;
-                elsif r_count_h2_wght = w_h2 then
-                    r_data_valid_wght <= '0';
-                    r_wght_done       <= '1';
-                else
-                    r_data_valid_wght <= '0';
                 end if;
+            end if;
+
+            if i_start = '0' and r_wght_done = '1' then
+                -- reset when i_start is deasserted
+                r_wght_done <= '0';
+
+                r_count_c0_wght <= 0;
+                r_count_c1_wght <= 0;
+                r_count_h2_wght <= 0;
+                r_count_w1_wght <= 0;
+
+                r_offset_c_wght         <= 0;
+                r_offset_c_last_c1_wght <= 0;
+                r_offset_c_last_h2_wght <= 0;
+
+                r_index_c_wght      <= 0;
+                r_index_c_last_wght <= 0;
+
+                r_data_valid_wght <= '0';
             end if;
         end if;
 
@@ -615,71 +633,81 @@ begin
 
             r_iact_done <= '0';
         elsif rising_edge(clk) then
-            if i_start = '1' then
-                if i_fifo_full_iact = '0' and or r_delay_iact_valid = '0' then
-                    r_data_valid_iact <= '1';
+            r_data_valid_iact <= '0';
 
-                    if r_count_h2_iact /= w_h2 then
-                        if r_count_h1_iact /= i_kernel_size then
-                            if r_count_c0_iact /= w_c0_iact - 1 then
-                                r_count_c0_iact <= r_count_c0_iact + 1;
-                                r_offset_c_iact <= r_offset_c_iact + i_image_x;
-                                r_index_c_iact  <= r_index_c_iact + 1;
+            if i_start = '1' and r_iact_done = '0' and i_fifo_full_iact = '0' and or r_delay_iact_valid = '0' then
+                r_data_valid_iact <= '1';
+
+                if r_count_c0_iact /= w_c0_iact - 1 then
+                    r_count_c0_iact <= r_count_c0_iact + 1;
+                    r_offset_c_iact <= r_offset_c_iact + i_image_x;
+                    r_index_c_iact  <= r_index_c_iact + 1;
+                else
+                    r_count_c0_iact <= 0;
+                    r_offset_c_iact <= r_offset_c_last_c1_iact;
+                    r_index_c_iact  <= r_index_c_last_iact;
+
+                    if r_count_w1_iact /= w_w1 - 1 then
+                        r_count_w1_iact <= r_count_w1_iact + 1;
+
+                        if r_count_w1_iact = w_w1 - 2 then
+                            r_offset_c_last_c1_iact <= r_offset_c_iact + i_image_x;
+                            r_index_c_last_iact     <= r_index_c_iact + 1;
+                        end if;
+                    else
+                        r_count_w1_iact <= 0;
+
+                        if r_count_c1_iact /= w_c1 - 1 then
+                            r_count_c1_iact <= r_count_c1_iact + 1;
+                        else
+                            r_count_c1_iact     <= 0;
+                            r_index_c_iact      <= 0;
+                            r_index_c_last_iact <= 0;
+                            r_offset_c_iact     <= r_offset_c_last_h2_iact + r_count_h1_iact + 1;
+
+                            if r_count_h1_iact /= i_kernel_size - 1 then
+                                r_count_h1_iact         <= r_count_h1_iact + 1;
+                                r_offset_c_last_h1_iact <= r_offset_c_last_h1_iact + i_image_x;
+                                r_offset_c_last_c1_iact <= r_offset_c_last_h2_iact + r_count_h1_iact + 1;
                             else
-                                r_count_c0_iact <= 0;
-                                r_offset_c_iact <= r_offset_c_last_c1_iact;
-                                r_index_c_iact  <= r_index_c_last_iact;
+                                r_count_h1_iact         <= 0;
+                                r_offset_c_last_h1_iact <= 0;
 
-                                if r_count_w1_iact /= w_w1 - 1 then
-                                    r_count_w1_iact <= r_count_w1_iact + 1;
-
-                                    if r_count_w1_iact = w_w1 - 2 then
-                                        r_offset_c_last_c1_iact <= r_offset_c_iact + i_image_x;
-                                        r_index_c_last_iact     <= r_index_c_iact + 1;
-                                    end if;
+                                if r_count_h2_iact /= w_h2 - 1 then
+                                    r_count_h2_iact         <= r_count_h2_iact + 1;
+                                    r_index_h_iact          <= r_index_h_iact + size_x;
+                                    r_offset_c_last_h2_iact <= r_offset_c_last_h2_iact + size_x;
+                                    r_offset_c_last_c1_iact <= r_offset_c_last_h2_iact + size_x;
+                                    r_offset_c_iact         <= r_offset_c_last_h2_iact + size_x;
                                 else
-                                    r_count_w1_iact <= 0;
-
-                                    if r_count_c1_iact /= w_c1 - 1 then
-                                        r_count_c1_iact <= r_count_c1_iact + 1;
-                                    else
-                                        r_count_c1_iact     <= 0;
-                                        r_index_c_iact      <= 0;
-                                        r_index_c_last_iact <= 0;
-                                        r_offset_c_iact     <= r_offset_c_last_h2_iact + r_count_h1_iact + 1;
-
-                                        if r_count_h1_iact /= i_kernel_size - 1 then
-                                            r_count_h1_iact         <= r_count_h1_iact + 1;
-                                            r_offset_c_last_h1_iact <= r_offset_c_last_h1_iact + i_image_x;
-                                            r_offset_c_last_c1_iact <= r_offset_c_last_h2_iact + r_count_h1_iact + 1;
-                                        else
-                                            r_count_h1_iact         <= 0;
-                                            r_offset_c_last_h1_iact <= 0;
-
-                                            if r_count_h2_iact /= w_h2 then
-                                                r_count_h2_iact         <= r_count_h2_iact + 1;
-                                                r_index_h_iact          <= r_index_h_iact + size_x;
-                                                r_offset_c_last_h2_iact <= r_offset_c_last_h2_iact + size_x;
-                                                r_offset_c_last_c1_iact <= r_offset_c_last_h2_iact + size_x;
-                                                r_offset_c_iact         <= r_offset_c_last_h2_iact + size_x;
-                                            else
-                                                r_data_valid_iact <= '0';
-                                                r_iact_done       <= '1';
-                                            -- END
-                                            end if;
-                                        end if;
-                                    end if;
+                                    r_data_valid_iact <= '0';
+                                    r_iact_done       <= '1';
                                 end if;
                             end if;
                         end if;
-                    else
-                        r_data_valid_iact <= '0';
-                        r_iact_done       <= '1';
                     end if;
-                else
-                    r_data_valid_iact <= '0';
                 end if;
-            else
+            end if;
+
+            if i_start = '0' and r_iact_done = '1' then
+                -- reset when i_start is deasserted
+                r_iact_done <= '0';
+
+                r_count_c0_iact <= 0;
+                r_count_c1_iact <= 0;
+                r_count_h2_iact <= 0;
+                r_count_h1_iact <= 0;
+                r_count_w1_iact <= 0;
+                r_index_h_iact  <= 0;
+
+                r_offset_c_iact         <= 0;
+                r_offset_c_last_c1_iact <= 0;
+                r_offset_c_last_h2_iact <= 0;
+                r_offset_c_last_h1_iact <= 0;
+
+                r_index_c_iact      <= 0;
+                r_index_c_last_iact <= 0;
+
                 r_data_valid_iact <= '0';
             end if;
         end if;
@@ -709,73 +737,80 @@ begin
 
             r_wght_done <= '0';
         elsif rising_edge(clk) then
-            if i_start = '1' then
-                if i_fifo_full_wght = '0' and or r_delay_wght_valid = '0' then
-                    r_data_valid_wght <= '1';
+            r_data_valid_wght <= '0';
 
-                    if r_count_h2_wght /= w_h2 then
-                        if r_count_h1_wght /= i_kernel_size then
-                            if r_count_c0_wght /= w_c0_wght - 1 then
-                                r_count_c0_wght <= r_count_c0_wght + 1;
-                                r_offset_c_wght <= r_offset_c_wght + i_kernel_size;
-                                r_index_c_wght  <= r_index_c_wght + 1;
+            if i_start = '1' and r_wght_done = '0' and i_fifo_full_wght = '0' and or r_delay_wght_valid = '0' then
+                r_data_valid_wght <= '1';
+
+                if r_count_c0_wght /= w_c0_wght - 1 then
+                    r_count_c0_wght <= r_count_c0_wght + 1;
+                    r_offset_c_wght <= r_offset_c_wght + i_kernel_size;
+                    r_index_c_wght  <= r_index_c_wght + 1;
+                else
+                    r_count_c0_wght <= 0;
+                    if i_kernel_size /= 1 then
+                        r_offset_c_wght <= r_offset_c_last_c1_wght;
+                    else
+                        -- For kernel size 1, no w1 tiling. Just increase offset
+                        r_offset_c_wght <= r_offset_c_wght + 1;
+                    end if;
+                    r_index_c_wght <= r_index_c_last_wght;
+
+                    if r_count_w1_wght /= w_w1_wght - 1 then
+                        r_count_w1_wght <= r_count_w1_wght + 1;
+
+                        if r_count_w1_wght = w_w1_wght - 2 then
+                            r_offset_c_last_c1_wght <= r_offset_c_wght + i_kernel_size;
+                            r_index_c_last_wght     <= r_index_c_wght + 1;
+                        end if;
+                    else
+                        r_count_w1_wght <= 0;
+
+                        if r_count_c1_wght /= w_c1 - 1 then
+                            r_count_c1_wght <= r_count_c1_wght + 1;
+                        else
+                            r_count_c1_wght     <= 0;
+                            r_index_c_wght      <= 0;
+                            r_index_c_last_wght <= 0;
+                            r_offset_c_wght     <= 0;
+
+                            if r_count_h1_wght /= i_kernel_size - 1 then
+                                r_count_h1_wght         <= r_count_h1_wght + 1;
+                                r_offset_c_last_c1_wght <= 0;
                             else
-                                r_count_c0_wght <= 0;
-                                if i_kernel_size /= 1 then
-                                    r_offset_c_wght <= r_offset_c_last_c1_wght;
+                                r_count_h1_wght <= 0;
+
+                                if r_count_h2_wght /= w_h2 - 1 then
+                                    r_count_h2_wght         <= r_count_h2_wght + 1;
+                                    r_offset_c_last_c1_wght <= 0;
                                 else
-                                    -- For kernel size 1, no w1 tiling. Just increase offset
-                                    r_offset_c_wght <= r_offset_c_wght + 1;
-                                end if;
-                                r_index_c_wght <= r_index_c_last_wght;
-
-                                if r_count_w1_wght /= w_w1_wght - 1 then
-                                    r_count_w1_wght <= r_count_w1_wght + 1;
-
-                                    if r_count_w1_wght = w_w1_wght - 2 then
-                                        r_offset_c_last_c1_wght <= r_offset_c_wght + i_kernel_size;
-                                        r_index_c_last_wght     <= r_index_c_wght + 1;
-                                    end if;
-                                else
-                                    r_count_w1_wght <= 0;
-
-                                    if r_count_c1_wght /= w_c1 - 1 then
-                                        r_count_c1_wght <= r_count_c1_wght + 1;
-                                    else
-                                        r_count_c1_wght     <= 0;
-                                        r_index_c_wght      <= 0;
-                                        r_index_c_last_wght <= 0;
-                                        r_offset_c_wght     <= 0;
-
-                                        if r_count_h1_wght /= i_kernel_size - 1 then
-                                            r_count_h1_wght         <= r_count_h1_wght + 1;
-                                            r_offset_c_last_c1_wght <= 0;
-                                        else
-                                            r_count_h1_wght <= 0;
-
-                                            if r_count_h2_wght /= w_h2 then
-                                                r_count_h2_wght         <= r_count_h2_wght + 1;
-                                                r_offset_c_last_c1_wght <= 0;
-                                            else
-                                                -- END
-                                                r_data_valid_wght <= '0';
-                                                r_wght_done       <= '1';
-                                            end if;
-                                        end if;
-                                    end if;
+                                    r_data_valid_wght <= '0';
+                                    r_wght_done       <= '1';
                                 end if;
                             end if;
                         end if;
-                    else
-                        r_data_valid_wght <= '0';
-                        r_wght_done       <= '1';
                     end if;
-                elsif r_count_h2_wght = w_h2 then
-                    r_data_valid_wght <= '0';
-                    r_wght_done       <= '1';
-                else
-                    r_data_valid_wght <= '0';
                 end if;
+            end if;
+
+            if i_start = '0' and r_wght_done = '1' then
+                -- reset when i_start is deasserted
+                r_wght_done <= '0';
+
+                r_count_c0_wght <= 0;
+                r_count_c1_wght <= 0;
+                r_count_h2_wght <= 0;
+                r_count_h1_wght <= 0;
+                r_count_w1_wght <= 0;
+
+                r_offset_c_wght         <= 0;
+                r_offset_c_last_c1_wght <= 0;
+                r_offset_c_last_h2_wght <= 0;
+
+                r_index_c_wght      <= 0;
+                r_index_c_last_wght <= 0;
+
+                r_data_valid_wght <= '0';
             end if;
         end if;
 
