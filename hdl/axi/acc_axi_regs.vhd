@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 library accel;
 use accel.utilities.parameters_t;
 
-entity ACC_v1_0_S00_AXI is
+entity acc_axi_regs is
   generic (
     -- Users to add parameters here
     -- number of registers to present, rest is read 0 / writes ignored
@@ -105,9 +105,9 @@ entity ACC_v1_0_S00_AXI is
     -- accept the read data and response information.
     S_AXI_RREADY : in std_logic
   );
-end ACC_v1_0_S00_AXI;
+end acc_axi_regs;
 
-architecture arch_imp of ACC_v1_0_S00_AXI is
+architecture arch_imp of acc_axi_regs is
   -- AXI4LITE signals
   signal axi_awaddr  : std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
   signal axi_awready : std_logic;
@@ -253,12 +253,12 @@ begin
         -- drive read-only and static registers
         slv_regs(1)(0) <= i_done;
 
-        slv_regs(16)(0) <= resize(to_unsigned(size_y, 16) & to_unsigned(size_x, 16), C_S_AXI_DATA_WIDTH);
-        slv_regs(17)(0) <= resize(to_unsigned(line_length_wght, 16) & to_unsigned(line_length_iact, 16), C_S_AXI_DATA_WIDTH);
-        slv_regs(18)(0) <= resize(to_unsigned(line_length_psum, 16), C_S_AXI_DATA_WIDTH);
-        slv_regs(19)(0) <= resize(to_unsigned(data_width_psum, 8) & to_unsigned(data_width_wght, 8) & to_unsigned(data_width_iact, 8), C_S_AXI_DATA_WIDTH);
-        slv_regs(20)(0) <= resize(to_unsigned(spad_axi_addr_width_wght, 16) & to_unsigned(spad_axi_addr_width_iact, 16), C_S_AXI_DATA_WIDTH);
-        slv_regs(21)(0) <= resize(to_unsigned(spad_axi_addr_width_psum, 16), C_S_AXI_DATA_WIDTH);
+        slv_regs(25) <= std_logic_vector(resize(to_unsigned(size_y, 16) & to_unsigned(size_x, 16), C_S_AXI_DATA_WIDTH));
+        slv_regs(26) <= std_logic_vector(resize(to_unsigned(line_length_wght, 16) & to_unsigned(line_length_iact, 16), C_S_AXI_DATA_WIDTH));
+        slv_regs(27) <= std_logic_vector(resize(to_unsigned(line_length_psum, 16), C_S_AXI_DATA_WIDTH));
+        slv_regs(28) <= std_logic_vector(resize(to_unsigned(data_width_psum, 8) & to_unsigned(data_width_wght, 8) & to_unsigned(data_width_iact, 8), C_S_AXI_DATA_WIDTH));
+        slv_regs(29) <= std_logic_vector(resize(to_unsigned(spad_axi_addr_width_wght, 16) & to_unsigned(spad_axi_addr_width_iact, 16), C_S_AXI_DATA_WIDTH));
+        slv_regs(30) <= std_logic_vector(resize(to_unsigned(spad_axi_addr_width_psum, 16), C_S_AXI_DATA_WIDTH));
 
         slv_regs(31) <= MAGIC_REG_VALUE;
       end if;

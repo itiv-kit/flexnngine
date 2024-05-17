@@ -5,7 +5,9 @@ use ieee.numeric_std.all;
 library accel;
 use accel.utilities.parameters_t;
 
-entity ACC_v1_0 is
+library xil_defaultlib;
+
+entity acc_axi_top is
   generic (
     size_x : positive := 5;
     size_y : positive := 5;
@@ -104,9 +106,9 @@ entity ACC_v1_0 is
     s00_axi_rvalid  : out std_logic;
     s00_axi_rready  : in  std_logic
   );
-end ACC_v1_0;
+end acc_axi_top;
 
-architecture arch_imp of ACC_v1_0 is
+architecture arch_imp of acc_axi_top is
 
   signal rst, rstn : std_logic;
   signal start     : std_logic;
@@ -153,7 +155,7 @@ begin
   rstn <= not rst;
 
   -- Instantiation of AXI Bus Interface S00_AXI
-  ACC_v1_0_S00_AXI_inst : entity xil_defaultlib.ACC_v1_0_S00_AXI generic map (
+  acc_axi_regs_inst : entity xil_defaultlib.acc_axi_regs generic map (
     C_S_AXI_DATA_WIDTH => C_S00_AXI_DATA_WIDTH,
     C_S_AXI_ADDR_WIDTH => C_S00_AXI_ADDR_WIDTH,
     size_x => size_x,
