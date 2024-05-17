@@ -10,14 +10,31 @@ entity ACC_v1_0 is
     size_x : positive := 5;
     size_y : positive := 5;
 
-    data_width_iact          : positive := 8; -- Width of the input data (weights, iacts)
-    data_width_wght          : positive := 8;
-    data_width_psum          : positive := 16;
+    addr_width_rows : positive := 4;
+    addr_width_y    : positive := 3;
+    addr_width_x    : positive := 3;
+
+    -- iact line buffer length & matching offset addressing width
+    line_length_iact : positive := 64;
+    addr_width_iact  : positive := 6;
+
+    -- psum line buffer length & matching offset addressing width
+    line_length_psum : positive := 128;
+    addr_width_psum  : positive := 7;
+
+    -- wght line buffer length & matching offset addressing width
+    line_length_wght : positive := 64;
+    addr_width_wght  : positive := 6;
+
+    -- Width of the pe input/output data (weights, iacts, psums)
+    data_width_iact : positive := 8;
+    data_width_wght : positive := 8;
+    data_width_psum : positive := 16;
 
     -- internal addresses are word wise (8 bit for iact/wght, 16 bit for psum)
-    spad_addr_width_iact     : positive := 16;
-    spad_addr_width_wght     : positive := 16;
-    spad_addr_width_psum     : positive := 16;
+    spad_addr_width_iact : positive := 16;
+    spad_addr_width_wght : positive := 16;
+    spad_addr_width_psum : positive := 16;
 
     -- external addresses are byte wise
     spad_axi_addr_width_iact : positive := 16;
@@ -93,6 +110,17 @@ architecture arch_imp of ACC_v1_0 is
   component ACC_v1_0_S00_AXI is
     generic (
       NUM_REGS : integer := 32;
+      size_x : positive := 5;
+      size_y : positive := 5;
+      line_length_iact : positive := 512;
+      line_length_psum : positive := 1024;
+      line_length_wght : positive := 512;
+      data_width_iact : positive := 8;
+      data_width_wght : positive := 8;
+      data_width_psum : positive := 16;
+      spad_axi_addr_width_iact : positive := 16;
+      spad_axi_addr_width_wght : positive := 16;
+      spad_axi_addr_width_psum : positive := 17;
       C_S_AXI_DATA_WIDTH : integer := 32;
       C_S_AXI_ADDR_WIDTH : integer := 7
     );
@@ -249,10 +277,21 @@ begin
 
   rstn <= not rst;
 
--- Instantiation of AXI Bus Interface S00_AXI
+  -- Instantiation of AXI Bus Interface S00_AXI
   ACC_v1_0_S00_AXI_inst : ACC_v1_0_S00_AXI generic map (
     C_S_AXI_DATA_WIDTH => C_S00_AXI_DATA_WIDTH,
-    C_S_AXI_ADDR_WIDTH => C_S00_AXI_ADDR_WIDTH
+    C_S_AXI_ADDR_WIDTH => C_S00_AXI_ADDR_WIDTH,
+    size_x => size_x,
+    size_y => size_y,
+    line_length_iact => line_length_iact,
+    line_length_psum => line_length_psum,
+    line_length_wght => line_length_wght,
+    data_width_iact => data_width_iact,
+    data_width_wght => data_width_wght,
+    data_width_psum => data_width_psum,
+    spad_axi_addr_width_iact => spad_axi_addr_width_iact,
+    spad_axi_addr_width_wght => spad_axi_addr_width_wght,
+    spad_axi_addr_width_psum => spad_axi_addr_width_psum
   ) port map (
     o_rst         => rst,
     o_start       => start,
@@ -285,9 +324,15 @@ begin
     size_x    => size_x,
     size_y    => size_y,
     size_rows => size_x + size_y - 1,
-    data_width_psum => data_width_psum,
+    line_length_iact => line_length_iact,
+    addr_width_iact => addr_width_iact,
+    line_length_psum => line_length_psum,
+    addr_width_psum => addr_width_psum,
+    line_length_wght => line_length_wght,
+    addr_width_wght => addr_width_wght,
     data_width_iact => data_width_iact,
     data_width_wght => data_width_wght,
+    data_width_psum => data_width_psum,
     spad_addr_width_iact => spad_addr_width_iact,
     spad_addr_width_psum => spad_addr_width_psum,
     spad_addr_width_wght => spad_addr_width_wght,

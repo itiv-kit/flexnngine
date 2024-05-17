@@ -10,6 +10,24 @@ entity ACC_v1_0_S00_AXI is
     -- Users to add parameters here
     -- number of registers to present, rest is read 0 / writes ignored
     NUM_REGS : integer := 32;
+
+    -- static accelerator hardware info
+    size_x : positive := 5;
+    size_y : positive := 5;
+
+    line_length_iact : positive := 512;
+    line_length_psum : positive := 1024;
+    line_length_wght : positive := 512;
+
+    -- Width of the pe input/output data (weights, iacts, psums)
+    data_width_iact : positive := 8;
+    data_width_wght : positive := 8;
+    data_width_psum : positive := 16;
+
+    -- external addresses are byte wise
+    spad_axi_addr_width_iact : positive := 16;
+    spad_axi_addr_width_wght : positive := 16;
+    spad_axi_addr_width_psum : positive := 17;
     -- User parameters ends
     -- Do not modify the parameters beyond this line
 
@@ -121,7 +139,7 @@ architecture arch_imp of ACC_v1_0_S00_AXI is
   signal byte_index   : integer;
   signal aw_en        : std_logic;
 
-  constant MAGIC_REG_VALUE : std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := x"41434301"; -- "ACC" + register set version
+  constant MAGIC_REG_VALUE : std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := x"41434302"; -- "ACC" + register set version
 begin
   -- I/O Connections assignments
 
@@ -218,10 +236,6 @@ begin
       if S_AXI_ARESETN = '0' then
         slv_regs <= (others => (others => '0'));
       else
-        -- drive read-only and static registers
-        slv_regs(1)(0) <= i_done;
-        slv_regs(31) <= MAGIC_REG_VALUE;
-
         loc_addr := unsigned(axi_awaddr(ADDR_LSB + OPT_MEM_ADDR_BITS downto ADDR_LSB));
         if (slv_reg_wren = '1') then
           if to_integer(loc_addr) < NUM_REGS then
@@ -235,6 +249,18 @@ begin
             null; -- ignore writes outside of register bank
           end if;
         end if;
+
+        -- drive read-only and static registers
+        slv_regs(1)(0) <= i_done;
+
+        slv_regs(16)(0) <= resize(to_unsigned(size_y, 16) & to_unsigned(size_x, 16), C_S_AXI_DATA_WIDTH);
+        slv_regs(17)(0) <= resize(to_unsigned(line_length_wght, 16) & to_unsigned(line_length_iact, 16), C_S_AXI_DATA_WIDTH);
+        slv_regs(18)(0) <= resize(to_unsigned(line_length_psum, 16), C_S_AXI_DATA_WIDTH);
+        slv_regs(19)(0) <= resize(to_unsigned(data_width_psum, 8) & to_unsigned(data_width_wght, 8) & to_unsigned(data_width_iact, 8), C_S_AXI_DATA_WIDTH);
+        slv_regs(20)(0) <= resize(to_unsigned(spad_axi_addr_width_wght, 16) & to_unsigned(spad_axi_addr_width_iact, 16), C_S_AXI_DATA_WIDTH);
+        slv_regs(21)(0) <= resize(to_unsigned(spad_axi_addr_width_psum, 16), C_S_AXI_DATA_WIDTH);
+
+        slv_regs(31) <= MAGIC_REG_VALUE;
       end if;
     end if;
   end process;
