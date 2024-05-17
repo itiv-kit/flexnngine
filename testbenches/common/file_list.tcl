@@ -15,7 +15,7 @@ set HDL_FILE_NAMES [list \
     "${HDL_DIR}/line_buffer.vhd" \
     "${HDL_DIR}/pe.vhd" \
     "${HDL_DIR}/pe_array.vhd" \
-    "${HDL_DIR}/bytewrite_tdp_ram_rf.vhd" \
+    "${HDL_DIR}/ram_dp_bwe.vhd" \
     "${HDL_DIR}/scratchpad.vhd" \
     "${HDL_DIR}/scratchpad_interface.vhd" \
     "${HDL_DIR}/address_generator.vhd" \

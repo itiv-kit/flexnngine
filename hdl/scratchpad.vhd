@@ -163,7 +163,7 @@ begin
 
     end process psum;
 
-    ram_iact : entity accel.bytewrite_tdp_ram_rf
+    ram_iact : entity accel.ram_dp_bwe
         generic map (
             size          => 2 ** ext_addr_width_iact,
             addr_width    => ext_addr_width_iact,
@@ -189,7 +189,7 @@ begin
             dob   => datab_iact
         );
 
-    ram_wght : entity accel.bytewrite_tdp_ram_rf
+    ram_wght : entity accel.ram_dp_bwe
         generic map (
             size          => 2 ** ext_addr_width_wght,
             addr_width    => ext_addr_width_wght,
@@ -215,7 +215,7 @@ begin
             dob   => datab_wght
         );
 
-    ram_psum : entity accel.bytewrite_tdp_ram_rf
+    ram_psum : entity accel.ram_dp_bwe
         generic map (
             size          => 2 ** ext_addr_width_psum,
             addr_width    => ext_addr_width_psum,

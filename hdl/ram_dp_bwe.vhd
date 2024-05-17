@@ -1,7 +1,7 @@
 -- True-Dual-Port BRAM with Byte-wide Write Enable
 -- Read First mode
 --
--- bytewrite_tdp_ram_rf.vhd
+-- ram_dp_bwe.vhd
 --
 -- READ_FIRST ByteWide WriteEnable Block RAM Template
 
@@ -10,7 +10,7 @@ library ieee;
     use ieee.std_logic_unsigned.all;
     use std.textio.all;
 
-entity bytewrite_tdp_ram_rf is
+entity ram_dp_bwe is
     generic (
         size          : integer := 1024;
         addr_width    : integer := 10;
@@ -33,9 +33,9 @@ entity bytewrite_tdp_ram_rf is
         dib   : in    std_logic_vector(nb_col * col_width - 1 downto 0);
         dob   : out   std_logic_vector(nb_col * col_width - 1 downto 0)
     );
-end entity bytewrite_tdp_ram_rf;
+end entity ram_dp_bwe;
 
-architecture byte_wr_ram_rf of bytewrite_tdp_ram_rf is
+architecture byte_wr_ram_rf of ram_dp_bwe is
 
     type ram_type is array (0 to size - 1) of std_logic_vector(nb_col * col_width - 1 downto 0);
 
