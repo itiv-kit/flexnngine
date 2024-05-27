@@ -273,8 +273,8 @@ begin
     r_gnt_wght_binary_d <= w_gnt_wght_binary when rising_edge(clk_sp);
     r_gnt_psum_binary_d <= w_gnt_psum_binary when rising_edge(clk_sp);
 
-    w_arb_req_iact <= (others => '0') when i_start = '0' else not w_almost_full_iact_f;
-    w_arb_req_wght <= (others => '0') when i_start = '0' else not w_almost_full_wght_f;
+    w_arb_req_iact <= (others => '0') when i_start = '0' or r_done_iact = '1' else not w_almost_full_iact_f;
+    w_arb_req_wght <= (others => '0') when i_start = '0' or r_done_wght = '1' else not w_almost_full_wght_f;
     w_arb_req_psum <= (others => '0') when i_start = '0' else not w_empty_psum_out_f;
 
     o_fifo_iact_address_full <= or w_full_iact_address_f;
