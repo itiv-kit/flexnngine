@@ -134,14 +134,17 @@ architecture rtl of scratchpad_interface is
     signal w_empty_wght_address_f : std_logic_vector(size_y - 1 downto 0);
     signal w_valid_wght_address_f : array_t(0 to size_y - 1)(0 downto 0);
 
+    signal w_arb_req_iact      : std_logic_vector(size_rows - 1 downto 0);
     signal w_gnt_iact          : std_logic_vector(size_rows - 1 downto 0);
     signal w_gnt_iact_binary   : std_logic_vector(addr_width_rows - 1 downto 0);
     signal r_gnt_iact_binary_d : std_logic_vector(addr_width_rows - 1 downto 0) := (others => '0');
 
+    signal w_arb_req_wght      : std_logic_vector(size_y - 1 downto 0);
     signal w_gnt_wght          : std_logic_vector(size_y - 1 downto 0);
     signal w_gnt_wght_binary   : std_logic_vector(addr_width_y - 1 downto 0);
     signal r_gnt_wght_binary_d : std_logic_vector(addr_width_y - 1 downto 0) := (others => '0');
 
+    signal w_arb_req_psum      : std_logic_vector(size_x - 1 downto 0);
     signal w_gnt_psum          : std_logic_vector(size_x - 1 downto 0);
     signal w_gnt_psum_binary   : std_logic_vector(addr_width_x - 1 downto 0);
     signal r_gnt_psum_binary_d : std_logic_vector(addr_width_x - 1 downto 0) := (others => '0');
@@ -206,6 +209,10 @@ begin
                 else
                     o_enable <= '0';
                 end if;
+            elsif i_start = '0' then
+                o_enable    <= '0';
+                r_done_iact <= '0';
+                r_done_wght <= '0';
             end if;
         end if;
 
@@ -222,6 +229,8 @@ begin
             r_startup <= r_startup(9 downto 0) & not (or w_empty_iact_f(size_rows - 1 downto size_y - 1));
             if and r_startup = '1' then
                 r_preload_fifos_done <= '1';
+            elsif i_start = '0' then
+                r_preload_fifos_done <= '0';
             end if;
         end if;
 
@@ -263,6 +272,10 @@ begin
     r_gnt_iact_binary_d <= w_gnt_iact_binary when rising_edge(clk_sp);
     r_gnt_wght_binary_d <= w_gnt_wght_binary when rising_edge(clk_sp);
     r_gnt_psum_binary_d <= w_gnt_psum_binary when rising_edge(clk_sp);
+
+    w_arb_req_iact <= (others => '0') when i_start = '0' else not w_almost_full_iact_f;
+    w_arb_req_wght <= (others => '0') when i_start = '0' else not w_almost_full_wght_f;
+    w_arb_req_psum <= (others => '0') when i_start = '0' else not w_empty_psum_out_f;
 
     o_fifo_iact_address_full <= or w_full_iact_address_f;
     o_fifo_wght_address_full <= or w_full_wght_address_f;
@@ -322,7 +335,7 @@ begin
         port map (
             clk   => clk_sp,
             rstn  => rstn,
-            i_req => not w_almost_full_iact_f,
+            i_req => w_arb_req_iact,
             o_gnt => w_gnt_iact
         );
 
@@ -343,7 +356,7 @@ begin
         port map (
             clk   => clk_sp,
             rstn  => rstn,
-            i_req => not w_almost_full_wght_f,
+            i_req => w_arb_req_wght,
             o_gnt => w_gnt_wght
         );
 
@@ -580,7 +593,7 @@ begin
         port map (
             clk   => clk_sp,
             rstn  => rstn,
-            i_req => not w_empty_psum_out_f,
+            i_req => w_arb_req_psum,
             o_gnt => w_gnt_psum
         );
 
