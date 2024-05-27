@@ -537,7 +537,7 @@ class Test:
             with open((self.test_dir / '_success.txt'), 'w') as f:
                 f.write('Simulated and output checked successfully!')
             return True
-        except (IndexError, RuntimeError) as e:
+        except (IndexError, RuntimeError, ValueError) as e:
             print(f'Error while evaluating test: {self.name}: {e}')
             return False
 
