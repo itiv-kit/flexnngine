@@ -31,6 +31,7 @@ package utilities is
     function and_reduce_2d (arr : in std_logic_row_col_t) return std_logic;
 
     type parameters_t is record
+        dataflow     : integer range 0 to 1;
         channels     : integer range 0 to 1023;
         kernels      : integer range 0 to 1023;
         image_y      : integer range 0 to 4095;

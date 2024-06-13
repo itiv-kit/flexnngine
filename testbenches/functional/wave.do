@@ -183,6 +183,11 @@ add wave -noupdate -group IACT_INPUT -radix decimal  /functional_tb/accelerator_
 add wave -noupdate -group IACT_INPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/o_data_iact(0)
 add wave -noupdate -group IACT_INPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/w_valid_iact_f(0)
 add wave -noupdate -group IACT_INPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/w_rd_en_iact_f(0)
+add wave -noupdate -group IACT_INPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/rstn
+add wave -noupdate -group IACT_INPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/w_almost_full_iact_f
+add wave -noupdate -group IACT_INPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/w_gnt_iact
+add wave -noupdate -group IACT_INPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/w_dout_iact_address_f
+add wave -noupdate -group IACT_INPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/w_address_iact
 add wave -noupdate -group IACT_INPUT -radix decimal  /functional_tb/accelerator_inst/w_buffer_full_iact(0)
 add wave -noupdate -group IACT_INPUT -radix decimal  /functional_tb/accelerator_inst/w_buffer_full_next_iact(0)
 add wave -noupdate -group IACT_INPUT -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_iact/r_fill_count

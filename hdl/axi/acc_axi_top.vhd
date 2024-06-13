@@ -46,6 +46,8 @@ entity acc_axi_top is
     spad_ext_data_width_wght : positive := 32;
     spad_ext_data_width_psum : positive := 32;
 
+    dataflow : integer := 0;
+
     -- Parameters of Axi Slave Bus Interface S00_AXI
     C_S00_AXI_DATA_WIDTH : integer := 32;
     C_S00_AXI_ADDR_WIDTH : integer := 7
@@ -168,7 +170,8 @@ begin
     data_width_psum => data_width_psum,
     spad_axi_addr_width_iact => spad_axi_addr_width_iact,
     spad_axi_addr_width_wght => spad_axi_addr_width_wght,
-    spad_axi_addr_width_psum => spad_axi_addr_width_psum
+    spad_axi_addr_width_psum => spad_axi_addr_width_psum,
+    dataflow => dataflow
   ) port map (
     o_rst         => rst,
     o_start       => start,
@@ -218,7 +221,8 @@ begin
     spad_ext_data_width_psum => spad_ext_data_width_psum,
     spad_ext_addr_width_iact => spad_axi_addr_width_iact - 2, -- convert byte-wise addresses to 32bit-word-wise
     spad_ext_addr_width_wght => spad_axi_addr_width_wght - 2, -- convert byte-wise addresses to 32bit-word-wise
-    spad_ext_addr_width_psum => spad_axi_addr_width_psum - 2  -- convert byte-wise addresses to 32bit-word-wise
+    spad_ext_addr_width_psum => spad_axi_addr_width_psum - 2, -- convert byte-wise addresses to 32bit-word-wise
+    g_dataflow => dataflow
   ) port map (
     clk  => clk,
     rstn => rstn,

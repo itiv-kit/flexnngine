@@ -28,6 +28,8 @@ entity acc_axi_regs is
     spad_axi_addr_width_iact : positive := 16;
     spad_axi_addr_width_wght : positive := 16;
     spad_axi_addr_width_psum : positive := 17;
+
+    dataflow : integer := 0;
     -- User parameters ends
     -- Do not modify the parameters beyond this line
 
@@ -231,6 +233,11 @@ begin
 
   process (S_AXI_ACLK)
     variable loc_addr : unsigned(OPT_MEM_ADDR_BITS downto 0);
+
+    -- grab some additional status signals from the hierarchy
+    -- TODO: seems vivado can't handle ^ in hierarchical names
+    -- alias spad_iact_done is << signal ^.accelerator_inst.scratchpad_interface_inst.r_done_iact : std_logic >>;
+    -- alias spad_wght_done is << signal ^.accelerator_inst.scratchpad_interface_inst.r_done_wght : std_logic >>;
   begin
     if rising_edge(S_AXI_ACLK) then
       if S_AXI_ARESETN = '0' then
@@ -252,6 +259,9 @@ begin
 
         -- drive read-only and static registers
         slv_regs(1)(0) <= i_done;
+        slv_regs(1)(1) <= not i_done and not o_start; -- generate the "ready" bit from i_done and o_start
+        -- slv_regs(1)(2) <= spad_iact_done;
+        -- slv_regs(1)(3) <= spad_wght_done;
 
         slv_regs(25) <= std_logic_vector(resize(to_unsigned(size_y, 16) & to_unsigned(size_x, 16), C_S_AXI_DATA_WIDTH));
         slv_regs(26) <= std_logic_vector(resize(to_unsigned(line_length_wght, 16) & to_unsigned(line_length_iact, 16), C_S_AXI_DATA_WIDTH));
@@ -380,6 +390,7 @@ begin
   o_rst   <= slv_regs(0)(0);
   o_start <= slv_regs(0)(1);
 
+  o_params.dataflow     <= dataflow;
   o_params.channels     <= to_integer(unsigned(slv_regs( 2)( 9 downto 0)));
   o_params.kernels      <= to_integer(unsigned(slv_regs( 3)( 9 downto 0)));
   o_params.image_y      <= to_integer(unsigned(slv_regs( 4)(11 downto 0)));

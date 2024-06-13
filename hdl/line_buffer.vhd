@@ -51,7 +51,6 @@ architecture rtl of line_buffer is
     signal r_pointer_tail : integer;
     signal r_fill_count   : integer range 0 to line_length;
     -- signal fifo_filled_s    : std_logic;
-    signal r_fifo_empty_s : std_logic;
     -- signal fifo_shrink_s    : std_logic;
     signal r_data_out_valid : std_logic;
     signal w_read_offset    : integer;
@@ -162,7 +161,6 @@ begin
             r_addra        <= (others => '0');
             r_dina         <= (others => '0');
             r_pointer_tail <= 0;
-            r_fifo_empty_s <= '1';
         elsif rising_edge(clk) then
             -- Update data
             if r_command_delay(2) = c_lb_read_update then
@@ -180,7 +178,6 @@ begin
                 r_addra        <= std_logic_vector(to_unsigned(r_pointer_tail, addr_width));
                 r_dina         <= i_data;
                 incr(r_pointer_tail);
-                r_fifo_empty_s <= '0';
             -- Idle
             else
                 r_wena  <= '0';
