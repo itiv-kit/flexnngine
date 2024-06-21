@@ -66,8 +66,7 @@ architecture imp of kernels_tb is
     signal clk_sp : std_logic := '0';
     signal rstn   : std_logic;
 
-    signal start      : std_logic;
-    signal start_init : std_logic;
+    signal start : std_logic;
 
     signal o_psums           : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
     signal o_psums_valid     : std_logic_vector(size_x - 1 downto 0);
@@ -156,7 +155,6 @@ begin
             clk               => clk,
             rstn              => rstn,
             clk_sp            => clk_sp,
-            i_start_init      => start_init,
             i_start           => start,
             o_dout_psum       => dout_psum,
             o_dout_psum_valid => dout_psum_valid,
