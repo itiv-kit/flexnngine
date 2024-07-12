@@ -32,11 +32,11 @@ entity scratchpad_interface is
 
         fifo_width : positive := 16;
 
-        g_iact_fifo_size         : positive := 15;
-        g_wght_fifo_size         : positive := 15;
-        g_psum_fifo_size         : positive := 45;
-        g_iact_address_fifo_size : positive := 10;
-        g_wght_address_fifo_size : positive := 10
+        g_iact_fifo_size         : positive := 16;
+        g_wght_fifo_size         : positive := 16;
+        g_psum_fifo_size         : positive := 32;
+        g_iact_address_fifo_size : positive := 8;
+        g_wght_address_fifo_size : positive := 8
     );
     port (
         clk  : in    std_logic;
