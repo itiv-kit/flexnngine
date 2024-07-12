@@ -390,11 +390,9 @@ begin
 
                         r_command_wght <= (others => c_lb_idle);
 
-                        if w_c1 > 1 then
-                            if r_count_c0w0 = 0 and r_count_w1 = 0 then
-                                r_command_wght     <= (others => c_lb_shrink);
-                                r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0_last_c1, addr_width_wght)));
-                            end if;
+                        if r_count_c0w0 = 0 and r_count_w1 = 0 then
+                            r_command_wght     <= (others => c_lb_shrink);
+                            r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0_last_c1, addr_width_wght)));
                         end if;
 
                     when others =>
