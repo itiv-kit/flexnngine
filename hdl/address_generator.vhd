@@ -369,6 +369,9 @@ begin
                             r_index_c_last_wght <= 0;
                             r_offset_c_wght     <= 0;
 
+                            -- H2 iteration could be omitted if wght buffers are not being
+                            -- shrinked after a full w1 iteration (right before output phase).
+                            -- Right now, the same weights are loaded H2 times.
                             if r_count_h2_wght /= w_h2 - 1 then
                                 r_count_h2_wght         <= r_count_h2_wght + 1;
                                 r_offset_c_last_c1_wght <= 0;
@@ -780,6 +783,13 @@ begin
                             else
                                 r_count_h1_wght <= 0;
 
+                                -- Alt RS dataflow does filter height tiling (R) before channel tiling (C1).
+                                -- After each C1 iteration, the first row of each channel is being shrinked.
+                                -- Therefore when all kernel rows R are processed, wght line buffers are empty.
+                                -- So just reload the all weights for each H2 iteration before finishing.
+                                -- Alternatively, smaller C1 tiling could be done so that all kernel rows R fit
+                                -- the line buffer. Then control just needs to change wght offsets per C1 iteration
+                                -- instead of pruning the last kernel row and starting offsets from 0 again.
                                 if r_count_h2_wght /= w_h2 - 1 then
                                     r_count_h2_wght         <= r_count_h2_wght + 1;
                                     r_offset_c_last_c1_wght <= 0;
