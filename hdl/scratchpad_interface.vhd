@@ -46,6 +46,7 @@ entity scratchpad_interface is
 
         i_start  : in    std_logic;
         o_enable : out   std_logic;
+        o_status : out   status_info_t;
 
         -- Data to and from Address generator
         i_address_iact : in    array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
@@ -163,8 +164,9 @@ architecture rtl of scratchpad_interface is
     signal r_done_wght : std_logic;
     signal r_done_iact : std_logic;
 
-    signal r_pause_iact : std_logic_vector(size_rows - 1 downto 0);
-    signal r_startup    : std_logic_vector(10 downto 0); /* TODO Depending on clk_sp / clk factor */
+    signal r_start_delay : std_logic;
+    signal r_pause_iact  : std_logic_vector(size_rows - 1 downto 0);
+    signal r_startup     : std_logic_vector(10 downto 0); /* TODO Depending on clk_sp / clk factor */
 
     signal r_preload_fifos_done : std_logic;
 
@@ -217,6 +219,10 @@ begin
         end if;
 
     end process p_enable;
+
+    o_status.spad_iact_done     <= r_done_iact;
+    o_status.spad_wght_done     <= r_done_wght;
+    o_status.preload_fifos_done <= r_preload_fifos_done;
 
     -- Status signal indicates that the first values are in the buffers. Set to '1' once all address FIFOs not empty.
     p_startup : process (clk, rstn) is
@@ -606,5 +612,32 @@ begin
             i_onehot => w_gnt_psum,
             o_binary => w_gnt_psum_binary
         );
+
+    p_psum_overflow : process is
+
+        variable temp : natural;
+
+    begin
+
+        wait until rising_edge(clk);
+        r_start_delay <= i_start;
+
+        if rstn = '0' or (i_start = '1' and r_start_delay = '0') then
+            o_status.psum_overflows <= (others => '0');
+        else
+            temp := 0;
+
+            for i in w_full_psum_out_f'range loop
+
+                if (i_psums_valid(i) and w_full_psum_out_f(i)) = '1' then
+                    temp := temp + 1;
+                end if;
+
+            end loop;
+
+            o_status.psum_overflows <= o_status.psum_overflows + temp;
+        end if;
+
+    end process p_psum_overflow;
 
 end architecture rtl;

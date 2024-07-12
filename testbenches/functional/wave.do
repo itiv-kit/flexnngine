@@ -9,6 +9,7 @@ add wave -noupdate -group Testbench -radix unsigned /functional_tb/params
 
 add wave -noupdate -group Start -radix unsigned /functional_tb/accelerator_inst/i_start
 add wave -noupdate -group Start -radix unsigned /functional_tb/accelerator_inst/o_done
+add wave -noupdate -group Start -radix unsigned /functional_tb/accelerator_inst/o_status
 add wave -noupdate -group Start -radix unsigned -label "control i_start"               /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/i_start
 add wave -noupdate -group Start -radix unsigned -label "control o_init_done"           /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/o_init_done
 add wave -noupdate -group Start -radix unsigned -label "control i_enable_if"           /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/i_enable_if

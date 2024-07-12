@@ -3,7 +3,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 library accel;
-use accel.utilities.parameters_t;
+use accel.utilities.all;
 
 entity acc_axi_regs is
   generic (
@@ -44,6 +44,7 @@ entity acc_axi_regs is
     o_start  : out   std_logic;
     i_done   : in    std_logic;
     o_params : out   parameters_t;
+    i_status : in    status_info_t;
     -- User ports ends
 
     -- Global Clock Signal
@@ -235,9 +236,9 @@ begin
     variable loc_addr : unsigned(OPT_MEM_ADDR_BITS downto 0);
 
     -- grab some additional status signals from the hierarchy
-    -- TODO: seems vivado can't handle ^ in hierarchical names
     -- alias spad_iact_done is << signal ^.accelerator_inst.scratchpad_interface_inst.r_done_iact : std_logic >>;
     -- alias spad_wght_done is << signal ^.accelerator_inst.scratchpad_interface_inst.r_done_wght : std_logic >>;
+    -- seems vivado can't handle ^ in hierarchical names, so get the signals from the status record
   begin
     if rising_edge(S_AXI_ACLK) then
       if S_AXI_ARESETN = '0' then
@@ -260,9 +261,14 @@ begin
         -- drive read-only and static registers
         slv_regs(1)(0) <= i_done;
         slv_regs(1)(1) <= not i_done and not o_start; -- generate the "ready" bit from i_done and o_start
-        -- slv_regs(1)(2) <= spad_iact_done;
-        -- slv_regs(1)(3) <= spad_wght_done;
+        slv_regs(1)(2) <= i_status.spad_iact_done;
+        slv_regs(1)(3) <= i_status.spad_wght_done;
+        slv_regs(1)(4) <= i_status.preload_fifos_done;
 
+        -- debug status registers
+        slv_regs(24) <= std_logic_vector(resize(i_status.psum_overflows, 32));
+
+        -- static hardware info registers
         slv_regs(25) <= std_logic_vector(resize(to_unsigned(size_y, 16) & to_unsigned(size_x, 16), C_S_AXI_DATA_WIDTH));
         slv_regs(26) <= std_logic_vector(resize(to_unsigned(line_length_wght, 16) & to_unsigned(line_length_iact, 16), C_S_AXI_DATA_WIDTH));
         slv_regs(27) <= std_logic_vector(resize(to_unsigned(line_length_psum, 16), C_S_AXI_DATA_WIDTH));

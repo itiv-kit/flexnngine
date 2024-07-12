@@ -1,5 +1,6 @@
 library ieee;
     use ieee.std_logic_1164.all;
+    use ieee.numeric_std.all;
     use std.textio.all;
 
 package utilities is
@@ -48,6 +49,15 @@ package utilities is
         c0w0         : integer range 0 to 1023;
         c0w0_last_c1 : integer range 0 to 1023;
     end record parameters_t;
+
+    type status_info_t is record
+        psum_overflows     : unsigned(9 downto 0);
+        spad_iact_done     : std_logic;
+        spad_wght_done     : std_logic;
+        preload_fifos_done : std_logic;
+    end record status_info_t;
+
+    type status_info_pipe_t is array(natural range <>) of status_info_t;
 
 end package utilities;
 

@@ -3,7 +3,8 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 library accel;
-use accel.utilities.parameters_t;
+use accel.utilities.all;
+use accel.sync.bit_sync;
 
 library xil_defaultlib;
 
@@ -47,6 +48,9 @@ entity acc_axi_top is
     spad_ext_data_width_psum : positive := 32;
 
     dataflow : integer := 0;
+
+    -- enable cdc between AXI and accelerator clock domains if clocks differ
+    axi_acc_cdc : boolean := false;
 
     -- Parameters of Axi Slave Bus Interface S00_AXI
     C_S00_AXI_DATA_WIDTH : integer := 32;
@@ -112,14 +116,20 @@ end acc_axi_top;
 
 architecture arch_imp of acc_axi_top is
 
-  signal rst, rstn : std_logic;
-  signal start     : std_logic;
-  signal done      : std_logic;
-  signal params    : parameters_t;
+  signal w_axi_rst,   w_axi_rstn  : std_logic;
+  signal w_acc_rstn               : std_logic;
+  signal w_axi_start, w_acc_start : std_logic;
+  signal w_axi_done,  w_acc_done  : std_logic;
+
+  signal w_params, r_params : parameters_t;
+  signal w_status, r_status : status_info_t;
 
   attribute x_interface_mode      : string;
   attribute x_interface_info      : string;
   attribute x_interface_parameter : string;
+
+  attribute x_interface_info      of s00_axi_aclk : signal is "xilinx.com:signal:clock:1.0 s00_axi_aclk CLK";
+  attribute x_interface_parameter of s00_axi_aclk : signal is "ASSOCIATED_BUSIF s00_axi, ASSOCIATED_RESET s00_axi_aresetn, FREQ_HZ 100000000";
 
   attribute x_interface_parameter of i_dummy_clk_iact : signal is "XIL_INTERFACENAME bram_iact, MASTER_TYPE BRAM_CTRL, MEM_SIZE 65536, MEM_WIDTH 32, MEM_ECC NONE, READ_WRITE_MODE READ_WRITE, READ_LATENCY 1";
   attribute x_interface_parameter of i_dummy_clk_wght : signal is "XIL_INTERFACENAME bram_wght, MASTER_TYPE BRAM_CTRL, MEM_SIZE 65536, MEM_WIDTH 32, MEM_ECC NONE, READ_WRITE_MODE READ_WRITE, READ_LATENCY 1";
@@ -152,9 +162,13 @@ architecture arch_imp of acc_axi_top is
   attribute x_interface_info of i_din_psum       : signal is "xilinx.com:interface:bram_rtl:1.0 bram_psum DIN";
   attribute x_interface_info of o_dout_psum      : signal is "xilinx.com:interface:bram_rtl:1.0 bram_psum DOUT";
 
+  attribute async_reg             : string;
+  attribute async_reg of r_status : signal is "TRUE";
+  attribute async_reg of r_params : signal is "TRUE";
+
 begin
 
-  rstn <= not rst;
+  w_axi_rstn <= not w_axi_rst;
 
   -- Instantiation of AXI Bus Interface S00_AXI
   acc_axi_regs_inst : entity xil_defaultlib.acc_axi_regs generic map (
@@ -173,10 +187,11 @@ begin
     spad_axi_addr_width_psum => spad_axi_addr_width_psum,
     dataflow => dataflow
   ) port map (
-    o_rst         => rst,
-    o_start       => start,
-    i_done        => done,
-    o_params      => params,
+    o_rst         => w_axi_rst,
+    o_start       => w_axi_start,
+    i_done        => w_axi_done,
+    o_params      => w_params,
+    i_status      => r_status,
     S_AXI_ACLK    => s00_axi_aclk,
     S_AXI_ARESETN => s00_axi_aresetn,
     S_AXI_AWADDR  => s00_axi_awaddr,
@@ -225,13 +240,14 @@ begin
     g_dataflow => dataflow
   ) port map (
     clk  => clk,
-    rstn => rstn,
+    rstn => w_acc_rstn,
 
     clk_sp => clk_sp,
 
-    i_start  => start,
-    o_done   => done,
-    i_params => params,
+    i_start  => w_acc_start,
+    o_done   => w_acc_done,
+    i_params => r_params,
+    o_status => w_status,
 
     i_en_iact => i_en_iact,
     i_en_wght => i_en_wght,
@@ -253,5 +269,26 @@ begin
     o_dout_iact => o_dout_iact,
     o_dout_wght => o_dout_wght
   );
+
+  g_cdc : if axi_acc_cdc generate
+  begin
+
+    inst_sync_rst   : entity accel.bit_sync port map (clk, '0', w_axi_rstn,  w_acc_rstn);
+    inst_sync_start : entity accel.bit_sync port map (clk, '0', w_axi_start, w_acc_start);
+    inst_sync_done  : entity accel.bit_sync port map (clk, '0', w_acc_done,  w_axi_done);
+
+  end generate;
+
+  g_no_cdc : if not axi_acc_cdc generate
+  begin
+
+    w_acc_rstn <= w_axi_rstn;
+    w_acc_start <= w_axi_start;
+    w_axi_done <= w_acc_done;
+
+  end generate;
+
+  r_status <= w_status when rising_edge(s00_axi_aclk);
+  r_params <= w_params when rising_edge(clk);
 
 end arch_imp;
