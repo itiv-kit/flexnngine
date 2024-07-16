@@ -26,8 +26,9 @@ entity control is
         clk  : in    std_logic;
         rstn : in    std_logic;
 
-        i_start     : in    std_logic;
-        i_enable_if : in    std_logic; -- enable signal from scratchpad interface (0 when stalling)
+        i_start             : in    std_logic;
+        i_enable_if         : in    std_logic; -- enable signal from scratchpad interface (0 when stalling)
+        i_all_psum_finished : in    std_logic;
 
         o_init_done  : out   std_logic;
         o_enable     : out   std_logic;

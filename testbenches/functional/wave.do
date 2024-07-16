@@ -32,16 +32,16 @@ add wave -noupdate -group Start -radix unsigned -label "spadif w_full_wght_addre
 add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/read_en_iact
 add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/read_adr_iact
 add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/dout_iact_valid
-add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/dout_iact
+add wave -noupdate -group Scratchpad -radix decimal  /functional_tb/accelerator_inst/scratchpad_inst/dout_iact
 add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/read_en_wght
 add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/read_adr_wght
 add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/dout_wght_valid
-add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/dout_wght
+add wave -noupdate -group Scratchpad -radix decimal  /functional_tb/accelerator_inst/scratchpad_inst/dout_wght
 add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/write_en_psum
 add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/write_adr_psum
-add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/din_psum
+add wave -noupdate -group Scratchpad -radix decimal  /functional_tb/accelerator_inst/scratchpad_inst/din_psum
 add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/enb_psum
-add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/web_psum
+add wave -noupdate -group Scratchpad -radix symbolic /functional_tb/accelerator_inst/scratchpad_inst/web_psum
 add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/addrb_psum
 add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/datab_psum
 
@@ -224,6 +224,7 @@ add wave -noupdate -group IACT_INPUT -radix decimal  /functional_tb/accelerator_
 
 add wave -noupdate -group Control -radix symbolic /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/i_start
 add wave -noupdate -group Control -radix symbolic /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/i_enable_if
+add wave -noupdate -group Control -radix symbolic /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/i_all_psum_finished
 add wave -noupdate -group Control -radix symbolic /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/o_init_done
 add wave -noupdate -group Control -radix symbolic /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/o_enable
 add wave -noupdate -group Control -radix symbolic /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/o_pause_iact

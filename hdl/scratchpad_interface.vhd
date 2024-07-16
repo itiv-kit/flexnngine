@@ -61,6 +61,7 @@ entity scratchpad_interface is
         o_valid_psums_out   : out   std_logic_vector(size_x - 1 downto 0); -- to calculate psum address
         o_gnt_psum_binary_d : out   std_logic_vector(addr_width_x - 1 downto 0);
         o_empty_psum_fifo   : out   std_logic_vector(size_x - 1 downto 0);
+        o_all_psum_finished : out   std_logic;
 
         -- Addresses to Scratchpad
         o_address_iact : out   std_logic_vector(addr_width_iact_mem - 1 downto 0);
@@ -100,6 +101,8 @@ entity scratchpad_interface is
 end entity scratchpad_interface;
 
 architecture rtl of scratchpad_interface is
+
+    signal w_rst : std_logic;
 
     signal r_sel_iact_fifo : std_logic_vector(addr_width_rows - 1 downto 0);
     signal r_sel_wght_fifo : std_logic_vector(addr_width_y - 1 downto 0);
@@ -171,6 +174,8 @@ architecture rtl of scratchpad_interface is
     signal r_preload_fifos_done : std_logic;
 
 begin
+
+    w_rst <= not rstn;
 
     -- Delay i_pause_iact signal for to propagate through array
     r_pause_iact(size_rows - 1 downto 0) <= r_pause_iact(size_rows - 2 downto size_y - 1) & i_pause_iact & (size_y - 2 downto 0 => '0') when rising_edge(clk);
@@ -590,6 +595,14 @@ begin
             v_i => w_psum_out,
             sel => r_gnt_psum_binary_d,
             z_o => o_data_psum
+        );
+
+    sync_all_psum_finished : entity accel.bit_sync
+        port map (
+            clk     => clk,
+            rst     => w_rst,
+            bit_in  => and w_empty_psum_out_f,
+            bit_out => o_all_psum_finished
         );
 
     o_valid_psums_out   <= w_valid_psum_out_f;

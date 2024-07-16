@@ -32,8 +32,9 @@ entity control_address_generator is
         clk  : in    std_logic;
         rstn : in    std_logic;
 
-        i_start     : in    std_logic;
-        i_enable_if : in    std_logic;
+        i_start             : in    std_logic;
+        i_enable_if         : in    std_logic;
+        i_all_psum_finished : in    std_logic;
 
         o_init_done  : out   std_logic;
         o_enable     : out   std_logic;
@@ -102,6 +103,7 @@ begin
                 i_enable_if          => i_enable_if,
                 o_enable             => o_enable,
                 o_pause_iact         => o_pause_iact,
+                i_all_psum_finished  => i_all_psum_finished,
                 i_params             => i_params,
                 o_m0_dist            => w_m0_dist,
                 o_command            => o_command,
@@ -143,6 +145,7 @@ begin
                 i_enable_if          => i_enable_if,
                 o_enable             => o_enable,
                 o_pause_iact         => o_pause_iact,
+                i_all_psum_finished  => i_all_psum_finished,
                 i_params             => i_params,
                 o_m0_dist            => w_m0_dist,
                 o_command            => o_command,

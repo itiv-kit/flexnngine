@@ -162,6 +162,7 @@ architecture rtl of accelerator is
     signal w_valid_psums_out   : std_logic_vector(size_x - 1 downto 0);
     signal w_gnt_psum_binary_d : std_logic_vector(addr_width_x - 1 downto 0);
     signal w_empty_psum_fifo   : std_logic_vector(size_x - 1 downto 0);
+    signal w_all_psum_finished : std_logic;
 
     signal w_address_iact       : array_t(0 to size_rows - 1)(spad_addr_width_iact - 1 downto 0);
     signal w_address_wght       : array_t(0 to size_y - 1)(spad_addr_width_wght - 1 downto 0);
@@ -243,6 +244,7 @@ begin
             rstn                     => rstn,
             i_start                  => i_start,
             i_enable_if              => w_enable_if,
+            i_all_psum_finished      => w_all_psum_finished,
             o_init_done              => w_control_init_done,
             o_enable                 => w_enable,
             o_pause_iact             => w_pause_iact,
@@ -357,6 +359,7 @@ begin
             o_valid_psums_out        => w_valid_psums_out,
             o_gnt_psum_binary_d      => w_gnt_psum_binary_d,
             o_empty_psum_fifo        => w_empty_psum_fifo,
+            o_all_psum_finished      => w_all_psum_finished,
             o_address_iact           => w_read_adr_iact,
             o_address_wght           => w_read_adr_wght,
             o_address_iact_valid     => w_read_en_iact,
