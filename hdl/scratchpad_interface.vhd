@@ -190,14 +190,10 @@ begin
             if r_preload_fifos_done = '1' then
                 if (and w_empty_wght_address_f) and (and w_empty_wght_f) then
                     r_done_wght <= '1';
-                else
-                    r_done_wght <= '0';
                 end if;
 
                 if (and w_empty_iact_address_f(size_rows - 1 downto size_y - 1)) and (and w_empty_iact_f(size_rows - 1 downto size_y - 1)) then
                     r_done_iact <= '1';
-                else
-                    r_done_iact <= '0';
                 end if;
 
                 if (or w_empty_iact_f(size_rows - 1 downto size_y - 1) = '1') and r_done_iact = '1' and (or w_empty_wght_f = '0') then
@@ -448,6 +444,10 @@ begin
                 valid       => w_valid_iact_f(y)
             );
 
+        assert rstn = '0' or w_demux_iact_out_valid(y)(0) = '0' or w_full_iact_f(y) = '0'
+            report "push to full iact fifo " & integer'image(y)
+            severity warning;
+
     end generate fifo_iact;
 
     fifo_wght : for y in 0 to size_y - 1 generate
@@ -473,6 +473,10 @@ begin
                 empty       => w_empty_wght_f(y),
                 valid       => w_valid_wght_f(y)
             );
+
+        assert rstn = '0' or w_demux_wght_out_valid(y)(0) = '0' or w_full_wght_f(y) = '0'
+            report "push to full wght fifo " & integer'image(y)
+            severity warning;
 
     end generate fifo_wght;
 
@@ -500,6 +504,10 @@ begin
                 valid       => w_valid_iact_address_f(y)(0)
             );
 
+        assert rstn = '0' or i_address_iact_valid(y) = '0' or w_full_iact_address_f(y) = '0'
+            report "push to full iact address fifo " & integer'image(y)
+            severity warning;
+
     end generate fifo_iact_address;
 
     fifo_wght_address : for y in 0 to size_y - 1 generate
@@ -525,6 +533,10 @@ begin
                 empty       => w_empty_wght_address_f(y),
                 valid       => w_valid_wght_address_f(y)(0)
             );
+
+        assert rstn = '0' or i_address_wght_valid(y) = '0' or w_full_wght_address_f(y) = '0'
+            report "push to full wght address fifo " & integer'image(y)
+            severity warning;
 
     end generate fifo_wght_address;
 
@@ -553,6 +565,10 @@ begin
                 valid       => w_valid_psum_out_f(x),
                 empty       => w_empty_psum_out_f(x)
             );
+
+        assert rstn = '0' or i_psums_valid(x) = '0' or w_full_psum_out_f(x) = '0'
+            report "push to full psum fifo " & integer'image(x)
+            severity warning;
 
     end generate fifo_psum_out;
 
