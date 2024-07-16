@@ -69,14 +69,36 @@ add wave -noupdate -group FIFO_iact -radix unsigned /functional_tb/accelerator_i
 add wave -noupdate -group FIFO_iact -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/w_demux_iact_out(0)
 add wave -noupdate -group FIFO_iact -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/w_dout_iact_f(0)
 
-add wave -noupdate -group FIFO_iact_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/FIFO_iact_address(0)/FIFO_iact_address/din
-add wave -noupdate -group FIFO_iact_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/FIFO_iact_address(0)/FIFO_iact_address/dout
-add wave -noupdate -group FIFO_iact_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/FIFO_iact_address(0)/FIFO_iact_address/valid
-add wave -noupdate -group FIFO_iact_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/FIFO_iact_address(0)/FIFO_iact_address/empty
-add wave -noupdate -group FIFO_iact_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/FIFO_iact_address(0)/FIFO_iact_address/full
+add wave -noupdate -group FIFO_iact_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/fifo_iact_address(0)/fifo_iact_address/din
+add wave -noupdate -group FIFO_iact_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/fifo_iact_address(0)/fifo_iact_address/dout
+add wave -noupdate -group FIFO_iact_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/fifo_iact_address(0)/fifo_iact_address/valid
+add wave -noupdate -group FIFO_iact_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/fifo_iact_address(0)/fifo_iact_address/empty
+add wave -noupdate -group FIFO_iact_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/fifo_iact_address(0)/fifo_iact_address/full
 add wave -noupdate -group FIFO_iact_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/w_full_iact_address_f
 add wave -noupdate -group FIFO_iact_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/w_empty_iact_address_f
 add wave -noupdate -group FIFO_iact_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/o_fifo_iact_address_full
+
+add wave -noupdate -group FIFO_wght -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/fifo_wght(0)/fifo_wght/din
+add wave -noupdate -group FIFO_wght -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/fifo_wght(0)/fifo_wght/dout
+add wave -noupdate -group FIFO_wght -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/fifo_wght(0)/fifo_wght/valid
+add wave -noupdate -group FIFO_wght -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/fifo_wght(0)/fifo_wght/empty
+add wave -noupdate -group FIFO_wght -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/w_demux_wght_out_valid(0)
+add wave -noupdate -group FIFO_wght -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/w_demux_wght_out(0)
+add wave -noupdate -group FIFO_wght -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/w_dout_wght_f(0)
+add wave -noupdate -group FIFO_wght -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/i_data_wght_valid
+add wave -noupdate -group FIFO_wght -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/r_sel_wght_fifo
+add wave -noupdate -group FIFO_wght -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/w_rd_en_wght_f
+add wave -noupdate -group FIFO_wght -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/i_buffer_full_wght
+add wave -noupdate -group FIFO_wght -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/w_empty_wght_f
+
+add wave -noupdate -group FIFO_wght_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/fifo_wght_address(0)/fifo_wght_address/din
+add wave -noupdate -group FIFO_wght_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/fifo_wght_address(0)/fifo_wght_address/dout
+add wave -noupdate -group FIFO_wght_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/fifo_wght_address(0)/fifo_wght_address/valid
+add wave -noupdate -group FIFO_wght_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/fifo_wght_address(0)/fifo_wght_address/empty
+add wave -noupdate -group FIFO_wght_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/fifo_wght_address(0)/fifo_wght_address/full
+add wave -noupdate -group FIFO_wght_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/w_full_wght_address_f
+add wave -noupdate -group FIFO_wght_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/w_empty_wght_address_f
+add wave -noupdate -group FIFO_wght_address -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/o_fifo_wght_address_full
 
 quietly set addr_gen_path "/functional_tb/accelerator_inst/control_address_generator_inst/g_address_generator/address_generator_inst"
 add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/o_address_iact_valid
@@ -120,8 +142,6 @@ add wave -noupdate -group ADR_wght -radix unsigned ${addr_gen_path}/i_fifo_full_
 add wave -noupdate -group ADR_wght -radix unsigned ${addr_gen_path}/i_start
 
 add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/i_start
-add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/i_w1
-add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/i_m0
 add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/i_valid_psum_out
 add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/i_gnt_psum_binary_d
 add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/address_generator_psum_inst/r_start_event
@@ -136,14 +156,15 @@ add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator
 add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/w_write_adr_psum
 add wave -noupdate -group PSUM_OUTPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/i_psums
 add wave -noupdate -group PSUM_OUTPUT -radix binary   /functional_tb/accelerator_inst/scratchpad_interface_inst/i_psums_valid
-add wave -noupdate -group PSUM_OUTPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/w_gnt_psum_binary
+add wave -noupdate -group PSUM_OUTPUT -radix binary   /functional_tb/accelerator_inst/scratchpad_interface_inst/w_full_psum_out_f
+add wave -noupdate -group PSUM_OUTPUT -radix binary   /functional_tb/accelerator_inst/scratchpad_interface_inst/w_gnt_psum_binary
 add wave -noupdate -group PSUM_OUTPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/w_gnt_psum
-add wave -noupdate -group PSUM_OUTPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/w_empty_psum_out_f
+add wave -noupdate -group PSUM_OUTPUT -radix binary   /functional_tb/accelerator_inst/scratchpad_interface_inst/w_empty_psum_out_f
 add wave -noupdate -group PSUM_OUTPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/o_data_psum
-add wave -noupdate -group PSUM_OUTPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/o_write_en_psum
-add wave -noupdate -group PSUM_OUTPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/w_valid_psum_out_f
+add wave -noupdate -group PSUM_OUTPUT -radix binary   /functional_tb/accelerator_inst/scratchpad_interface_inst/o_write_en_psum
+add wave -noupdate -group PSUM_OUTPUT -radix binary   /functional_tb/accelerator_inst/scratchpad_interface_inst/w_valid_psum_out_f
 add wave -noupdate -group PSUM_OUTPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/w_valid_psum_out
-add wave -noupdate -group PSUM_OUTPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/w_rd_en_psum_out_f
+add wave -noupdate -group PSUM_OUTPUT -radix binary   /functional_tb/accelerator_inst/scratchpad_interface_inst/w_rd_en_psum_out_f
 #add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/ram_dp_psum/ram_instance
 
 add wave -noupdate -group {PE arr outputs} -radix signed /functional_tb/accelerator_inst/pe_array_inst/o_psums
@@ -215,6 +236,7 @@ add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_ins
 add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/w_output_sequence
 add wave -noupdate -group Control -radix symbolic /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_command
 add wave -noupdate -group Control -radix symbolic /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_command_psum
+add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_m0_dist
 
 add wave -noupdate -group {iact commands} -radix symbolic /functional_tb/accelerator_inst/w_command_iact(0)
 add wave -noupdate -group {iact commands} -radix unsigned /functional_tb/accelerator_inst/w_read_offset_iact(0)

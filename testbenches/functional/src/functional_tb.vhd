@@ -76,7 +76,7 @@ architecture imp of functional_tb is
 
     signal clk    : std_logic := '0';
     signal clk_sp : std_logic := '0';
-    signal rstn   : std_logic;
+    signal rstn   : std_logic := '0';
 
     signal start       : std_logic;
     signal done        : std_logic;
