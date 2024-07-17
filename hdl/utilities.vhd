@@ -33,8 +33,8 @@ package utilities is
 
     type parameters_t is record
         dataflow     : integer range 0 to 1;
-        channels     : integer range 0 to 1023;
-        kernels      : integer range 0 to 1023;
+        inputchs     : integer range 0 to 1023;
+        outputchs    : integer range 0 to 1023;
         image_y      : integer range 0 to 4095;
         image_x      : integer range 0 to 4095;
         kernel_size  : integer range 0 to 31;

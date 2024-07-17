@@ -419,7 +419,7 @@ begin
                         -- r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0_last_c1 - w_c0_last_c1, addr_width_iact)));
                         else
                         -- r_command_iact     <= (others => c_lb_shrink);
-                        -- r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * i_params.channels - i_params.channels, addr_width_iact)));
+                        -- r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * i_params.inputchs - i_params.inputchs, addr_width_iact)));
                         end if;
                     end if;
 

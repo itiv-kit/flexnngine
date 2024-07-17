@@ -397,8 +397,8 @@ begin
   o_start <= slv_regs(0)(1);
 
   o_params.dataflow     <= dataflow;
-  o_params.channels     <= to_integer(unsigned(slv_regs( 2)( 9 downto 0)));
-  o_params.kernels      <= to_integer(unsigned(slv_regs( 3)( 9 downto 0)));
+  o_params.inputchs     <= to_integer(unsigned(slv_regs( 2)( 9 downto 0)));
+  o_params.outputchs    <= to_integer(unsigned(slv_regs( 3)( 9 downto 0)));
   o_params.image_y      <= to_integer(unsigned(slv_regs( 4)(11 downto 0)));
   o_params.image_x      <= to_integer(unsigned(slv_regs( 5)(11 downto 0)));
   o_params.kernel_size  <= to_integer(unsigned(slv_regs( 6)( 4 downto 0)));

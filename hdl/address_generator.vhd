@@ -191,9 +191,9 @@ begin
                     -- o_address_wght(i)       <= std_logic_vector(to_unsigned(w_offset_mem_wght + i * i_params.kernel_size, addr_width_wght_mem));
                     if i < i_params.m0 * i_params.kernel_size then
                         o_address_wght(i) <= std_logic_vector(to_unsigned(w_offset_mem_wght + (i - (to_integer(unsigned(i_m0_dist(i)))) * i_params.kernel_size + i_params.kernel_size) * i_params.kernel_size +
-                                                                          ((to_integer(unsigned(i_m0_dist(i))) - 1) * i_params.kernel_size * i_params.kernel_size * i_params.channels), addr_width_wght_mem));
+                                                                          ((to_integer(unsigned(i_m0_dist(i))) - 1) * i_params.kernel_size * i_params.kernel_size * i_params.inputchs), addr_width_wght_mem));
                         r_test_wght(i)    <= (i - (to_integer(unsigned(i_m0_dist(i)))) * i_params.kernel_size + i_params.kernel_size);
-                        r_test_wght2(i)   <= ((to_integer(unsigned(i_m0_dist(i))) - 1) * i_params.kernel_size * i_params.kernel_size * i_params.channels);
+                        r_test_wght2(i)   <= ((to_integer(unsigned(i_m0_dist(i))) - 1) * i_params.kernel_size * i_params.kernel_size * i_params.inputchs);
                     end if;
                 else
                     o_address_wght_valid(i) <= '0';
@@ -559,7 +559,7 @@ begin
         if not rstn then
             r_ckk <= 0;
         elsif rising_edge(clk) then
-            r_ckk <= i_params.kernel_size * i_params.kernel_size * i_params.channels;
+            r_ckk <= i_params.kernel_size * i_params.kernel_size * i_params.inputchs;
         end if;
 
     end process p_wght_address_helper;
@@ -586,7 +586,7 @@ begin
                     if i < i_params.m0 * i_params.kernel_size then
                         o_address_wght(i) <= std_logic_vector(to_unsigned(w_offset_mem_wght + r_ckki(i) + r_count_h1_wght * i_params.kernel_size, addr_width_wght_mem)); -- channel offset + kernel offset + row offset
                         /* r_test_wght(i)    <= (i - i_params.kernel_size + i_params.kernel_size);
-                         r_test_wght2(i)   <= (i * i_params.kernel_size * i_params.kernel_size * i_params.channels);*/
+                         r_test_wght2(i)   <= (i * i_params.kernel_size * i_params.kernel_size * i_params.inputchs);*/
                     end if;
                 else
                     o_address_wght_valid(i) <= '0';

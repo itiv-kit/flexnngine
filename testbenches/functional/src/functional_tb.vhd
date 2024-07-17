@@ -41,8 +41,8 @@ entity functional_tb is
 
         fifo_width : positive := 16;
 
-        g_channels    : positive := 30;
-        g_kernels     : positive := 10;
+        g_inputchs    : positive := 30;
+        g_outputchs   : positive := 10;
         g_image_y     : positive := 20;
         g_image_x     : positive := 20;
         g_kernel_size : positive := 1;
@@ -91,8 +91,8 @@ architecture imp of functional_tb is
     signal i_data_wght       : array_t (0 to size_y - 1)(data_width_wght - 1 downto 0);
     signal i_data_wght_valid : std_logic_vector(size_y - 1 downto 0);
 
-    signal s_input_image     : int_image_t(0 to size_rows - 1, 0 to g_image_x * g_channels * g_h2 - 1);         -- 2, because two tile_y
-    signal s_input_weights   : int_image_t(0 to g_kernel_size - 1, 0 to g_kernel_size * g_channels * g_h2 - 1); -- not *2 because kernel stays the same across tile_y
+    signal s_input_image     : int_image_t(0 to size_rows - 1, 0 to g_image_x * g_inputchs * g_h2 - 1);         -- 2, because two tile_y
+    signal s_input_weights   : int_image_t(0 to g_kernel_size - 1, 0 to g_kernel_size * g_inputchs * g_h2 - 1); -- not *2 because kernel stays the same across tile_y
     signal s_expected_output : int_image_t(0 to g_image_y - g_kernel_size, 0 to g_image_x - g_kernel_size);
 
     constant spad_ext_addr_width_iact : integer := addr_width_iact_mem - 2;
@@ -139,8 +139,8 @@ begin
                                           '0';
     end generate g_psum_commands;
 
-    params.channels     <= g_channels;
-    params.kernels      <= g_kernels;
+    params.inputchs     <= g_inputchs;
+    params.outputchs    <= g_outputchs;
     params.image_y      <= g_image_y;
     params.image_x      <= g_image_x;
     params.kernel_size  <= g_kernel_size;
@@ -261,7 +261,7 @@ begin
     p_constant_check : process is
     begin
 
-        -- assert line_length_iact >= g_kernel_size * g_channels
+        -- assert line_length_iact >= g_kernel_size * g_inputchs
         --     report "Line length to store input values must be greater or equal to the kernel size"
         --     severity failure;
 
@@ -269,7 +269,7 @@ begin
             report "Y dimension of PE array has to be greater or equal to kernel size"
             severity failure;
 
-        -- assert line_length_wght >= g_kernel_size * g_channels
+        -- assert line_length_wght >= g_kernel_size * g_inputchs
         --     report "Length of wght buffer has to be greater or equal to kernel size, buffer has to store values of one kernel row at a time."
         --     severity failure;
 
@@ -308,8 +308,8 @@ begin
     p_read_files : process is
     begin
 
-        -- s_input_image <= read_file(file_name => g_files_dir & "_image_reordered_2.txt", num_col => g_image_x * g_channels * g_h2, num_row => size_rows);
-        -- s_input_weights   <= read_file(file_name => "src/_kernel_reordered.txt", num_col => g_kernel_size * g_channels * g_tiles_y, num_row => g_kernel_size);
+        -- s_input_image <= read_file(file_name => g_files_dir & "_image_reordered_2.txt", num_col => g_image_x * g_inputchs * g_h2, num_row => size_rows);
+        -- s_input_weights   <= read_file(file_name => "src/_kernel_reordered.txt", num_col => g_kernel_size * g_inputchs * g_tiles_y, num_row => g_kernel_size);
         -- s_expected_output <= read_file(file_name => g_files_dir & "_convolution.txt", num_col => g_image_x - g_kernel_size + 1, num_row => g_image_y - g_kernel_size + 1);
         wait;
 
@@ -333,7 +333,7 @@ begin
         p_check_image_vals : process is
         begin
 
-            for i in 0 to g_image_x * g_channels * g_h2 - 1 loop
+            for i in 0 to g_image_x * g_inputchs * g_h2 - 1 loop
 
                 wait until rising_edge(clk) and i_data_iact_valid(y) = '1';
 
@@ -367,7 +367,7 @@ begin
         p_check_wght_vals : process is
         begin
 
-            for i in 0 to g_kernel_size * g_channels * g_tiles_y - 1 loop
+            for i in 0 to g_kernel_size * g_inputchs * g_tiles_y - 1 loop
 
                 wait until rising_edge(clk) and i_data_wght_valid(y) = '1';
 

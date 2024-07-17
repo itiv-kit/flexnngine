@@ -440,7 +440,8 @@ class Test:
             'g_kernel_size':       self.convolution.kernel_size,
             'g_image_y':           self.convolution.image_size,
             'g_image_x':           self.convolution.image_size,
-            'g_channels':          self.convolution.input_channels,
+            'g_inputchs':          self.convolution.input_channels,
+            'g_outputchs':         3, # currently fixed
             'line_length_wght':    self.accelerator.line_length_wght,
             'addr_width_wght':     math.ceil(math.log2(self.accelerator.line_length_wght)),
             'line_length_iact':    self.accelerator.line_length_iact,
