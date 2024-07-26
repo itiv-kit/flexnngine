@@ -55,6 +55,10 @@ package utilities is
         spad_iact_done     : std_logic;
         spad_wght_done     : std_logic;
         preload_fifos_done : std_logic;
+        spad_iact_full     : std_logic;
+        spad_iact_empty    : std_logic;
+        spad_wght_full     : std_logic;
+        spad_wght_empty    : std_logic;
     end record status_info_t;
 
     type status_info_pipe_t is array(natural range <>) of status_info_t;

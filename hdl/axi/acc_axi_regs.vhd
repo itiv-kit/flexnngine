@@ -266,6 +266,10 @@ begin
         slv_regs(1)(4) <= i_status.preload_fifos_done;
 
         -- debug status registers
+        slv_regs(23)(0) <= i_status.spad_iact_full;
+        slv_regs(23)(1) <= i_status.spad_iact_empty;
+        slv_regs(23)(2) <= i_status.spad_wght_full;
+        slv_regs(23)(3) <= i_status.spad_wght_empty;
         slv_regs(24) <= std_logic_vector(resize(i_status.psum_overflows, 32));
 
         -- static hardware info registers

@@ -669,4 +669,9 @@ begin
 
     end process p_psum_overflow;
 
+    o_status.spad_iact_full  <= or w_full_iact_f;
+    o_status.spad_iact_empty <= or w_empty_iact_f;
+    o_status.spad_wght_full  <= or w_full_wght_f;
+    o_status.spad_wght_empty <= or w_empty_wght_f;
+
 end architecture rtl;
