@@ -12,12 +12,12 @@ library ieee;
 
 entity ram_dp_bwe is
     generic (
-        size          : integer := 1024;
-        addr_width    : integer := 10;
-        col_width     : integer := 8;
-        nb_col        : integer := 4;
-        initialize    : boolean := false;
-        init_file     : string  := ""
+        size       : integer := 1024;
+        addr_width : integer := 10;
+        col_width  : integer := 8;
+        nb_col     : integer := 4;
+        initialize : boolean := false;
+        init_file  : string  := ""
     );
     port (
         clka  : in    std_logic;
@@ -51,16 +51,21 @@ architecture byte_wr_ram_rf of ram_dp_bwe is
     begin
 
         temp_mem := (others => (others => '0'));
-        n_words := 0;
+        n_words  := 0;
 
         while not endfile(mem_file) loop
+
             readline(mem_file, mem_line);
+
             loop
+
                 read(mem_line, temp_bv, good);
                 exit when not good;
                 temp_mem(n_words) := to_stdlogicvector(temp_bv);
-                n_words := n_words + 1;
+                n_words           := n_words + 1;
+
             end loop;
+
         end loop;
 
         report "initialized " & integer'image(n_words) & " words of memory from " & mem_file_name

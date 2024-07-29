@@ -53,9 +53,9 @@ entity scratchpad is
         ext_en_wght : in    std_logic;
         ext_en_psum : in    std_logic;
 
-        ext_write_en_iact : in    std_logic_vector(ext_data_width_iact/8 - 1 downto 0);
-        ext_write_en_wght : in    std_logic_vector(ext_data_width_wght/8 - 1 downto 0);
-        ext_write_en_psum : in    std_logic_vector(ext_data_width_psum/8 - 1 downto 0);
+        ext_write_en_iact : in    std_logic_vector(ext_data_width_iact / 8 - 1 downto 0);
+        ext_write_en_wght : in    std_logic_vector(ext_data_width_wght / 8 - 1 downto 0);
+        ext_write_en_psum : in    std_logic_vector(ext_data_width_psum / 8 - 1 downto 0);
 
         ext_addr_iact : in    std_logic_vector(ext_addr_width_iact - 1 downto 0);
         ext_addr_wght : in    std_logic_vector(ext_addr_width_wght - 1 downto 0);
@@ -77,22 +77,23 @@ architecture rtl of scratchpad is
     constant cols_wght : integer := ext_data_width_wght / 8;
     constant cols_psum : integer := ext_data_width_psum / 8;
 
-    signal enb_iact            : std_logic                                        := '1';
-    signal enb_wght            : std_logic                                        := '1';
-    signal enb_psum            : std_logic                                        := '1';
-    signal web_iact            : std_logic_vector(cols_iact - 1 downto 0)         := (others => '0');
-    signal web_wght            : std_logic_vector(cols_wght - 1 downto 0)         := (others => '0');
-    signal web_psum            : std_logic_vector(cols_psum - 1 downto 0)         := (others => '0');
-    signal addrb_iact          : std_logic_vector(ext_addr_width_iact - 1 downto 0);
-    signal datab_iact          : std_logic_vector(ext_data_width_iact - 1 downto 0);
-    signal addrb_wght          : std_logic_vector(ext_addr_width_wght - 1 downto 0);
-    signal datab_wght          : std_logic_vector(ext_data_width_wght - 1 downto 0);
-    signal addrb_psum          : std_logic_vector(ext_addr_width_psum - 1 downto 0);
-    signal datab_psum          : std_logic_vector(ext_data_width_psum - 1 downto 0);
-    signal read_adr_wght_buff  : std_logic_vector(addr_width_wght - 1 downto 0) := (others => '0');
-    signal read_adr_iact_buff  : std_logic_vector(addr_width_iact - 1 downto 0) := (others => '0');
+    signal enb_iact           : std_logic                                      := '1';
+    signal enb_wght           : std_logic                                      := '1';
+    signal enb_psum           : std_logic                                      := '1';
+    signal web_iact           : std_logic_vector(cols_iact - 1 downto 0)       := (others => '0');
+    signal web_wght           : std_logic_vector(cols_wght - 1 downto 0)       := (others => '0');
+    signal web_psum           : std_logic_vector(cols_psum - 1 downto 0)       := (others => '0');
+    signal addrb_iact         : std_logic_vector(ext_addr_width_iact - 1 downto 0);
+    signal datab_iact         : std_logic_vector(ext_data_width_iact - 1 downto 0);
+    signal addrb_wght         : std_logic_vector(ext_addr_width_wght - 1 downto 0);
+    signal datab_wght         : std_logic_vector(ext_data_width_wght - 1 downto 0);
+    signal addrb_psum         : std_logic_vector(ext_addr_width_psum - 1 downto 0);
+    signal datab_psum         : std_logic_vector(ext_data_width_psum - 1 downto 0);
+    signal read_adr_wght_buff : std_logic_vector(addr_width_wght - 1 downto 0) := (others => '0');
+    signal read_adr_iact_buff : std_logic_vector(addr_width_iact - 1 downto 0) := (others => '0');
 
 begin
+
     enb_iact <= read_en_iact;
     enb_wght <= read_en_wght;
 
@@ -156,21 +157,21 @@ begin
             else
                 web_psum <= "0011";
             end if;
-            -- datab_psum <= (others => '0');
-            -- datab_psum(data_width_psum * (index + 1) - 1 downto data_width_psum * index) <= din_psum;
-            -- web_psum(index)                                                              <= '1';
+        -- datab_psum <= (others => '0');
+        -- datab_psum(data_width_psum * (index + 1) - 1 downto data_width_psum * index) <= din_psum;
+        -- web_psum(index)                                                              <= '1';
         end if;
 
     end process psum;
 
     ram_iact : entity accel.ram_dp_bwe
         generic map (
-            size          => 2 ** ext_addr_width_iact,
-            addr_width    => ext_addr_width_iact,
-            col_width     => 8,
-            nb_col        => cols_iact,
-            initialize    => initialize_mems,
-            init_file     => g_files_dir & "_mem_iact.txt"
+            size       => 2 ** ext_addr_width_iact,
+            addr_width => ext_addr_width_iact,
+            col_width  => 8,
+            nb_col     => cols_iact,
+            initialize => initialize_mems,
+            init_file  => g_files_dir & "_mem_iact.txt"
         )
         port map (
             -- external access
@@ -191,12 +192,12 @@ begin
 
     ram_wght : entity accel.ram_dp_bwe
         generic map (
-            size          => 2 ** ext_addr_width_wght,
-            addr_width    => ext_addr_width_wght,
-            col_width     => 8,
-            nb_col        => cols_wght,
-            initialize    => initialize_mems,
-            init_file     => g_files_dir & "_mem_wght_stack.txt"
+            size       => 2 ** ext_addr_width_wght,
+            addr_width => ext_addr_width_wght,
+            col_width  => 8,
+            nb_col     => cols_wght,
+            initialize => initialize_mems,
+            init_file  => g_files_dir & "_mem_wght_stack.txt"
         )
         port map (
             -- external access
@@ -217,12 +218,12 @@ begin
 
     ram_psum : entity accel.ram_dp_bwe
         generic map (
-            size          => 2 ** ext_addr_width_psum,
-            addr_width    => ext_addr_width_psum,
-            col_width     => 8,
-            nb_col        => cols_psum,
-            initialize    => false,
-            init_file     => g_files_dir & "_mem_psum.txt"
+            size       => 2 ** ext_addr_width_psum,
+            addr_width => ext_addr_width_psum,
+            col_width  => 8,
+            nb_col     => cols_psum,
+            initialize => false,
+            init_file  => g_files_dir & "_mem_psum.txt"
         )
         port map (
             -- external access

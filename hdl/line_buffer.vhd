@@ -174,9 +174,9 @@ begin
                 r_dina  <= i_update_val;
             -- Write data to tail
             elsif i_data_valid and not o_buffer_full then
-                r_wena         <= '1';
-                r_addra        <= std_logic_vector(to_unsigned(r_pointer_tail, addr_width));
-                r_dina         <= i_data;
+                r_wena  <= '1';
+                r_addra <= std_logic_vector(to_unsigned(r_pointer_tail, addr_width));
+                r_dina  <= i_data;
                 incr(r_pointer_tail);
             -- Idle
             else

@@ -16,8 +16,8 @@ library accel;
 
 entity functional_tb is
     generic (
-        size_x    : positive := 7;
-        size_y    : positive := 10;
+        size_x : positive := 7;
+        size_y : positive := 10;
 
         data_width_iact     : positive := 8;  -- Width of the input data (weights, iacts)
         line_length_iact    : positive := 64; /* TODO check influence on tiling - does not work for length 32, kernel 4 and channels 10. Does not work for length 30, kernel 3 and channels 10*/

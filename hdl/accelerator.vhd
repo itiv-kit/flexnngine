@@ -8,23 +8,23 @@ library accel;
 
 entity accelerator is
     generic (
-        size_x    : positive := 5;
-        size_y    : positive := 5;
+        size_x : positive := 5;
+        size_y : positive := 5;
 
         -- iact word size, pe line buffer length & matching offset addressing width
-        data_width_iact     : positive := 8;
-        line_length_iact    : positive := 512;
-        addr_width_iact     : positive := 9;
+        data_width_iact  : positive := 8;
+        line_length_iact : positive := 512;
+        addr_width_iact  : positive := 9;
 
         -- psum word size, pe line buffer length & matching offset addressing width
-        data_width_psum     : positive := 16;
-        line_length_psum    : positive := 1024;
-        addr_width_psum     : positive := 10;
+        data_width_psum  : positive := 16;
+        line_length_psum : positive := 1024;
+        addr_width_psum  : positive := 10;
 
         -- wght word size, pe line buffer length & matching offset addressing width
-        data_width_wght     : positive := 8;
-        line_length_wght    : positive := 512;
-        addr_width_wght     : positive := 9;
+        data_width_wght  : positive := 8;
+        line_length_wght : positive := 512;
+        addr_width_wght  : positive := 9;
 
         -- address widths scratchpad <-> pe array
         spad_addr_width_iact : positive := 15; -- word size data_width_iact
@@ -64,9 +64,9 @@ entity accelerator is
         i_en_wght : in    std_logic;
         i_en_psum : in    std_logic;
 
-        i_write_en_iact : in    std_logic_vector(spad_ext_data_width_iact/8 - 1 downto 0);
-        i_write_en_wght : in    std_logic_vector(spad_ext_data_width_wght/8 - 1 downto 0);
-        i_write_en_psum : in    std_logic_vector(spad_ext_data_width_psum/8 - 1 downto 0);
+        i_write_en_iact : in    std_logic_vector(spad_ext_data_width_iact / 8 - 1 downto 0);
+        i_write_en_wght : in    std_logic_vector(spad_ext_data_width_wght / 8 - 1 downto 0);
+        i_write_en_psum : in    std_logic_vector(spad_ext_data_width_psum / 8 - 1 downto 0);
 
         i_addr_iact : in    std_logic_vector(spad_ext_addr_width_iact - 1 downto 0);
         i_addr_wght : in    std_logic_vector(spad_ext_addr_width_wght - 1 downto 0);
@@ -152,7 +152,7 @@ architecture rtl of accelerator is
     attribute async_reg : string;
     attribute async_reg of w_params_sp : signal is "TRUE";
 
-    signal r_status_pipe : status_info_pipe_t(2 downto 0);
+    signal r_status_pipe    : status_info_pipe_t(2 downto 0);
     signal w_status_spad_if : status_info_t;
 
     signal w_dout_iact_valid : std_logic;
@@ -288,8 +288,8 @@ begin
             g_files_dir         => g_files_dir
         )
         port map (
-            clk             => clk_sp,
-            rstn            => rstn,
+            clk  => clk_sp,
+            rstn => rstn,
             -- internal access
             read_adr_iact   => w_read_adr_iact,
             read_adr_wght   => w_read_adr_wght,
@@ -410,6 +410,6 @@ begin
 
     -- add a pipeline to relax timing on the status record signals
     r_status_pipe(r_status_pipe'high downto 1) <= r_status_pipe(r_status_pipe'high - 1 downto 0) when rising_edge(clk);
-    o_status <= r_status_pipe(r_status_pipe'high);
+    o_status                                   <= r_status_pipe(r_status_pipe'high);
 
 end architecture rtl;
