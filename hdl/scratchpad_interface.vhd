@@ -379,7 +379,7 @@ begin
 
     demux_iact : entity accel.demux
         generic map (
-            output_width  => 8,
+            output_width  => data_width_iact,
             output_num    => size_rows,
             address_width => addr_width_rows
         )
@@ -403,7 +403,7 @@ begin
 
     demux_wght : entity accel.demux
         generic map (
-            output_width  => 8,
+            output_width  => data_width_wght,
             output_num    => size_y,
             address_width => addr_width_y
         )
