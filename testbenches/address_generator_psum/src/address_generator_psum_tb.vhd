@@ -30,9 +30,6 @@ architecture imp of address_generator_psum_tb is
 
     signal i_start             : std_logic;
     signal i_dataflow          : std_logic;
-    signal i_w1                : integer range 0 to 1023;
-    signal i_m0                : integer range 0 to 1023;
-    signal i_new_output        : std_logic;
     signal i_valid_psum_out    : std_logic_vector(size_x - 1 downto 0);
     signal i_gnt_psum_binary_d : std_logic_vector(size_x_width - 1 downto 0);
     signal i_empty_psum_fifo   : std_logic_vector(size_x - 1 downto 0);
@@ -44,6 +41,13 @@ architecture imp of address_generator_psum_tb is
     signal tb_wen : std_logic                                 := '0';
     signal wen    : std_logic                                 := '0';
     signal din    : std_logic_vector(data_width - 1 downto 0) := (others => '0');
+
+    signal i_params : parameters_t := (
+                                        kernel_size => kernel_size,
+                                       w1 => image_width,
+                                       m0 => kernel_count,
+                                       others => 0
+                                   );
 
     type ram_type is array (0 to 2 ** addr_width - 1) of std_logic_vector(data_width - 1 downto 0);
 
@@ -61,10 +65,7 @@ begin
             rstn                => rstn,
             i_start             => i_start,
             i_dataflow          => i_dataflow,
-            i_w1                => i_w1,
-            i_m0                => i_m0,
-            i_kernel_size       => kernel_size,
-            i_new_output        => i_new_output,
+            i_params            => i_params,
             i_valid_psum_out    => i_valid_psum_out,
             i_gnt_psum_binary_d => i_gnt_psum_binary_d,
             i_empty_psum_fifo   => i_empty_psum_fifo,
@@ -123,8 +124,6 @@ begin
 
         wait until rising_edge(clk);
         i_start <= '1';
-        i_w1    <= image_width;
-        i_m0    <= 3;
 
         wait until done;
 
@@ -138,7 +137,6 @@ begin
     begin
 
         tb_wen                  <= '0';
-        i_new_output            <= '0';
         i_gnt_psum_binary_d_int <= 0;
         i_valid_psum_out        <= (others => '0');
 
@@ -152,12 +150,6 @@ begin
             wait for 150 ns;
 
             for step in 0 to (image_width + size_x - 1) / size_x loop
-
-                wait until rising_edge(clk);
-                i_new_output <= '1';
-
-                wait until rising_edge(clk);
-                i_new_output <= '0';
 
                 wait for 150 ns;
                 wait until rising_edge(clk);
