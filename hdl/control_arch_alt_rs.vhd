@@ -59,7 +59,7 @@ architecture alternative_rs_dataflow of control is
 
 begin
 
-    o_done       <= '1' when r_state = s_done else '0';
+    o_done <= '1' when r_state = s_done else '0';
 
     -- unused by alternative rs dataflow, so drive with constant 0
     r_m0_dist <= (others => (others => '0'));
