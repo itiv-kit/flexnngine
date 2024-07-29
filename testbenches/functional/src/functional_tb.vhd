@@ -18,11 +18,6 @@ entity functional_tb is
     generic (
         size_x    : positive := 7;
         size_y    : positive := 10;
-        size_rows : positive := size_x + size_y - 1;
-
-        addr_width_rows : positive := 4;
-        addr_width_y    : positive := 4;
-        addr_width_x    : positive := 3;
 
         data_width_iact     : positive := 8;  -- Width of the input data (weights, iacts)
         line_length_iact    : positive := 64; /* TODO check influence on tiling - does not work for length 32, kernel 4 and channels 10. Does not work for length 30, kernel 3 and channels 10*/
@@ -73,6 +68,8 @@ entity functional_tb is
 end entity functional_tb;
 
 architecture imp of functional_tb is
+
+    constant size_rows : positive := size_x + size_y - 1;
 
     signal clk    : std_logic := '0';
     signal clk_sp : std_logic := '0';
@@ -159,10 +156,6 @@ begin
         generic map (
             size_x                   => size_x,
             size_y                   => size_y,
-            size_rows                => size_rows,
-            addr_width_rows          => addr_width_rows,
-            addr_width_y             => addr_width_y,
-            addr_width_x             => addr_width_x,
             data_width_iact          => data_width_iact,
             line_length_iact         => line_length_iact,
             addr_width_iact          => addr_width_iact,
@@ -287,18 +280,6 @@ begin
 
         assert addr_width_wght = integer(ceil(log2(real(line_length_wght))))
             report "Check wght address width!"
-            severity failure;
-
-        assert addr_width_x = integer(ceil(log2(real(size_x))))
-            report "Check address width x!"
-            severity failure;
-
-        assert addr_width_y = integer(ceil(log2(real(size_y))))
-            report "Check address width y!"
-            severity failure;
-
-        assert addr_width_rows = integer(ceil(log2(real(size_rows))))
-            report "Check address width rows!"
             severity failure;
 
         wait;

@@ -13,10 +13,6 @@ entity acc_axi_top is
     size_x : positive := 5;
     size_y : positive := 5;
 
-    addr_width_rows : positive := 4;
-    addr_width_y    : positive := 3;
-    addr_width_x    : positive := 3;
-
     -- iact line buffer length & matching offset addressing width
     line_length_iact : positive := 64;
     addr_width_iact  : positive := 6;
@@ -218,7 +214,6 @@ begin
   accelerator_inst : entity accel.accelerator generic map (
     size_x    => size_x,
     size_y    => size_y,
-    size_rows => size_x + size_y - 1,
     line_length_iact => line_length_iact,
     addr_width_iact => addr_width_iact,
     line_length_psum => line_length_psum,

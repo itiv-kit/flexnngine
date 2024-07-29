@@ -1,6 +1,7 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
+    use ieee.math_real.all;
 
 library accel;
     use accel.utilities.all;
@@ -9,11 +10,6 @@ entity accelerator is
     generic (
         size_x    : positive := 5;
         size_y    : positive := 5;
-        size_rows : positive := 9;
-
-        addr_width_rows : positive := 4;
-        addr_width_y    : positive := 3;
-        addr_width_x    : positive := 3;
 
         -- iact word size, pe line buffer length & matching offset addressing width
         data_width_iact     : positive := 8;
@@ -87,6 +83,12 @@ entity accelerator is
 end entity accelerator;
 
 architecture rtl of accelerator is
+
+    constant size_rows : positive := size_x + size_y - 1;
+
+    constant addr_width_x    : positive := positive(ceil(log2(real(size_x))));
+    constant addr_width_y    : positive := positive(ceil(log2(real(size_y))));
+    constant addr_width_rows : positive := positive(ceil(log2(real(size_rows))));
 
     signal w_preload_psum       : std_logic_vector(data_width_psum - 1 downto 0);
     signal w_preload_psum_valid : std_logic;
