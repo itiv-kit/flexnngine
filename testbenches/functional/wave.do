@@ -302,9 +302,11 @@ for {set y 0} {$y < $size_y} {incr y} {
     add wave -noupdate -group PEs -group $group -radix unsigned ${pe_path}/i_data_in_psum_valid
     add wave -noupdate -group PEs -group $group -radix unsigned ${pe_path}/r_sel_mult_psum
     add wave -noupdate -group PEs -group $group -radix unsigned ${pe_path}/i_update_offset_psum
-    add wave -noupdate -group PEs -group $group -radix decimal  ${pe_path}/w_data_acc_out
+    add wave -noupdate -group PEs -group $group -radix decimal  ${pe_path}/w_data_iact
+    add wave -noupdate -group PEs -group $group -radix decimal  ${pe_path}/w_data_wght
     add wave -noupdate -group PEs -group $group -radix decimal  ${pe_path}/w_data_acc_in1
     add wave -noupdate -group PEs -group $group -radix decimal  ${pe_path}/w_data_acc_in2
+    add wave -noupdate -group PEs -group $group -radix decimal  ${pe_path}/w_data_acc_out
     add wave -noupdate -group PEs -group $group -radix unsigned ${pe_path}/w_data_acc_in1_valid
     add wave -noupdate -group PEs -group $group -radix unsigned ${pe_path}/w_data_acc_in2_valid
     add wave -noupdate -group PEs -group $group -radix symbolic ${pe_path}/line_buffer_iact/i_command
