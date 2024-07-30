@@ -124,8 +124,9 @@ architecture rtl of accelerator is
     signal w_read_offset_psum : array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
     signal w_read_offset_wght : array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
 
-    signal w_psums       : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
-    signal w_psums_valid : std_logic_vector(size_x - 1 downto 0);
+    signal w_psums          : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
+    signal w_psums_valid    : std_logic_vector(size_x - 1 downto 0);
+    signal w_psums_halfword : std_logic_vector(size_x - 1 downto 0);
 
     signal w_read_adr_iact  : std_logic_vector(spad_addr_width_iact - 1 downto 0);
     signal w_read_adr_wght  : std_logic_vector(spad_addr_width_wght - 1 downto 0);
@@ -136,6 +137,7 @@ architecture rtl of accelerator is
     signal w_din_psum  : std_logic_vector(data_width_psum - 1 downto 0);
 
     signal w_write_en_psum       : std_logic;
+    signal w_psum_halfword       : std_logic;
     signal w_write_suppress_psum : std_logic;
 
     signal w_read_en_iact : std_logic;
@@ -205,6 +207,7 @@ begin
         port map (
             clk                     => clk,
             rstn                    => rstn,
+            i_params                => i_params,
             i_preload_psum          => w_preload_psum,
             i_preload_psum_valid    => w_preload_psum_valid,
             i_enable                => w_enable,
@@ -231,7 +234,8 @@ begin
             i_read_offset_psum      => w_read_offset_psum,
             i_read_offset_wght      => w_read_offset_wght,
             o_psums                 => w_psums,
-            o_psums_valid           => w_psums_valid
+            o_psums_valid           => w_psums_valid,
+            o_psums_halfword        => w_psums_halfword
         );
 
     control_address_generator_inst : entity accel.control_address_generator
@@ -313,6 +317,7 @@ begin
             read_en_iact    => w_read_en_iact,
             read_en_wght    => w_read_en_wght,
             write_en_psum   => w_write_en_psum and not w_write_suppress_psum,
+            write_half_psum => w_psum_halfword,
             dout_iact_valid => w_dout_iact_valid,
             dout_wght_valid => w_dout_wght_valid,
             dout_iact       => w_dout_iact,
@@ -385,6 +390,7 @@ begin
             o_address_iact_valid     => w_read_en_iact,
             o_address_wght_valid     => w_read_en_wght,
             o_write_en_psum          => w_write_en_psum,
+            o_psum_halfword          => w_psum_halfword,
             o_data_psum              => w_din_psum,
             i_data_iact              => w_dout_iact,
             i_data_wght              => w_dout_wght,
@@ -400,6 +406,7 @@ begin
             i_buffer_full_next_wght  => w_buffer_full_next_wght,
             i_psums                  => w_psums,
             i_psums_valid            => w_psums_valid,
+            i_psums_halfword         => w_psums_halfword,
             i_pause_iact             => w_pause_iact
         );
 

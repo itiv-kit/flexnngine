@@ -22,11 +22,15 @@ entity pe_array is
 
         data_width_wght  : positive := 8;
         line_length_wght : positive := 32;
-        addr_width_wght  : positive := 5
+        addr_width_wght  : positive := 5;
+
+        g_bias_act_enabled : boolean := false
     );
     port (
         clk  : in    std_logic;
         rstn : in    std_logic;
+
+        i_params :   in  parameters_t;
 
         i_preload_psum       : in    std_logic_vector(data_width_psum - 1 downto 0);
         i_preload_psum_valid : in    std_logic;
@@ -61,8 +65,9 @@ entity pe_array is
         i_read_offset_psum : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
         i_read_offset_wght : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
 
-        o_psums       : out   array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
-        o_psums_valid : out   std_logic_vector(size_x - 1 downto 0)
+        o_psums          : out   array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
+        o_psums_valid    : out   std_logic_vector(size_x - 1 downto 0);
+        o_psums_halfword : out   std_logic_vector(size_x - 1 downto 0)
     );
 end entity pe_array;
 
@@ -86,6 +91,12 @@ architecture behavioral of pe_array is
 
     signal w_data_out       : array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(data_width_psum - 1 downto 0);
     signal w_data_out_valid : std_logic_row_col_t(0 to size_y - 1, 0 to size_x - 1);
+
+    signal w_psums_bias       : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
+    signal w_psums_bias_valid : std_logic_vector(size_x - 1 downto 0);
+
+    signal w_psums_act       : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
+    signal w_psums_act_valid : std_logic_vector(size_x - 1 downto 0);
 
     signal w_data_in       : array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(data_width_psum - 1 downto 0);
     signal w_data_in_valid : std_logic_row_col_t(0 to size_y - 1, 0 to size_x - 1);
@@ -222,12 +233,69 @@ begin
 
     -- Partial sums output from north PE row. This is the actual output of the PE array.
 
-    psum_output : for i in 0 to size_x - 1 generate
+    bias_act : if g_bias_act_enabled generate
+        psum_output : for i in 0 to size_x - 1 generate
 
-        o_psums(i)       <= w_data_out(0, i);
-        o_psums_valid(i) <= w_data_out_valid(0, i);
+            -- generate bias, activation and requantization (scaling) units
+            -- TODO: bias could also be applied by preloading biases to accumulators
 
-    end generate psum_output;
+            bias_inst : entity accel.psum_bias
+                generic map (
+                    data_width_psum => data_width_psum
+                )
+                port map (
+                    clk          => clk,
+                    i_params     => i_params,
+                    i_psum_valid => w_data_out_valid(0, i),
+                    i_psum       => w_data_out(0, i),
+                    o_psum_valid => w_psums_bias_valid(i),
+                    o_psum       => w_psums_bias(i)
+                );
+
+            activation_inst : entity accel.psum_activation
+                generic map (
+                    data_width_psum => data_width_psum
+                )
+                port map (
+                    clk          => clk,
+                    i_mode       => i_params.mode_act,
+                    i_psum_valid => w_psums_bias_valid(i),
+                    i_psum       => w_psums_bias(i),
+                    o_psum_valid => w_psums_act_valid(i),
+                    o_psum       => w_psums_act(i)
+                );
+
+            requantize_inst : entity accel.psum_requantize
+                generic map (
+                    data_width_psum => data_width_psum,
+                    data_width_iact => data_width_iact
+                )
+                port map (
+                    clk             => clk,
+                    rstn            => rstn,
+                    i_params        => i_params,
+                    i_data_valid    => w_psums_act_valid(i),
+                    i_data          => w_psums_act(i),
+                    o_data_valid    => o_psums_valid(i),
+                    o_data          => o_psums(i),
+                    o_data_halfword => o_psums_halfword(i)
+                );
+
+        end generate psum_output;
+
+    else generate
+
+        -- if bias & activation are disabled, directly map partial sum outputs to module outputs
+
+        psum_output : for i in 0 to size_x - 1 generate
+
+            o_psums(i)          <= w_data_out(0, i);
+            o_psums_valid(i)    <= w_data_out_valid(0, i);
+            o_psums_halfword(i) <= '0';
+
+        end generate psum_output;
+
+    end generate bias_act;
 
     -- OUTPUT BUFFER FULL SIGNALS
     o_buffer_full_psum      <= and_reduce_2d(w_buffer_full_psum);

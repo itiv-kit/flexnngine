@@ -76,6 +76,7 @@ entity scratchpad_interface is
         o_address_wght_valid : out   std_logic;
 
         o_write_en_psum : out   std_logic;
+        o_psum_halfword : out   std_logic;
         o_data_psum     : out   std_logic_vector(data_width_psum - 1 downto 0);
 
         -- Data from Scratchpad
@@ -99,8 +100,9 @@ entity scratchpad_interface is
         i_buffer_full_next_wght : in    std_logic_vector(size_y - 1 downto 0);
 
         -- Data from PE array
-        i_psums       : in    array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
-        i_psums_valid : in    std_logic_vector(size_x - 1 downto 0);
+        i_psums          : in    array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
+        i_psums_valid    : in    std_logic_vector(size_x - 1 downto 0);
+        i_psums_halfword : in    std_logic_vector(size_x - 1 downto 0);
 
         -- Data from control
         i_pause_iact : in    std_logic
@@ -166,12 +168,14 @@ architecture rtl of scratchpad_interface is
     signal w_address_wght : std_logic_vector(addr_width_wght_mem - 1 downto 0);
 
     signal w_rd_en_psum_out_f : std_logic_vector(size_x - 1 downto 0);
-    signal w_dout_psum_out_f  : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
+    signal w_din_psum_out_f   : array_t(0 to size_x - 1)(data_width_psum downto 0);
+    signal w_dout_psum_out_f  : array_t(0 to size_x - 1)(data_width_psum downto 0);
     signal w_full_psum_out_f  : std_logic_vector(size_x - 1 downto 0);
     signal w_empty_psum_out_f : std_logic_vector(size_x - 1 downto 0);
     signal w_valid_psum_out_f : std_logic_vector(size_x - 1 downto 0);
     signal w_valid_psum_out   : array_t(0 to size_x - 1)(0 downto 0);
-    signal w_psum_out         : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
+    signal w_psum_out         : array_t(0 to size_x - 1)(data_width_psum downto 0);
+    signal w_data_psum        : std_logic_vector(data_width_psum downto 0);
 
     signal r_done_iact_pipe, r_done_wght_pipe : std_logic_vector(4 downto 0); -- >= number of sync stages in iact/wght dc_fifo
     signal r_done_iact,      r_done_wght      : std_logic;
@@ -589,6 +593,8 @@ begin
 
         /* TODO use feasible size for Psum FIFO */
 
+        w_din_psum_out_f(x) <= i_psums_halfword(x) & i_psums(x);
+
         fifo_psum_out : entity accel.dc_fifo
             generic map (
                 mem_size    => g_psum_fifo_size,
@@ -599,7 +605,7 @@ begin
                 wr_clk      => clk,
                 rst         => not rstn,
                 wr_en       => i_psums_valid(x),
-                din         => i_psums(x),
+                din         => w_din_psum_out_f(x),
                 full        => w_full_psum_out_f(x),
                 almost_full => open,
                 keep        => '0',
@@ -627,15 +633,18 @@ begin
 
     mux_psum_out : entity accel.mux
         generic map (
-            input_width   => data_width_psum,
+            input_width   => data_width_psum + 1,
             input_num     => size_x,
             address_width => addr_width_x
         )
         port map (
             v_i => w_psum_out,
             sel => r_gnt_psum_binary_d,
-            z_o => o_data_psum
+            z_o => w_data_psum
         );
+
+    o_psum_halfword <= w_data_psum(data_width_psum);
+    o_data_psum     <= w_data_psum(data_width_psum - 1 downto 0);
 
     sync_all_psum_finished : entity accel.bit_sync
         port map (

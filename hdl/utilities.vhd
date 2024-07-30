@@ -6,6 +6,7 @@ library ieee;
 package utilities is
 
     type t_control_state is (s_idle, s_init, s_calculate, s_output, s_incr_c1, s_incr_h1, s_done);
+    type mode_activation_t is (passthrough, relu, sigmoid, leaky_relu, elu);
 
     type std_logic_row_col_t is array (natural  range <>, natural range <>) of std_logic;
 
@@ -48,6 +49,12 @@ package utilities is
         c0_last_c1   : integer range 0 to 1023;
         c0w0         : integer range 0 to 1023;
         c0w0_last_c1 : integer range 0 to 1023;
+        requant_enab : boolean;
+        bias_enab    : boolean;
+        mode_act     : mode_activation_t;
+        bias         : std_logic_vector(31 downto 0);
+        zeropt_fp32  : std_logic_vector(31 downto 0);
+        scale_fp32   : std_logic_vector(31 downto 0);
     end record parameters_t;
 
     type status_info_spadif_t is record

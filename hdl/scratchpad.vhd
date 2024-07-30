@@ -38,9 +38,10 @@ entity scratchpad is
         read_adr_wght  : in    std_logic_vector(addr_width_wght - 1 downto 0);
         write_adr_psum : in    std_logic_vector(addr_width_psum - 1 downto 0);
 
-        read_en_iact  : in    std_logic;
-        read_en_wght  : in    std_logic;
-        write_en_psum : in    std_logic;
+        read_en_iact    : in    std_logic;
+        read_en_wght    : in    std_logic;
+        write_en_psum   : in    std_logic;
+        write_half_psum : in    std_logic;
 
         dout_iact_valid : out   std_logic;
         dout_wght_valid : out   std_logic;
@@ -144,23 +145,44 @@ begin
 
         wait until rising_edge(clk);
 
-        index := to_integer(unsigned(write_adr_psum(addr_width_psum - ext_addr_width_psum - 1 downto 0)));
+        if write_half_psum = '1' then
 
-        addrb_psum <= write_adr_psum(addr_width_psum - 1 downto addr_width_psum - ext_addr_width_psum);
-        datab_psum <= din_psum & din_psum;
-        enb_psum   <= write_en_psum;
-        web_psum   <= (others => '0');
+            index := to_integer(unsigned(write_adr_psum(addr_width_psum - ext_addr_width_psum downto 0)));
 
-        -- TODO: generalize, currently fixed for 32bit spad 8bit cols 16bit psums
-        if write_en_psum = '1' then
-            if index = 1 then
-                web_psum <= "1100";
-            else
-                web_psum <= "0011";
+            addrb_psum <= write_adr_psum(addr_width_psum - 1 downto addr_width_psum - ext_addr_width_psum + 1);
+            datab_psum <= din_psum(data_width_iact) & din_psum(data_width_iact) & din_psum(data_width_iact) & din_psum(data_width_iact);
+            enb_psum   <= write_en_psum;
+            web_psum   <= (others => '0');
+
+            if write_en_psum = '1' then
+                with index select web_psum <=
+                    "1000" when 3,
+                    "0100" when 2,
+                    "0010" when 1,
+                    "0001" when others;
             end if;
-        -- datab_psum <= (others => '0');
-        -- datab_psum(data_width_psum * (index + 1) - 1 downto data_width_psum * index) <= din_psum;
-        -- web_psum(index)                                                              <= '1';
+
+        else
+
+            index := to_integer(unsigned(write_adr_psum(addr_width_psum - ext_addr_width_psum - 1 downto 0)));
+
+            addrb_psum <= write_adr_psum(addr_width_psum - 1 downto addr_width_psum - ext_addr_width_psum);
+            datab_psum <= din_psum & din_psum;
+            enb_psum   <= write_en_psum;
+            web_psum   <= (others => '0');
+
+            -- TODO: generalize, currently fixed for 32bit spad 8bit cols 16bit psums
+            if write_en_psum = '1' then
+                if index = 1 then
+                    web_psum <= "1100";
+                else
+                    web_psum <= "0011";
+                end if;
+            -- datab_psum <= (others => '0');
+            -- datab_psum(data_width_psum * (index + 1) - 1 downto data_width_psum * index) <= din_psum;
+            -- web_psum(index)                                                              <= '1';
+            end if;
+
         end if;
 
     end process psum;
