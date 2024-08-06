@@ -71,7 +71,9 @@ begin
                 '1' when r_state = s_output else
                 '0';
 
-    o_pause_iact <= '0';
+    -- suppress iact input when in c_pe_conv_pass. otherwise, stray iacts could show up on the psum datapath
+    -- because the southmost PEs get iact input as their "psum pass" input
+    o_pause_iact <= '1' when r_command(0) = c_pe_conv_pass else '0';
 
     r_command_psum_d       <= r_command_psum when rising_edge(clk);
     r_read_offset_psum_d   <= r_read_offset_psum when rising_edge(clk);
