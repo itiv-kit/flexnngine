@@ -236,14 +236,17 @@ begin
     end generate g_address_generator;
 
     -- cycle counter from start to done
-    count_cycles : process
+    count_cycles : process is
     begin
+
         wait until rising_edge(clk);
+
         if rstn = '0' or (i_start = '0' and o_done = '0') then
             o_cyclectr <= (others => '0');
         elsif i_start = '1' and o_done = '0' then
             o_cyclectr <= o_cyclectr + 1;
         end if;
+
     end process count_cycles;
 
 end architecture rtl;

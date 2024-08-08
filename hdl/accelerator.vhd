@@ -407,7 +407,7 @@ begin
         );
 
     -- construct the o_status record
-    r_status_pipe(0).spadif <= w_status_spad_if;
+    r_status_pipe(0).spadif        <= w_status_spad_if;
     r_status_pipe(0).cycle_counter <= w_cyclectr;
 
     -- add a pipeline to relax timing on the status record signals
