@@ -112,7 +112,6 @@ class Test:
 
             self.line_length_wght_usable = self.accelerator.line_length_wght - 28
 
-            size_rows = self.accelerator.size_x + self.accelerator.size_y - 1
             self.H2 = math.ceil(
                 (self.convolution.image_size - self.convolution.kernel_size + 1)
                 / self.accelerator.size_x
@@ -170,37 +169,6 @@ class Test:
                 return False
 
         else:
-            """self.W1 = self.convolution.image_size - self.convolution.kernel_size + 1
-            self.M0_last_m1 = 1 # not used yet
-            self.rows_last_h2 = 1
-            self.C0_last_c1 = 1
-            self.C0W0 = 1
-            self.C0W0_last_c1 = 1
-
-            self.M0 = math.floor(self.accelerator.size_y / self.convolution.kernel_size)
-            self.H1 = self.accelerator.size_x
-
-            size_rows = self.accelerator.size_x + self.accelerator.size_y - 1
-            if self.M0 == 0:
-                self.H2 = math.ceil(
-                    (self.convolution.image_size - self.convolution.kernel_size + 1)
-                    / self.accelerator.size_x
-                )
-            else:
-                self.H2 = math.ceil(self.convolution.image_size / self.accelerator.size_x)
-
-            self.C0 = math.floor(
-                self.accelerator.line_length_wght / self.convolution.kernel_size
-            )
-            if (
-                self.convolution.input_channels * self.convolution.kernel_size
-                < self.accelerator.line_length_wght
-            ):
-                self.C0 = self.convolution.input_channels
-
-            self.C1 = math.ceil(self.convolution.input_channels / self.C0)
-
-            self.C0_last_c1 = self.convolution.input_channels - (self.C1 - 1) * self.C0"""
             self.line_length_wght_usable = self.accelerator.line_length_wght - 1
 
             self.M0 = math.floor(self.accelerator.size_y / self.convolution.kernel_size)
@@ -209,7 +177,6 @@ class Test:
             self.W1 = self.convolution.image_size - self.convolution.kernel_size + 1
             self.M0_last_m1 = 1 # not used yet
 
-            size_rows = self.accelerator.size_x + self.accelerator.size_y - 1
             if self.M0 == 0:
                 self.H2 = math.ceil(
                     (self.convolution.image_size - self.convolution.kernel_size + 1)
