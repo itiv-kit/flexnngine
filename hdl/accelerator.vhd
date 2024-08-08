@@ -398,7 +398,7 @@ begin
             rstn                => rstn,
             i_start             => w_control_init_done,
             i_dataflow          => w_dataflow,
-            i_params            => i_params,
+            i_params            => w_params_sp,
             i_valid_psum_out    => w_valid_psums_out,
             i_gnt_psum_binary_d => w_gnt_psum_binary_d,
             i_empty_psum_fifo   => w_empty_psum_fifo,
