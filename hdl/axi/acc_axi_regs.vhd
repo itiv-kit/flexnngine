@@ -261,16 +261,17 @@ begin
         -- drive read-only and static registers
         slv_regs(1)(0) <= i_done;
         slv_regs(1)(1) <= not i_done and not o_start; -- generate the "ready" bit from i_done and o_start
-        slv_regs(1)(2) <= i_status.spad_iact_done;
-        slv_regs(1)(3) <= i_status.spad_wght_done;
-        slv_regs(1)(4) <= i_status.preload_fifos_done;
+        slv_regs(1)(2) <= i_status.spadif.spad_iact_done;
+        slv_regs(1)(3) <= i_status.spadif.spad_wght_done;
+        slv_regs(1)(4) <= i_status.spadif.preload_fifos_done;
 
         -- debug status registers
-        slv_regs(23)(0) <= i_status.spad_iact_full;
-        slv_regs(23)(1) <= i_status.spad_iact_empty;
-        slv_regs(23)(2) <= i_status.spad_wght_full;
-        slv_regs(23)(3) <= i_status.spad_wght_empty;
-        slv_regs(24) <= std_logic_vector(resize(i_status.psum_overflows, 32));
+        slv_regs(22) <= std_logic_vector(i_status.cycle_counter);
+        slv_regs(23)(0) <= i_status.spadif.spad_iact_full;
+        slv_regs(23)(1) <= i_status.spadif.spad_iact_empty;
+        slv_regs(23)(2) <= i_status.spadif.spad_wght_full;
+        slv_regs(23)(3) <= i_status.spadif.spad_wght_empty;
+        slv_regs(24) <= std_logic_vector(resize(i_status.spadif.psum_overflows, 32));
 
         -- static hardware info registers
         slv_regs(25) <= std_logic_vector(resize(to_unsigned(size_y, 16) & to_unsigned(size_x, 16), C_S_AXI_DATA_WIDTH));

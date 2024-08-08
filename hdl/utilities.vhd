@@ -50,7 +50,7 @@ package utilities is
         c0w0_last_c1 : integer range 0 to 1023;
     end record parameters_t;
 
-    type status_info_t is record
+    type status_info_spadif_t is record
         psum_overflows     : unsigned(9 downto 0);
         spad_iact_done     : std_logic;
         spad_wght_done     : std_logic;
@@ -59,6 +59,11 @@ package utilities is
         spad_iact_empty    : std_logic;
         spad_wght_full     : std_logic;
         spad_wght_empty    : std_logic;
+    end record status_info_spadif_t;
+
+    type status_info_t is record
+        spadif        : status_info_spadif_t;
+        cycle_counter : unsigned(31 downto 0);
     end record status_info_t;
 
     type status_info_pipe_t is array(natural range <>) of status_info_t;

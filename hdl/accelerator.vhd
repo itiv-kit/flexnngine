@@ -153,7 +153,8 @@ architecture rtl of accelerator is
     attribute async_reg of w_params_sp : signal is "TRUE";
 
     signal r_status_pipe    : status_info_pipe_t(2 downto 0);
-    signal w_status_spad_if : status_info_t;
+    signal w_status_spad_if : status_info_spadif_t;
+    signal w_cyclectr       : unsigned(31 downto 0);
 
     signal w_dout_iact_valid : std_logic;
     signal w_dout_wght_valid : std_logic;
@@ -405,8 +406,9 @@ begin
             o_suppress_out      => w_write_suppress_psum
         );
 
-    -- construct the o_status record, currently consists of scratchpad interface signals only
-    r_status_pipe(0) <= w_status_spad_if;
+    -- construct the o_status record
+    r_status_pipe(0).spadif <= w_status_spad_if;
+    r_status_pipe(0).cycle_counter <= w_cyclectr;
 
     -- add a pipeline to relax timing on the status record signals
     r_status_pipe(r_status_pipe'high downto 1) <= r_status_pipe(r_status_pipe'high - 1 downto 0) when rising_edge(clk);

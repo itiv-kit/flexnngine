@@ -46,7 +46,7 @@ entity scratchpad_interface is
 
         i_start  : in    std_logic;
         o_enable : out   std_logic;
-        o_status : out   status_info_t;
+        o_status : out   status_info_spadif_t;
 
         -- Data to and from Address generator
         i_address_iact : in    array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
