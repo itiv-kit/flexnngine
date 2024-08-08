@@ -52,6 +52,8 @@ architecture rs_dataflow of address_generator is
     signal r_state_wght : t_state_type;
     signal r_state_iact : t_state_type;
 
+    signal r_mapped_pe_rows : integer;
+
     signal w_c0_iact       : integer;
     signal r_count_c0_iact : integer;
 
@@ -134,6 +136,8 @@ begin
     w_offset_mem_iact <= r_offset_c_iact * i_params.image_x + r_count_w1_iact;
     w_offset_mem_wght <= r_offset_c_wght * i_params.kernel_size + r_count_w1_wght;
 
+    r_mapped_pe_rows <= i_params.m0 * i_params.kernel_size when rising_edge(clk);
+
     iact_address_out : for i in 0 to size_rows - 1 generate
 
         /*o_address_iact(i)     <= std_logic_vector(to_unsigned(w_offset_mem_iact + i * i_params.image_x, addr_width_iact_mem));
@@ -189,7 +193,7 @@ begin
                     o_address_wght_valid(i) <= '1';
                     r_delay_wght_valid(i)   <= '1';
                     -- o_address_wght(i)       <= std_logic_vector(to_unsigned(w_offset_mem_wght + i * i_params.kernel_size, addr_width_wght_mem));
-                    if i < i_params.m0 * i_params.kernel_size then
+                    if i < r_mapped_pe_rows then
                         o_address_wght(i) <= std_logic_vector(to_unsigned(w_offset_mem_wght + (i - (to_integer(unsigned(i_m0_dist(i)))) * i_params.kernel_size + i_params.kernel_size) * i_params.kernel_size +
                                                                           ((to_integer(unsigned(i_m0_dist(i))) - 1) * i_params.kernel_size * i_params.kernel_size * i_params.inputchs), addr_width_wght_mem));
                         r_test_wght(i)    <= (i - (to_integer(unsigned(i_m0_dist(i)))) * i_params.kernel_size + i_params.kernel_size);
@@ -431,6 +435,8 @@ architecture alternative_rs_dataflow of address_generator is
     signal r_state_wght : t_state_type;
     signal r_state_iact : t_state_type;
 
+    signal r_mapped_pe_rows : integer;
+
     signal w_c0_iact       : integer;
     signal r_count_c0_iact : integer;
 
@@ -504,6 +510,8 @@ architecture alternative_rs_dataflow of address_generator is
     signal r_ckki : int_line_t(0 to size_y - 1);
 
 begin
+
+    r_mapped_pe_rows <= i_params.m0 * i_params.kernel_size when rising_edge(clk);
 
     w_c1      <= i_params.c1;
     w_w1      <= i_params.image_x;
@@ -583,7 +591,7 @@ begin
                     o_address_wght_valid(i) <= '1';
                     r_delay_wght_valid(i)   <= '1';
                     -- o_address_wght(i)       <= std_logic_vector(to_unsigned(w_offset_mem_wght + i * i_params.kernel_size, addr_width_wght_mem));
-                    if i < i_params.m0 * i_params.kernel_size then
+                    if i < r_mapped_pe_rows then
                         o_address_wght(i) <= std_logic_vector(to_unsigned(w_offset_mem_wght + r_ckki(i) + r_count_h1_wght * i_params.kernel_size, addr_width_wght_mem)); -- channel offset + kernel offset + row offset
                         /* r_test_wght(i)    <= (i - i_params.kernel_size + i_params.kernel_size);
                          r_test_wght2(i)   <= (i * i_params.kernel_size * i_params.kernel_size * i_params.inputchs);*/
