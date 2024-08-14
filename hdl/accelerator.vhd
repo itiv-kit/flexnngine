@@ -252,6 +252,7 @@ begin
             o_enable                 => w_enable,
             o_pause_iact             => w_pause_iact,
             o_done                   => o_done,
+            o_cyclectr               => w_cyclectr,
             i_params                 => i_params,
             o_command                => w_command,
             o_command_iact           => w_command_iact,
