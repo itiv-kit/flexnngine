@@ -190,6 +190,7 @@ begin
     -- 2. Weights "done" and all iact FIFOs not empty
     -- 3. All wght and iact FIFOs not empty
     p_enable : process (clk, rstn) is
+        variable any_iact_fifo_empty, any_wght_fifo_empty : std_logic;
     begin
 
         if not rstn then
@@ -197,22 +198,26 @@ begin
             r_done_wght <= '0';
             r_done_iact <= '0';
         elsif rising_edge(clk) then
+            if i_addr_iact_done and (and w_empty_iact_address_f(size_rows - 1 downto size_y - 1)) and (and w_empty_iact_f(size_rows - 1 downto size_y - 1)) then
+                r_done_iact <= '1';
+            end if;
+
+            if i_addr_wght_done and (and w_empty_wght_address_f) and (and w_empty_wght_f) then
+                r_done_wght <= '1';
+            end if;
+
             if r_preload_fifos_done = '1' then
-                if i_addr_wght_done and (and w_empty_iact_address_f(size_rows - 1 downto size_y - 1)) and (and w_empty_iact_f(size_rows - 1 downto size_y - 1)) then
-                    r_done_iact <= '1';
-                end if;
+                any_iact_fifo_empty := or w_empty_iact_f(size_rows - 1 downto size_y - 1); -- only bottom FIFOs used to support alternative dataflow
+                any_wght_fifo_empty := or w_empty_wght_f;
 
-                if i_addr_iact_done and (and w_empty_wght_address_f) and (and w_empty_wght_f) then
-                    r_done_wght <= '1';
-                end if;
-
-                if (or w_empty_iact_f(size_rows - 1 downto size_y - 1) = '1') and r_done_iact = '1' and (or w_empty_wght_f = '0') then
+                -- if iacts are done, but there are still weights to load (none of the wght fifos not empty), enable the PE array (guess: only used for GEMM)
+                if any_iact_fifo_empty and r_done_iact and not any_wght_fifo_empty then
                     o_enable <= '1';
-                elsif (or w_empty_wght_f = '1') and r_done_wght = '1' and (or w_empty_iact_f(size_rows - 1 downto size_y - 1) = '0') then
+                -- if wghts are done, but there are still iacts to load (none of the iact fifos not empty), enable the PE array (guess: only used for GEMM)
+                elsif any_wght_fifo_empty and r_done_wght and not any_iact_fifo_empty then
                     o_enable <= '1';
-                elsif (or w_empty_iact_f(size_rows - 1 downto size_y - 1) = '0') and (or w_empty_wght_f = '0') then
-                    o_enable <= '1';
-                elsif r_done_iact = '1' and r_done_wght = '1' then
+                -- as long as iact / wght FIFOs are not drained or iact / wght is done (then it's okay for the FIFOs to drain), enable the pe array
+                elsif (r_done_iact or not any_iact_fifo_empty) and (r_done_wght or not any_wght_fifo_empty) then
                     o_enable <= '1';
                 else
                     o_enable <= '0';
