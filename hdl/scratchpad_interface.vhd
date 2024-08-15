@@ -55,8 +55,13 @@ entity scratchpad_interface is
         i_address_iact_valid : in    std_logic_vector(size_rows - 1 downto 0);
         i_address_wght_valid : in    std_logic_vector(size_y - 1 downto 0);
 
-        o_fifo_iact_address_full : out   std_logic; -- to pause address generator
-        o_fifo_wght_address_full : out   std_logic; -- to pause address generator
+        -- to pause address generator
+        o_fifo_iact_address_full : out   std_logic;
+        o_fifo_wght_address_full : out   std_logic;
+
+        -- input to create done signal
+        i_addr_iact_done : in    std_logic;
+        i_addr_wght_done : in    std_logic;
 
         o_valid_psums_out   : out   std_logic_vector(size_x - 1 downto 0); -- to calculate psum address
         o_gnt_psum_binary_d : out   std_logic_vector(addr_width_x - 1 downto 0);
@@ -193,19 +198,19 @@ begin
             r_done_iact <= '0';
         elsif rising_edge(clk) then
             if r_preload_fifos_done = '1' then
-                if (and w_empty_wght_address_f) and (and w_empty_wght_f) then
-                    r_done_wght <= '1';
+                if i_addr_wght_done and (and w_empty_iact_address_f(size_rows - 1 downto size_y - 1)) and (and w_empty_iact_f(size_rows - 1 downto size_y - 1)) then
+                    r_done_iact <= '1';
                 end if;
 
-                if (and w_empty_iact_address_f(size_rows - 1 downto size_y - 1)) and (and w_empty_iact_f(size_rows - 1 downto size_y - 1)) then
-                    r_done_iact <= '1';
+                if i_addr_iact_done and (and w_empty_wght_address_f) and (and w_empty_wght_f) then
+                    r_done_wght <= '1';
                 end if;
 
                 if (or w_empty_iact_f(size_rows - 1 downto size_y - 1) = '1') and r_done_iact = '1' and (or w_empty_wght_f = '0') then
                     o_enable <= '1';
                 elsif (or w_empty_wght_f = '1') and r_done_wght = '1' and (or w_empty_iact_f(size_rows - 1 downto size_y - 1) = '0') then
                     o_enable <= '1';
-                elsif (or w_empty_iact_f(size_rows - 1 downto size_y - 1) = '0') and  (or w_empty_wght_f = '0') then
+                elsif (or w_empty_iact_f(size_rows - 1 downto size_y - 1) = '0') and (or w_empty_wght_f = '0') then
                     o_enable <= '1';
                 elsif r_done_iact = '1' and r_done_wght = '1' then
                     o_enable <= '1';

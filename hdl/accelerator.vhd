@@ -171,6 +171,8 @@ architecture rtl of accelerator is
     signal w_address_wght       : array_t(0 to size_y - 1)(spad_addr_width_wght - 1 downto 0);
     signal w_address_iact_valid : std_logic_vector(size_rows - 1 downto 0);
     signal w_address_wght_valid : std_logic_vector(size_y - 1 downto 0);
+    signal w_address_iact_done  : std_logic;
+    signal w_address_wght_done  : std_logic;
 
 begin
 
@@ -264,8 +266,10 @@ begin
             o_read_offset_iact       => w_read_offset_iact,
             o_read_offset_psum       => w_read_offset_psum,
             o_read_offset_wght       => w_read_offset_wght,
-            w_fifo_iact_address_full => w_fifo_iact_address_full,
-            w_fifo_wght_address_full => w_fifo_wght_address_full,
+            i_fifo_iact_address_full => w_fifo_iact_address_full,
+            i_fifo_wght_address_full => w_fifo_wght_address_full,
+            o_addr_iact_done         => w_address_iact_done,
+            o_addr_wght_done         => w_address_wght_done,
             o_address_iact           => w_address_iact,
             o_address_wght           => w_address_wght,
             o_address_iact_valid     => w_address_iact_valid,
@@ -360,6 +364,8 @@ begin
             i_address_wght_valid     => w_address_wght_valid,
             o_fifo_iact_address_full => w_fifo_iact_address_full,
             o_fifo_wght_address_full => w_fifo_wght_address_full,
+            i_addr_iact_done         => w_address_iact_done,
+            i_addr_wght_done         => w_address_wght_done,
             o_valid_psums_out        => w_valid_psums_out,
             o_gnt_psum_binary_d      => w_gnt_psum_binary_d,
             o_empty_psum_fifo        => w_empty_psum_fifo,

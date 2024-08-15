@@ -35,6 +35,9 @@ entity address_generator is
         i_params  : in    parameters_t;
         i_m0_dist : in    array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
 
+        o_iact_done : out   std_logic;
+        o_wght_done : out   std_logic;
+
         i_fifo_full_iact : in    std_logic;
         i_fifo_full_wght : in    std_logic;
 
@@ -112,6 +115,9 @@ architecture rs_dataflow of address_generator is
     signal r_delay_wght_valid : std_logic_vector(size_y - 1 downto 0);
 
 begin
+
+    o_iact_done <= r_iact_done;
+    o_wght_done <= r_wght_done;
 
     w_c1      <= i_params.c1;
     w_w1      <= i_params.image_x;
@@ -458,6 +464,9 @@ architecture alternative_rs_dataflow of address_generator is
     signal r_ckki : int_line_t(0 to size_y - 1);
 
 begin
+
+    o_iact_done <= r_iact_done;
+    o_wght_done <= r_wght_done;
 
     r_mapped_pe_rows <= i_params.m0 * i_params.kernel_size when rising_edge(clk);
 

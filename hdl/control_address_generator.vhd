@@ -57,8 +57,11 @@ entity control_address_generator is
         o_read_offset_psum : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
         o_read_offset_wght : out   array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
 
-        w_fifo_iact_address_full : in    std_logic;
-        w_fifo_wght_address_full : in    std_logic;
+        i_fifo_iact_address_full : in    std_logic;
+        i_fifo_wght_address_full : in    std_logic;
+
+        o_addr_iact_done : out   std_logic;
+        o_addr_wght_done : out   std_logic;
 
         o_address_iact       : out   array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
         o_address_wght       : out   array_t(0 to size_y - 1)(addr_width_wght_mem - 1 downto 0);
@@ -190,8 +193,10 @@ begin
                 i_start              => w_control_init_done,
                 i_params             => i_params,
                 i_m0_dist            => w_m0_dist,
-                i_fifo_full_iact     => w_fifo_iact_address_full,
-                i_fifo_full_wght     => w_fifo_wght_address_full,
+                o_iact_done          => o_addr_iact_done,
+                o_wght_done          => o_addr_wght_done,
+                i_fifo_full_iact     => i_fifo_iact_address_full,
+                i_fifo_full_wght     => i_fifo_wght_address_full,
                 o_address_iact       => o_address_iact,
                 o_address_wght       => o_address_wght,
                 o_address_iact_valid => o_address_iact_valid,
@@ -225,8 +230,10 @@ begin
                 i_start              => w_control_init_done,
                 i_params             => i_params,
                 i_m0_dist            => w_m0_dist,
-                i_fifo_full_iact     => w_fifo_iact_address_full,
-                i_fifo_full_wght     => w_fifo_wght_address_full,
+                o_iact_done          => o_addr_iact_done,
+                o_wght_done          => o_addr_wght_done,
+                i_fifo_full_iact     => i_fifo_iact_address_full,
+                i_fifo_full_wght     => i_fifo_wght_address_full,
                 o_address_iact       => o_address_iact,
                 o_address_wght       => o_address_wght,
                 o_address_iact_valid => o_address_iact_valid,
