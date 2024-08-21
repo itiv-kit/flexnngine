@@ -24,7 +24,7 @@ entity pe_array is
         line_length_wght : positive := 32;
         addr_width_wght  : positive := 5;
 
-        g_bias_act_enabled : boolean := false
+        g_bias_act_enabled : boolean := true
     );
     port (
         clk  : in    std_logic;
@@ -248,38 +248,41 @@ begin
                     i_params     => i_params,
                     i_psum_valid => w_data_out_valid(0, i),
                     i_psum       => w_data_out(0, i),
-                    o_psum_valid => w_psums_bias_valid(i),
-                    o_psum       => w_psums_bias(i)
+                    -- o_psum_valid => w_psums_bias_valid(i),
+                    -- o_psum       => w_psums_bias(i)
+                    o_psum_valid => o_psums_valid(i),
+                    o_psum       => o_psums(i)
                 );
+                o_psums_halfword(i) <= '0';
 
-            activation_inst : entity accel.psum_activation
-                generic map (
-                    data_width_psum => data_width_psum
-                )
-                port map (
-                    clk          => clk,
-                    i_mode       => i_params.mode_act,
-                    i_psum_valid => w_psums_bias_valid(i),
-                    i_psum       => w_psums_bias(i),
-                    o_psum_valid => w_psums_act_valid(i),
-                    o_psum       => w_psums_act(i)
-                );
+            -- activation_inst : entity accel.psum_activation
+            --     generic map (
+            --         data_width_psum => data_width_psum
+            --     )
+            --     port map (
+            --         clk          => clk,
+            --         i_mode       => i_params.mode_act,
+            --         i_psum_valid => w_psums_bias_valid(i),
+            --         i_psum       => w_psums_bias(i),
+            --         o_psum_valid => w_psums_act_valid(i),
+            --         o_psum       => w_psums_act(i)
+            --     );
 
-            requantize_inst : entity accel.psum_requantize
-                generic map (
-                    data_width_psum => data_width_psum,
-                    data_width_iact => data_width_iact
-                )
-                port map (
-                    clk             => clk,
-                    rstn            => rstn,
-                    i_params        => i_params,
-                    i_data_valid    => w_psums_act_valid(i),
-                    i_data          => w_psums_act(i),
-                    o_data_valid    => o_psums_valid(i),
-                    o_data          => o_psums(i),
-                    o_data_halfword => o_psums_halfword(i)
-                );
+            -- requantize_inst : entity accel.psum_requantize
+            --     generic map (
+            --         data_width_psum => data_width_psum,
+            --         data_width_iact => data_width_iact
+            --     )
+            --     port map (
+            --         clk             => clk,
+            --         rstn            => rstn,
+            --         i_params        => i_params,
+            --         i_data_valid    => w_psums_act_valid(i),
+            --         i_data          => w_psums_act(i),
+            --         o_data_valid    => o_psums_valid(i),
+            --         o_data          => o_psums(i),
+            --         o_data_halfword => o_psums_halfword(i)
+            --     );
 
         end generate psum_output;
 

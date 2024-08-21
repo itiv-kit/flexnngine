@@ -41,6 +41,7 @@ entity functional_tb is
         g_image_y     : positive := 20;
         g_image_x     : positive := 20;
         g_kernel_size : positive := 1;
+        g_bias        : positive := 5;
 
         g_iact_fifo_size : positive := 15;
         g_wght_fifo_size : positive := 15;
@@ -151,6 +152,7 @@ begin
     params.c0_last_c1   <= g_c0_last_c1;
     params.c0w0         <= g_c0w0;
     params.c0w0_last_c1 <= g_c0w0_last_c1;
+    params.bias         <= g_bias;
 
     accelerator_inst : entity accel.accelerator
         generic map (

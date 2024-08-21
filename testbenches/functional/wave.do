@@ -185,6 +185,8 @@ add wave -noupdate -group PSUM_OUTPUT -radix binary   /functional_tb/accelerator
 
 add wave -noupdate -group {PE arr outputs} -radix signed /functional_tb/accelerator_inst/pe_array_inst/o_psums
 add wave -noupdate -group {PE arr outputs} -radix binary /functional_tb/accelerator_inst/pe_array_inst/o_psums_valid
+add wave -noupdate -group {PE arr outputs} -radix signed /functional_tb/accelerator_inst/pe_array_inst/w_data_out
+add wave -noupdate -group {PE arr outputs} -radix binary /functional_tb/accelerator_inst/pe_array_inst/w_data_out_valid
 
 add wave -noupdate -group WGHT_INPUT -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_wght/ram/ram_instance
 add wave -noupdate -group WGHT_INPUT -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/ram/ram_instance

@@ -2,11 +2,11 @@
 -- zero or one cycle latency between i_psum and o_psum_act
 
 library ieee;
-    use ieee.std_logic_1164.all;
-    use ieee.numeric_std.all;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 library accel;
-    use accel.utilities.all;
+use accel.utilities.all;
 
 entity psum_bias is
     generic (
@@ -31,24 +31,40 @@ architecture behavioral of psum_bias is
     signal w_bias_in   : signed(data_width_psum - 1 downto 0);
     signal w_data_in   : signed(data_width_psum - 1 downto 0);
     signal w_data_out  : signed(data_width_psum - 1 downto 0);
-    signal w_data_bias : signed(data_width_psum - 1 downto 0);
+    signal r_count_w1  : integer := 0;
+    signal r_output_channel : integer := 0; 
+    signal w_data_in_valid : integer := 1;
 
 begin
 
-    w_bias_in <= signed(i_params.bias) when rising_edge(clk);
+
+    process begin
+        wait until rising_edge(clk);
+        if w_data_in_valid = 1 then
+            r_count_w1 <= r_count_w1 + 1;
+            if r_count_w1 = i_params.w1 then
+                r_count_w1 <= 0;
+                r_output_channel <= r_output_channel + 1;
+                if r_output_channel = i_params.m0 then
+                    r_output_channel <= 0;
+                end if;
+            end if;
+        end if;
+    end process;
+
+    w_bias_in <= i_params.bias(r_output_channel);
+    -- w_bias_in <= to_signed(i_params.bias, 16) when rising_edge(clk);
     w_data_in <= signed(i_psum);
 
-    relu_proc : process (all) is
+    bias_addition_proc : process (all) is
     begin
 
-        w_data_bias <= w_data_in + w_bias_in;
+        w_data_out <= w_data_in + w_bias_in;
 
-    end process relu_proc;
-
-    w_data_out <= w_data_bias when i_params.bias_enab else w_data_in;
+    end process bias_addition_proc;
 
     output_reg_gen : if use_output_reg generate
-
+        
         o_psum_valid <= i_psum_valid when rising_edge(clk);
         o_psum       <= std_logic_vector(w_data_out) when rising_edge(clk);
 
@@ -56,7 +72,6 @@ begin
 
         o_psum_valid <= i_psum_valid;
         o_psum       <= std_logic_vector(w_data_out);
-
     end generate output_reg_gen;
 
 end architecture behavioral;

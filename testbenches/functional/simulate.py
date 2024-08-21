@@ -15,13 +15,14 @@ class Convolution:
     """Class to represent a convolution operation."""
 
     def __init__(
-        self, image_size, kernel_size, input_channels, output_channels, input_bits
+        self, image_size, kernel_size, input_channels, output_channels, input_bits, bias
     ):
         self.image_size = image_size
         self.kernel_size = kernel_size
         self.input_channels = input_channels
         self.output_channels = output_channels
         self.input_bits = input_bits
+        self.bias = bias
 
 
 @dataclass
@@ -352,6 +353,7 @@ class Test:
             'g_image_x':           self.convolution.image_size,
             'g_inputchs':          self.convolution.input_channels,
             'g_outputchs':         3, # currently fixed
+            'g_bias':              self.convolution.bias,
             'line_length_wght':    self.accelerator.line_length_wght,
             'addr_width_wght':     math.ceil(math.log2(self.accelerator.line_length_wght)),
             'line_length_iact':    self.accelerator.line_length_iact,
@@ -571,7 +573,7 @@ if __name__ == "__main__":
 # --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     # very small test - GUI
-    simulation.append(Setting("", Convolution(image_size = [16], kernel_size = [3], input_channels = [100], output_channels = [3], input_bits = [4]),
+    simulation.append(Setting("", Convolution(image_size = [16], kernel_size = [3], input_channels = [100], output_channels = [3], input_bits = [4], bias = [5]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
@@ -614,7 +616,7 @@ if __name__ == "__main__":
                                                                 settings.append(
                                                                     Setting(
                                                                         name,
-                                                                        Convolution(hw, rs, c, oc, sim.convolution.input_bits[0]),
+                                                                        Convolution(hw, rs, c, oc, sim.convolution.input_bits[0], sim.convolution.bias[0]),
                                                                         Accelerator(
                                                                             x,
                                                                             y,
