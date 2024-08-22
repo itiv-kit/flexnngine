@@ -9,7 +9,7 @@ entity acc_axi_regs is
   generic (
     -- Users to add parameters here
     -- number of registers to present, rest is read 0 / writes ignored
-    NUM_REGS : integer := 32;
+    NUM_REGS : integer := 48;
 
     -- static accelerator hardware info
     size_x : positive := 5;
@@ -417,6 +417,7 @@ begin
   o_params.c0_last_c1   <= to_integer(unsigned(slv_regs(14)( 9 downto 0)));
   o_params.c0w0         <= to_integer(unsigned(slv_regs(15)( 9 downto 0)));
   o_params.c0w0_last_c1 <= to_integer(unsigned(slv_regs(16)( 9 downto 0)));
+  o_params.bias(0)      <= to_integer(unsigned(slv_regs(32)(15 downto 0)));
   -- User logic ends
 
 end arch_imp;

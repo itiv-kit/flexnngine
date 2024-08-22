@@ -28,35 +28,36 @@ end entity psum_bias;
 
 architecture behavioral of psum_bias is
 
-    signal w_bias_in   : signed(data_width_psum - 1 downto 0);
-    signal w_data_in   : signed(data_width_psum - 1 downto 0);
-    signal w_data_out  : signed(data_width_psum - 1 downto 0);
-    signal r_count_w1  : integer := 0;
-    signal r_output_channel : integer := 0; 
-    signal w_data_in_valid : integer := 1;
+    signal w_bias_in        : signed(data_width_psum - 1 downto 0);
+    signal w_data_in        : signed(data_width_psum - 1 downto 0);
+    signal w_data_out       : signed(data_width_psum - 1 downto 0);
+    signal r_count_w1       : integer := 0;
+    signal r_output_channel : integer := 0;
 
 begin
 
-
-    process begin
+    p_track_channel : process is
+    begin
         wait until rising_edge(clk);
-        if w_data_in_valid = 1 then
+        if rstn = '0' then
+            r_count_w1 <= 0;
+            r_output_channel <= 0;
+        elsif i_psum_valid = '1' then
             r_count_w1 <= r_count_w1 + 1;
-            if r_count_w1 = i_params.w1 then
+            if r_count_w1 = i_params.w1 - 1 then
                 r_count_w1 <= 0;
                 r_output_channel <= r_output_channel + 1;
-                if r_output_channel = i_params.m0 then
+                if r_output_channel = i_params.m0 - 1 then
                     r_output_channel <= 0;
                 end if;
             end if;
         end if;
-    end process;
+    end process p_track_channel;
 
-    w_bias_in <= i_params.bias(r_output_channel);
-    -- w_bias_in <= to_signed(i_params.bias, 16) when rising_edge(clk);
+    w_bias_in <= to_signed(i_params.bias(r_output_channel), 16) when rising_edge(clk);
     w_data_in <= signed(i_psum);
 
-    bias_addition_proc : process (all) is
+    p_add_bias : process (all) is
     begin
 
         w_data_out <= w_data_in + w_bias_in;
@@ -64,7 +65,7 @@ begin
     end process bias_addition_proc;
 
     output_reg_gen : if use_output_reg generate
-        
+
         o_psum_valid <= i_psum_valid when rising_edge(clk);
         o_psum       <= std_logic_vector(w_data_out) when rising_edge(clk);
 
@@ -72,6 +73,7 @@ begin
 
         o_psum_valid <= i_psum_valid;
         o_psum       <= std_logic_vector(w_data_out);
+
     end generate output_reg_gen;
 
 end architecture behavioral;

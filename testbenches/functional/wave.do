@@ -183,10 +183,12 @@ add wave -noupdate -group PSUM_OUTPUT -radix decimal  /functional_tb/accelerator
 add wave -noupdate -group PSUM_OUTPUT -radix binary   /functional_tb/accelerator_inst/scratchpad_interface_inst/w_rd_en_psum_out_f
 #add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/ram_dp_psum/ram_instance
 
-add wave -noupdate -group {PE arr outputs} -radix signed /functional_tb/accelerator_inst/pe_array_inst/o_psums
-add wave -noupdate -group {PE arr outputs} -radix binary /functional_tb/accelerator_inst/pe_array_inst/o_psums_valid
-add wave -noupdate -group {PE arr outputs} -radix signed /functional_tb/accelerator_inst/pe_array_inst/w_data_out
-add wave -noupdate -group {PE arr outputs} -radix binary /functional_tb/accelerator_inst/pe_array_inst/w_data_out_valid
+add wave -noupdate -group {PE arr outputs} -radix signed   /functional_tb/accelerator_inst/pe_array_inst/o_psums
+add wave -noupdate -group {PE arr outputs} -radix binary   /functional_tb/accelerator_inst/pe_array_inst/o_psums_valid
+add wave -noupdate -group {PE arr outputs} -radix signed   /functional_tb/accelerator_inst/pe_array_inst/w_data_out
+add wave -noupdate -group {PE arr outputs} -radix binary   /functional_tb/accelerator_inst/pe_array_inst/w_data_out_valid
+add wave -noupdate -group {PE arr outputs} -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/bias_act/psum_output(0)/bias_inst/w_bias_in
+add wave -noupdate -group {PE arr outputs} -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/bias_act/psum_output(0)/bias_inst/r_output_channel
 
 add wave -noupdate -group WGHT_INPUT -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_wght/ram/ram_instance
 add wave -noupdate -group WGHT_INPUT -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/ram/ram_instance

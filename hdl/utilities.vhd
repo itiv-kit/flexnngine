@@ -26,7 +26,7 @@ package utilities is
     type command_pe_array_t is array (natural range <>) of command_pe_t;
     type command_pe_row_col_t is array (natural range <>, natural range <>) of command_pe_t;
 
-    type bias_arr_t is array (natural range <>) of signed(4 downto 0);
+    type bias_arr_t is array (natural range <>) of integer;
 
     impure function read_file (file_name : string; num_col : integer; num_row : integer) return int_image_t;
 
@@ -53,7 +53,7 @@ package utilities is
         c0w0_last_c1 : integer range 0 to 1023;
         requant_enab : boolean;
         mode_act     : mode_activation_t;
-        bias         : bias_arr_t; --integer range -32768 to 32767
+        bias         : bias_arr_t (9 downto 0);
         zeropt_fp32  : std_logic_vector(31 downto 0);
         scale_fp32   : std_logic_vector(31 downto 0);
     end record parameters_t;
