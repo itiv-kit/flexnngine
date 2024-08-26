@@ -417,7 +417,12 @@ begin
   o_params.c0_last_c1   <= to_integer(unsigned(slv_regs(14)( 9 downto 0)));
   o_params.c0w0         <= to_integer(unsigned(slv_regs(15)( 9 downto 0)));
   o_params.c0w0_last_c1 <= to_integer(unsigned(slv_regs(16)( 9 downto 0)));
-  o_params.bias(0)      <= to_integer(unsigned(slv_regs(32)(15 downto 0)));
+
+  -- registers for bias per output channel, currently limited to size of bias in parameters_t
+  -- (should be 32 .. 32 + size_x - 1 to support mapping 1x1 kernels with m0 = size_x)
+  g_bias_regs : for x in 0 to parameters_t.bias'high generate
+    o_params.bias(x) <= to_integer(unsigned(slv_regs(32 + x)(15 downto 0)));
+  end generate g_bias_regs;
   -- User logic ends
 
 end arch_imp;
