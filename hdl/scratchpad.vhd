@@ -149,8 +149,8 @@ begin
 
             index := to_integer(unsigned(write_adr_psum(addr_width_psum - ext_addr_width_psum downto 0)));
 
-            addrb_psum <= write_adr_psum(addr_width_psum - 1 downto addr_width_psum - ext_addr_width_psum + 1);
-            datab_psum <= din_psum(data_width_iact) & din_psum(data_width_iact) & din_psum(data_width_iact) & din_psum(data_width_iact);
+            addrb_psum <= '0' & write_adr_psum(addr_width_psum - 1 downto addr_width_psum - ext_addr_width_psum + 1);
+            datab_psum <= din_psum(data_width_iact - 1 downto 0) & din_psum(data_width_iact - 1 downto 0) & din_psum(data_width_iact - 1 downto 0) & din_psum(data_width_iact - 1 downto 0);
             enb_psum   <= write_en_psum;
             web_psum   <= (others => '0');
 
