@@ -265,7 +265,9 @@ begin
             r_startup            <= (others => '0');
         elsif rising_edge(clk) then
             r_startup <= r_startup(9 downto 0) & not (or w_empty_iact_f(size_rows - 1 downto size_y - 1));
-            if and r_startup = '1' then
+            -- alternative: wait for all fifos to be mostly filled with:
+            -- & and w_almost_full_iact_f(size_rows - 1 downto size_y - 1)
+            if and r_startup = '1' or r_done_iact = '1' then
                 r_preload_fifos_done <= '1';
             elsif i_start = '0' then
                 r_preload_fifos_done <= '0';
