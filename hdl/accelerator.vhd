@@ -384,8 +384,10 @@ begin
             o_data_wght              => w_data_wght,
             o_data_iact_valid        => w_data_iact_valid,
             o_data_wght_valid        => w_data_wght_valid,
-            i_buffer_full_iact       => w_buffer_full_next_iact,
-            i_buffer_full_wght       => w_buffer_full_next_wght,
+            i_buffer_full_iact       => w_buffer_full_iact,
+            i_buffer_full_next_iact  => w_buffer_full_next_iact,
+            i_buffer_full_wght       => w_buffer_full_wght,
+            i_buffer_full_next_wght  => w_buffer_full_next_wght,
             i_psums                  => w_psums,
             i_psums_valid            => w_psums_valid,
             i_pause_iact             => w_pause_iact

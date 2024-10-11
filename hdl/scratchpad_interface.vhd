@@ -93,8 +93,10 @@ entity scratchpad_interface is
         o_data_wght_valid : out   std_logic_vector(size_y - 1 downto 0);
 
         -- Buffer full signals from PE array
-        i_buffer_full_iact : in    std_logic_vector(size_rows - 1 downto 0);
-        i_buffer_full_wght : in    std_logic_vector(size_y - 1 downto 0);
+        i_buffer_full_iact      : in    std_logic_vector(size_rows - 1 downto 0);
+        i_buffer_full_next_iact : in    std_logic_vector(size_rows - 1 downto 0);
+        i_buffer_full_wght      : in    std_logic_vector(size_y - 1 downto 0);
+        i_buffer_full_next_wght : in    std_logic_vector(size_y - 1 downto 0);
 
         -- Data from PE array
         i_psums       : in    array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
@@ -118,6 +120,7 @@ architecture rtl of scratchpad_interface is
     signal w_demux_wght_out_valid : array_t(0 to size_y - 1)(0 downto 0);
 
     signal w_rd_en_iact_f       : std_logic_vector(size_rows - 1 downto 0);
+    signal w_rd_en_iact_f_d     : std_logic_vector(size_rows - 1 downto 0);
     signal w_dout_iact_f        : array_t(0 to size_rows - 1)(data_width_iact - 1 downto 0);
     signal w_full_iact_f        : std_logic_vector(size_rows - 1 downto 0);
     signal w_almost_full_iact_f : std_logic_vector(size_rows - 1 downto 0);
@@ -125,6 +128,7 @@ architecture rtl of scratchpad_interface is
     signal w_valid_iact_f       : std_logic_vector(size_rows - 1 downto 0);
 
     signal w_rd_en_wght_f       : std_logic_vector(size_y - 1 downto 0);
+    signal w_rd_en_wght_f_d     : std_logic_vector(size_y - 1 downto 0);
     signal w_dout_wght_f        : array_t(0 to size_y - 1)(data_width_wght - 1 downto 0);
     signal w_full_wght_f        : std_logic_vector(size_y - 1 downto 0);
     signal w_almost_full_wght_f : std_logic_vector(size_y - 1 downto 0);
@@ -286,8 +290,8 @@ begin
 
         o_data_iact(i) <= w_dout_iact_f(i);
 
-        w_rd_en_iact_f(i) <= '1' when i_start = '1' and i_buffer_full_iact(i) = '0' and w_empty_iact_f(i) <= '0' and r_pause_iact(i) = '0' else
-                             '0';
+        w_rd_en_iact_f(i) <= i_start and not w_empty_iact_f(i) and not r_pause_iact(i) and
+                             not (i_buffer_full_next_iact(i) and (i_buffer_full_iact(i) or w_rd_en_iact_f_d(i)));
 
     end generate pe_arr_iact;
 
@@ -295,10 +299,13 @@ begin
 
         o_data_wght(i) <= w_dout_wght_f(i);
 
-        w_rd_en_wght_f(i) <= '1' when i_start = '1' and i_buffer_full_wght(i) = '0' and w_empty_wght_f(i) <= '0' else
-                             '0';
+        w_rd_en_wght_f(i) <= i_start and not w_empty_wght_f(i) and
+                             not (i_buffer_full_next_wght(i) and (i_buffer_full_wght(i) or w_rd_en_wght_f_d(i)));
 
     end generate pe_arr_wght;
+
+    w_rd_en_iact_f_d <= w_rd_en_iact_f when rising_edge(clk);
+    w_rd_en_wght_f_d <= w_rd_en_wght_f when rising_edge(clk);
 
     w_rd_en_iact_address_f <= w_gnt_iact when not w_empty_iact_address_f(to_integer(unsigned(w_gnt_iact_binary))) else -- Selected with arbiter
                               (others => '0');
