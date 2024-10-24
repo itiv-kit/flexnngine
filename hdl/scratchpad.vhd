@@ -29,8 +29,9 @@ entity scratchpad is
         g_files_dir     : string  := ""
     );
     port (
-        clk  : in    std_logic;
-        rstn : in    std_logic;
+        clk     : in    std_logic;
+        ext_clk : in    std_logic; -- clock for external spad interfaces
+        rstn    : in    std_logic;
 
         -- internal addresses and control signals used by the pe array / address generator
         read_adr_iact  : in    std_logic_vector(addr_width_iact - 1 downto 0);
@@ -175,7 +176,7 @@ begin
         )
         port map (
             -- external access
-            clka  => clk,
+            clka  => ext_clk,
             ena   => ext_en_iact,
             wea   => ext_write_en_iact,
             addra => ext_addr_iact,
@@ -201,7 +202,7 @@ begin
         )
         port map (
             -- external access
-            clka  => clk,
+            clka  => ext_clk,
             ena   => ext_en_wght,
             wea   => ext_write_en_wght,
             addra => ext_addr_wght,
@@ -227,7 +228,7 @@ begin
         )
         port map (
             -- external access
-            clka  => clk,
+            clka  => ext_clk,
             ena   => ext_en_psum,
             wea   => ext_write_en_psum,
             addra => ext_addr_psum,

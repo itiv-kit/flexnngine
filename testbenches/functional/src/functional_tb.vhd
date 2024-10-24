@@ -181,12 +181,13 @@ begin
             g_dataflow               => g_dataflow
         )
         port map (
-            clk      => clk,
-            rstn     => rstn,
-            clk_sp   => clk_sp,
-            i_start  => start,
-            o_done   => done,
-            i_params => params,
+            clk        => clk,
+            rstn       => rstn,
+            clk_sp     => clk_sp,
+            clk_sp_ext => clk_sp,
+            i_start    => start,
+            o_done     => done,
+            i_params   => params,
             -- memory i/o not used in this testbench
             i_en_iact       => '0',
             i_en_wght       => '0',

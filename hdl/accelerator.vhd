@@ -53,7 +53,8 @@ entity accelerator is
         clk  : in    std_logic;
         rstn : in    std_logic;
 
-        clk_sp : in    std_logic;
+        clk_sp     : in    std_logic;
+        clk_sp_ext : in    std_logic;
 
         i_start  : in    std_logic;
         o_done   : out   std_logic;
@@ -294,8 +295,9 @@ begin
             g_files_dir         => g_files_dir
         )
         port map (
-            clk  => clk_sp,
-            rstn => rstn,
+            clk     => clk_sp,
+            ext_clk => clk_sp_ext,
+            rstn    => rstn,
             -- internal access
             read_adr_iact   => w_read_adr_iact,
             read_adr_wght   => w_read_adr_wght,

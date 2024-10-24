@@ -237,7 +237,8 @@ begin
     clk  => clk,
     rstn => w_acc_rstn,
 
-    clk_sp => clk_sp,
+    clk_sp     => clk_sp,
+    clk_sp_ext => s00_axi_aclk,
 
     i_start  => w_acc_start,
     o_done   => w_acc_done,
