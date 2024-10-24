@@ -41,9 +41,9 @@ entity accelerator is
 
         fifo_width : positive := 16;
 
-        g_iact_fifo_size : positive := 15;
-        g_wght_fifo_size : positive := 15;
-        g_psum_fifo_size : positive := 45;
+        g_iact_fifo_size : positive := 16;
+        g_wght_fifo_size : positive := 16;
+        g_psum_fifo_size : positive := 512;
 
         g_files_dir : string  := "";
         g_init_sp   : boolean := false;
