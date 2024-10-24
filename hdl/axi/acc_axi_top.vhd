@@ -271,7 +271,7 @@ begin
 
     inst_sync_rst   : entity accel.bit_sync port map (clk, '0', w_axi_rstn,  w_acc_rstn);
     inst_sync_start : entity accel.bit_sync port map (clk, '0', w_axi_start, w_acc_start);
-    inst_sync_done  : entity accel.bit_sync port map (clk, '0', w_acc_done,  w_axi_done);
+    inst_sync_done  : entity accel.bit_sync port map (s00_axi_aclk, '0', w_acc_done, w_axi_done);
 
   end generate;
 
