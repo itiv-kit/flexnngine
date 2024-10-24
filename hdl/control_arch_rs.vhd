@@ -30,29 +30,29 @@ architecture rs_dataflow of control is
 
     signal r_incr_w1 : std_logic;
 
-    signal r_command_iact       : command_lb_array_t(0 to size_y);
-    signal r_read_offset_iact   : array_t(0 to size_y)(addr_width_iact - 1 downto 0);
-    signal r_update_offset_iact : array_t(0 to size_y)(addr_width_iact - 1 downto 0);
+    signal r_command_iact       : command_lb_array_t(0 to size_y - 1);
+    signal r_read_offset_iact   : array_t(0 to size_y - 1)(addr_width_iact - 1 downto 0);
+    signal r_update_offset_iact : array_t(0 to size_y - 1)(addr_width_iact - 1 downto 0);
 
-    signal r_command_wght       : command_lb_array_t(0 to size_y);
-    signal r_read_offset_wght   : array_t(0 to size_y)(addr_width_wght - 1 downto 0);
-    signal r_update_offset_wght : array_t(0 to size_y)(addr_width_wght - 1 downto 0);
+    signal r_command_wght       : command_lb_array_t(0 to size_y - 1);
+    signal r_read_offset_wght   : array_t(0 to size_y - 1)(addr_width_wght - 1 downto 0);
+    signal r_update_offset_wght : array_t(0 to size_y - 1)(addr_width_wght - 1 downto 0);
 
-    signal r_command_psum_d       : command_lb_array_t(0 to size_y);
-    signal r_read_offset_psum_d   : array_t(0 to size_y)(addr_width_psum - 1 downto 0);
-    signal r_update_offset_psum_d : array_t(0 to size_y)(addr_width_psum - 1 downto 0);
+    signal r_command_psum_d       : command_lb_array_t(0 to size_y - 1);
+    signal r_read_offset_psum_d   : array_t(0 to size_y - 1)(addr_width_psum - 1 downto 0);
+    signal r_update_offset_psum_d : array_t(0 to size_y - 1)(addr_width_psum - 1 downto 0);
 
-    signal r_command_psum       : command_lb_array_t(0 to size_y);
-    signal r_read_offset_psum   : array_t(0 to size_y)(addr_width_psum - 1 downto 0);
-    signal r_update_offset_psum : array_t(0 to size_y)(addr_width_psum - 1 downto 0);
+    signal r_command_psum       : command_lb_array_t(0 to size_y - 1);
+    signal r_read_offset_psum   : array_t(0 to size_y - 1)(addr_width_psum - 1 downto 0);
+    signal r_update_offset_psum : array_t(0 to size_y - 1)(addr_width_psum - 1 downto 0);
 
-    signal w_mux_read_offset_psum   : array_t(0 to size_y)(addr_width_psum - 1 downto 0);
-    signal w_mux_update_offset_psum : array_t(0 to size_y)(addr_width_psum - 1 downto 0);
-    signal w_mux_command_psum       : command_lb_array_t(0 to size_y);
+    signal w_mux_read_offset_psum   : array_t(0 to size_y - 1)(addr_width_psum - 1 downto 0);
+    signal w_mux_update_offset_psum : array_t(0 to size_y - 1)(addr_width_psum - 1 downto 0);
+    signal w_mux_command_psum       : command_lb_array_t(0 to size_y - 1);
 
     signal w_output_sequence : int_line_t(0 to size_y - 1);
 
-    signal r_command : command_pe_array_t(0 to size_y);
+    signal r_command : command_pe_array_t(0 to size_y - 1);
 
     signal r_m0_dist         : array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
     signal r_m0_count_idx    : integer range 0 to size_y + 1;
