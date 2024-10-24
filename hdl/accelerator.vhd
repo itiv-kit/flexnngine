@@ -179,6 +179,14 @@ begin
 
     w_dataflow <= '1' when g_dataflow > 0 else '0';
 
+    -- no preload support yet
+    w_preload_psum_valid <= '0';
+    w_preload_psum       <= (others => '0');
+
+    -- initial psum input unused
+    w_data_psum_valid <= '0';
+    w_data_psum       <= (others => '0');
+
     pe_array_inst : entity accel.pe_array
         generic map (
             size_x           => size_x,
