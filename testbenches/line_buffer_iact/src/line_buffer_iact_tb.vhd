@@ -48,7 +48,6 @@ architecture imp of line_buffer_iact_tb is
     end component;
 
     signal clk              : std_logic := '1';
-    signal clk_2            : std_logic := '1';
     signal rstn             : std_logic;
     signal data_in_valid    : std_logic;
     signal data_in          : std_logic_vector(data_width - 1 downto 0);
@@ -63,6 +62,7 @@ architecture imp of line_buffer_iact_tb is
     signal s_x              : integer;
     signal s_y              : integer;
     signal s_done           : boolean;
+    signal enable           : std_logic;
 
     type image_t is array(natural range <>, natural range <>) of integer;
 
@@ -117,7 +117,7 @@ begin
         port map (
             clk                => clk,
             rstn               => rstn,
-            i_enable           => '1',
+            i_enable           => enable,
             i_data             => data_in,
             i_data_valid       => data_in_valid,
             o_data             => data_out,
@@ -130,6 +130,13 @@ begin
             i_command          => command
         );
 
+    clkgen : process (clk) is
+    begin
+
+        clk <= not clk after 10 ns;
+
+    end process clkgen;
+
     p_rstn : process is
     begin
 
@@ -139,13 +146,6 @@ begin
         wait for 4000 ns;
 
     end process p_rstn;
-
-    clkgen_2 : process (clk_2) is
-    begin
-
-        clk_2 <= not clk_2 after 10 ns;
-
-    end process clkgen_2;
 
     stimuli_data : process (rstn, clk) is
     begin
@@ -160,10 +160,10 @@ begin
             if s_y = number_of_lines then
                 s_done <= true;
             -- data_in_valid <= '0';
-            elsif buffer_full = '0' then
+            elsif buffer_full = '0' and enable = '1' then
                 data_in_valid <= '1';
                 data_in       <= std_logic_vector(to_signed(test_image(s_y, s_x), data_width));
-                incr(s_y,s_x);
+                incr(s_y, s_x);
             end if;
         end if;
 
@@ -172,22 +172,26 @@ begin
     stimuli_commands : process is
     begin
 
-        wait until rstn = '1';
-        read_offset <= (others => '0');
+        update_val    <= (others => '0');
+        update_offset <= (others => '0');
+        read_offset   <= (others => '0');
+
+        wait until rstn = '1' and rising_edge(clk);
 
         for y in 0 to number_of_lines - 1 loop
 
-            wait until s_x = 5 or buffer_full = '1';
+            report "Waiting until buffer full";
+
+            wait until (s_x = 5 or buffer_full = '1');
 
             for x in 0 to line_length - kernel_size loop
-
-                report "Waiting until buffer full";
 
                 /*if buffer_full = '0' then
                     wait until buffer_full = '1';
                 end if;*/
 
-                wait until rising_edge(clk);
+                -- wait for enable to only shrink if enabled
+                wait until rising_edge(clk) and enable = '1';
 
                 report "Buffer full, start with commands";
 
@@ -210,7 +214,7 @@ begin
 
                     command     <= c_lb_read;
                     read_offset <= std_logic_vector(to_unsigned(z, addr_width));
-                    wait until rising_edge(clk);
+                    wait until rising_edge(clk) and enable = '1';
 
                 end loop;
 
@@ -224,8 +228,9 @@ begin
             read_offset <= std_logic_vector(to_unsigned(kernel_size - 1, addr_width));
             command     <= c_lb_shrink;
 
-            wait until rising_edge(clk);
-            /*for z in 0 to kernel_size - 1 loop -- Flush remaining pixels 
+            wait until rising_edge(clk) and enable = '1';
+
+            /*for z in 0 to kernel_size - 1 loop -- Flush remaining pixels
 
                 wait until rising_edge(clk);
                 command_enum <= c_shrink;
@@ -237,6 +242,27 @@ begin
         end loop;
 
     end process stimuli_commands;
+
+    stimuli_enable : process is
+    begin
+
+        enable <= '1';
+
+        wait until rstn = '1';
+        wait for 1000 ns;
+
+        -- wait until rising_edge(clk);
+        -- pull enable low after some time to test against the double shrink bug
+        wait until command = c_lb_shrink;
+        enable <= '0';
+
+        wait until rising_edge(clk);
+        wait until rising_edge(clk);
+        enable <= '1';
+
+        wait until rstn = '0';
+
+    end process stimuli_enable;
 
     output_check : process is
     begin
@@ -277,12 +303,5 @@ begin
         finish;
 
     end process output_check;
-
-    clkgen : process (clk) is
-    begin
-
-        clk <= not clk after 10 ns;
-
-    end process clkgen;
 
 end architecture imp;

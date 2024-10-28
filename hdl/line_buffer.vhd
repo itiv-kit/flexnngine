@@ -50,12 +50,11 @@ architecture rtl of line_buffer is
     signal r_pointer_head : integer;
     signal r_pointer_tail : integer;
     signal r_fill_count   : integer range 0 to line_length;
-    -- signal fifo_filled_s    : std_logic;
-    -- signal fifo_shrink_s    : std_logic;
+
     signal r_data_out_valid : std_logic;
+    signal r_buffer_full_wr : std_logic;
     signal w_read_offset    : integer;
-    -- signal update_offset_s  : std_logic_vector(addr_width - 1 downto 0);
-    -- signal command_s        : std_logic_vector(1 downto 0);
+
     signal w_forward_update       : std_logic;
     signal r_forward_update_delay : std_logic_vector(1 downto 0);
 
@@ -178,11 +177,18 @@ begin
                 r_addra <= std_logic_vector(to_unsigned(r_pointer_tail, addr_width));
                 r_dina  <= i_data;
                 incr(r_pointer_tail);
+                -- detect if buffer is being written full, but can be shrinked at the same time -> check pointers in next cycle
+                if r_pointer_tail + 1 = r_pointer_head or (r_pointer_tail = line_length - 1 and r_pointer_head = 0) then
+                    r_buffer_full_wr <= '1';
+                end if;
             -- Idle
             else
                 r_wena  <= '0';
                 r_addra <= (others => '0');
                 r_dina  <= (others => '0');
+                if r_pointer_tail /= r_pointer_head then
+                    r_buffer_full_wr <= '0';
+                end if;
             end if;
         end if;
 
@@ -193,50 +199,18 @@ begin
     o_buffer_full      <= '1' when r_fill_count = line_length else
                           '0';
 
-    p_fill_stat : process (clk, rstn) is
+    p_fill_count : process (all) is
     begin
 
-        if not rstn then
-            r_fill_count <= 0;
-        elsif rising_edge(clk) then
-            if i_data_valid = '1' and (o_buffer_full = '0') and (r_command_delay(2) /= c_lb_read_update) and i_command /= c_lb_shrink then
-                r_fill_count <= r_fill_count + 1;
-            -- end if;
-            elsif i_command = c_lb_shrink and i_data_valid = '1' and (o_buffer_full = '0') and (r_command_delay(2) /= c_lb_read_update) then
-                if r_fill_count - w_read_offset + 1 < 0 then
-                    r_fill_count <= 0;
-                else
-                    r_fill_count <= r_fill_count - w_read_offset + 1;
-                end if;
-            elsif i_command = c_lb_shrink then
-                if r_fill_count - w_read_offset < 0 then
-                    r_fill_count <= 0;
-                else
-                    r_fill_count <= r_fill_count - w_read_offset;
-                end if;
-            end if;
-        end if;
-
-    end process p_fill_stat;
-
-    -- Process to set / clear the buffer full flag
-    /*fifo_status : process (all) is
-    begin
-
-        if not rstn then
-            buffer_full <= '0';
+        if r_buffer_full_wr = '1' and r_pointer_head = r_pointer_tail then
+            r_fill_count <= line_length;
+        elsif r_pointer_tail >= r_pointer_head then
+            r_fill_count <= r_pointer_tail - r_pointer_head;
         else
-            if pointer_tail_s = pointer_head_s and fifo_empty_s = '0' then
-                buffer_full <= '1';
-            elsif fifo_shrink_s then
-                buffer_full <= '0';
-            end if;
+            r_fill_count <= line_length - r_pointer_head + r_pointer_tail;
         end if;
 
-    end process fifo_status;*/
-
-    -- buffer_full      <= '1' when (pointer_tail_s = pointer_head_s) and (fifo_empty_s = '0') else
-    --                    '0';
+    end process p_fill_count;
 
     w_forward_update <= '1' when r_command_delay(0) = c_lb_read_update and (i_command = c_lb_read_update or i_command = c_lb_read)
                                  and i_update_offset = r_update_offset_delay(0) else
@@ -282,10 +256,9 @@ begin
         elsif rising_edge(clk) then
             if i_enable = '1' or psum_type = true then
                 o_data_valid <= r_data_out_valid;
-                -- fifo_shrink_s  <= '0';
-                r_wenb  <= '0';
-                r_addrb <= (others => '0');
-                r_dinb  <= (others => '0');
+                r_wenb       <= '0';
+                r_addrb      <= (others => '0');
+                r_dinb       <= (others => '0');
 
                 case i_command is
 
@@ -325,8 +298,7 @@ begin
 
                         r_data_out_valid <= '0';
                         -- incr(pointer_head_s);
-                        incr_offset(r_pointer_head,  w_read_offset);
-                    -- fifo_shrink_s <= '1';
+                        incr_offset(r_pointer_head, w_read_offset);
 
                     when others =>
 
