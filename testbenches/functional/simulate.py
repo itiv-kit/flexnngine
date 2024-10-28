@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from subprocess import STDOUT, CalledProcessError, check_call
 import shutil
 from pathlib import Path
+import argparse
 
 @dataclass
 class Convolution:
@@ -236,53 +237,47 @@ class Test:
                 print("C0W0_last_c1 = ", self.C0W0_last_c1)
                 return False
 
+        # fixed random seed for reproducibility
         np.random.seed(2)
-        st = np.random.get_state()
-        # print(st)
 
-        # state = ['MT19937', key_array, 624, 0, 0.0]
-
-        # create array with random filter weights
-        kernel = np.random.randint(
+        # create kernels with random filter weights (for input_channels * output_channels (M0))
+        # TODO: can M0 = 0 happen, when looking at code above? then this breaks...
+        kernels = np.random.randint(
             -(2 ** (self.convolution.input_bits - 1)),
             (2 ** (self.convolution.input_bits - 1)) - 1,
             (
-                self.convolution.kernel_size * self.convolution.input_channels,
+                self.M0,
+                self.convolution.input_channels,
+                self.convolution.kernel_size,
                 self.convolution.kernel_size,
             ),
         )
 
-        kernels = np.zeros(
-            (
-                self.M0,
-                self.convolution.kernel_size * self.convolution.input_channels,
-                self.convolution.kernel_size,
-            )
-        )
-        # create M0 kernels
-        for k in range(self.M0):
-            kernels[k] = kernel
-            #kernels[k] = np.random.randint(-(2**(self.convolution.input_bits-1)), (2**(self.convolution.input_bits-1))-1, (self.convolution.kernel_size * self.convolution.input_channels, self.convolution.kernel_size))
-            # TODO for debugging just copy the first kernel. Uncomment the line above to get random kernels
+        if args.same_kernel:
+            # DEBUG: just copy the first kernel for all output channels
+            kernels = np.broadcast_to(kernels[0], (self.M0,) + kernels[0].shape)
 
-        # create array with random input activations ("image")
+        if args.only_first_kernel:
+            # DEBUG: zero out all but first output channel
+            kernels = np.stack([kernels[0]] + (self.M0-1) * [np.zeros(kernels[0].shape)])
+
+        # create array with random input activations (three dimensional "image")
         image = np.random.randint(
             -(2 ** (self.convolution.input_bits - 1)),
             (2 ** (self.convolution.input_bits - 1)) - 1,
             (
-                self.convolution.image_size * self.convolution.input_channels,
+                self.convolution.input_channels,
+                self.convolution.image_size,
                 self.convolution.image_size,
             ),
         )
 
-        # create empty array for convolved image
-        convolved_channel = np.zeros(
-            (
-                self.convolution.input_channels,
-                self.convolution.image_size - self.convolution.kernel_size + 1,
-                self.convolution.image_size - self.convolution.kernel_size + 1,
-            )
-        )
+        if args.linear_image:
+            # DEBUG: linear sequence of input activations
+            linear = np.linspace(1, self.convolution.image_size, self.convolution.image_size, dtype=np.int8)
+            image = np.stack(self.convolution.input_channels * [self.convolution.image_size * [linear]])
+
+        # create empty array for all channels of the conved image
         convolved_channels = np.zeros(
             (
                 self.M0,
@@ -291,71 +286,29 @@ class Test:
                 self.convolution.image_size - self.convolution.kernel_size + 1,
             )
         )
-
-        for c in range(self.convolution.input_channels):
-            # iterate over the image and convolve each channel
-            image_channel = image[
-                c * self.convolution.image_size : (c + 1) * self.convolution.image_size,
-                :,
-            ]
-            kernel_channel = kernel[
-                c
-                * self.convolution.kernel_size : (c + 1)
-                * self.convolution.kernel_size,
-                :,
-            ]
-            # print("image_channel", image_channel)
-            convolved_channel[c, :, :] = self._convolution2d(
-                image_channel, kernel_channel, 0
-            )
-            # print("convolved_channel", convolved_channel)
-            # print(convolution2d(image[c*image_size:(c+1)*image_size,:], kernel[(c*kernel_size):((c+1)*kernel_size-1),:], 0))
-            for k in range(self.M0):
+        # iterate over the image and convolve each channel
+        for k in range(self.M0):
+            for c in range(self.convolution.input_channels):
                 convolved_channels[k, c, :, :] = self._convolution2d(
-                    image_channel,
-                    kernels[
-                        k,
-                        c
-                        * self.convolution.kernel_size : (c + 1)
-                        * self.convolution.kernel_size,
-                        :,
-                    ],
+                    image[c],
+                    kernels[k, c],
                     0,
                 )
+            # break # DEBUG: zero out all but first output channel
 
         # sum over all channels
-        convolved_image = np.sum(convolved_channel, axis=0)
         convolved_images = np.sum(convolved_channels, axis=1)
 
-        # stack the convolved images
-        for k in range(self.M0):
-            if k == 0:
-                self.convolved_images_stack = convolved_images[k, :, :]
-            else:
-                self.convolved_images_stack = np.vstack(
-                    (self.convolved_images_stack, convolved_images[k, :, :])
-                )
-
-        # stack the kernels
-        for k in range(self.M0):
-            if k == 0:
-                kernels_stack = kernels[k, :, :]
-            else:
-                kernels_stack = np.vstack((kernels_stack, kernels[k, :, :]))
-        kernels_stack = kernels_stack.astype(int)
-
-        # print("convolved_image_shape: ", convolved_image.shape)
-        # print("convolved_images_shape: ", convolved_images.shape)
-        # print("convolved_images_stack_shape: ", self.convolved_images_stack.shape)
+        # stack image, kernels and convolved images
+        # (make them 2D by unrolling all dimensions vertically except for the last one)
+        image_stack = np.vstack(image)
+        kernels_stack = np.reshape(kernels, (-1, kernels.shape[-1])).astype(int)
+        self.convolved_images_stack = np.reshape(convolved_images, (-1, convolved_images.shape[-1]))
 
         # save data as txt files
-        np.savetxt(self.test_dir / "_image.txt", image, fmt="%d", delimiter=" ")
-        np.savetxt(self.test_dir / "_kernel.txt", kernel, fmt="%d", delimiter=" ")
+        np.savetxt(self.test_dir / "_image.txt", image_stack, fmt="%d", delimiter=" ")
         np.savetxt(
             self.test_dir / "_kernel_stack.txt", kernels_stack, fmt="%d", delimiter=" "
-        )
-        np.savetxt(
-            self.test_dir / "_convolution.txt", convolved_image, fmt="%d", delimiter=" "
         )
         np.savetxt(
             self.test_dir / "_convolution_stack.txt",
@@ -366,20 +319,10 @@ class Test:
 
         # save mem files
         # save image as 8-bit binary values in _mem_iact.txt in two's complement
-        # write_memory_file_int8_wordsize8(self.test_dir / "_mem_iact.txt", image)
-        write_memory_file_int8_wordsize32(self.test_dir / "_mem_iact.txt", image)
-
-        # save kernel as 8-bit binary values in _mem_wght.txt in two's complement
-        # write_memory_file_int8_wordsize8(self.test_dir / "_mem_wght.txt", kernel)
-        write_memory_file_int8_wordsize32(self.test_dir / "_mem_wght.txt", kernel)
+        write_memory_file_int8_wordsize32(self.test_dir / "_mem_iact.txt", image_stack)
 
         # save kernels as 8-bit binary values in _mem_wght_stack.txt in two's complement
-        # write_memory_file_int8_wordsize8(self.test_dir / "_mem_wght_stack.txt", kernels_stack)
         write_memory_file_int8_wordsize32(self.test_dir / "_mem_wght_stack.txt", kernels_stack)
-
-        # save empty file as _mem_psum.txt
-        with open(self.test_dir / "_mem_psum.txt", "w") as f:
-            pass
 
         return True
 
@@ -511,16 +454,18 @@ def run_test(setting):
     gen_test = test.generate_test(setting.name, Path("test") / setting.name)
     if gen_test:
         return test.run()
-        return True
     else:
         print("Error while generating test: ", setting.name)
         return False
 
 
 if __name__ == "__main__":
-    # Define convolution parameters
-    output_channels = 3
-    input_bits = 4
+    global args
+    parser = argparse.ArgumentParser(description='FleXNNgine functional simulation')
+    parser.add_argument('--same-kernel',       action='store_true', help='Use the same kernel for each output channel (M0)')
+    parser.add_argument('--only-first-kernel', action='store_true', help='Zero-out kernels for m0 > 0')
+    parser.add_argument('--linear-image',      action='store_true', help='Generate a input image with linearly increasing pixels instead of random')
+    args = parser.parse_args()
 
     simulation = []
 
@@ -653,8 +598,8 @@ if __name__ == "__main__":
         for hw in sim.convolution.image_size:
             for rs in sim.convolution.kernel_size:
                 for c in sim.convolution.input_channels:
-                    for df in sim.accelerator.dataflow:
-                        #for li in sim.accelerator.line_length_iact:
+                    for oc in sim.convolution.output_channels:
+                        for df in sim.accelerator.dataflow:
                             for lw in sim.accelerator.line_length_wght:
                                 for lp in sim.accelerator.line_length_psum:
                                     for fifoi in sim.accelerator.iact_fifo_size:
@@ -669,7 +614,7 @@ if __name__ == "__main__":
                                                                 settings.append(
                                                                     Setting(
                                                                         name,
-                                                                        Convolution(hw, rs, c, output_channels, input_bits),
+                                                                        Convolution(hw, rs, c, oc, sim.convolution.input_bits[0]),
                                                                         Accelerator(
                                                                             x,
                                                                             y,
