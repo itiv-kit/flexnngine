@@ -186,7 +186,9 @@ begin
                 r_wena  <= '0';
                 r_addra <= (others => '0');
                 r_dina  <= (others => '0');
-                if r_pointer_tail /= r_pointer_head then
+                -- clear the buffer full flag if pointers differ or in the special case of shrinking the complete
+                -- buffer at once, where r_pointer_head does not change even though the buffer is empty now
+                if r_pointer_tail /= r_pointer_head or (i_command = c_lb_shrink and w_read_offset = line_length) then
                     r_buffer_full_wr <= '0';
                 end if;
             end if;
