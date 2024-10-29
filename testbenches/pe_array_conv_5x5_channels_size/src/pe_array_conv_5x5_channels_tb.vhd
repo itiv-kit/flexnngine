@@ -41,11 +41,13 @@ entity pe_array_conv_5x5_channels_tb is
         -- COMMAND_LENGTH --
         265
         -- COMMAND_LENGTH --
+        -- vsg_disable_next_line whitespace_003
         ;
         output_command_length : positive :=
         -- OUTPUT_COMMAND_LENGTH --
         55
         -- OUTPUT_COMMAND_LENGTH --
+        -- vsg_disable_next_line whitespace_003
         ;
 
         kernel_size : positive := 5; --! 3 pixel kernel
