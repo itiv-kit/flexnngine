@@ -186,7 +186,6 @@ pe_array_conv_5x5_channels_tb:
             - .gitlab-ci.yml
     before_script:
         - *sim_test_before_script
-        - pip3 install --user numpy
         - cd testbenches/pe_array_conv_5x5_channels_size/src
         - python3 stimuli.py
         - python3 program.py
