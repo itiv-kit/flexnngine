@@ -14,7 +14,7 @@ entity psum_activation is
         use_output_reg  : boolean  := true
     );
     port (
-        clk  : in    std_logic;
+        clk : in    std_logic;
 
         i_mode : in    mode_activation_t;
 

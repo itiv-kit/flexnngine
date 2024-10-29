@@ -146,7 +146,6 @@ begin
         wait until rising_edge(clk);
 
         if write_half_psum = '1' then
-
             index := to_integer(unsigned(write_adr_psum(addr_width_psum - ext_addr_width_psum downto 0)));
 
             addrb_psum <= '0' & write_adr_psum(addr_width_psum - 1 downto addr_width_psum - ext_addr_width_psum + 1);
@@ -161,9 +160,7 @@ begin
                     "0010" when 1,
                     "0001" when others;
             end if;
-
         else
-
             index := to_integer(unsigned(write_adr_psum(addr_width_psum - ext_addr_width_psum - 1 downto 0)));
 
             addrb_psum <= write_adr_psum(addr_width_psum - 1 downto addr_width_psum - ext_addr_width_psum);
@@ -182,7 +179,6 @@ begin
             -- datab_psum(data_width_psum * (index + 1) - 1 downto data_width_psum * index) <= din_psum;
             -- web_psum(index)                                                              <= '1';
             end if;
-
         end if;
 
     end process psum;

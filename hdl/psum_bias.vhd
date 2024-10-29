@@ -2,11 +2,11 @@
 -- zero or one cycle latency between i_psum and o_psum_act
 
 library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
+    use ieee.std_logic_1164.all;
+    use ieee.numeric_std.all;
 
 library accel;
-use accel.utilities.all;
+    use accel.utilities.all;
 
 entity psum_bias is
     generic (
@@ -14,7 +14,7 @@ entity psum_bias is
         use_output_reg  : boolean  := true
     );
     port (
-        clk  : in    std_logic;
+        clk : in    std_logic;
 
         i_params : in    parameters_t;
 
@@ -38,20 +38,23 @@ begin
 
     p_track_channel : process is
     begin
+
         wait until rising_edge(clk);
+
         if rstn = '0' then
-            r_count_w1 <= 0;
+            r_count_w1       <= 0;
             r_output_channel <= 0;
         elsif i_psum_valid = '1' then
             r_count_w1 <= r_count_w1 + 1;
             if r_count_w1 = i_params.w1 - 1 then
-                r_count_w1 <= 0;
+                r_count_w1       <= 0;
                 r_output_channel <= r_output_channel + 1;
                 if r_output_channel = i_params.m0 - 1 then
                     r_output_channel <= 0;
                 end if;
             end if;
         end if;
+
     end process p_track_channel;
 
     w_bias_in <= to_signed(i_params.bias(r_output_channel), 16) when rising_edge(clk);

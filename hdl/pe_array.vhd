@@ -30,7 +30,7 @@ entity pe_array is
         clk  : in    std_logic;
         rstn : in    std_logic;
 
-        i_params :   in  parameters_t;
+        i_params : in    parameters_t;
 
         i_preload_psum       : in    std_logic_vector(data_width_psum - 1 downto 0);
         i_preload_psum_valid : in    std_logic;
@@ -234,6 +234,7 @@ begin
     -- Partial sums output from north PE row. This is the actual output of the PE array.
 
     bias_act : if g_bias_act_enabled generate
+
         psum_output : for i in 0 to size_x - 1 generate
 
             -- generate bias, activation and requantization (scaling) units
@@ -253,36 +254,37 @@ begin
                     o_psum_valid => o_psums_valid(i),
                     o_psum       => o_psums(i)
                 );
-                o_psums_halfword(i) <= '0';
 
-            -- activation_inst : entity accel.psum_activation
-            --     generic map (
-            --         data_width_psum => data_width_psum
-            --     )
-            --     port map (
-            --         clk          => clk,
-            --         i_mode       => i_params.mode_act,
-            --         i_psum_valid => w_psums_bias_valid(i),
-            --         i_psum       => w_psums_bias(i),
-            --         o_psum_valid => w_psums_act_valid(i),
-            --         o_psum       => w_psums_act(i)
-            --     );
+            o_psums_halfword(i) <= '0';
 
-            -- requantize_inst : entity accel.psum_requantize
-            --     generic map (
-            --         data_width_psum => data_width_psum,
-            --         data_width_iact => data_width_iact
-            --     )
-            --     port map (
-            --         clk             => clk,
-            --         rstn            => rstn,
-            --         i_params        => i_params,
-            --         i_data_valid    => w_psums_act_valid(i),
-            --         i_data          => w_psums_act(i),
-            --         o_data_valid    => o_psums_valid(i),
-            --         o_data          => o_psums(i),
-            --         o_data_halfword => o_psums_halfword(i)
-            --     );
+        -- activation_inst : entity accel.psum_activation
+        --     generic map (
+        --         data_width_psum => data_width_psum
+        --     )
+        --     port map (
+        --         clk          => clk,
+        --         i_mode       => i_params.mode_act,
+        --         i_psum_valid => w_psums_bias_valid(i),
+        --         i_psum       => w_psums_bias(i),
+        --         o_psum_valid => w_psums_act_valid(i),
+        --         o_psum       => w_psums_act(i)
+        --     );
+
+        -- requantize_inst : entity accel.psum_requantize
+        --     generic map (
+        --         data_width_psum => data_width_psum,
+        --         data_width_iact => data_width_iact
+        --     )
+        --     port map (
+        --         clk             => clk,
+        --         rstn            => rstn,
+        --         i_params        => i_params,
+        --         i_data_valid    => w_psums_act_valid(i),
+        --         i_data          => w_psums_act(i),
+        --         o_data_valid    => o_psums_valid(i),
+        --         o_data          => o_psums(i),
+        --         o_data_halfword => o_psums_halfword(i)
+        --     );
 
         end generate psum_output;
 
