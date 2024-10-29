@@ -15,7 +15,7 @@ class Convolution:
     """Class to represent a convolution operation."""
 
     def __init__(
-        self, image_size, kernel_size, input_channels, output_channels, input_bits, bias
+        self, image_size, kernel_size, input_channels, output_channels, input_bits, bias = 0
     ):
         self.image_size = image_size
         self.kernel_size = kernel_size
@@ -292,13 +292,14 @@ class Test:
             for c in range(self.convolution.input_channels):
                 convolved_channels[k, c, :, :] = self._convolution2d(
                     image[c],
-                    kernels[k, c],
-                    0,
+                    kernels[k, c]
                 )
-            # break # DEBUG: zero out all but first output channel
 
         # sum over all channels
         convolved_images = np.sum(convolved_channels, axis=1)
+
+        # add bias to all channels
+        convolved_images += self.convolution.bias
 
         # stack image, kernels and convolved images
         # (make them 2D by unrolling all dimensions vertically except for the last one)
@@ -327,7 +328,7 @@ class Test:
 
         return True
 
-    def _convolution2d(self, image, kernel, bias):
+    def _convolution2d(self, image, kernel):
         m, n = kernel.shape
         if m == n:
             y, x = image.shape
@@ -336,9 +337,7 @@ class Test:
             new_image = np.zeros((y, x))
             for i in range(y):
                 for j in range(x):
-                    new_image[i][j] = (
-                        np.sum(image[i : i + m, j : j + m] * kernel) + bias
-                    )
+                    new_image[i][j] = np.sum(image[i : i + m, j : j + m] * kernel)
         else:
             print("Kernel size is not equal")
             print("Kernel size is:", m, n)
