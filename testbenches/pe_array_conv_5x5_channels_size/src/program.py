@@ -18,7 +18,7 @@ print("COMMANDS FOR PEs and LINE BUFFERS TO COMPUTE THE CONVOLUTION AND OBTAIN T
 print("####################")
 
 # input read offset iact
-array = np.zeros((kernel_size * channels + 1) * (image_size - kernel_size + 1) + 1, dtype = np.int16); 
+array = np.zeros((kernel_size * channels + 1) * (image_size - kernel_size + 1) + 1, dtype = np.int16);
 
 for i in range(image_size - kernel_size + 1):
     for j in range(kernel_size * channels):
@@ -34,7 +34,7 @@ list_input_read_offset_iact = [str (x) for x in array.tolist()]
 #print('\n', repr(array))
 
 # input read offset wght
-array = np.zeros((kernel_size * channels + 1) * (image_size - kernel_size + 1) + 1, dtype = np.int16); 
+array = np.zeros((kernel_size * channels + 1) * (image_size - kernel_size + 1) + 1, dtype = np.int16);
 
 for i in range(image_size - kernel_size + 1):
     for j in range(kernel_size * channels):
@@ -50,7 +50,7 @@ list_input_read_offset_wght = [str (x) for x in array.tolist()]
 #print('\n', repr(array))
 
 # input read offset psum
-array = np.zeros((kernel_size * channels + 1) * (image_size - kernel_size + 1) + 1, dtype = np.int16); 
+array = np.zeros((kernel_size * channels + 1) * (image_size - kernel_size + 1) + 1, dtype = np.int16);
 
 for i in range(image_size - kernel_size + 1):
     for j in range(kernel_size * channels):
@@ -263,37 +263,37 @@ with open(output_file, 'r') as file:
     output_command_length_occurences = []
 
     for i, line in enumerate(lines):
-        if "/*INPUT_PE_COMMAND*/" in line:
+        if "-- INPUT_PE_COMMAND --" in line:
             input_pe_command_occurences.append(i)
-        if "/*INPUT_COMMAND_IACT*/" in line:
+        if "-- INPUT_COMMAND_IACT --" in line:
             input_command_iact_occurences.append(i)
-        if "/*INPUT_COMMAND_WGHT*/" in line:
+        if "-- INPUT_COMMAND_WGHT --" in line:
             input_command_wght_occurences.append(i)
-        if "/*INPUT_COMMAND_PSUM*/" in line:
+        if "-- INPUT_COMMAND_PSUM --" in line:
             input_command_psum_occurences.append(i)
-        if "/*INPUT_READ_OFFSET_IACT*/" in line:
+        if "-- INPUT_READ_OFFSET_IACT --" in line:
             input_read_offset_iact_occurences.append(i)
-        if "/*INPUT_READ_OFFSET_WGHT*/" in line:
+        if "-- INPUT_READ_OFFSET_WGHT --" in line:
             input_read_offset_wght_occurences.append(i)
-        if "/*INPUT_READ_OFFSET_PSUM*/" in line:
+        if "-- INPUT_READ_OFFSET_PSUM --" in line:
             input_read_offset_psum_occurences.append(i)
-        if "/*INPUT_UPDATE_OFFSET_IACT*/" in line:
+        if "-- INPUT_UPDATE_OFFSET_IACT --" in line:
             input_update_offset_iact_occurences.append(i)
-        if "/*INPUT_UPDATE_OFFSET_WGHT*/" in line:
+        if "-- INPUT_UPDATE_OFFSET_WGHT --" in line:
             input_update_offset_wght_occurences.append(i)
-        if "/*INPUT_UPDATE_OFFSET_PSUM*/" in line:
+        if "-- INPUT_UPDATE_OFFSET_PSUM --" in line:
             input_update_offset_psum_occurences.append(i)
-        if "/*OUTPUT_READ_OFFSET*/" in line:
+        if "-- OUTPUT_READ_OFFSET --" in line:
             output_read_offset_occurences.append(i)
-        if "/*OUTPUT_UPDATE_OFFSET*/" in line:
+        if "-- OUTPUT_UPDATE_OFFSET --" in line:
             output_update_offset_occurences.append(i)
-        if "/*OUTPUT_PE_COMMAND*/" in line:
+        if "-- OUTPUT_PE_COMMAND --" in line:
             output_pe_command_occurences.append(i)
-        if "/*OUTPUT_COMMAND*/" in line:
+        if "-- OUTPUT_COMMAND --" in line:
             output_command_occurences.append(i)
-        if "/*COMMAND_LENGTH*/" in line:
+        if "-- COMMAND_LENGTH --" in line:
             command_length_occurences.append(i)
-        if "/*OUTPUT_COMMAND_LENGTH*/" in line:
+        if "-- OUTPUT_COMMAND_LENGTH --" in line:
             output_command_length_occurences.append(i)
     if len(input_pe_command_occurences) == 2 and abs(input_pe_command_occurences[0] - input_pe_command_occurences[1]) == 6:
         start = int(min(input_pe_command_occurences[0], input_pe_command_occurences[1])) + 1
@@ -531,9 +531,9 @@ with open(output_file, 'r') as file:
     else:
         print("ERROR: command_length_occurences not found")
         exit
-    
 
-    
+
+
 
     with open(output_file, 'w') as file:
         file.writelines(lines)
