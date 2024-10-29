@@ -152,7 +152,7 @@ begin
     params.c0_last_c1   <= g_c0_last_c1;
     params.c0w0         <= g_c0w0;
     params.c0w0_last_c1 <= g_c0w0_last_c1;
-    params.bias         <= g_bias;
+    params.bias         <= (others => g_bias);
 
     accelerator_inst : entity accel.accelerator
         generic map (
