@@ -15,7 +15,7 @@ class Convolution:
     """Class to represent a convolution operation."""
 
     def __init__(
-        self, image_size, kernel_size, input_channels, output_channels, input_bits, bias = 0
+        self, image_size, kernel_size, input_channels, output_channels, input_bits, bias = 0, requantize = False
     ):
         self.image_size = image_size
         self.kernel_size = kernel_size
@@ -23,6 +23,7 @@ class Convolution:
         self.output_channels = output_channels
         self.input_bits = input_bits
         self.bias = bias
+        self.requantize = requantize
 
 
 @dataclass
@@ -301,6 +302,18 @@ class Test:
         # add bias to all channels
         convolved_images += self.convolution.bias
 
+        # if requant is enabled, find a suitable scaling value per output channel
+        zeropt_scale_vals = np.zeros((self.M0, 2))
+        if self.convolution.requantize:
+            min_vals = np.min(convolved_images, axis=(1,2))
+            max_vals = np.max(convolved_images, axis=(1,2))
+            for n, min_max in enumerate(np.dstack([min_vals, max_vals])[0]):
+                zeropt_scale_vals[n] = np.linalg.solve([[1, min_max[0]], [1, min_max[1]]], [127, -128])
+                print(f"Scaling output channel {n} with {zeropt_scale_vals[n][1]}, zeropoint {zeropt_scale_vals[n][0]}")
+
+            convolved_images_requant = convolved_images * zeropt_scale_vals[:, 1, None, None] + zeropt_scale_vals[:, 0, None, None]
+            convolved_images = np.rint(convolved_images_requant)
+
         # stack image, kernels and convolved images
         # (make them 2D by unrolling all dimensions vertically except for the last one)
         image_stack = np.vstack(image)
@@ -308,16 +321,10 @@ class Test:
         self.convolved_images_stack = np.reshape(convolved_images, (-1, convolved_images.shape[-1]))
 
         # save data as txt files
-        np.savetxt(self.test_dir / "_image.txt", image_stack, fmt="%d", delimiter=" ")
-        np.savetxt(
-            self.test_dir / "_kernel_stack.txt", kernels_stack, fmt="%d", delimiter=" "
-        )
-        np.savetxt(
-            self.test_dir / "_convolution_stack.txt",
-            self.convolved_images_stack,
-            fmt="%d",
-            delimiter=" ",
-        )
+        np.savetxt(self.test_dir / "_image.txt",             image_stack,                 fmt="%d", delimiter=" ")
+        np.savetxt(self.test_dir / "_kernel_stack.txt",      kernels_stack,               fmt="%d", delimiter=" ")
+        np.savetxt(self.test_dir / "_convolution_stack.txt", self.convolved_images_stack, fmt="%d", delimiter=" ")
+        np.savetxt(self.test_dir / "_zeropt_scale.txt",      zeropt_scale_vals,           fmt="%f", delimiter=" ")
 
         # save mem files
         # save image as 8-bit binary values in _mem_iact.txt in two's complement
@@ -379,6 +386,7 @@ class Test:
             'g_c0w0_last_c1':      self.C0W0_last_c1,
             'g_clk':               self.accelerator.clk_period,
             'g_clk_sp':            self.accelerator.clk_sp_period,
+            'g_requant':           1 if self.convolution.requantize else 0,
             'g_dataflow':          self.accelerator.dataflow,
             'g_init_sp':           True,
             'g_files_dir':         str(self.test_dir.absolute()) + '/',
@@ -572,7 +580,7 @@ if __name__ == "__main__":
 # --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     # very small test - GUI
-    simulation.append(Setting("", Convolution(image_size = [16], kernel_size = [3], input_channels = [100], output_channels = [3], input_bits = [4], bias = [5]),
+    simulation.append(Setting("", Convolution(image_size = [16], kernel_size = [3], input_channels = [100], output_channels = [3], input_bits = [4], bias = [5], requantize = [True]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
@@ -615,7 +623,7 @@ if __name__ == "__main__":
                                                                 settings.append(
                                                                     Setting(
                                                                         name,
-                                                                        Convolution(hw, rs, c, oc, sim.convolution.input_bits[0], sim.convolution.bias[0]),
+                                                                        Convolution(hw, rs, c, oc, sim.convolution.input_bits[0], sim.convolution.bias[0], sim.convolution.requantize[0]),
                                                                         Accelerator(
                                                                             x,
                                                                             y,

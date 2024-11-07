@@ -7,6 +7,7 @@ library ieee;
     use std.env.stop;
     use ieee.math_real.log2;
     use std.textio.all;
+    use ieee.float_pkg.all;
 
 library accel;
     use accel.utilities.all;
@@ -41,7 +42,7 @@ entity functional_tb is
         g_image_y     : positive := 20;
         g_image_x     : positive := 20;
         g_kernel_size : positive := 1;
-        g_bias        : positive := 5;
+        g_bias        : integer  := 5;
 
         g_iact_fifo_size : positive := 15;
         g_wght_fifo_size : positive := 15;
@@ -64,6 +65,7 @@ entity functional_tb is
         g_c0_last_c1   : positive := 1;
         g_c0w0         : positive := 1;
         g_c0w0_last_c1 : positive := 1;
+        g_requant      : integer  := 0;
         g_dataflow     : integer  := 1
     );
 end entity functional_tb;
@@ -93,15 +95,18 @@ architecture imp of functional_tb is
     signal s_input_weights   : int_image_t(0 to g_kernel_size - 1, 0 to g_kernel_size * g_inputchs * g_h2 - 1); -- not *2 because kernel stays the same across tile_y
     signal s_expected_output : int_image_t(0 to g_image_y - g_kernel_size, 0 to g_image_x - g_kernel_size);
 
+    signal zeropt_fp32 : array_t(max_output_channels - 1 downto 0)(31 downto 0);
+    signal scale_fp32  : array_t(max_output_channels - 1 downto 0)(31 downto 0);
+
     constant spad_ext_addr_width_iact : integer := addr_width_iact_mem - 2;
     constant spad_ext_addr_width_psum : integer := addr_width_psum_mem - 1;
     constant spad_ext_addr_width_wght : integer := addr_width_wght_mem - 2;
     constant spad_ext_data_width_iact : integer := 32;
     constant spad_ext_data_width_psum : integer := 32;
     constant spad_ext_data_width_wght : integer := 32;
-    constant iact_words_per_mem_word  : integer := 2 ** (spad_ext_data_width_iact / addr_width_iact_mem);
-    constant psum_words_per_mem_word  : integer := 2 ** (spad_ext_data_width_psum / addr_width_psum_mem);
-    constant wght_words_per_mem_word  : integer := 2 ** (spad_ext_data_width_wght / addr_width_wght_mem);
+    constant iact_words_per_mem_word  : integer := 2 ** (addr_width_iact_mem - spad_ext_addr_width_iact);
+    constant psum_words_per_mem_word  : integer := 2 ** (addr_width_psum_mem - spad_ext_addr_width_psum);
+    constant wght_words_per_mem_word  : integer := 2 ** (addr_width_wght_mem - spad_ext_addr_width_wght);
 
     type ram_type is array (0 to 2 ** spad_ext_addr_width_psum - 1) of std_logic_vector(spad_ext_data_width_psum - 1 downto 0);
 
@@ -153,6 +158,10 @@ begin
     params.c0w0         <= g_c0w0;
     params.c0w0_last_c1 <= g_c0w0_last_c1;
     params.bias         <= (others => g_bias);
+    params.requant_enab <= true when g_requant > 0 else
+                           false;
+    params.zeropt_fp32  <= zeropt_fp32;
+    params.scale_fp32   <= scale_fp32;
 
     accelerator_inst : entity accel.accelerator
         generic map (
@@ -290,11 +299,35 @@ begin
     end process p_constant_check;
 
     p_read_files : process is
+
+        variable v_zeropt_scale : float32_arr2d_t(0 to max_output_channels - 1, 0 to 1);
+
     begin
 
         -- s_input_image <= read_file(file_name => g_files_dir & "_image_reordered_2.txt", num_col => g_image_x * g_inputchs * g_h2, num_row => size_rows);
         -- s_input_weights   <= read_file(file_name => "src/_kernel_reordered.txt", num_col => g_kernel_size * g_inputchs * g_tiles_y, num_row => g_kernel_size);
         -- s_expected_output <= read_file(file_name => g_files_dir & "_convolution.txt", num_col => g_image_x - g_kernel_size + 1, num_row => g_image_y - g_kernel_size + 1);
+
+        for g in 0 to max_output_channels - 1 loop
+
+            zeropt_fp32(g) <= to_slv(to_float(0.0));
+            scale_fp32(g)  <= to_slv(to_float(1.0));
+
+        end loop;
+
+        if g_requant > 0 then
+            v_zeropt_scale := read_file_floats(g_files_dir & "_zeropt_scale.txt", 2, max_output_channels);
+            report "got zeropt " & to_string(to_real(v_zeropt_scale(0,0))) & " and scale " & to_string(to_real(v_zeropt_scale(0,1)));
+
+            for g in 0 to g_m0 - 1 loop
+
+                zeropt_fp32(g) <= to_slv(v_zeropt_scale(g, 0));
+                scale_fp32(g)  <= to_slv(v_zeropt_scale(g, 1));
+
+            end loop;
+
+        end if;
+
         wait;
 
     end process p_read_files;
@@ -543,11 +576,25 @@ begin
         variable word_idx : integer;
         variable data     : std_logic_vector(data_width_psum - 1 downto 0);
 
+        variable actual_data_width : integer;
+        variable actual_word_count : integer;
+
         alias ram is << variable accelerator_inst.scratchpad_inst.ram_psum.ram : ram_type >>;
 
     begin
 
         output_done <= false;
+
+        if g_requant > 0 then
+            actual_data_width := data_width_iact;
+            actual_word_count := iact_words_per_mem_word;
+            assert spad_ext_data_width_iact = spad_ext_data_width_psum
+                report "subword readout for requantized data only available for equal iact / psum mem width"
+                severity error;
+        else
+            actual_data_width := data_width_psum;
+            actual_word_count := psum_words_per_mem_word;
+        end if;
 
         wait until done = '1';
 
@@ -562,11 +609,12 @@ begin
 
                 for pix in 0 to g_image_x - g_kernel_size loop
 
-                    data := ram(idx)(data_width_psum * (word_idx + 1) - 1 downto data_width_psum * word_idx);
-                    write(outline, integer'image(to_integer(signed(data))));
+                    data                                 := (others => '0');
+                    data(actual_data_width - 1 downto 0) := ram(idx)(actual_data_width * (word_idx + 1) - 1 downto actual_data_width * word_idx);
+                    write(outline, integer'image(to_integer(signed(data(actual_data_width - 1 downto 0)))));
                     write(outline, string'(" "));
 
-                    if word_idx = psum_words_per_mem_word - 1 then
+                    if word_idx = actual_word_count - 1 then
                         word_idx := 0;
                         idx      := idx + 1;
                     else
