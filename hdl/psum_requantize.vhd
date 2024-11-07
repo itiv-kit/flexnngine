@@ -43,15 +43,37 @@ architecture behavioral of psum_requantize is
     signal pipe : pipe_t;
 
     signal scale, zeropoint : float32;
+    signal r_count_w1       : integer := 0;
+    signal r_output_channel : integer := 0;
 
 begin
 
-    -- TODO: add support for individual scale/zeropoint per output channel (e.g. from weight memory?)
-    scale     <= to_float(i_params.scale_fp32);
-    zeropoint <= to_float(i_params.zeropt_fp32);
+    p_track_channel : process is
+    begin
+
+        wait until rising_edge(clk);
+
+        if rstn = '0' then
+            r_count_w1       <= 0;
+            r_output_channel <= 0;
+        elsif i_data_valid = '1' then
+            r_count_w1 <= r_count_w1 + 1;
+            if r_count_w1 = i_params.w1 - 1 then
+                r_count_w1       <= 0;
+                r_output_channel <= r_output_channel + 1;
+                if r_output_channel = i_params.m0 - 1 then
+                    r_output_channel <= 0;
+                end if;
+            end if;
+        end if;
+
+        scale     <= to_float(i_params.scale_fp32(r_output_channel));
+        zeropoint <= to_float(i_params.zeropt_fp32(r_output_channel));
+
+    end process p_track_channel;
 
     -- construct the o_status record, currently consists of scratchpad interface signals only
-    pipe(0)              <= (i_data_valid, to_float(i_data));
+    pipe(0)              <= (i_data_valid, to_float(signed(i_data)));
     pipe(1)              <= (pipe(0).valid, pipe(0).data * scale) when rising_edge(clk);
     pipe(2)              <= (pipe(1).valid, pipe(1).data + zeropoint) when rising_edge(clk);
     pipe(3 to pipe'high) <= pipe(2 to pipe'high - 1) when rising_edge(clk);

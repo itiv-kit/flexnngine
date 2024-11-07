@@ -401,6 +401,9 @@ begin
   o_rst   <= slv_regs(0)(0);
   o_start <= slv_regs(0)(1);
 
+  o_params.requant_enab <= slv_regs(0)(2);
+  o_params.mode_act     <= mode_activation_t'val(slv_regs(0)(5 downto 3));
+
   o_params.dataflow     <= dataflow;
   o_params.inputchs     <= to_integer(unsigned(slv_regs( 2)( 9 downto 0)));
   o_params.outputchs    <= to_integer(unsigned(slv_regs( 3)( 9 downto 0)));

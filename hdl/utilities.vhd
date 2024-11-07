@@ -1,9 +1,12 @@
 library ieee;
-    use ieee.std_logic_1164.all;
+    use ieee.float_pkg.all;
     use ieee.numeric_std.all;
+    use ieee.std_logic_1164.all;
     use std.textio.all;
 
 package utilities is
+
+    constant max_output_channels : integer := 10;
 
     type t_control_state is (s_idle, s_init, s_calculate, s_output, s_incr_c1, s_incr_h1, s_done);
     type mode_activation_t is (passthrough, relu, sigmoid, leaky_relu, elu);
@@ -28,9 +31,14 @@ package utilities is
 
     type bias_arr_t is array (natural range <>) of integer;
 
+    type float32_arr_t is array (natural range <>) of float32;
+    type float32_arr2d_t is array (natural range <>, natural range <>) of float32;
+
     impure function read_file (file_name : string; num_col : integer; num_row : integer) return int_image_t;
 
     impure function read_file (file_name : string; num_col : integer; num_row : integer; num_channels : integer) return int_image3_t;
+
+    impure function read_file_floats (file_name : string; num_col : integer; num_row : integer) return float32_arr2d_t;
 
     function and_reduce_2d (arr : in std_logic_row_col_t) return std_logic;
 
@@ -53,9 +61,9 @@ package utilities is
         c0w0_last_c1 : integer range 0 to 1023;
         requant_enab : boolean;
         mode_act     : mode_activation_t;
-        bias         : bias_arr_t (9 downto 0);
-        zeropt_fp32  : std_logic_vector(31 downto 0);
-        scale_fp32   : std_logic_vector(31 downto 0);
+        bias         : int_line_t(max_output_channels - 1 downto 0);
+        zeropt_fp32  : array_t(max_output_channels - 1 downto 0)(31 downto 0);
+        scale_fp32   : array_t(max_output_channels - 1 downto 0)(31 downto 0);
     end record parameters_t;
 
     type status_info_spadif_t is record
@@ -158,6 +166,44 @@ package body utilities is
         end loop;
 
         return v_input_image;
+
+    end function;
+
+    impure function read_file_floats (
+        file_name : string;
+        num_col : integer;
+        num_row : integer)
+        return float32_arr2d_t is
+
+        file     testfile           : text open read_mode is file_name;
+        variable row                : line;
+        variable v_data_read        : real;
+        variable v_data_row_counter : integer;
+        variable v_data_array       : float32_arr2d_t(0 to num_row - 1, 0 to num_col - 1);
+
+    begin
+
+        v_data_row_counter := 0;
+        v_data_array       := (others => (0 => to_float(0.0), 1 => to_float(1.0)));
+
+        -- read row from input file
+        while not endfile(testfile) loop
+
+            readline(testfile, row);
+
+            -- read integer from row
+            for i in 0 to num_col - 1 loop
+
+                read(row, v_data_read);
+                v_data_array(v_data_row_counter, i) := to_float(v_data_read);
+
+            end loop;
+
+            v_data_row_counter := v_data_row_counter + 1;
+
+        end loop;
+
+        return v_data_array;
 
     end function;
 

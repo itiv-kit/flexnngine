@@ -14,7 +14,8 @@ entity psum_bias is
         use_output_reg  : boolean  := true
     );
     port (
-        clk : in    std_logic;
+        clk  : in    std_logic;
+        rstn : in    std_logic;
 
         i_params : in    parameters_t;
 
@@ -65,7 +66,7 @@ begin
 
         w_data_out <= w_data_in + w_bias_in;
 
-    end process bias_addition_proc;
+    end process p_add_bias;
 
     output_reg_gen : if use_output_reg generate
 
