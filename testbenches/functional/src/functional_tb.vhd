@@ -189,7 +189,8 @@ begin
             g_iact_fifo_size         => g_iact_fifo_size,
             g_wght_fifo_size         => g_wght_fifo_size,
             g_psum_fifo_size         => g_psum_fifo_size,
-            g_dataflow               => g_dataflow
+            g_dataflow               => g_dataflow,
+            g_en_bias_reqnt          => g_requant > 0
         )
         port map (
             clk        => clk,

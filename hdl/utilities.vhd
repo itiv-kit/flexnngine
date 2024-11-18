@@ -42,6 +42,8 @@ package utilities is
 
     function and_reduce_2d (arr : in std_logic_row_col_t) return std_logic;
 
+    function to_stdlogic (b : boolean) return std_logic;
+
     type parameters_t is record
         dataflow     : integer range 0 to 1;
         inputchs     : integer range 0 to 1023;
@@ -228,5 +230,16 @@ package body utilities is
         return res;
 
     end function;
+
+    function to_stdlogic (b : boolean) return std_logic is
+    begin
+
+        if b then
+            return '1';
+        else
+            return '0';
+        end if;
+
+    end function to_stdlogic;
 
 end package body utilities;

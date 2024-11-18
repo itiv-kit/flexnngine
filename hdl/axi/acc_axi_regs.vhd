@@ -9,7 +9,7 @@ entity acc_axi_regs is
   generic (
     -- Users to add parameters here
     -- number of registers to present, rest is read 0 / writes ignored
-    NUM_REGS : integer := 48;
+    NUM_REGS : integer := 64;
 
     -- static accelerator hardware info
     size_x : positive := 5;
@@ -29,7 +29,8 @@ entity acc_axi_regs is
     spad_axi_addr_width_wght : positive := 16;
     spad_axi_addr_width_psum : positive := 17;
 
-    dataflow : integer := 0;
+    dataflow             : integer := 0;
+    bias_requant_enabled : boolean := true;
     -- User parameters ends
     -- Do not modify the parameters beyond this line
 
@@ -142,7 +143,7 @@ architecture arch_imp of acc_axi_regs is
   signal byte_index   : integer;
   signal aw_en        : std_logic;
 
-  constant MAGIC_REG_VALUE : std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := x"41434302"; -- "ACC" + register set version
+  constant MAGIC_REG_VALUE : std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := x"41434303"; -- "ACC" + register set version
 begin
   -- I/O Connections assignments
 
@@ -233,7 +234,8 @@ begin
   slv_reg_wren <= axi_wready and S_AXI_WVALID and axi_awready and S_AXI_AWVALID ;
 
   process (S_AXI_ACLK)
-    variable loc_addr : unsigned(OPT_MEM_ADDR_BITS downto 0);
+    variable loc_addr     : unsigned(OPT_MEM_ADDR_BITS downto 0);
+    variable capabilities : unsigned(7 downto 0);
 
     -- grab some additional status signals from the hierarchy
     -- alias spad_iact_done is << signal ^.accelerator_inst.scratchpad_interface_inst.r_done_iact : std_logic >>;
@@ -274,12 +276,17 @@ begin
         slv_regs(24) <= std_logic_vector(resize(i_status.spadif.psum_overflows, 32));
 
         -- static hardware info registers
+        capabilities := (
+          0 => std_logic(to_unsigned(dataflow, 1)(0)),
+          1 => to_stdlogic(bias_requant_enabled),
+          others => '0'
+        );
         slv_regs(25) <= std_logic_vector(resize(to_unsigned(size_y, 16) & to_unsigned(size_x, 16), C_S_AXI_DATA_WIDTH));
         slv_regs(26) <= std_logic_vector(resize(to_unsigned(line_length_wght, 16) & to_unsigned(line_length_iact, 16), C_S_AXI_DATA_WIDTH));
         slv_regs(27) <= std_logic_vector(resize(to_unsigned(line_length_psum, 16), C_S_AXI_DATA_WIDTH));
         slv_regs(28) <= std_logic_vector(resize(to_unsigned(data_width_psum, 8) & to_unsigned(data_width_wght, 8) & to_unsigned(data_width_iact, 8), C_S_AXI_DATA_WIDTH));
-        slv_regs(29) <= std_logic_vector(resize(to_unsigned(spad_axi_addr_width_wght, 16) & to_unsigned(spad_axi_addr_width_iact, 16), C_S_AXI_DATA_WIDTH));
-        slv_regs(30) <= std_logic_vector(resize(to_unsigned(spad_axi_addr_width_psum, 16), C_S_AXI_DATA_WIDTH));
+        slv_regs(29) <= std_logic_vector(resize(to_unsigned(spad_axi_addr_width_psum, 8) & to_unsigned(spad_axi_addr_width_wght, 8) & to_unsigned(spad_axi_addr_width_iact, 8), C_S_AXI_DATA_WIDTH));
+        slv_regs(30) <= std_logic_vector(resize(capabilities & to_unsigned(max_output_channels, 8), C_S_AXI_DATA_WIDTH));
 
         slv_regs(31) <= MAGIC_REG_VALUE;
       end if;
@@ -401,8 +408,8 @@ begin
   o_rst   <= slv_regs(0)(0);
   o_start <= slv_regs(0)(1);
 
-  o_params.requant_enab <= slv_regs(0)(2);
-  o_params.mode_act     <= mode_activation_t'val(slv_regs(0)(5 downto 3));
+  o_params.requant_enab <= slv_regs(0)(2) = '1';
+  o_params.mode_act     <= mode_activation_t'val(to_integer(unsigned(slv_regs(0)(5 downto 3))));
 
   o_params.dataflow     <= dataflow;
   o_params.inputchs     <= to_integer(unsigned(slv_regs( 2)( 9 downto 0)));
@@ -421,11 +428,12 @@ begin
   o_params.c0w0         <= to_integer(unsigned(slv_regs(15)( 9 downto 0)));
   o_params.c0w0_last_c1 <= to_integer(unsigned(slv_regs(16)( 9 downto 0)));
 
-  -- registers for bias per output channel, currently limited to size of bias in parameters_t
-  -- (should be 32 .. 32 + size_x - 1 to support mapping 1x1 kernels with m0 = size_x)
-  g_bias_regs : for x in 0 to parameters_t.bias'high generate
-    o_params.bias(x) <= to_integer(unsigned(slv_regs(32 + x)(15 downto 0)));
-  end generate g_bias_regs;
+  -- registers for bias, scale, zeropt per output channel, limited by maximum m0 value max_output_channels
+  g_bias_req_regs : for x in 0 to max_output_channels - 1 generate
+    o_params.bias(x)        <= to_integer(unsigned(slv_regs(32 + x)(15 downto 0)));
+    o_params.scale_fp32(x)  <= slv_regs(32 + 1 * max_output_channels + x)(31 downto 0);
+    o_params.zeropt_fp32(x) <= slv_regs(32 + 2 * max_output_channels + x)(31 downto 0);
+  end generate g_bias_req_regs;
   -- User logic ends
 
 end arch_imp;

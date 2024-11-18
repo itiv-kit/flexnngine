@@ -43,7 +43,8 @@ entity acc_axi_top is
     spad_ext_data_width_wght : positive := 32;
     spad_ext_data_width_psum : positive := 32;
 
-    dataflow : integer := 0;
+    dataflow             : integer := 0;
+    bias_requant_enabled : boolean := true;
 
     -- enable cdc between AXI and accelerator clock domains if clocks differ
     axi_acc_cdc : boolean := false;
@@ -181,7 +182,8 @@ begin
     spad_axi_addr_width_iact => spad_axi_addr_width_iact,
     spad_axi_addr_width_wght => spad_axi_addr_width_wght,
     spad_axi_addr_width_psum => spad_axi_addr_width_psum,
-    dataflow => dataflow
+    dataflow => dataflow,
+    bias_requant_enabled => bias_requant_enabled
   ) port map (
     o_rst         => w_axi_rst,
     o_start       => w_axi_start,
@@ -232,7 +234,8 @@ begin
     spad_ext_addr_width_iact => spad_axi_addr_width_iact - 2, -- convert byte-wise addresses to 32bit-word-wise
     spad_ext_addr_width_wght => spad_axi_addr_width_wght - 2, -- convert byte-wise addresses to 32bit-word-wise
     spad_ext_addr_width_psum => spad_axi_addr_width_psum - 2, -- convert byte-wise addresses to 32bit-word-wise
-    g_dataflow => dataflow
+    g_dataflow => dataflow,
+    g_en_bias_reqnt => bias_requant_enabled
   ) port map (
     clk  => clk,
     rstn => w_acc_rstn,
