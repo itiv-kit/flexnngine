@@ -1,6 +1,8 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.math_real.ceil;
+use ieee.math_real.log2;
 
 library accel;
 use accel.utilities.all;
@@ -29,8 +31,8 @@ entity acc_axi_regs is
     spad_axi_addr_width_wght : positive := 16;
     spad_axi_addr_width_psum : positive := 17;
 
-    dataflow             : integer := 0;
-    bias_requant_enabled : boolean := true;
+    dataflow         : integer := 0;
+    postproc_enabled : boolean := true;
     -- User parameters ends
     -- Do not modify the parameters beyond this line
 
@@ -273,12 +275,12 @@ begin
         slv_regs(23)(1) <= i_status.spadif.spad_iact_empty;
         slv_regs(23)(2) <= i_status.spadif.spad_wght_full;
         slv_regs(23)(3) <= i_status.spadif.spad_wght_empty;
-        slv_regs(24) <= std_logic_vector(resize(i_status.spadif.psum_overflows, 32));
+        slv_regs(24) <= std_logic_vector(resize(i_status.spadif.psum_overflows, C_S_AXI_DATA_WIDTH));
 
         -- static hardware info registers
         capabilities := (
           0 => std_logic(to_unsigned(dataflow, 1)(0)),
-          1 => to_stdlogic(bias_requant_enabled),
+          1 => to_stdlogic(postproc_enabled),
           others => '0'
         );
         slv_regs(25) <= std_logic_vector(resize(to_unsigned(size_y, 16) & to_unsigned(size_x, 16), C_S_AXI_DATA_WIDTH));

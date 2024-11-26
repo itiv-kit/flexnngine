@@ -387,6 +387,7 @@ class Test:
             'g_clk':               self.accelerator.clk_period,
             'g_clk_sp':            self.accelerator.clk_sp_period,
             'g_requant':           1 if self.convolution.requantize else 0,
+            'g_postproc':          1 if self.convolution.requantize or self.convolution.bias != 0 else 0,
             'g_dataflow':          self.accelerator.dataflow,
             'g_init_sp':           True,
             'g_files_dir':         str(self.test_dir.absolute()) + '/',

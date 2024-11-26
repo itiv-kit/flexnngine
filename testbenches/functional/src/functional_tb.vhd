@@ -66,6 +66,7 @@ entity functional_tb is
         g_c0w0         : positive := 1;
         g_c0w0_last_c1 : positive := 1;
         g_requant      : integer  := 0;
+        g_postproc     : integer  := 1;
         g_dataflow     : integer  := 1
     );
 end entity functional_tb;
@@ -190,7 +191,7 @@ begin
             g_wght_fifo_size         => g_wght_fifo_size,
             g_psum_fifo_size         => g_psum_fifo_size,
             g_dataflow               => g_dataflow,
-            g_en_bias_reqnt          => g_requant > 0
+            g_en_postproc            => g_postproc > 0
         )
         port map (
             clk        => clk,

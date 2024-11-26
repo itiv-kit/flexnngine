@@ -24,7 +24,7 @@ entity pe_array is
         line_length_wght : positive := 32;
         addr_width_wght  : positive := 5;
 
-        g_en_bias_reqnt : boolean := true
+        g_en_postproc : boolean := true
     );
     port (
         clk  : in    std_logic;
@@ -233,7 +233,7 @@ begin
 
     -- Partial sums output from north PE row. This is the actual output of the PE array.
 
-    bias_act : if g_en_bias_reqnt generate
+    postproc : if g_en_postproc generate
 
         psum_output : for i in 0 to size_x - 1 generate
 
@@ -301,7 +301,7 @@ begin
 
         end generate psum_output;
 
-    end generate bias_act;
+    end generate postproc;
 
     -- OUTPUT BUFFER FULL SIGNALS
     o_buffer_full_psum      <= and_reduce_2d(w_buffer_full_psum);
