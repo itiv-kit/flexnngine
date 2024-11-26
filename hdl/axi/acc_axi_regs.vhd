@@ -39,7 +39,7 @@ entity acc_axi_regs is
     -- Width of S_AXI data bus
     C_S_AXI_DATA_WIDTH : integer := 32;
     -- Width of S_AXI address bus
-    C_S_AXI_ADDR_WIDTH : integer := 7
+    C_S_AXI_ADDR_WIDTH : integer := 16
   );
   port (
     -- Users to add ports here
@@ -132,7 +132,7 @@ architecture arch_imp of acc_axi_regs is
   -- ADDR_LSB = 2 for 32 bits (n downto 2)
   -- ADDR_LSB = 3 for 64 bits (n downto 3)
   constant ADDR_LSB  : integer := (C_S_AXI_DATA_WIDTH/32)+ 1;
-  constant OPT_MEM_ADDR_BITS : integer := 4;
+  constant OPT_MEM_ADDR_BITS : integer := integer(ceil(log2(real(NUM_REGS))));
   ------------------------------------------------
   ---- Signals for user logic register space example
   --------------------------------------------------
@@ -236,7 +236,7 @@ begin
   slv_reg_wren <= axi_wready and S_AXI_WVALID and axi_awready and S_AXI_AWVALID ;
 
   process (S_AXI_ACLK)
-    variable loc_addr     : unsigned(OPT_MEM_ADDR_BITS downto 0);
+    variable loc_addr     : unsigned(OPT_MEM_ADDR_BITS - 1 downto 0);
     variable capabilities : unsigned(7 downto 0);
 
     -- grab some additional status signals from the hierarchy
@@ -248,7 +248,7 @@ begin
       if S_AXI_ARESETN = '0' then
         slv_regs <= (others => (others => '0'));
       else
-        loc_addr := unsigned(axi_awaddr(ADDR_LSB + OPT_MEM_ADDR_BITS downto ADDR_LSB));
+        loc_addr := unsigned(axi_awaddr(ADDR_LSB + OPT_MEM_ADDR_BITS - 1 downto ADDR_LSB));
         if (slv_reg_wren = '1') then
           if to_integer(loc_addr) < NUM_REGS then
             for byte_index in 0 to (C_S_AXI_DATA_WIDTH/8-1) loop
@@ -377,10 +377,10 @@ begin
   slv_reg_rden <= axi_arready and S_AXI_ARVALID and (not axi_rvalid);
 
   process (slv_regs, axi_araddr, S_AXI_ARESETN, slv_reg_rden)
-    variable loc_addr : unsigned(OPT_MEM_ADDR_BITS downto 0);
+    variable loc_addr : unsigned(OPT_MEM_ADDR_BITS - 1 downto 0);
   begin
     -- Address decoding for reading registers
-    loc_addr := unsigned(axi_araddr(ADDR_LSB + OPT_MEM_ADDR_BITS downto ADDR_LSB));
+    loc_addr := unsigned(axi_araddr(ADDR_LSB + OPT_MEM_ADDR_BITS - 1 downto ADDR_LSB));
     if to_integer(loc_addr) < NUM_REGS then
       reg_data_out <= slv_regs(to_integer(loc_addr));
     else
