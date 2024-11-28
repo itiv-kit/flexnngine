@@ -25,8 +25,10 @@ To restart this container: `podman start -ia mypython`
 
 Jupyter on server with port forwarding:
 ```bash
-podman run --name jupyter2 --uidmap 1000:0:1 --uidmap 0:1:999 --uidmap 1001:1001:64535 -p 127.0.0.1:8314:8888/tcp -e JUPYTER_ENABLE_LAB=yes -v "$PWD":/home/jovyan:Z jupyter/minimal-notebook
+podman run --rm -u root -e NB_USER=root -e NB_UID=0 -e NB_GID=0 -p 8888:8888 -v "$PWD":/home/root/work --security-opt label=disable quay.io/jupyter/minimal-notebook:latest start-notebook.py --allow-root
 ```
+
+The old command using `--uidmap +1000:0` does not work anymore due to a regression in podman.
 
 #### Set all files to VHDL 2008 in Vivado
 ```tcl
@@ -48,3 +50,4 @@ Add generics to env variable `generics` with `-gGeneric=value`
 ```bash
 module load questa/2023.4
 generics=$generics MTI_VCO_MODE=64 vsim -c -do run_batch.do`
+```
