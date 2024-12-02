@@ -51,6 +51,7 @@ begin
 
     r_start_delay <= i_start when rising_edge(clk);
     r_start_event <= i_start and not r_start_delay;
+    r_image_size  <= i_params.w1 * i_params.w1 when rising_edge(clk);
 
     -- Multiplex addresses for PE colums to interface the single Psum scratchpad
     mux_psum_adr : entity accel.mux
@@ -67,16 +68,6 @@ begin
 
     w_suppress_out <= r_suppress_row or r_suppress_col;
     o_suppress_out <= w_suppress_out(to_integer(unsigned(i_gnt_psum_binary_d)));
-
-    p_address_psum_helper : process (clk, rstn) is
-    begin
-
-        if not rstn then
-        elsif rising_edge(clk) then
-            r_image_size <= i_params.w1 * i_params.w1;
-        end if;
-
-    end process p_address_psum_helper;
 
     gen_counter : for x in 0 to size_x - 1 generate
 
