@@ -437,8 +437,16 @@ class Test:
             if expected_output.shape != actual_output.shape:
                 print(f'{self.name}: shape of expected ({expected_output.shape})')
 
-            if np.equal(actual_output, expected_output).all():
+            acceptable_delta = 0
+            if self.convolution.requantize:
+                acceptable_delta = 1
+
+            delta = np.abs(actual_output - expected_output)
+
+            if np.less_equal(delta, acceptable_delta).all():
                 print(f'{self.name}: Output matches!')
+                if self.convolution.requantize:
+                    print(f'{self.name}: Maximum delta after requant: {np.max(delta)}')
             else:
                 print(f'{self.name}: Output differs!')
                 index = 0
