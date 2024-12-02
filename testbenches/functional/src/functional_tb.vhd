@@ -319,7 +319,7 @@ begin
 
         if g_requant > 0 then
             v_zeropt_scale := read_file_floats(g_files_dir & "_zeropt_scale.txt", 2, max_output_channels);
-            report "got zeropt " & to_string(to_real(v_zeropt_scale(0,0))) & " and scale " & to_string(to_real(v_zeropt_scale(0,1)));
+            -- report "got zeropt " & to_string(to_real(v_zeropt_scale(0,0))) & " and scale " & to_string(to_real(v_zeropt_scale(0,1)));
 
             for g in 0 to g_m0 - 1 loop
 

@@ -17,6 +17,7 @@ set HDL_FILE_NAMES [list \
     "${HDL_DIR}/psum_bias.vhd" \
     "${HDL_DIR}/psum_activation.vhd" \
     "${HDL_DIR}/psum_requantize.vhd" \
+    "${HDL_DIR}/postproc.vhd" \
     "${HDL_DIR}/pe_array.vhd" \
     "${HDL_DIR}/ram_dp_bwe.vhd" \
     "${HDL_DIR}/scratchpad.vhd" \

@@ -223,85 +223,15 @@ begin
 
     end generate data_in_iact;
 
-    -- Partial sums valid for south PEs
-
-/*    psum_valid : for x in 0 to size_x - 1 generate
-
-        w_data_in_valid(size_y - 1,x) <= '0';
-
-    end generate psum_valid;*/
-
     -- Partial sums output from north PE row. This is the actual output of the PE array.
 
-    postproc : if g_en_postproc generate
+    psum_output : for i in 0 to size_x - 1 generate
 
-        psum_output : for i in 0 to size_x - 1 generate
+        o_psums(i)          <= w_data_out(0, i);
+        o_psums_valid(i)    <= w_data_out_valid(0, i);
+        o_psums_halfword(i) <= '0';
 
-            -- generate bias, activation and requantization (scaling) units
-            -- TODO: bias could also be applied by preloading biases to accumulators
-
-            bias_inst : entity accel.psum_bias
-                generic map (
-                    data_width_psum => data_width_psum
-                )
-                port map (
-                    clk          => clk,
-                    rstn         => rstn,
-                    i_params     => i_params,
-                    i_psum_valid => w_data_out_valid(0, i),
-                    i_psum       => w_data_out(0, i),
-                    o_psum_valid => w_psums_bias_valid(i),
-                    o_psum       => w_psums_bias(i)
-                );
-
-            -- o_psums_halfword(i) <= '0';
-
-            -- activation_inst : entity accel.psum_activation
-            --     generic map (
-            --         data_width_psum => data_width_psum
-            --     )
-            --     port map (
-            --         clk          => clk,
-            --         i_mode       => i_params.mode_act,
-            --         i_psum_valid => w_psums_bias_valid(i),
-            --         i_psum       => w_psums_bias(i),
-            --         o_psum_valid => w_psums_act_valid(i),
-            --         o_psum       => w_psums_act(i)
-            --     );
-
-            requantize_inst : entity accel.psum_requantize
-                generic map (
-                    data_width_psum => data_width_psum,
-                    data_width_iact => data_width_iact
-                )
-                port map (
-                    clk      => clk,
-                    rstn     => rstn,
-                    i_params => i_params,
-                    -- i_data_valid    => w_psums_act_valid(i),
-                    -- i_data          => w_psums_act(i),
-                    i_data_valid    => w_psums_bias_valid(i),
-                    i_data          => w_psums_bias(i),
-                    o_data_valid    => o_psums_valid(i),
-                    o_data          => o_psums(i),
-                    o_data_halfword => o_psums_halfword(i)
-                );
-
-        end generate psum_output;
-
-    else generate
-
-        -- if bias & activation are disabled, directly map partial sum outputs to module outputs
-
-        psum_output : for i in 0 to size_x - 1 generate
-
-            o_psums(i)          <= w_data_out(0, i);
-            o_psums_valid(i)    <= w_data_out_valid(0, i);
-            o_psums_halfword(i) <= '0';
-
-        end generate psum_output;
-
-    end generate postproc;
+    end generate psum_output;
 
     -- OUTPUT BUFFER FULL SIGNALS
     o_buffer_full_psum      <= and_reduce_2d(w_buffer_full_psum);
