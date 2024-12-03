@@ -421,7 +421,6 @@ class Test:
         print("Running test: ", self.name)
 
         myenv = os.environ.copy()
-        myenv["LM_LICENSE_FILE"] = "1717@scclic2.itiv.kit.edu"
         myenv["library"] = self.test_dir.absolute()
         myenv["library_name"] = self.name
         myenv["GENERICS"] = " ".join(f'-g{x}={y}' for x,y in self.build_generics().items())
@@ -429,10 +428,10 @@ class Test:
         myenv["LAUNCH_GUI"] = str(int(sim.start_gui))
 
         script_dir = Path(__file__).resolve().parent
-        simulator = "/tools/cadence/mentor/2020-21/RHELx86/QUESTA-CORE-PRIME_2020.4/questasim/bin/vsim"
+        simulator = "vsim"
         arguments = []
         if not self.gui:
-            arguments += ["-c"]
+            arguments += ["-batch"]
         arguments += ["-do", script_dir / "run.do"]
 
         with open(self.test_dir / "_log.txt", "w+") as logfile:
