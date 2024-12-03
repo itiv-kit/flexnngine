@@ -9,7 +9,7 @@ entity postproc is
         size_x          : positive := 3;
         data_width_iact : positive := 8;
         data_width_psum : positive := 16;
-        g_en_postproc   : boolean := true
+        g_en_postproc   : boolean  := true
     );
     port (
         clk  : in    std_logic;

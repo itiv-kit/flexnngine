@@ -246,10 +246,10 @@ begin
 
     postproc_inst : entity accel.postproc
         generic map (
-            size_x           => size_x,
-            data_width_iact  => data_width_iact,
-            data_width_psum  => data_width_psum,
-            g_en_postproc    => g_en_postproc
+            size_x          => size_x,
+            data_width_iact => data_width_iact,
+            data_width_psum => data_width_psum,
+            g_en_postproc   => g_en_postproc
         )
         port map (
             clk             => clk,
