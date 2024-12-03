@@ -52,7 +52,7 @@ architecture imp of control_conv_tb is
             empty  : out   std_logic;
             valid  : out   std_logic
         );
-    end component;
+    end component fifo_generator_0;
 
     component mult_gen_0 is
         port (
@@ -62,7 +62,7 @@ architecture imp of control_conv_tb is
             ce  : in    std_logic;
             p   : out   std_logic_vector(15 downto 0)
         );
-    end component;
+    end component mult_gen_0;
 
     signal clk  : std_logic := '0';
     signal rstn : std_logic;
@@ -170,7 +170,7 @@ architecture imp of control_conv_tb is
 
         s_c <= s_tile_c * c_per_tile + s_c0;
 
-    end procedure;
+    end procedure incr;
 
     procedure incr_wght (signal s_wght_y : inout integer; signal s_wght_x : inout integer; signal s_wght_c : out integer; signal s_wght_c0 : inout integer; variable s_wght_tile_c : inout integer) is
     begin
@@ -192,7 +192,7 @@ architecture imp of control_conv_tb is
 
         s_wght_c <= s_wght_tile_c * c_per_tile + s_wght_c0;
 
-    end procedure;
+    end procedure incr_wght;
 
 begin
 

@@ -21,7 +21,7 @@ package body gray_code is
 
         return gray;
 
-    end function;
+    end function to_gray;
 
     function to_binary (gray : std_logic_vector) return std_logic_vector is
 
@@ -39,6 +39,6 @@ package body gray_code is
 
         return bin;
 
-    end function;
+    end function to_binary;
 
 end package body gray_code;

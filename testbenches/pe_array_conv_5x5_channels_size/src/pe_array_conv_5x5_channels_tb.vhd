@@ -396,7 +396,7 @@ architecture imp of pe_array_conv_5x5_channels_tb is
             pointer_c <= pointer_c + 1;
         end if;
 
-    end procedure;
+    end procedure incr;
 
 begin
 

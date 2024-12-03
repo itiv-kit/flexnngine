@@ -22,7 +22,7 @@ package fifos is
             dout  : out   std_logic_vector;
             empty : out   std_logic
         );
-    end component;
+    end component fifo;
 
     -- dual clock fifo, optionally packet-based
     -- if USE_PACKETS is true, keep/discard must be assigned at
@@ -51,7 +51,7 @@ package fifos is
             valid : out   std_logic;
             empty : out   std_logic
         );
-    end component;
+    end component dc_fifo;
 
 end package fifos;
 

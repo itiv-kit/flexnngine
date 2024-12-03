@@ -77,7 +77,7 @@ architecture rtl of line_buffer is
             pointer <= pointer + 1;
         end if;
 
-    end procedure;
+    end procedure incr;
 
     -- Increment by offset
 
@@ -92,7 +92,7 @@ architecture rtl of line_buffer is
             pointer <= pointer + offset;
         end if;
 
-    end procedure;
+    end procedure incr_offset;
 
     -- Increment by offset variable
 
@@ -107,7 +107,7 @@ architecture rtl of line_buffer is
             pointer := pointer + offset;
         end if;
 
-    end procedure;
+    end procedure incr_offset_v;
 
 begin
 

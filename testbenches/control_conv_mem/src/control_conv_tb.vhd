@@ -55,7 +55,7 @@ architecture imp of control_conv_tb is
             empty  : out   std_logic;
             valid  : out   std_logic
         );
-    end component;
+    end component fifo_generator_0;
 
     component mult_gen_0 is
         port (
@@ -65,7 +65,7 @@ architecture imp of control_conv_tb is
             ce  : in    std_logic;
             p   : out   std_logic_vector(15 downto 0)
         );
-    end component;
+    end component mult_gen_0;
 
     signal clk  : std_logic := '0';
     signal rstn : std_logic;

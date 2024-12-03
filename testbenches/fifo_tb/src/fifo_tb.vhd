@@ -29,7 +29,7 @@ architecture tb of tb_dc_fifo is
             empty       : out   std_logic;
             valid       : out   std_logic
         );
-    end component;
+    end component fifo_generator_0;
 
     signal wr_clk       : std_logic                     := '0';
     signal rst          : std_logic                     := '1';
@@ -129,7 +129,7 @@ begin
             report "not initially full";
 
         -- test single write
-        din   <= x"00aa";
+        din   <= x"00AA";
         wr_en <= '1';
 
         wait until rising_edge(wr_clk);
@@ -168,7 +168,7 @@ begin
 
         -- test overwrite
         wait until rising_edge(wr_clk);
-        din   <= x"00ff";
+        din   <= x"00FF";
         wr_en <= '1';
 
         wait until rising_edge(wr_clk);
@@ -219,7 +219,7 @@ begin
 
             wait until rising_edge(rd_clk) and not empty = '1';
             rd_en <= '1';
-            assert dout /= x"00ff"
+            assert dout /= x"00FF"
                 report "overwrite pattern stored";
 
         end loop;
@@ -234,9 +234,9 @@ begin
 
             wait until rising_edge(rd_clk) and empty = '0';
             rd_en     <= '1';
-            assert dout /= x"00ff"
+            assert dout /= x"00FF"
                 report "overwrite pattern stored";
-            assert n<3 or unsigned(last_dout) + 1 = unsigned(dout)
+            assert n < 3 or unsigned(last_dout) + 1 = unsigned(dout)
                 report "dout not steadily increasing";
             assert empty = '0'
                 report "empty during concurrent rw";

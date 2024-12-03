@@ -258,7 +258,7 @@ architecture imp of pe_array_conv_3x3_tb is
             pointer_x <= pointer_x + 1;
         end if;
 
-    end procedure;
+    end procedure incr;
 
 begin
 

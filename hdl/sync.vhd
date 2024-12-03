@@ -17,7 +17,7 @@ package sync is
             bit_in  : in    std_logic;
             bit_out : out   std_logic
         );
-    end component;
+    end component bit_sync;
 
     -- A handshaking synchronizer for sending an array between clock domains.
     -- This uses the four-phase handshake protocol.
@@ -40,7 +40,7 @@ package sync is
             rx_data : out   std_logic_vector;
             rx_new  : out   std_logic
         );
-    end component;
+    end component handshake_sync;
 
     -- Gray code synchronizer for single-step counters
     component gray_sync is
@@ -54,7 +54,7 @@ package sync is
             dst_clk : in    std_logic;
             dst_bin : out   std_logic_vector
         );
-    end component;
+    end component gray_sync;
 
 end package sync;
 

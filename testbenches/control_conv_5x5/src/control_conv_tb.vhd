@@ -133,7 +133,7 @@ architecture imp of control_conv_tb is
 
         s_c <= s_tile_c * c_per_tile + s_c0;
 
-    end procedure;
+    end procedure incr;
 
     procedure incr_wght (signal s_wght_y : inout integer; signal s_wght_x : inout integer; signal s_wght_c : out integer; signal s_wght_c0 : inout integer; variable s_wght_tile_c : inout integer) is
     begin
@@ -155,7 +155,7 @@ architecture imp of control_conv_tb is
 
         s_wght_c <= s_wght_tile_c * c_per_tile + s_wght_c0;
 
-    end procedure;
+    end procedure incr_wght;
 
 begin
 

@@ -64,7 +64,7 @@ architecture syn of ram_dp is
 
         return temp_mem;
 
-    end function;
+    end function init_memory_wfile;
 
     impure function init_file_or_zero (mem_file_name : in string) return ram_type is
     begin
@@ -75,7 +75,7 @@ architecture syn of ram_dp is
             return (others => (others => '0'));
         end if;
 
-    end function;
+    end function init_file_or_zero;
 
     -- vsg_disable_next_line variable_007
     shared variable ram_instance : ram_type := init_file_or_zero(init_file);

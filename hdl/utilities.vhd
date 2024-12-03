@@ -124,7 +124,7 @@ package body utilities is
 
         return v_input_image;
 
-    end function;
+    end function read_file;
 
     impure function read_file (
         file_name : string;
@@ -169,7 +169,7 @@ package body utilities is
 
         return v_input_image;
 
-    end function;
+    end function read_file;
 
     impure function read_file_floats (
         file_name : string;
@@ -207,7 +207,7 @@ package body utilities is
 
         return v_data_array;
 
-    end function;
+    end function read_file_floats;
 
     function and_reduce_2d (arr : in std_logic_row_col_t) return std_logic is
 
@@ -229,7 +229,7 @@ package body utilities is
 
         return res;
 
-    end function;
+    end function and_reduce_2d;
 
     function to_stdlogic (b : boolean) return std_logic is
     begin

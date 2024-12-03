@@ -44,7 +44,7 @@ architecture imp of line_buffer_psum_tb is
             i_read_offset   : in    std_logic_vector(addr_width - 1 downto 0);
             i_command       : in    command_lb_t
         );
-    end component;
+    end component line_buffer;
 
     signal clk            : std_logic := '1';
     signal rstn           : std_logic;

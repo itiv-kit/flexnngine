@@ -37,7 +37,7 @@ architecture imp of rr_arbiter_tb is
             -- outputs
             gnt : out   std_logic_vector(arbiter_width - 1 downto 0)
         );
-    end component;
+    end component rr_arbiter;
 
     component onehot_binary is
         generic (

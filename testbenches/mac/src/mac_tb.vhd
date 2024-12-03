@@ -30,7 +30,7 @@ architecture rtl of mac_tb is
             o_result       : out   std_logic_vector(output_width - 1 downto 0);
             o_result_valid : out   std_logic
         );
-    end component;
+    end component mac;
 
     signal clk          : std_logic := '1';
     signal rstn         : std_logic;
@@ -138,7 +138,7 @@ begin
             wait until rising_edge(clk);
             en <= '1';
 
-            if i=3 then
+            if i = 3 then
                 en <= '0';
                 wait for 40 ns;
                 en <= '1';

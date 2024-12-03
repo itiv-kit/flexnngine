@@ -235,7 +235,7 @@ architecture imp of pe_array_gemm_3x3_tb is
             pointer_x <= pointer_x + 1;
         end if;
 
-    end procedure;
+    end procedure incr;
 
 begin
 
@@ -494,7 +494,7 @@ begin
 
             -- If result is not valid, wait until next rising edge with valid results.
             if or o_psums_valid = '0' then
-                wait until rising_edge(clk) and (or o_psums_valid= '1');
+                wait until rising_edge(clk) and (or o_psums_valid = '1');
             end if;
 
             for y in 0 to size_y - 1 loop

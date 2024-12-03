@@ -21,8 +21,8 @@ end entity div16_8_8;
 
 architecture rtl of div16_8_8 is
 
-    type unsigned_8_array is array(natural range <>) of UNSIGNED( 7 downto 0);
-    type unsigned_16_array is array(natural range <>) of UNSIGNED(15 downto 0);
+    type unsigned_8_array is array(natural range <>) of unsigned( 7 downto 0);
+    type unsigned_16_array is array(natural range <>) of unsigned(15 downto 0);
 
     signal r_remainder     : unsigned_16_array(1 to 9);
     signal r_shifted_b     : unsigned_16_array(1 to 9);
@@ -35,9 +35,9 @@ begin
 
     div : process (clk, rstn, en) is
 
-        variable v_result   : UNSIGNED( 8 downto 1);
+        variable v_result   : unsigned( 8 downto 1);
         variable a_signed   : signed(16 downto 0);
-        variable a_unsigned : UNSIGNED(15 downto 0);
+        variable a_unsigned : unsigned(15 downto 0);
 
     begin
 
