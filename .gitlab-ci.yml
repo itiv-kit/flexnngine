@@ -29,9 +29,10 @@ image: gitlab.itiv.kit.edu:1443/itiv/docker/itiv-rocky8:latest
 
 stages:
     - lint
-    - test_1
-    - test_2
-    - test_3
+    - test_basics
+    - test_modules
+    - test_pe_array
+    - functional_verification
 
 style-guide:
     extends: .vsg_test
@@ -53,7 +54,7 @@ style-guide-tb:
 
 test-mac:
     extends: .sim_test
-    stage: test_1
+    stage: test_basics
     only:
         changes:
             - hdl/mac.vhd
@@ -67,7 +68,7 @@ test-mac:
 
 test-line-buffer-iact:
     extends: .sim_test
-    stage: test_1
+    stage: test_basics
     only:
         changes:
             - hdl/line_buffer.vhd
@@ -82,7 +83,7 @@ test-line-buffer-iact:
 
 test-line-buffer-psum:
     extends: .sim_test
-    stage: test_1
+    stage: test_basics
     only:
         changes:
             - hdl/line_buffer.vhd
@@ -97,7 +98,7 @@ test-line-buffer-psum:
 
 test-line-buffer-wght:
     extends: .sim_test
-    stage: test_1
+    stage: test_basics
     only:
         changes:
             - hdl/line_buffer.vhd
@@ -112,7 +113,7 @@ test-line-buffer-wght:
 
 test-pe-conv:
     extends: .sim_test
-    stage: test_2
+    stage: test_modules
     only:
         changes:
             - hdl/pe.vhd
@@ -131,7 +132,7 @@ test-pe-conv:
 
 test-pe-array-conv-3x3:
     extends: .sim_test
-    stage: test_3
+    stage: test_pe_array
     only:
         changes:
             - hdl/pe.vhd
@@ -151,7 +152,7 @@ test-pe-array-conv-3x3:
 
 test-pe-array-conv-3x3-wide:
     extends: .sim_test
-    stage: test_3
+    stage: test_pe_array
     only:
         changes:
             - hdl/pe.vhd
@@ -171,7 +172,7 @@ test-pe-array-conv-3x3-wide:
 
 pe_array_conv_5x5_channels_tb:
     extends: .sim_test
-    stage: test_3
+    stage: test_pe_array
     only:
         changes:
             - hdl/pe.vhd
@@ -196,7 +197,7 @@ pe_array_conv_5x5_channels_tb:
 
 addr_gen_psum:
     extends: .sim_test
-    stage: test_2
+    stage: test_modules
     only:
         changes:
             - hdl/mux.vhd
@@ -207,3 +208,10 @@ addr_gen_psum:
     script:
         - cd testbenches/address_generator_psum
         - vsim -batch -nolog -do "../../ci/simulate.tcl"
+
+functional:
+    extends: .sim_test
+    stage: functional_verification
+    script:
+        - cd testbenches/functional
+        - python3 simulate.py --preset ci
