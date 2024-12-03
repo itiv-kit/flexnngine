@@ -656,35 +656,35 @@ if __name__ == "__main__":
 
         # override settings from commandline
         if args.hw:
-            setting.convolution.image_size = args.hw.split(',')
+            setting.convolution.image_size = [int(x) for x in args.hw.split(',')]
         if args.rs:
-            setting.convolution.kernel_size = args.rs.split(',')
+            setting.convolution.kernel_size = [int(x) for x in args.rs.split(',')]
         if args.ich:
-            setting.convolution.input_channels = args.ich.split(',')
+            setting.convolution.input_channels = [int(x) for x in args.ich.split(',')]
         if args.och:
-            setting.convolution.output_channels = args.och.split(',')
+            setting.convolution.output_channels = [int(x) for x in args.och.split(',')]
         if args.dataflow:
-            setting.accelerator.dataflow = args.dataflow.split(',')
+            setting.accelerator.dataflow = [int(x) for x in args.dataflow.split(',')]
         if args.lb_iact:
-            setting.accelerator.line_length_iact = args.lb_iact.split(',')
+            setting.accelerator.line_length_iact = [int(x) for x in args.lb_iact.split(',')]
         if args.lb_wght:
-            setting.accelerator.line_length_wght = args.lb_wght.split(',')
+            setting.accelerator.line_length_wght = [int(x) for x in args.lb_wght.split(',')]
         if args.lb_psum:
-            setting.accelerator.line_length_psum = args.lb_psum.split(',')
+            setting.accelerator.line_length_psum = [int(x) for x in args.lb_psum.split(',')]
         if args.fifo_iact:
-            setting.accelerator.iact_fifo_size = args.fifo_iact.split(',')
+            setting.accelerator.iact_fifo_size = [int(x) for x in args.fifo_iact.split(',')]
         if args.fifo_wght:
-            setting.accelerator.wght_fifo_size = args.fifo_wght.split(',')
+            setting.accelerator.wght_fifo_size = [int(x) for x in args.fifo_wght.split(',')]
         if args.fifo_psum:
-            setting.accelerator.psum_fifo_size = args.fifo_psum.split(',')
+            setting.accelerator.psum_fifo_size = [int(x) for x in args.fifo_psum.split(',')]
         if args.clk:
-            setting.accelerator.clk_period = args.clk.split(',')
+            setting.accelerator.clk_period = [int(x) for x in args.clk.split(',')]
         if args.clk_sp:
-            setting.accelerator.clk_sp_period = args.clk_sp.split(',')
+            setting.accelerator.clk_sp_period = [int(x) for x in args.clk_sp.split(',')]
         if args.size_x:
-            setting.accelerator.size_x = args.size_x.split(',')
+            setting.accelerator.size_x = [int(x) for x in args.size_x.split(',')]
         if args.size_y:
-            setting.accelerator.size_y = args.size_y.split(',')
+            setting.accelerator.size_y = [int(x) for x in args.size_y.split(',')]
         if args.bias:
             setting.convolution.bias = [int(x) for x in args.bias.split(',')]
         if args.requantize:
