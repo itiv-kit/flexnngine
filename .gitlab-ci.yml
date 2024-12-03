@@ -16,7 +16,7 @@
 # This specific template is located at:
 # https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Getting-Started.gitlab-ci.yml
 
-image: gitlab.itiv.kit.edu:1443/itiv/docker/itiv-rocky8:latest
+image: gitlab.itiv.kit.edu:1443/itiv/docker/rocky9:latest
 
 .vsg_test:
     stage: lint
