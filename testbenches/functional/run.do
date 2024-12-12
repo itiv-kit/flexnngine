@@ -21,7 +21,7 @@ if { [info exists env(GENERICS)] } {
     set generics [list]
 }
 
-set SIM_TIME "10 ms"
+set SIM_TIME "-all"
 set SIM_TOP_LEVEL "functional_tb"
 set RUN_DIR [file normalize "."]
 
