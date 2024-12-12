@@ -6,7 +6,11 @@ library ieee;
 
 package utilities is
 
-    constant max_output_channels : integer := 10;
+    constant max_output_channels  : integer := 16;
+    constant max_size_x           : integer := 32;
+    constant max_line_length_iact : integer := 64;
+    constant max_line_length_wght : integer := 64;
+    constant max_line_length_psum : integer := 128;
 
     type t_control_state is (s_idle, s_init, s_calculate, s_output, s_incr_c1, s_incr_h1, s_done);
     type mode_activation_t is (passthrough, relu, sigmoid, leaky_relu, elu);
@@ -49,18 +53,18 @@ package utilities is
         inputchs     : integer range 0 to 1023;
         outputchs    : integer range 0 to 1023;
         image_y      : integer range 0 to 4095;
-        image_x      : integer range 0 to 4095;
+        image_x      : integer range 0 to max_line_length_psum;
         kernel_size  : integer range 0 to 31;
         c1           : integer range 0 to 1023;
         w1           : integer range 0 to 1023;
         h2           : integer range 0 to 1023;
-        m0           : integer range 0 to 1023;
-        m0_last_m1   : integer range 0 to 1023;
-        rows_last_h2 : integer range 0 to 1023;
-        c0           : integer range 0 to 1023;
-        c0_last_c1   : integer range 0 to 1023;
-        c0w0         : integer range 0 to 1023;
-        c0w0_last_c1 : integer range 0 to 1023;
+        m0           : integer range 0 to max_output_channels;
+        m0_last_m1   : integer range 0 to max_output_channels;
+        rows_last_h2 : integer range 0 to max_size_x;
+        c0           : integer range 0 to max_line_length_wght;
+        c0_last_c1   : integer range 0 to max_line_length_wght;
+        c0w0         : integer range 0 to max_line_length_wght;
+        c0w0_last_c1 : integer range 0 to max_line_length_wght;
         requant_enab : boolean;
         mode_act     : mode_activation_t;
         bias         : int_line_t(max_output_channels - 1 downto 0);

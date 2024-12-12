@@ -465,4 +465,8 @@ begin
     r_status_pipe(r_status_pipe'high downto 1) <= r_status_pipe(r_status_pipe'high - 1 downto 0) when rising_edge(clk);
     o_status                                   <= r_status_pipe(r_status_pipe'high);
 
+    assert g_dataflow = 0 or max_output_channels >= size_y
+        report "Dataflow 1 requires max_output_channels to be at least size_y"
+        severity failure;
+
 end architecture rtl;
