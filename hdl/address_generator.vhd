@@ -460,8 +460,13 @@ architecture alternative_rs_dataflow of address_generator is
 
     signal r_delay_wght_valid : std_logic_vector(size_y - 1 downto 0);
 
+    -- define a large integer array (18 bits) for ckki, since c * k * k * i can grow large
+    -- e.g. 200 channels * 7 * 7 kernel * 14 PEs (size_y) = 137200
+    -- TODO: add hw feature flag for this limit & driver should check this
+    type uint18_line_t is array(natural range <>) of integer range 0 to 262143;
+
     signal r_ckk  : integer;
-    signal r_ckki : int_line_t(0 to size_y - 1);
+    signal r_ckki : uint18_line_t(0 to size_y - 1);
 
 begin
 
@@ -524,7 +529,7 @@ begin
         if not rstn then
             r_ckk <= 0;
         elsif rising_edge(clk) then
-            r_ckk <= i_params.kernel_size * i_params.kernel_size * i_params.inputchs;
+            r_ckk <= i_params.kernel_size * i_params.kernel_size * i_params.inputchs; -- this could be multi-cycle
         end if;
 
     end process p_wght_address_helper;
@@ -541,7 +546,7 @@ begin
                 r_ckki(i)               <= 0;
             elsif rising_edge(clk) then
                 r_delay_wght_valid(i) <= '0';
-                r_ckki(i)             <= r_ckk * i;
+                r_ckki(i)             <= r_ckk * i; -- this could be multi-cycle
                 if i_start = '1' and i_fifo_full_wght = '0' and r_wght_done = '0' and r_delay_wght_valid(i) = '0' then
                     o_address_wght_valid(i) <= '1';
                     r_delay_wght_valid(i)   <= '1';
