@@ -30,8 +30,6 @@ entity pe_array is
         clk  : in    std_logic;
         rstn : in    std_logic;
 
-        i_params : in    parameters_t;
-
         i_preload_psum       : in    std_logic_vector(data_width_psum - 1 downto 0);
         i_preload_psum_valid : in    std_logic;
 

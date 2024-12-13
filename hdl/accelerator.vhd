@@ -213,7 +213,6 @@ begin
         port map (
             clk                     => clk,
             rstn                    => rstn,
-            i_params                => i_params,
             i_preload_psum          => w_preload_psum,
             i_preload_psum_valid    => w_preload_psum_valid,
             i_enable                => w_enable,
