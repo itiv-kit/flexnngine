@@ -335,7 +335,9 @@ begin
                             r_count_w1 <= r_count_w1 + 1;
                         elsif r_count_h2 = w_h2 then
                             -- All h2 done and output
-                            r_state <= s_done;
+                            if i_all_psum_finished = '1' then
+                                r_state <= s_done;
+                            end if;
                         else
                             r_count_c1   <= 0;
                             r_count_w1   <= 0;
