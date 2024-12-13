@@ -429,10 +429,7 @@ class Test:
 
         script_dir = Path(__file__).resolve().parent
         simulator = "vsim"
-        arguments = []
-        if not self.gui:
-            arguments += ["-batch"]
-        arguments += ["-do", script_dir / "run.do"]
+        arguments = ["-do", script_dir / "run.do"]
 
         with open(self.test_dir / "_log.txt", "w+") as logfile:
             try:
@@ -443,7 +440,14 @@ class Test:
                     cwd=self.test_dir,
                 )
             except CalledProcessError as e:
-                print(f"Error while running test {self.name}: {e}")
+                print(f"Simulation {self.name} failed.")
+                logfile.seek(0)
+                for line in logfile:
+                    if any((x in line.lower() for x in ["error", "fail"])):
+                        print(line)
+                return False
+            except FileNotFoundError as e:
+                print(f'Failed to find simulator: {e}')
                 return False
 
         return self._evaluate()
