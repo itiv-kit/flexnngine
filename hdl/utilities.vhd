@@ -20,9 +20,12 @@ package utilities is
     type array_t is array (natural range <>) of std_logic_vector;
     type array_row_col_t is array (natural  range <>, natural range <>) of std_logic_vector;
 
-    type int_line_t is array(natural range <>) of integer range 0 to 16383;
+    type int_line_t is array (natural range <>) of integer;
     type int_image_t is array (natural range <>, natural range <>) of integer;
     type int_image3_t is array (natural range <>, natural range <>, natural range <>) of integer;
+
+    type uint10_line_t is array (natural range <>) of integer range 0 to 1023;
+    type uint18_line_t is array (natural range <>) of integer range 0 to 262143;
 
     type command_lb_t is (c_lb_idle, c_lb_read, c_lb_read_update, c_lb_shrink);
     type command_lb_array_t is array (natural range <>) of command_lb_t;

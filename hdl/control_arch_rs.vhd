@@ -50,7 +50,7 @@ architecture rs_dataflow of control is
     signal w_mux_update_offset_psum : array_t(0 to size_y - 1)(addr_width_psum - 1 downto 0);
     signal w_mux_command_psum       : command_lb_array_t(0 to size_y - 1);
 
-    signal w_output_sequence : int_line_t(0 to size_y - 1);
+    signal w_output_sequence : uint10_line_t(0 to size_y - 1);
 
     signal r_command : command_pe_array_t(0 to size_y - 1);
 

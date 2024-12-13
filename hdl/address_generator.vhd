@@ -460,11 +460,9 @@ architecture alternative_rs_dataflow of address_generator is
 
     signal r_delay_wght_valid : std_logic_vector(size_y - 1 downto 0);
 
-    -- define a large integer array (18 bits) for ckki, since c * k * k * i can grow large
+    -- use a large integer array (18 bits) for ckki, since c * k * k * i can grow large
     -- e.g. 200 channels * 7 * 7 kernel * 14 PEs (size_y) = 137200
     -- TODO: add hw feature flag for this limit & driver should check this
-    type uint18_line_t is array(natural range <>) of integer range 0 to 262143;
-
     signal r_ckk  : integer;
     signal r_ckki : uint18_line_t(0 to size_y - 1);
 

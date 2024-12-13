@@ -35,9 +35,9 @@ architecture rtl of address_generator_psum is
 
     signal r_address_psum : array_t(0 to size_x - 1)(addr_width_psum - 1 downto 0);
 
-    signal r_count_w1 : int_line_t(0 to size_x - 1);
-    signal r_count_m0 : int_line_t(0 to size_x - 1);
-    signal r_count_h2 : int_line_t(0 to size_x - 1);
+    signal r_count_w1 : uint10_line_t(0 to size_x - 1);
+    signal r_count_m0 : uint10_line_t(0 to size_x - 1);
+    signal r_count_h2 : uint10_line_t(0 to size_x - 1);
 
     signal r_start_delay  : std_logic;
     signal r_start_event  : std_logic;
