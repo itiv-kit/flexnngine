@@ -53,6 +53,7 @@ entity functional_tb is
 
         g_files_dir  : string   := "./";
         g_init_sp    : boolean  := true;
+        g_write_eval : boolean  := false;
         g_iterations : positive := 1;
 
         g_c1           : positive := 1;
@@ -432,7 +433,7 @@ begin
     begin
 
         if not rstn then
-        elsif rising_edge(clk) then
+        elsif rising_edge(clk) and g_write_eval then
             if r_preload_fifos_started = '1' then
                 -- Output and Calculate
                 if r_preload_fifos_done = '1' then
