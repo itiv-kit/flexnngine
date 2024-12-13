@@ -379,7 +379,7 @@ class Test:
             'g_image_y':           self.convolution.image_size,
             'g_image_x':           self.convolution.image_size,
             'g_inputchs':          self.convolution.input_channels,
-            'g_outputchs':         3, # currently fixed
+            'g_outputchs':         self.M0, # currently fixed to M0, TODO: make smaller count possible
             'g_bias':              self.convolution.bias,
             'line_length_wght':    self.accelerator.line_length_wght,
             'addr_width_wght':     math.ceil(math.log2(self.accelerator.line_length_wght)),

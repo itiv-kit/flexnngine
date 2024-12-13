@@ -31,7 +31,6 @@ package utilities is
     type command_lb_array_t is array (natural range <>) of command_lb_t;
     type command_lb_row_col_t is array (natural range <>, natural range <>) of command_lb_t;
 
-    -- type command_pe_t is (c_pe_mux_mac, c_pe_mux_psum);
     type command_pe_t is (c_pe_conv_mult, c_pe_conv_psum, c_pe_conv_pass, c_pe_gemm_mult, c_pe_gemm_psum);
     type command_pe_array_t is array (natural range <>) of command_pe_t;
     type command_pe_row_col_t is array (natural range <>, natural range <>) of command_pe_t;
