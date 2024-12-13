@@ -1,5 +1,6 @@
 library ieee;
     use ieee.std_logic_1164.all;
+    use ieee.numeric_std.all;
 
 library accel;
     use accel.utilities.all;
@@ -58,18 +59,18 @@ begin
                     o_psum       => w_psums_bias(i)
                 );
 
-            -- activation_inst : entity accel.psum_activation
-            --     generic map (
-            --         data_width_psum => data_width_psum
-            --     )
-            --     port map (
-            --         clk          => clk,
-            --         i_mode       => i_params.mode_act,
-            --         i_psum_valid => w_psums_bias_valid(i),
-            --         i_psum       => w_psums_bias(i),
-            --         o_psum_valid => w_psums_act_valid(i),
-            --         o_psum       => w_psums_act(i)
-            --     );
+            activation_inst : entity accel.psum_activation
+                generic map (
+                    data_width_psum => data_width_psum
+                )
+                port map (
+                    clk          => clk,
+                    i_mode       => i_params.mode_act,
+                    i_psum_valid => w_psums_bias_valid(i),
+                    i_psum       => w_psums_bias(i),
+                    o_psum_valid => w_psums_act_valid(i),
+                    o_psum       => w_psums_act(i)
+                );
 
             requantize_inst : entity accel.psum_requantize
                 generic map (
@@ -77,13 +78,11 @@ begin
                     data_width_iact => data_width_iact
                 )
                 port map (
-                    clk      => clk,
-                    rstn     => rstn,
-                    i_params => i_params,
-                    -- i_data_valid    => w_psums_act_valid(i),
-                    -- i_data          => w_psums_act(i),
-                    i_data_valid    => w_psums_bias_valid(i),
-                    i_data          => w_psums_bias(i),
+                    clk             => clk,
+                    rstn            => rstn,
+                    i_params        => i_params,
+                    i_data_valid    => w_psums_act_valid(i),
+                    i_data          => w_psums_act(i),
                     o_data_valid    => o_data_valid(i),
                     o_data          => o_data(i),
                     o_data_halfword => o_data_halfword(i)

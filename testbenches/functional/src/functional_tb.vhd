@@ -162,6 +162,7 @@ begin
     params.bias         <= (others => g_bias);
     params.requant_enab <= true when g_requant > 0 else
                            false;
+    params.mode_act     <= passthrough;
     params.zeropt_fp32  <= zeropt_fp32;
     params.scale_fp32   <= scale_fp32;
 
