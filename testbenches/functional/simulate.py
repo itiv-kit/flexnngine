@@ -430,6 +430,8 @@ class Test:
         script_dir = Path(__file__).resolve().parent
         simulator = "vsim"
         arguments = ["-do", script_dir / "run.do"]
+        if not sim.start_gui:
+            arguments += ["-batch"]
 
         with open(self.test_dir / "_log.txt", "w+") as logfile:
             try:
@@ -442,9 +444,13 @@ class Test:
             except CalledProcessError as e:
                 print(f"Simulation {self.name} failed.")
                 logfile.seek(0)
+                max_errors = 3 # limit number of errors to print to console
                 for line in logfile:
                     if any((x in line.lower() for x in ["error", "fail"])):
                         print(line)
+                        max_errors -= 1
+                        if max_errors == 0:
+                            break
                 return False
             except FileNotFoundError as e:
                 print(f'Failed to find simulator: {e}')
@@ -487,7 +493,7 @@ class Test:
             with open((self.test_dir / '_success.txt'), 'w') as f:
                 f.write('Simulated and output checked successfully!')
             return True
-        except (IndexError, RuntimeError, ValueError) as e:
+        except (IndexError, RuntimeError, ValueError, OSError) as e:
             print(f'Error while evaluating test: {self.name}: {e}')
             return False
 

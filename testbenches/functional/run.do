@@ -10,20 +10,20 @@ if { $::argc > 1 } {
 }
 
 if { ! [info exists env(LAUNCH_GUI)] } {
-    set GUI 1
+    quietly set GUI 1
 } else {
-    set GUI $env(LAUNCH_GUI)
+    quietly set GUI $env(LAUNCH_GUI)
 }
 
 if { [info exists env(GENERICS)] } {
-    set generics $::env(GENERICS)
+    quietly set generics $::env(GENERICS)
 } else {
-    set generics [list]
+    quietly set generics [list]
 }
 
-set SIM_TIME "-all"
-set SIM_TOP_LEVEL "functional_tb"
-set RUN_DIR [file normalize "."]
+quietly set SIM_TIME "-all"
+quietly set SIM_TOP_LEVEL "functional_tb"
+quietly set RUN_DIR [file normalize "."]
 
 if { [info exists env(TB_DIR)] } {
     set TB_DIR $env(TB_DIR)
@@ -73,5 +73,5 @@ quietly set NumericStdNoWarnings 1
 run $SIM_TIME
 
 if { ! $GUI } {
-    exit
+    quit
 }
