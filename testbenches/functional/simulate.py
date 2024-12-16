@@ -10,13 +10,19 @@ import shutil
 from pathlib import Path
 import argparse
 import itertools
+from enum import IntEnum
+
+@dataclass
+class ActivationMode(IntEnum):
+    passthrough = 0
+    relu = 1
 
 @dataclass
 class Convolution:
     """Class to represent a convolution operation."""
 
     def __init__(
-        self, image_size, kernel_size, input_channels, output_channels, bias=0, requantize=False, input_bits=4
+        self, image_size, kernel_size, input_channels, output_channels, bias=0, requantize=False, activation=ActivationMode.passthrough, input_bits=4
     ):
         self.image_size = image_size
         self.kernel_size = kernel_size
@@ -25,6 +31,7 @@ class Convolution:
         self.input_bits = input_bits
         self.bias = bias
         self.requantize = requantize
+        self.activation = activation
 
 
 @dataclass
@@ -323,6 +330,9 @@ class Test:
         # add bias to all channels
         convolved_images += self.convolution.bias
 
+        if self.convolution.activation == ActivationMode.relu:
+            convolved_images = np.maximum(convolved_images, 0)
+
         # if requant is enabled, find a suitable scaling value per output channel
         zeropt_scale_vals = np.zeros((self.M0, 2))
         if self.convolution.requantize:
@@ -407,8 +417,9 @@ class Test:
             'g_c0w0_last_c1':      self.C0W0_last_c1,
             'g_clk':               self.accelerator.clk_period,
             'g_clk_sp':            self.accelerator.clk_sp_period,
+            'g_mode_act':          int(self.convolution.activation),
             'g_requant':           1 if self.convolution.requantize else 0,
-            'g_postproc':          1 if self.convolution.requantize or self.convolution.bias != 0 else 0,
+            'g_postproc':          1 if self.convolution.requantize or self.convolution.bias != 0 or self.convolution.activation != ActivationMode.passthrough else 0,
             'g_dataflow':          self.accelerator.dataflow,
             'g_init_sp':           True,
             'g_files_dir':         str(self.test_dir.absolute()) + '/',
@@ -510,7 +521,7 @@ def run_test(setting):
 presets = {
     'default': Setting(
                       Convolution(image_size = [16], kernel_size = [3], input_channels = [100],
-                                  output_channels = [3], bias = [5], requantize = [True]),
+                                  output_channels = [3], bias = [5], requantize = [True], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
@@ -519,7 +530,7 @@ presets = {
     # Test with different dataflow. Kernel_size 1,3 and medium image size 16, 10-200 channels
     'rs_df_channels_10..200': Setting(
                       Convolution(image_size = [16], kernel_size = [1,3], input_channels = [10+i*10 for i in range(20)],
-                                  output_channels = [3], bias = [0], requantize = [False]),
+                                  output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
@@ -528,7 +539,7 @@ presets = {
     # Test with different dataflow. Kernel_size 3 and large image size 124, 3 channels
     'channels_3': Setting(
                       Convolution(image_size = [124], kernel_size = [3], input_channels = [3],
-                                  output_channels = [3], bias = [0], requantize = [False]),
+                                  output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
@@ -537,7 +548,7 @@ presets = {
     # Test with different FIFO sizes. Kernel_size 1,3 and medium image size 16, 40 channels
     'in_fifos_5..512': Setting(
                       Convolution(image_size = [16], kernel_size = [1,3], input_channels = [40],
-                                  output_channels = [3], bias = [0], requantize = [False]),
+                                  output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
                                   iact_fifo_size = [5, 10, 15, 30, 64, 128, 512], wght_fifo_size = [5, 10, 15, 30, 64, 128, 512], psum_fifo_size = [512],
@@ -546,7 +557,7 @@ presets = {
     # Test with different Line buffer sizes. Kernel_size 1,3 and medium image size 16, 40 channels, DF 0
     'rs_lb_wght_32..1024_df0': Setting(
                     Convolution(image_size = [16], kernel_size = [1,3], input_channels = [40],
-                                output_channels = [3], bias = [0], requantize = [False]),
+                                output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [], line_length_psum = [128], line_length_wght = [32, 48, 64, 96, 128, 256, 512, 1024],
                                 mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
                                 iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
@@ -554,7 +565,7 @@ presets = {
 
     'hw_rs_array_x_size': Setting(
                       Convolution(image_size = [16, 32], kernel_size = [1, 3, 5], input_channels = [40],
-                                  output_channels = [3], bias = [0], requantize = [False]),
+                                  output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [5,10,15,20,25,50,100], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [16384],
@@ -562,7 +573,7 @@ presets = {
 
     'hw_rs_array_y_size': Setting(
                       Convolution(image_size = [16, 32], kernel_size = [1, 3, 5], input_channels = [40],
-                                  output_channels = [3], bias = [0], requantize = [False]),
+                                  output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [10], size_y = [5,10,15,20,25,50,100], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [16384],
@@ -570,7 +581,7 @@ presets = {
 
     'rs_df_clk_sp_10x7': Setting(
                       Convolution(image_size = [32], kernel_size = [1, 3], input_channels = [40],
-                                  output_channels = [3], bias = [0], requantize = [False]),
+                                  output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
@@ -578,7 +589,7 @@ presets = {
 
     'rs_df_clk_sp_14x12': Setting(
                       Convolution(image_size = [32], kernel_size = [1, 3], input_channels = [40],
-                                  output_channels = [3], bias = [0], requantize = [False]),
+                                  output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [12], size_y = [14], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
@@ -587,7 +598,7 @@ presets = {
     # Test with different Line buffer sizes. Kernel_size 1,3 and medium image size 16, 40 channels, DF 1
     'rs_lb_wght_32..1024_df1': Setting(
                     Convolution(image_size = [16], kernel_size = [1,3], input_channels = [40],
-                                output_channels = [3], bias = [0], requantize = [False]),
+                                output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [], line_length_psum = [128], line_length_wght = [32, 48, 64, 96, 128, 256, 512, 1024],
                                 mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
                                 iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
@@ -596,7 +607,7 @@ presets = {
     # small test - 20 simulations
     'rs_df_channels_10..13': Setting(
                     Convolution(image_size = [16], kernel_size = [1, 3], input_channels = [10+i*1 for i in range(4)],
-                                output_channels = [3], bias = [0], requantize = [False]),
+                                output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [512], line_length_wght = [64],
                                 mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
                                 iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [128],
@@ -605,7 +616,7 @@ presets = {
     # the test-conv2d.cpp configuration
     'hw_defaults_minimal': Setting(
                     Convolution(image_size = [32], kernel_size = [3], input_channels = [4],
-                                output_channels = [3], bias = [0], requantize = [False]),
+                                output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                 mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
                                 iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [128],
@@ -614,7 +625,7 @@ presets = {
     # a configuration for continuous integration, testing the most important set of features
     'ci': Setting(
                     Convolution(image_size = [32], kernel_size = [3], input_channels = [100],
-                                output_channels = [3], bias = [0,5], requantize = [False,True]),
+                                output_channels = [3], bias = [0,5], requantize = [False,True], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                 mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
                                 iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [128],
@@ -642,6 +653,7 @@ if __name__ == "__main__":
     parser.add_argument('--size-y',                                 help='Override preset pe array y size')
     parser.add_argument('--bias',                                   help='Override preset bias values (same bias for all och)')
     parser.add_argument('--requantize',                             help='Override preset requantization (1/0)')
+    parser.add_argument('--activation',                             help='Enable activation (0=off, 1=ReLU)')
     parser.add_argument('--gui',               action='store_true', help='Override preset to enable GUI')
     parser.add_argument('--no-gui',            action='store_true', help='Override preset to disable GUI / batch mode')
     parser.add_argument('--input-bits',        default=4, type=int, help='Set bit range for iact/wght input values')
@@ -699,6 +711,8 @@ if __name__ == "__main__":
             setting.convolution.bias = [int(x) for x in args.bias.split(',')]
         if args.requantize:
             setting.convolution.requantize = [int(x) > 0 for x in args.requantize.split(',')]
+        if args.activation:
+            setting.convolution.activation = [ActivationMode(int(x)) for x in args.activation.split(',')]
         if args.gui:
             setting.start_gui = True
         if args.no_gui:
@@ -713,7 +727,7 @@ if __name__ == "__main__":
     # generate configurations settings for all permutations
     settings = []
     for sim in configurations:
-        for hw, rs, c, oc, df, li, lw, lp, fifoi, fifow, fifop, clk, clk_sp, x, y, bias, rq in itertools.product(
+        for hw, rs, c, oc, df, li, lw, lp, fifoi, fifow, fifop, clk, clk_sp, x, y, bias, rq, act in itertools.product(
                 sim.convolution.image_size,
                 sim.convolution.kernel_size,
                 sim.convolution.input_channels,
@@ -730,11 +744,12 @@ if __name__ == "__main__":
                 sim.accelerator.size_x,
                 sim.accelerator.size_y,
                 sim.convolution.bias,
-                sim.convolution.requantize
+                sim.convolution.requantize,
+                sim.convolution.activation,
             ):
             settings.append(
                 Setting(
-                    Convolution(hw, rs, c, oc, bias, rq, args.input_bits),
+                    Convolution(hw, rs, c, oc, bias, rq, act, args.input_bits),
                     Accelerator(
                         x,
                         y,

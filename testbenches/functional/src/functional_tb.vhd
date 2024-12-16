@@ -66,6 +66,7 @@ entity functional_tb is
         g_c0_last_c1   : positive := 1;
         g_c0w0         : positive := 1;
         g_c0w0_last_c1 : positive := 1;
+        g_mode_act     : integer  := 0;
         g_requant      : integer  := 0;
         g_postproc     : integer  := 1;
         g_dataflow     : integer  := 1
@@ -162,7 +163,7 @@ begin
     params.bias         <= (others => g_bias);
     params.requant_enab <= true when g_requant > 0 else
                            false;
-    params.mode_act     <= passthrough;
+    params.mode_act     <= mode_activation_t'val(g_mode_act);
     params.zeropt_fp32  <= zeropt_fp32;
     params.scale_fp32   <= scale_fp32;
 
