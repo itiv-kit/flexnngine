@@ -1,6 +1,7 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
+    use ieee.math_real.all;
 
 library accel;
     use accel.utilities.all;
@@ -16,17 +17,16 @@ entity scratchpad_interface is
         addr_width_x    : positive := 3;
 
         data_width_iact     : positive := 8; -- Width of the input data (weights, iacts)
-        line_length_iact    : positive := 32;
         addr_width_iact     : positive := 5;
         addr_width_iact_mem : positive := 15;
 
         data_width_psum     : positive := 16;
-        line_length_psum    : positive := 127;
+        data_width_psum_mem : positive := 128;
+        words_psum          : positive := data_width_psum_mem / data_width_iact;
         addr_width_psum     : positive := 7;
         addr_width_psum_mem : positive := 15;
 
         data_width_wght     : positive := 8;
-        line_length_wght    : positive := 32;
         addr_width_wght     : positive := 5;
         addr_width_wght_mem : positive := 15;
 
@@ -75,9 +75,10 @@ entity scratchpad_interface is
         o_address_iact_valid : out   std_logic;
         o_address_wght_valid : out   std_logic;
 
-        o_write_en_psum : out   std_logic;
-        o_psum_halfword : out   std_logic;
-        o_data_psum     : out   std_logic_vector(data_width_psum - 1 downto 0);
+        -- o_write_en_psum : out   std_logic;
+        -- o_valid_psum    : out   std_logic_vector(words_psum - 1 downto 0);
+        o_write_en_psum : out   std_logic_vector(words_psum - 1 downto 0);
+        o_data_psum     : out   std_logic_vector(data_width_psum_mem - 1 downto 0);
 
         -- Data from Scratchpad
         i_data_iact : in    std_logic_vector(data_width_iact - 1 downto 0);
@@ -167,15 +168,28 @@ architecture rtl of scratchpad_interface is
     signal w_address_iact : std_logic_vector(addr_width_iact_mem - 1 downto 0);
     signal w_address_wght : std_logic_vector(addr_width_wght_mem - 1 downto 0);
 
-    signal w_rd_en_psum_out_f : std_logic_vector(size_x - 1 downto 0);
-    signal w_din_psum_out_f   : array_t(0 to size_x - 1)(data_width_psum downto 0);
-    signal w_dout_psum_out_f  : array_t(0 to size_x - 1)(data_width_psum downto 0);
-    signal w_full_psum_out_f  : std_logic_vector(size_x - 1 downto 0);
-    signal w_empty_psum_out_f : std_logic_vector(size_x - 1 downto 0);
-    signal w_valid_psum_out_f : std_logic_vector(size_x - 1 downto 0);
-    signal w_valid_psum_out   : array_t(0 to size_x - 1)(0 downto 0);
-    signal w_psum_out         : array_t(0 to size_x - 1)(data_width_psum downto 0);
-    signal w_data_psum        : std_logic_vector(data_width_psum downto 0);
+    -- constant c_psum_wide_words       : integer := data_width_psum_mem / data_width_iact;
+    constant c_psum_wide_words_width : positive := positive(ceil(log2(real(words_psum))));
+    constant c_psum_fifo_width       : integer := data_width_psum_mem + c_psum_wide_words_width;
+
+    type unsigned_array_t is array (natural range <>) of unsigned;
+
+    signal w_psum_wide_data  : array_t(0 to size_x - 1)(data_width_psum_mem - 1 downto 0);
+    signal w_psum_wide_words : unsigned_array_t(0 to size_x - 1)(c_psum_wide_words_width - 1 downto 0);
+    signal w_word_count_psum : unsigned(c_psum_wide_words_width - 1 downto 0);
+    signal w_psum_valid_out  : std_logic;
+    signal w_wen_psum        : std_logic_vector(words_psum - 1 downto 0);
+
+    signal w_rd_en_psum_f : std_logic_vector(size_x - 1 downto 0);
+    signal w_wr_en_psum_f : std_logic_vector(size_x - 1 downto 0);
+    signal w_din_psum_f   : array_t(0 to size_x - 1)(c_psum_fifo_width - 1 downto 0);
+    signal w_dout_psum_f  : array_t(0 to size_x - 1)(c_psum_fifo_width - 1 downto 0);
+    signal w_full_psum_f  : std_logic_vector(size_x - 1 downto 0);
+    signal w_empty_psum_f : std_logic_vector(size_x - 1 downto 0);
+    signal w_valid_psum_f : std_logic_vector(size_x - 1 downto 0);
+    signal w_valid_psum   : array_t(0 to size_x - 1)(0 downto 0);
+    signal w_psum_out     : array_t(0 to size_x - 1)(c_psum_fifo_width - 1 downto 0);
+    signal w_data_psum    : std_logic_vector(c_psum_fifo_width - 1 downto 0);
 
     signal r_done_iact_pipe, r_done_wght_pipe : std_logic_vector(4 downto 0); -- >= number of sync stages in iact/wght dc_fifo
     signal r_done_iact,      r_done_wght      : std_logic;
@@ -326,7 +340,7 @@ begin
 
     w_arb_req_iact <= (others => '0') when i_start = '0' or r_done_iact = '1' else not w_almost_full_iact_f;
     w_arb_req_wght <= (others => '0') when i_start = '0' or r_done_wght = '1' else not w_almost_full_wght_f;
-    w_arb_req_psum <= (others => '0') when i_start = '0' else not w_empty_psum_out_f;
+    w_arb_req_psum <= (others => '0') when i_start = '0' else not w_empty_psum_f;
 
     o_fifo_iact_address_full <= or w_full_iact_address_f;
     o_fifo_wght_address_full <= or w_full_wght_address_f;
@@ -593,7 +607,22 @@ begin
 
         /* TODO use feasible size for Psum FIFO */
 
-        w_din_psum_out_f(x) <= i_psums_halfword(x) & i_psums(x);
+        -- w_din_psum_f(x) <= i_psums_halfword(x) & i_psums(x);
+
+        psum_parallel_requantized : entity accel.parallelizer
+            port map (
+                clk => clk,
+                rstn => rstn,
+                i_valid => i_psums_valid(x) and not i_psums_halfword(x),
+                i_data => i_psums(x),
+                i_last => '0', -- TODO
+                o_valid => w_wr_en_psum_f(x),
+                o_data => w_psum_wide_data(x),
+                o_words => w_psum_wide_words(x)
+            );
+
+        -- store wide data words & number of valid words in fifo_psum_out
+        w_din_psum_f(x) <= std_logic_vector(w_psum_wide_words(x)) & w_psum_wide_data(x);
 
         fifo_psum_out : entity accel.dc_fifo
             generic map (
@@ -604,20 +633,20 @@ begin
             port map (
                 wr_clk      => clk,
                 rst         => not rstn,
-                wr_en       => i_psums_valid(x),
-                din         => w_din_psum_out_f(x),
-                full        => w_full_psum_out_f(x),
+                wr_en       => w_wr_en_psum_f(x),
+                din         => w_din_psum_f(x),
+                full        => w_full_psum_f(x),
                 almost_full => open,
                 keep        => '0',
                 drop        => '0',
                 rd_clk      => clk_sp,
-                rd_en       => w_rd_en_psum_out_f(x),
-                dout        => w_dout_psum_out_f(x),
-                valid       => w_valid_psum_out_f(x),
-                empty       => w_empty_psum_out_f(x)
+                rd_en       => w_rd_en_psum_f(x),
+                dout        => w_dout_psum_f(x),
+                valid       => w_valid_psum_f(x),
+                empty       => w_empty_psum_f(x)
             );
 
-        assert rstn = '0' or i_psums_valid(x) = '0' or w_full_psum_out_f(x) = '0'
+        assert rstn = '0' or i_psums_valid(x) = '0' or w_full_psum_f(x) = '0'
             report "push to full psum fifo " & integer'image(x)
             severity warning;
 
@@ -625,15 +654,15 @@ begin
 
     gen_g_psums_valid : for i in 0 to size_x - 1 generate
 
-        w_valid_psum_out(i)(0) <= w_valid_psum_out_f(i);
-        w_psum_out(i)          <= w_dout_psum_out_f(i);
-        w_rd_en_psum_out_f(i)  <= w_gnt_psum(i);
+        w_valid_psum(i)(0) <= w_valid_psum_f(i);
+        w_psum_out(i)      <= w_dout_psum_f(i);
+        w_rd_en_psum_f(i)  <= w_gnt_psum(i);
 
     end generate gen_g_psums_valid;
 
     mux_psum_out : entity accel.mux
         generic map (
-            input_width   => data_width_psum + 1,
+            input_width   => c_psum_fifo_width,
             input_num     => size_x,
             address_width => addr_width_x
         )
@@ -643,31 +672,36 @@ begin
             z_o => w_data_psum
         );
 
-    o_psum_halfword <= w_data_psum(data_width_psum);
-    o_data_psum     <= w_data_psum(data_width_psum - 1 downto 0);
+    -- unpack data from psum fifo
+    w_word_count_psum <= unsigned(w_data_psum(c_psum_fifo_width - 1 downto data_width_psum_mem));
+    o_data_psum  <= w_data_psum(data_width_psum_mem - 1 downto 0);
 
-    sync_all_psum_finished : entity accel.bit_sync
+    -- generate write enable from psum fifo word count
+    psum_wen_gen : entity accel.write_enable_gen
+        generic map (
+            count_width => c_psum_wide_words_width,
+            wen_width => words_psum
+        )
         port map (
-            clk     => clk,
-            rst     => w_rst,
-            bit_in  => and w_empty_psum_out_f,
-            bit_out => o_all_psum_finished
+            i_count => w_word_count_psum,
+            o_wen => w_wen_psum
         );
 
-    o_valid_psums_out   <= w_valid_psum_out_f;
+    o_write_en_psum <= w_wen_psum when w_psum_valid_out = '1' else (others => '0');
+    o_valid_psums_out   <= w_valid_psum_f;
     o_gnt_psum_binary_d <= r_gnt_psum_binary_d;
-    o_empty_psum_fifo   <= w_empty_psum_out_f;
+    o_empty_psum_fifo   <= w_empty_psum_f;
 
-    mux_psum_out_valid : entity accel.mux
+    mux_psum_valid : entity accel.mux
         generic map (
             input_width   => 1,
             input_num     => size_x,
             address_width => addr_width_x
         )
         port map (
-            v_i    => w_valid_psum_out,
+            v_i    => w_valid_psum,
             sel    => r_gnt_psum_binary_d,
-            z_o(0) => o_write_en_psum
+            z_o(0) => w_psum_valid_out
         );
 
     rr_arbiter_psum : entity accel.rr_arbiter
@@ -691,6 +725,14 @@ begin
             o_binary => w_gnt_psum_binary
         );
 
+    sync_all_psum_finished : entity accel.bit_sync
+        port map (
+            clk     => clk,
+            rst     => w_rst,
+            bit_in  => and w_empty_psum_f,
+            bit_out => o_all_psum_finished
+        );
+
     p_psum_overflow : process is
 
         variable temp : natural;
@@ -705,9 +747,9 @@ begin
         else
             temp := 0;
 
-            for i in w_full_psum_out_f'range loop
+            for i in w_full_psum_f'range loop
 
-                if (i_psums_valid(i) and w_full_psum_out_f(i)) = '1' then
+                if (i_psums_valid(i) and w_full_psum_f(i)) = '1' then
                     temp := temp + 1;
                 end if;
 

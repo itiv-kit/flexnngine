@@ -37,7 +37,7 @@ entity accelerator is
         spad_ext_addr_width_psum : positive := 14; -- word size spad_ext_data_width_psum
         spad_ext_data_width_iact : positive := 32;
         spad_ext_data_width_wght : positive := 32;
-        spad_ext_data_width_psum : positive := 32;
+        spad_ext_data_width_psum : positive := 128;
 
         fifo_width : positive := 16;
 
@@ -87,6 +87,7 @@ end entity accelerator;
 architecture rtl of accelerator is
 
     constant size_rows : positive := size_x + size_y - 1;
+    constant words_psum : positive := spad_ext_data_width_psum / data_width_iact;
 
     constant addr_width_x    : positive := positive(ceil(log2(real(size_x))));
     constant addr_width_y    : positive := positive(ceil(log2(real(size_y))));
@@ -139,10 +140,9 @@ architecture rtl of accelerator is
 
     signal w_dout_iact : std_logic_vector(data_width_iact - 1 downto 0);
     signal w_dout_wght : std_logic_vector(data_width_wght - 1 downto 0);
-    signal w_din_psum  : std_logic_vector(data_width_psum - 1 downto 0);
+    signal w_din_psum  : std_logic_vector(spad_ext_data_width_psum - 1 downto 0);
 
-    signal w_write_en_psum       : std_logic;
-    signal w_psum_halfword       : std_logic;
+    signal w_write_en_psum       : std_logic_vector(words_psum - 1 downto 0);
     signal w_write_suppress_psum : std_logic;
 
     signal w_read_en_iact : std_logic;
@@ -340,8 +340,8 @@ begin
             write_adr_psum  => w_write_adr_psum,
             read_en_iact    => w_read_en_iact,
             read_en_wght    => w_read_en_wght,
-            write_en_psum   => w_write_en_psum and not w_write_suppress_psum,
-            write_half_psum => w_psum_halfword,
+            write_en_psum   => w_write_en_psum,
+            write_supp_psum => w_write_suppress_psum,
             dout_iact_valid => w_dout_iact_valid,
             dout_wght_valid => w_dout_wght_valid,
             dout_iact       => w_dout_iact,
@@ -374,15 +374,13 @@ begin
             addr_width_y        => addr_width_y,
             addr_width_x        => addr_width_x,
             data_width_iact     => data_width_iact,
-            line_length_iact    => line_length_iact,
             addr_width_iact     => addr_width_iact,
             addr_width_iact_mem => spad_addr_width_iact,
             data_width_psum     => data_width_psum,
-            line_length_psum    => line_length_psum,
+            data_width_psum_mem => spad_ext_data_width_psum,
             addr_width_psum     => addr_width_psum,
             addr_width_psum_mem => spad_addr_width_psum,
             data_width_wght     => data_width_wght,
-            line_length_wght    => line_length_wght,
             addr_width_wght     => addr_width_wght,
             addr_width_wght_mem => spad_addr_width_wght,
             fifo_width          => fifo_width,
@@ -414,7 +412,6 @@ begin
             o_address_iact_valid     => w_read_en_iact,
             o_address_wght_valid     => w_read_en_wght,
             o_write_en_psum          => w_write_en_psum,
-            o_psum_halfword          => w_psum_halfword,
             o_data_psum              => w_din_psum,
             i_data_iact              => w_dout_iact,
             i_data_wght              => w_dout_wght,

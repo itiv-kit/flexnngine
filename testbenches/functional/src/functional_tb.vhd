@@ -105,7 +105,7 @@ architecture imp of functional_tb is
     constant spad_ext_addr_width_psum : integer := addr_width_psum_mem - 1;
     constant spad_ext_addr_width_wght : integer := addr_width_wght_mem - 2;
     constant spad_ext_data_width_iact : integer := 32;
-    constant spad_ext_data_width_psum : integer := 32;
+    constant spad_ext_data_width_psum : integer := 128;
     constant spad_ext_data_width_wght : integer := 32;
     constant iact_words_per_mem_word  : integer := 2 ** (addr_width_iact_mem - spad_ext_addr_width_iact);
     constant psum_words_per_mem_word  : integer := 2 ** (addr_width_psum_mem - spad_ext_addr_width_psum);
@@ -425,7 +425,7 @@ begin
         alias r_state                 is << signal accelerator_inst.control_address_generator_inst.g_control.control_inst.r_state : t_control_state >>;
         alias r_preload_fifos_started is << signal accelerator_inst.scratchpad_interface_inst.i_start : std_logic >>;
         alias r_preload_fifos_done    is << signal accelerator_inst.scratchpad_interface_inst.r_preload_fifos_done : std_logic >>;
-        alias r_write_en_psum         is << signal accelerator_inst.scratchpad_interface_inst.o_write_en_psum : std_logic >>;
+        alias r_write_en_psum         is << signal accelerator_inst.scratchpad_interface_inst.o_write_en_psum : std_logic_vector(15 downto 0) >>;
         alias r_empty_psum_fifo       is << signal accelerator_inst.address_generator_psum_inst.i_empty_psum_fifo : std_logic_vector(size_x - 1 downto 0) >>;
         alias r_data_iact_valid       is << signal accelerator_inst.scratchpad_interface_inst.o_data_iact_valid : std_logic_vector(size_rows - 1 downto 0) >>;
         alias r_data_wght_valid       is << signal accelerator_inst.scratchpad_interface_inst.o_data_wght_valid : std_logic_vector(size_y - 1 downto 0) >>;
@@ -545,7 +545,7 @@ begin
                 end if;
 
                 -- Store output
-                if r_write_en_psum = '1' then
+                if or r_write_en_psum = '1' then
                     write(row, integer'image(60));
                     write(row, string'("  "));
                 elsif r_state /= s_output or done = '0' or (done = '1' and (and r_empty_psum_fifo = '0')) then
