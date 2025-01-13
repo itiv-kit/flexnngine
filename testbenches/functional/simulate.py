@@ -659,6 +659,7 @@ if __name__ == "__main__":
     parser.add_argument('--gui',               action='store_true', help='Override preset to enable GUI')
     parser.add_argument('--no-gui',            action='store_true', help='Override preset to disable GUI / batch mode')
     parser.add_argument('--input-bits',        default=4, type=int, help='Set bit range for iact/wght input values')
+    parser.add_argument('--pool',              default=1, type=int, help='Number of parallel simulations')
     parser.add_argument('--list-presets',      action='store_true', help='List all available simulation presets')
     parser.add_argument('--same-kernel',       action='store_true', help='Use the same kernel for each output channel (M0)')
     parser.add_argument('--only-first-kernel', action='store_true', help='Zero-out kernels for m0 > 0')
@@ -779,7 +780,7 @@ if __name__ == "__main__":
     if len(settings) > 1:
         print(f'Running {len(settings)} simulations...')
 
-    pool = Pool(128)
+    pool = Pool(args.pool)
     outputs = pool.map(run_test, settings)
 
     print("Outputs: ", outputs)
