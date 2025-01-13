@@ -338,7 +338,10 @@ class Test:
             min_vals = np.min(convolved_images, axis=(1,2))
             max_vals = np.max(convolved_images, axis=(1,2))
             for n, (min, max) in enumerate(np.dstack([min_vals, max_vals])[0]):
-                zeropt_scale_vals[n] = np.linalg.solve([[1, max], [1, min]], [127, -128])
+                if max == min: # hack for the rare case of same-value images
+                    zeropt_scale_vals[n] = [0.0, 1.0]
+                else:
+                    zeropt_scale_vals[n] = np.linalg.solve([[1, max], [1, min]], [127, -128])
                 print(f"Scaling output channel {n} with {zeropt_scale_vals[n][1]}, zeropoint {zeropt_scale_vals[n][0]}")
 
             convolved_images_requant = convolved_images * zeropt_scale_vals[:, 1, None, None] + zeropt_scale_vals[:, 0, None, None]
