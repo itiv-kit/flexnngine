@@ -1,6 +1,7 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
+    use ieee.math_real.all;
 
 library accel;
     use accel.utilities.all;
@@ -10,9 +11,11 @@ entity address_generator_psum is
         size_x : positive := 5;
         size_y : positive := 5;
 
-        addr_width_x : positive := 3;
+        addr_width_x    : positive := 3;
+        addr_width_psum : positive := 15;
 
-        addr_width_psum : positive := 15
+        write_size        : positive := 1;
+        word_offset_width : integer := integer(ceil(log2(real(write_size))))
     );
     port (
         clk  : in    std_logic;
@@ -27,7 +30,8 @@ entity address_generator_psum is
         i_empty_psum_fifo   : in    std_logic_vector(size_x - 1 downto 0); -- currently unused
 
         o_address_psum : out   std_logic_vector(addr_width_psum - 1 downto 0);
-        o_suppress_out : out   std_logic
+        o_suppress_out : out   std_logic;
+        o_word_offsets : out   array_t(0 to size_x - 1)(word_offset_width - 1 downto 0)
     );
 end entity address_generator_psum;
 
@@ -71,12 +75,16 @@ begin
 
     gen_counter : for x in 0 to size_x - 1 generate
 
+        o_word_offsets(x) <= r_address_psum(x)(word_offset_width - 1 downto 0);
+
         p_psum_counter : process (clk, rstn) is
 
             variable v_count_w1 : integer; -- output channel counter
             variable v_count_m0 : integer; -- output width counter
             variable v_count_h2 : integer; -- output step counter (h2 = number of steps for whole image height)
             variable v_cur_row  : integer; -- current row
+            variable v_offset   : integer; -- offset of the address to full write_size memory words
+            variable v_new_addr : integer;
 
         begin
 
@@ -104,7 +112,7 @@ begin
                     v_count_h2        := 0;
                 -- common output of one pixel
                 elsif i_valid_psum_out(x) then
-                    if v_count_w1 = i_params.w1 - 1 then
+                    if v_count_w1 >= i_params.w1 - write_size then
                         -- one row is done
                         v_count_w1 := 0;
 
@@ -128,7 +136,8 @@ begin
                             v_cur_row := v_cur_row - (i_params.w1 + i_params.kernel_size - 1);
                         end if;
 
-                        r_address_psum(x) <= std_logic_vector(to_unsigned(v_count_m0 * r_image_size + v_cur_row * i_params.w1, addr_width_psum));
+                        v_new_addr        := v_count_m0 * r_image_size + v_cur_row * i_params.w1;
+                        r_address_psum(x) <= std_logic_vector(to_unsigned(v_new_addr, addr_width_psum));
 
                         -- check condition to suppress the current row (when output row > output image rows = i_params.w1 - i_params.kernel_size)
                         if v_cur_row > i_params.w1 - 1 then
@@ -146,8 +155,14 @@ begin
                         end if;
                     else
                         -- we are within a image row
-                        v_count_w1        := v_count_w1 + 1;
-                        r_address_psum(x) <= std_logic_vector(to_unsigned(to_integer(unsigned(r_address_psum(x))) + 1, addr_width_psum));
+                        if v_count_w1 = 0 then
+                            -- initially, maybe only a partial word is written. extract the offset from the original write address.
+                            v_offset   := to_integer(unsigned(o_word_offsets(x)));
+                            v_count_w1 := v_count_w1 + write_size - v_offset;
+                        else
+                            v_count_w1 := v_count_w1 + write_size;
+                        end if;
+                        r_address_psum(x) <= std_logic_vector(to_unsigned(to_integer(unsigned(r_address_psum(x))) + write_size, addr_width_psum));
                     end if;
                 end if;
 

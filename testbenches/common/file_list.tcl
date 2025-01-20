@@ -22,7 +22,6 @@ set HDL_FILE_NAMES [list \
     "${HDL_DIR}/ram_dp_bwe.vhd" \
     "${HDL_DIR}/scratchpad.vhd" \
     "${HDL_DIR}/parallelizer.vhd" \
-    "${HDL_DIR}/write_enable_gen.vhd" \
     "${HDL_DIR}/scratchpad_interface.vhd" \
     "${HDL_DIR}/address_generator.vhd" \
     "${HDL_DIR}/address_generator_psum.vhd" \
