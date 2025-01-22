@@ -19,10 +19,14 @@ entity psum_activation is
         i_mode : in    mode_activation_t;
 
         i_psum_valid : in    std_logic;
+        i_psum_last  : in    std_logic;
         i_psum       : in    std_logic_vector(data_width_psum - 1 downto 0);
+        i_channel    : in    integer range 0 to max_size_x - 1;
 
         o_psum_valid : out   std_logic;
-        o_psum       : out   std_logic_vector(data_width_psum - 1 downto 0)
+        o_psum_last  : out   std_logic;
+        o_psum       : out   std_logic_vector(data_width_psum - 1 downto 0);
+        o_channel    : out   integer range 0 to max_size_x - 1
     );
 end entity psum_activation;
 
@@ -62,12 +66,16 @@ begin
     output_reg_gen : if use_output_reg generate
 
         o_psum_valid <= i_psum_valid when rising_edge(clk);
+        o_psum_last  <= i_psum_last when rising_edge(clk);
         o_psum       <= std_logic_vector(w_data_out) when rising_edge(clk);
+        o_channel    <= i_channel when rising_edge(clk);
 
     else generate
 
         o_psum_valid <= i_psum_valid;
+        o_psum_last  <= i_psum_last;
         o_psum       <= std_logic_vector(w_data_out);
+        o_channel    <= i_channel;
 
     end generate output_reg_gen;
 
