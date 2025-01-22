@@ -7,27 +7,27 @@ library work;
 
 entity fifo_multiword_tb is
     generic (
-        in_clock_duration  : time    := 2 ns;
-        out_clock_duration : time    := 4 ns
+        in_clock_duration  : time := 2 ns;
+        out_clock_duration : time := 4 ns
     );
 end entity fifo_multiword_tb;
 
 architecture tb of fifo_multiword_tb is
 
-    signal wr_clk       : std_logic                    := '0';
-    signal rst          : std_logic                    := '1';
-    signal wr_en        : std_logic                    := '0';
-    signal din          : std_logic_vector(7 downto 0) := (others => '0');
-    signal last         : std_logic                    := '0';
-    signal full         : std_logic                    := '0';
-    signal almost_full  : std_logic                    := '0';
+    signal wr_clk      : std_logic                    := '0';
+    signal rst         : std_logic                    := '1';
+    signal wr_en       : std_logic                    := '0';
+    signal din         : std_logic_vector(7 downto 0) := (others => '0');
+    signal last        : std_logic                    := '0';
+    signal full        : std_logic                    := '0';
+    signal almost_full : std_logic                    := '0';
 
-    signal rd_clk        : std_logic                     := '0';
-    signal rd_en         : std_logic                     := '0';
-    signal dout          : std_logic_vector(63 downto 0) := (others => '0');
-    signal valid         : std_logic;
-    signal empty         : std_logic                     := '0';
-    signal almost_empty  : std_logic                     := '0';
+    signal rd_clk       : std_logic                     := '0';
+    signal rd_en        : std_logic                     := '0';
+    signal dout         : std_logic_vector(63 downto 0) := (others => '0');
+    signal valid        : std_logic;
+    signal empty        : std_logic                     := '0';
+    signal almost_empty : std_logic                     := '0';
 
 begin
 
@@ -91,7 +91,7 @@ begin
         wait until rising_edge(wr_clk);
         wr_en <= '0';
 
-        wait for 30 ns; -- propagation to read domain
+        wait for 30 ns;                                    -- propagation to read domain
         wait until rising_edge(rd_clk);
         assert empty = '0'
             report "empty after write";
@@ -110,7 +110,7 @@ begin
         wait until rising_edge(wr_clk);
         wr_en <= '0';
 
-        wait for 30 ns; -- propagation to read domain
+        wait for 30 ns;                                    -- propagation to read domain
         wait until rising_edge(wr_clk);
         assert empty = '0'
             report "empty after write";
@@ -133,7 +133,7 @@ begin
         assert full = '1'
             report "not full after overwrite";
 
-        wait for 30 ns;  -- propagation to read domain
+        wait for 30 ns;                                    -- propagation to read domain
         wait until rising_edge(rd_clk);
         assert empty = '0'
             report "empty after overwrite";
@@ -145,7 +145,7 @@ begin
 
             wait until rising_edge(wr_clk) and full = '0';
             wr_en <= '1';
-            din <= std_logic_vector(to_unsigned(n, 8));
+            din   <= std_logic_vector(to_unsigned(n, 8));
 
         end loop;
 
@@ -153,7 +153,7 @@ begin
 
         wait until rising_edge(wr_clk);
         wr_en <= '0';
-        last <= '0';
+        last  <= '0';
 
         wait;
 
