@@ -21,8 +21,10 @@ entity scratchpad_interface is
         addr_width_iact_mem : positive := 15;
 
         data_width_psum     : positive := 16;
-        data_width_psum_mem : positive := 128;
+        data_width_psum_mem : positive := 64;
         words_psum          : positive := data_width_psum_mem / data_width_iact;
+        word_offset_width   : positive := integer(ceil(log2(real(words_psum))));
+
         addr_width_psum     : positive := 7;
         addr_width_psum_mem : positive := 15;
 
@@ -45,6 +47,7 @@ entity scratchpad_interface is
         clk_sp : in    std_logic;
 
         i_start  : in    std_logic;
+        i_params : in    parameters_t;
         o_enable : out   std_logic;
         o_status : out   status_info_spadif_t;
 
@@ -54,6 +57,10 @@ entity scratchpad_interface is
 
         i_address_iact_valid : in    std_logic_vector(size_rows - 1 downto 0);
         i_address_wght_valid : in    std_logic_vector(size_y - 1 downto 0);
+
+        -- offsets from psum address generator for image row <-> memory row alignment
+        i_psum_word_offsets       : in    array_t(0 to size_x - 1)(word_offset_width - 1 downto 0);
+        i_psum_word_offsets_valid : in    std_logic_vector(size_x - 1 downto 0);
 
         -- to pause address generator
         o_fifo_iact_address_full : out   std_logic;
@@ -103,6 +110,7 @@ entity scratchpad_interface is
         -- Data from PE array
         i_psums          : in    array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
         i_psums_valid    : in    std_logic_vector(size_x - 1 downto 0);
+        i_psums_last     : in    std_logic_vector(size_x - 1 downto 0);
         i_psums_halfword : in    std_logic_vector(size_x - 1 downto 0);
 
         -- Data from control
@@ -168,20 +176,21 @@ architecture rtl of scratchpad_interface is
     signal w_address_iact : std_logic_vector(addr_width_iact_mem - 1 downto 0);
     signal w_address_wght : std_logic_vector(addr_width_wght_mem - 1 downto 0);
 
-    -- constant c_psum_wide_words       : integer := data_width_psum_mem / data_width_iact;
     constant c_psum_wide_words_width : positive := positive(ceil(log2(real(words_psum))));
-    constant c_psum_fifo_width       : integer := data_width_psum_mem + c_psum_wide_words_width;
-
-    type unsigned_array_t is array (natural range <>) of unsigned;
+    constant c_psum_fifo_width       : integer  := data_width_psum_mem + words_psum;
 
     signal w_psum_wide_data  : array_t(0 to size_x - 1)(data_width_psum_mem - 1 downto 0);
-    signal w_psum_wide_words : unsigned_array_t(0 to size_x - 1)(c_psum_wide_words_width - 1 downto 0);
     signal w_word_count_psum : unsigned(c_psum_wide_words_width - 1 downto 0);
     signal w_psum_valid_out  : std_logic;
     signal w_wen_psum        : std_logic_vector(words_psum - 1 downto 0);
 
+    signal w_psum_word_offsets       : array_t(0 to size_x - 1)(word_offset_width - 1 downto 0);
+    signal r_psum_offset_initialized : std_logic_vector(size_x - 1 downto 0);
+    signal w_psum_offset_rd_en       : std_logic_vector(size_x - 1 downto 0);
+    signal w_psum_offset_empty       : std_logic_vector(size_x - 1 downto 0);
+
     signal w_rd_en_psum_f : std_logic_vector(size_x - 1 downto 0);
-    signal w_wr_en_psum_f : std_logic_vector(size_x - 1 downto 0);
+    signal w_wr_en_psum_f : array_t(0 to size_x - 1)(words_psum - 1 downto 0);
     signal w_din_psum_f   : array_t(0 to size_x - 1)(c_psum_fifo_width - 1 downto 0);
     signal w_dout_psum_f  : array_t(0 to size_x - 1)(c_psum_fifo_width - 1 downto 0);
     signal w_full_psum_f  : std_logic_vector(size_x - 1 downto 0);
@@ -605,24 +614,22 @@ begin
 
     gen_fifo_psum_out : for x in 0 to size_x - 1 generate
 
-        /* TODO use feasible size for Psum FIFO */
-
-        -- w_din_psum_f(x) <= i_psums_halfword(x) & i_psums(x);
-
         psum_parallel_requantized : entity accel.parallelizer
             port map (
-                clk => clk,
-                rstn => rstn,
-                i_valid => i_psums_valid(x) and not i_psums_halfword(x),
-                i_data => i_psums(x),
-                i_last => '0', -- TODO
-                o_valid => w_wr_en_psum_f(x),
-                o_data => w_psum_wide_data(x),
-                o_words => w_psum_wide_words(x)
+                clk      => clk,
+                rstn     => rstn,
+                i_valid  => i_psums_valid(x) and i_psums_halfword(x),
+                i_last   => i_psums_last(x),
+                i_data   => i_psums(x)(data_width_iact - 1 downto 0),
+                i_offset => unsigned(w_psum_word_offsets(x)),
+                o_valid  => w_wr_en_psum_f(x),
+                o_data   => w_psum_wide_data(x)
             );
 
         -- store wide data words & number of valid words in fifo_psum_out
-        w_din_psum_f(x) <= std_logic_vector(w_psum_wide_words(x)) & w_psum_wide_data(x);
+        w_din_psum_f(x) <= w_wr_en_psum_f(x) & w_psum_wide_data(x);
+
+        /* TODO use feasible size for Psum FIFO */
 
         fifo_psum_out : entity accel.dc_fifo
             generic map (
@@ -633,7 +640,7 @@ begin
             port map (
                 wr_clk      => clk,
                 rst         => not rstn,
-                wr_en       => w_wr_en_psum_f(x),
+                wr_en       => or w_wr_en_psum_f(x),
                 din         => w_din_psum_f(x),
                 full        => w_full_psum_f(x),
                 almost_full => open,
@@ -673,21 +680,22 @@ begin
         );
 
     -- unpack data from psum fifo
-    w_word_count_psum <= unsigned(w_data_psum(c_psum_fifo_width - 1 downto data_width_psum_mem));
-    o_data_psum  <= w_data_psum(data_width_psum_mem - 1 downto 0);
+    -- w_word_count_psum <= unsigned(w_data_psum(c_psum_fifo_width - 1 downto data_width_psum_mem));
+    w_wen_psum  <= w_data_psum(c_psum_fifo_width - 1 downto data_width_psum_mem);
+    o_data_psum <= w_data_psum(data_width_psum_mem - 1 downto 0);
 
     -- generate write enable from psum fifo word count
-    psum_wen_gen : entity accel.write_enable_gen
-        generic map (
-            count_width => c_psum_wide_words_width,
-            wen_width => words_psum
-        )
-        port map (
-            i_count => w_word_count_psum,
-            o_wen => w_wen_psum
-        );
+    -- psum_wen_gen : entity accel.write_enable_gen
+    --     generic map (
+    --         count_width => c_psum_wide_words_width,
+    --         wen_width => words_psum
+    --     )
+    --     port map (
+    --         i_count => w_word_count_psum,
+    --         o_wen => w_wen_psum
+    --     );
 
-    o_write_en_psum <= w_wen_psum when w_psum_valid_out = '1' else (others => '0');
+    o_write_en_psum     <= w_wen_psum when w_psum_valid_out = '1' else (others => '0');
     o_valid_psums_out   <= w_valid_psum_f;
     o_gnt_psum_binary_d <= r_gnt_psum_binary_d;
     o_empty_psum_fifo   <= w_empty_psum_f;
@@ -732,6 +740,46 @@ begin
             bit_in  => and w_empty_psum_f,
             bit_out => o_all_psum_finished
         );
+
+    word_offset_sync : for x in 0 to size_x - 1 generate
+
+        fifo : entity accel.dc_fifo
+            generic map (
+                mem_size => 4,
+                stages   => 2
+            )
+            port map (
+                wr_clk => clk_sp,
+                rst    => '0',
+                wr_en  => i_psum_word_offsets_valid(x),
+                din    => i_psum_word_offsets(x),
+                keep   => '0',
+                drop   => '0',
+                rd_clk => clk,
+                rd_en  => w_psum_offset_rd_en(x),
+                dout   => w_psum_word_offsets(x),
+                empty  => w_psum_offset_empty(x)
+            );
+
+        sample_word_offset : process is
+        begin
+
+            wait until rising_edge(clk);
+
+            w_psum_offset_rd_en(x) <= '0';
+
+            if i_start = '0' or rstn = '0' then
+                r_psum_offset_initialized(x) <= '0';
+            elsif not w_psum_offset_empty(x) and not r_psum_offset_initialized(x) then
+                w_psum_offset_rd_en(x)       <= '1';
+                r_psum_offset_initialized(x) <= '1';
+            elsif i_psums_last(x) = '1' then
+                w_psum_offset_rd_en(x) <= '1';
+            end if;
+
+        end process sample_word_offset;
+
+    end generate word_offset_sync;
 
     p_psum_overflow : process is
 

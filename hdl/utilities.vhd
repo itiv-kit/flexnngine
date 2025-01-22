@@ -18,12 +18,14 @@ package utilities is
     type std_logic_row_col_t is array (natural  range <>, natural range <>) of std_logic;
 
     type array_t is array (natural range <>) of std_logic_vector;
+    type uns_array_t is array (natural range <>) of unsigned;
     type array_row_col_t is array (natural  range <>, natural range <>) of std_logic_vector;
 
     type int_line_t is array (natural range <>) of integer;
     type int_image_t is array (natural range <>, natural range <>) of integer;
     type int_image3_t is array (natural range <>, natural range <>, natural range <>) of integer;
 
+    type x_idx_line_t is array (natural range <>) of integer range 0 to max_size_x - 1;
     type uint10_line_t is array (natural range <>) of integer range 0 to 1023;
     type uint18_line_t is array (natural range <>) of integer range 0 to 262143;
 

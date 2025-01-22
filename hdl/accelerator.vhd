@@ -37,7 +37,7 @@ entity accelerator is
         spad_ext_addr_width_psum : positive := 14; -- word size spad_ext_data_width_psum
         spad_ext_data_width_iact : positive := 32;
         spad_ext_data_width_wght : positive := 32;
-        spad_ext_data_width_psum : positive := 128;
+        spad_ext_data_width_psum : positive := 64;
 
         fifo_width : positive := 16;
 
@@ -86,8 +86,10 @@ end entity accelerator;
 
 architecture rtl of accelerator is
 
-    constant size_rows : positive := size_x + size_y - 1;
+    constant size_rows  : positive := size_x + size_y - 1;
     constant words_psum : positive := spad_ext_data_width_psum / data_width_iact;
+
+    constant psum_word_offset_width : positive := integer(ceil(log2(real(words_psum))));
 
     constant addr_width_x    : positive := positive(ceil(log2(real(size_x))));
     constant addr_width_y    : positive := positive(ceil(log2(real(size_y))));
@@ -128,6 +130,7 @@ architecture rtl of accelerator is
 
     signal w_psums          : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
     signal w_psums_valid    : std_logic_vector(size_x - 1 downto 0);
+    signal w_psums_last     : std_logic_vector(size_x - 1 downto 0);
     signal w_psums_halfword : std_logic_vector(size_x - 1 downto 0);
 
     signal w_psums_raw          : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
@@ -142,8 +145,10 @@ architecture rtl of accelerator is
     signal w_dout_wght : std_logic_vector(data_width_wght - 1 downto 0);
     signal w_din_psum  : std_logic_vector(spad_ext_data_width_psum - 1 downto 0);
 
-    signal w_write_en_psum       : std_logic_vector(words_psum - 1 downto 0);
-    signal w_write_suppress_psum : std_logic;
+    signal w_write_en_psum           : std_logic_vector(words_psum - 1 downto 0);
+    signal w_write_suppress_psum     : std_logic;
+    signal w_psum_word_offsets       : array_t(0 to size_x - 1)(psum_word_offset_width - 1 downto 0);
+    signal w_psum_word_offsets_valid : std_logic_vector(size_x - 1 downto 0);
 
     signal w_read_en_iact : std_logic;
     signal w_read_en_wght : std_logic;
@@ -259,6 +264,7 @@ begin
             i_data_halfword => w_psums_raw_halfword,
             o_data          => w_psums,
             o_data_valid    => w_psums_valid,
+            o_data_last     => w_psums_last,
             o_data_halfword => w_psums_halfword
         );
 
@@ -389,46 +395,50 @@ begin
             g_psum_fifo_size    => g_psum_fifo_size
         )
         port map (
-            clk                      => clk,
-            rstn                     => rstn,
-            clk_sp                   => clk_sp,
-            i_start                  => w_control_init_done,
-            o_enable                 => w_enable_if,
-            o_status                 => w_status_spad_if,
-            i_address_iact           => w_address_iact,
-            i_address_wght           => w_address_wght,
-            i_address_iact_valid     => w_address_iact_valid,
-            i_address_wght_valid     => w_address_wght_valid,
-            o_fifo_iact_address_full => w_fifo_iact_address_full,
-            o_fifo_wght_address_full => w_fifo_wght_address_full,
-            i_addr_iact_done         => w_address_iact_done,
-            i_addr_wght_done         => w_address_wght_done,
-            o_valid_psums_out        => w_valid_psums_out,
-            o_gnt_psum_binary_d      => w_gnt_psum_binary_d,
-            o_empty_psum_fifo        => w_empty_psum_fifo,
-            o_all_psum_finished      => w_all_psum_finished,
-            o_address_iact           => w_read_adr_iact,
-            o_address_wght           => w_read_adr_wght,
-            o_address_iact_valid     => w_read_en_iact,
-            o_address_wght_valid     => w_read_en_wght,
-            o_write_en_psum          => w_write_en_psum,
-            o_data_psum              => w_din_psum,
-            i_data_iact              => w_dout_iact,
-            i_data_wght              => w_dout_wght,
-            i_data_iact_valid        => w_dout_iact_valid,
-            i_data_wght_valid        => w_dout_wght_valid,
-            o_data_iact              => w_data_iact,
-            o_data_wght              => w_data_wght,
-            o_data_iact_valid        => w_data_iact_valid,
-            o_data_wght_valid        => w_data_wght_valid,
-            i_buffer_full_iact       => w_buffer_full_iact,
-            i_buffer_full_next_iact  => w_buffer_full_next_iact,
-            i_buffer_full_wght       => w_buffer_full_wght,
-            i_buffer_full_next_wght  => w_buffer_full_next_wght,
-            i_psums                  => w_psums,
-            i_psums_valid            => w_psums_valid,
-            i_psums_halfword         => w_psums_halfword,
-            i_pause_iact             => w_pause_iact
+            clk                       => clk,
+            rstn                      => rstn,
+            clk_sp                    => clk_sp,
+            i_start                   => w_control_init_done,
+            i_params                  => i_params,
+            o_enable                  => w_enable_if,
+            o_status                  => w_status_spad_if,
+            i_address_iact            => w_address_iact,
+            i_address_wght            => w_address_wght,
+            i_address_iact_valid      => w_address_iact_valid,
+            i_address_wght_valid      => w_address_wght_valid,
+            i_psum_word_offsets       => w_psum_word_offsets,
+            i_psum_word_offsets_valid => w_psum_word_offsets_valid,
+            o_fifo_iact_address_full  => w_fifo_iact_address_full,
+            o_fifo_wght_address_full  => w_fifo_wght_address_full,
+            i_addr_iact_done          => w_address_iact_done,
+            i_addr_wght_done          => w_address_wght_done,
+            o_valid_psums_out         => w_valid_psums_out,
+            o_gnt_psum_binary_d       => w_gnt_psum_binary_d,
+            o_empty_psum_fifo         => w_empty_psum_fifo,
+            o_all_psum_finished       => w_all_psum_finished,
+            o_address_iact            => w_read_adr_iact,
+            o_address_wght            => w_read_adr_wght,
+            o_address_iact_valid      => w_read_en_iact,
+            o_address_wght_valid      => w_read_en_wght,
+            o_write_en_psum           => w_write_en_psum,
+            o_data_psum               => w_din_psum,
+            i_data_iact               => w_dout_iact,
+            i_data_wght               => w_dout_wght,
+            i_data_iact_valid         => w_dout_iact_valid,
+            i_data_wght_valid         => w_dout_wght_valid,
+            o_data_iact               => w_data_iact,
+            o_data_wght               => w_data_wght,
+            o_data_iact_valid         => w_data_iact_valid,
+            o_data_wght_valid         => w_data_wght_valid,
+            i_buffer_full_iact        => w_buffer_full_iact,
+            i_buffer_full_next_iact   => w_buffer_full_next_iact,
+            i_buffer_full_wght        => w_buffer_full_wght,
+            i_buffer_full_next_wght   => w_buffer_full_next_wght,
+            i_psums                   => w_psums,
+            i_psums_valid             => w_psums_valid,
+            i_psums_last              => w_psums_last,
+            i_psums_halfword          => w_psums_halfword,
+            i_pause_iact              => w_pause_iact
         );
 
     w_params_sp <= i_params when rising_edge(clk_sp);
@@ -438,7 +448,8 @@ begin
             size_x          => size_x,
             size_y          => size_y,
             addr_width_x    => addr_width_x,
-            addr_width_psum => spad_addr_width_psum
+            addr_width_psum => spad_addr_width_psum,
+            write_size      => words_psum
         )
         port map (
             clk                 => clk_sp,
@@ -450,7 +461,9 @@ begin
             i_gnt_psum_binary_d => w_gnt_psum_binary_d,
             i_empty_psum_fifo   => w_empty_psum_fifo,
             o_address_psum      => w_write_adr_psum,
-            o_suppress_out      => w_write_suppress_psum
+            o_suppress_out      => w_write_suppress_psum,
+            o_word_offsets      => w_psum_word_offsets,
+            o_word_offset_valid => w_psum_word_offsets_valid
         );
 
     -- construct the o_status record

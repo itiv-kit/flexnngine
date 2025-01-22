@@ -53,32 +53,32 @@ package fifos is
         );
     end component dc_fifo;
 
-    -- fifo that assembles small input words to large output words
-    -- valid indicates how many din words are in a word being read
-    -- almost_empty is 1 if only an incomplete output word can be read
-    -- component dc_merge_fifo is
-    --     generic (
-    --         mem_size    : positive;
-    --         stages      : positive := 3
-    --     );
-    --     port (
-    --         wr_clk : in    std_logic;
-    --         rst    : in    std_logic;
+-- fifo that assembles small input words to large output words
+-- valid indicates how many din words are in a word being read
+-- almost_empty is 1 if only an incomplete output word can be read
+-- component dc_merge_fifo is
+--     generic (
+--         mem_size    : positive;
+--         stages      : positive := 3
+--     );
+--     port (
+--         wr_clk : in    std_logic;
+--         rst    : in    std_logic;
 
-    --         wr_en       : in    std_logic;
-    --         din         : in    std_logic_vector;
-    --         full        : out   std_logic;
-    --         almost_full : out   std_logic;
+--         wr_en       : in    std_logic;
+--         din         : in    std_logic_vector;
+--         full        : out   std_logic;
+--         almost_full : out   std_logic;
 
-    --         rd_clk : in    std_logic;
+--         rd_clk : in    std_logic;
 
-    --         rd_en        : in    std_logic;
-    --         dout         : out   std_logic_vector;
-    --         valid        : out   std_logic_vector;
-    --         almost_empty : out   std_logic;
-    --         empty        : out   std_logic
-    --     );
-    -- end component dc_merge_fifo;
+--         rd_en        : in    std_logic;
+--         dout         : out   std_logic_vector;
+--         valid        : out   std_logic_vector;
+--         almost_empty : out   std_logic;
+--         empty        : out   std_logic
+--     );
+-- end component dc_merge_fifo;
 
 end package fifos;
 
@@ -372,8 +372,8 @@ library accel;
 
 entity dc_merge_fifo is
     generic (
-        mem_size    : positive; -- number of words
-        stages      : positive := 3
+        mem_size : positive; -- number of words
+        stages   : positive := 3
     );
     port (
         wr_clk : in    std_logic;

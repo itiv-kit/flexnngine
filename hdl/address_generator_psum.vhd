@@ -15,7 +15,7 @@ entity address_generator_psum is
         addr_width_psum : positive := 15;
 
         write_size        : positive := 1;
-        word_offset_width : integer := integer(ceil(log2(real(write_size))))
+        word_offset_width : integer  := integer(ceil(log2(real(write_size))))
     );
     port (
         clk  : in    std_logic;
@@ -29,15 +29,22 @@ entity address_generator_psum is
         i_gnt_psum_binary_d : in    std_logic_vector(addr_width_x - 1 downto 0);
         i_empty_psum_fifo   : in    std_logic_vector(size_x - 1 downto 0); -- currently unused
 
-        o_address_psum : out   std_logic_vector(addr_width_psum - 1 downto 0);
-        o_suppress_out : out   std_logic;
-        o_word_offsets : out   array_t(0 to size_x - 1)(word_offset_width - 1 downto 0)
+        o_address_psum      : out   std_logic_vector(addr_width_psum - 1 downto 0);
+        o_suppress_out      : out   std_logic;
+        o_word_offsets      : out   array_t(0 to size_x - 1)(word_offset_width - 1 downto 0);
+        o_word_offset_valid : out   std_logic_vector(size_x - 1 downto 0)
     );
 end entity address_generator_psum;
 
 architecture rtl of address_generator_psum is
 
-    signal r_address_psum : array_t(0 to size_x - 1)(addr_width_psum - 1 downto 0);
+    signal r_next_address : uns_array_t(0 to size_x - 1)(addr_width_psum - 1 downto 0);
+    signal r_address_psum : uns_array_t(0 to size_x - 1)(addr_width_psum - 1 downto 0);
+    signal w_address_mux  : array_t    (0 to size_x - 1)(addr_width_psum - 1 downto 0);
+
+    signal r_next_address_valid : std_logic_vector(0 to size_x - 1);
+    signal r_suppress_next_row  : std_logic_vector(0 to size_x - 1);
+    signal r_suppress_next_col  : std_logic_vector(0 to size_x - 1);
 
     signal r_count_w1 : uint10_line_t(0 to size_x - 1);
     signal r_count_m0 : uint10_line_t(0 to size_x - 1);
@@ -45,9 +52,7 @@ architecture rtl of address_generator_psum is
 
     signal r_start_delay  : std_logic;
     signal r_start_event  : std_logic;
-    signal r_suppress_row : std_logic_vector(0 to size_x - 1);
-    signal r_suppress_col : std_logic_vector(0 to size_x - 1);
-    signal w_suppress_out : std_logic_vector(0 to size_x - 1);
+    signal r_suppress_out : std_logic_vector(0 to size_x - 1);
 
     signal r_image_size : integer; -- output image size per channel, currently rectangular images only = w1*w1
 
@@ -65,19 +70,19 @@ begin
             address_width => addr_width_x
         )
         port map (
-            v_i => r_address_psum,
+            v_i => w_address_mux,
             sel => i_gnt_psum_binary_d,
             z_o => o_address_psum
         );
 
-    w_suppress_out <= r_suppress_row or r_suppress_col;
-    o_suppress_out <= w_suppress_out(to_integer(unsigned(i_gnt_psum_binary_d)));
+    o_suppress_out <= r_suppress_out(to_integer(unsigned(i_gnt_psum_binary_d)));
 
     gen_counter : for x in 0 to size_x - 1 generate
 
-        o_word_offsets(x) <= r_address_psum(x)(word_offset_width - 1 downto 0);
+        o_word_offsets(x) <= std_logic_vector(r_next_address(x)(word_offset_width - 1 downto 0));
+        w_address_mux(x)  <= std_logic_vector(r_address_psum(x));
 
-        p_psum_counter : process (clk, rstn) is
+        p_psum_counter : process is
 
             variable v_count_w1 : integer; -- output channel counter
             variable v_count_m0 : integer; -- output width counter
@@ -88,81 +93,103 @@ begin
 
         begin
 
+            wait until rising_edge(clk);
+
+            o_word_offset_valid(x) <= '0';
+
             if not rstn then
-                r_address_psum(x) <= (others => '0');
-                r_suppress_row(x) <= '0';
-                r_suppress_col(x) <= '0';
+                r_suppress_out(x) <= '0';
+
+                r_next_address_valid(x) <= '1'; -- will be reset on r_start_event
+                r_suppress_next_row(x)  <= '0';
+                r_suppress_next_col(x)  <= '0';
 
                 r_count_w1(x) <= 0;
                 r_count_m0(x) <= 0;
                 r_count_h2(x) <= 0;
-            elsif rising_edge(clk) then
+            else
                 v_count_w1 := r_count_w1(x);
                 v_count_m0 := r_count_m0(x);
                 v_count_h2 := r_count_h2(x);
 
-                -- start of a totally new result, reset all counters
+                -- address output/increment and calculation of new base addresses are decoupled
+                -- if timing issues occur, this can be pipelined
+
                 if r_start_event = '1' then
-                    v_cur_row         := x;
-                    r_address_psum(x) <= std_logic_vector(to_unsigned(v_cur_row * i_params.w1, addr_width_psum));
-                    r_suppress_row(x) <= '0';
-                    r_suppress_col(x) <= '0';
-                    v_count_m0        := 0;
-                    v_count_w1        := 0;
-                    v_count_h2        := 0;
-                -- common output of one pixel
+                    -- start of a totally new result, reset all counters
+                    v_count_m0 := 0;
+                    v_count_h2 := 0;
+                elsif not r_next_address_valid(x) then
+                    if v_count_m0 = i_params.m0 - 1 then
+                        -- all kernels of this step done, prepare for next step
+                        v_count_m0 := 0;
+                        v_count_h2 := v_count_h2 + 1;
+                    else
+                        -- advance to the next mapped kernel, set address to next output image and advance by mapped rows difference
+                        v_count_m0 := v_count_m0 + 1;
+                    end if;
+                end if;
+
+                -- calculate the current row, taking m0 into account for rs dataflow
+                v_cur_row := v_count_h2 * size_x + x;
+                if i_dataflow = '0' then
+                    v_cur_row := v_cur_row + v_count_m0 * i_params.kernel_size;
+                end if;
+
+                --  wrap at input image size
+                if v_cur_row >= i_params.w1 + i_params.kernel_size - 1 then
+                    v_cur_row := v_cur_row - (i_params.w1 + i_params.kernel_size - 1);
+                end if;
+
+                v_new_addr := v_count_m0 * r_image_size + v_cur_row * i_params.w1;
+
+                if r_next_address_valid(x) = '0' or r_start_event = '1' then
+                    r_next_address(x)       <= to_unsigned(v_new_addr, addr_width_psum);
+                    r_next_address_valid(x) <= '1';
+                    o_word_offset_valid(x)  <= '1';
+                end if;
+
+                -- check condition to suppress the current row (when output row > output image rows = i_params.w1 - i_params.kernel_size)
+                if v_cur_row > i_params.w1 - 1 then
+                    r_suppress_next_row(x) <= '1';
+                else
+                    r_suppress_next_row(x) <= '0';
+                end if;
+
+                -- check condition to suppress a full column (on last step when total columns > i_params.w1) (unmapped PEs)
+                -- could be moved up if v_cur_row calculation is split
+                if v_count_h2 * size_x + x + 1 > i_params.w1 + i_params.kernel_size - 1 then
+                    r_suppress_next_col(x) <= '1';
+                else
+                    r_suppress_next_col(x) <= '0';
+                end if;
+
+                if r_start_event = '1' then
+                    v_count_w1 := 0;
+
+                    r_address_psum(x)       <= to_unsigned(v_new_addr, addr_width_psum);
+                    r_suppress_out(x)       <= '0';
+                    r_next_address_valid(x) <= '0'; -- immediately trigger calculation of subsequent address
                 elsif i_valid_psum_out(x) then
+                    -- common output of one word (write_size pixels)
                     if v_count_w1 >= i_params.w1 - write_size then
                         -- one row is done
                         v_count_w1 := 0;
 
-                        if v_count_m0 = i_params.m0 - 1 then
-                            -- all kernels of this step done, prepare for next step
-                            v_count_m0 := 0;
-                            v_count_h2 := v_count_h2 + 1;
-                        else
-                            -- advance to the next mapped kernel, set address to next output image and advance by mapped rows difference
-                            v_count_m0 := v_count_m0 + 1;
-                        end if;
+                        r_address_psum(x)       <= r_next_address(x);
+                        r_next_address_valid(x) <= '0';
 
-                        -- calculate the current row, taking m0 into account for rs dataflow
-                        v_cur_row := v_count_h2 * size_x + x;
-                        if i_dataflow = '0' then
-                            v_cur_row := v_cur_row + v_count_m0 * i_params.kernel_size;
-                        end if;
-
-                        --  wrap at input image size
-                        if v_cur_row >= i_params.w1 + i_params.kernel_size - 1 then
-                            v_cur_row := v_cur_row - (i_params.w1 + i_params.kernel_size - 1);
-                        end if;
-
-                        v_new_addr        := v_count_m0 * r_image_size + v_cur_row * i_params.w1;
-                        r_address_psum(x) <= std_logic_vector(to_unsigned(v_new_addr, addr_width_psum));
-
-                        -- check condition to suppress the current row (when output row > output image rows = i_params.w1 - i_params.kernel_size)
-                        if v_cur_row > i_params.w1 - 1 then
-                            r_suppress_row(x) <= '1';
-                        else
-                            r_suppress_row(x) <= '0';
-                        end if;
-
-                        -- check condition to suppress a full column (on last step when total columns > i_params.w1) (unmapped PEs)
-                        -- could be moved up if v_cur_row calculation is split
-                        if v_count_h2 * size_x + x + 1 > i_params.w1 + i_params.kernel_size - 1 then
-                            r_suppress_col(x) <= '1';
-                        else
-                            r_suppress_col(x) <= '0';
-                        end if;
+                        r_suppress_out(x) <= r_suppress_next_row(x) or r_suppress_next_col(x);
                     else
                         -- we are within a image row
-                        if v_count_w1 = 0 then
-                            -- initially, maybe only a partial word is written. extract the offset from the original write address.
-                            v_offset   := to_integer(unsigned(o_word_offsets(x)));
-                            v_count_w1 := v_count_w1 + write_size - v_offset;
+                        if write_size > 1 and v_count_w1 = 0 then
+                            v_offset   := to_integer(r_address_psum(x)(word_offset_width - 1 downto 0));
+                            v_count_w1 := write_size - v_offset;
                         else
                             v_count_w1 := v_count_w1 + write_size;
                         end if;
-                        r_address_psum(x) <= std_logic_vector(to_unsigned(to_integer(unsigned(r_address_psum(x))) + write_size, addr_width_psum));
+                        -- v_count_w1        := v_count_w1 + write_size;
+                        r_address_psum(x) <= r_address_psum(x) + write_size;
                     end if;
                 end if;
 

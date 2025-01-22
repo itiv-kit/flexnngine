@@ -1,78 +1,95 @@
-/*---------------------------------------------------------------------
--- Design:      Parallelizer
--- Description: Take serial stream of words and combine them to a larger word, i.e. parallelize the words
--- Author:      Johannes Huober
-------------------------------------------------------------------------*/
+-- concatenate i_data words until o_data is full or i_last is asserted
+-- i_offset selects the first words of o_data to be written to after i_last was asserted
+-- o_valid is a byte-wise valid signal of o_data
 
--- Module used to parallelize data with in_width to out_width format
--- i.e. 128 Bit <-> 16 Bit => 8 cycles
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
     use ieee.math_real.all;
 
 entity parallelizer is
+    generic (
+        little_endian : boolean := false
+    );
     port (
         clk  : in    std_logic;
         rstn : in    std_logic;
 
-        i_valid : in    std_logic;
-        i_last  : in    std_logic;
-        i_data  : in    std_logic_vector;
+        i_valid  : in    std_logic;
+        i_last   : in    std_logic;
+        i_data   : in    std_logic_vector;
+        i_offset : in    unsigned; -- initial offset for new rows
 
         o_data  : out   std_logic_vector;
-        -- o_valid : out   std_logic_vector;
-        o_valid : out   std_logic;
-        o_words : out   unsigned
+        o_valid : out   std_logic_vector
     );
-
-end parallelizer;
+end entity parallelizer;
 
 architecture behavioral of parallelizer is
 
-    constant c_words       : integer := integer(o_data'length / i_data'length);
+    constant c_words         : integer  := integer(o_data'length / i_data'length);
     constant c_counter_width : positive := positive(ceil(log2(real(c_words))));
-    signal counter         : integer range 0 to c_words - 1;
-    signal words_output    : unsigned(c_counter_width - 1 downto 0);
+    signal   counter         : integer range 0 to c_words - 1;
 
+    signal full, idle  : std_logic;
     signal shift_reg   : std_logic_vector(o_data'range);
-    -- signal words_valid : std_logic_vector(words - 1 downto 0);
+    signal valid_words : std_logic_vector(c_words - 1 downto 0);
 
 begin
 
-    proc : process
+    proc : process is
     begin
+
         wait until rising_edge(clk);
 
         if not rstn then
-            counter <= 0;
-            -- words_valid <= (others => '0');
-
-            o_valid <= '0';
-            -- o_data  <= (others => '0');
+            full        <= '0';
+            idle        <= '1';
+            counter     <= 0;
+            valid_words <= (others => '0');
+            o_valid     <= (o_valid'range => '0');
         else
+            if idle = '1' then
+                counter <= to_integer(i_offset(c_counter_width - 1 downto 0));
+            end if;
+
+            if full = '1' then
+                o_data  <= shift_reg;
+                o_valid <= valid_words;
+
+                valid_words <= (others => '0');
+                full        <= '0';
+            else
+                o_valid <= (o_valid'range => '0');
+            end if;
+
             if i_valid = '1' then
-                shift_reg <= shift_reg(o_data'length - i_data'length - 1 downto 0) & i_data;
+                idle <= '0';
+
+                if little_endian then
+                    valid_words(c_words - counter - 1) <= '1';
+
+                    shift_reg(i_data'length * (c_words - counter) - 1 downto i_data'length * (c_words - counter - 1)) <= i_data;
+                else
+                    valid_words(counter) <= '1';
+
+                    shift_reg(i_data'length * (counter + 1 ) - 1 downto i_data'length * counter) <= i_data;
+                end if;
+
                 if counter = c_words - 1 or i_last = '1' then
-                    counter <= 0;
-                    -- words_valid <= words_valid(words_valid'length - 1 downto 0) & '1';
-                    words_output <= to_unsigned(counter, c_counter_width);
+                    full <= '1';
+
+                    if i_last = '1' then
+                        idle <= '1';
+                    else
+                        counter <= 0;
+                    end if;
                 else
                     counter <= counter + 1;
                 end if;
             end if;
-
-            if words_output > 0 then
-                -- o_valid     <= words_valid;
-                o_data  <= shift_reg;
-                o_words <= words_output;
-                o_valid <= '1';
-                -- words_valid <= (others => '0');
-                words_output <= (others => '0');
-            else
-                o_valid <= '0';
-            end if;
         end if;
+
     end process proc;
 
-end behavioral;
+end architecture behavioral;

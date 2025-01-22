@@ -18,11 +18,14 @@ entity address_generator_psum_tb is
         addr_width   : positive := 16; --! memory address width
         data_width   : positive := 16; --! psum data width
         kernel_size  : positive := 3;  --! r/s, kernel size
-        kernel_count : positive := 3   --! m0, number of mapped kernels
+        kernel_count : positive := 3;  --! m0, number of mapped kernels
+        write_size   : positive := 1   --! number of data_width words per write (> 1 not implemented yet!)
     );
 end entity address_generator_psum_tb;
 
 architecture imp of address_generator_psum_tb is
+
+    constant mem_width : integer := data_width * write_size;
 
     signal clk  : std_logic := '1';
     signal rstn : std_logic := '0';
@@ -38,15 +41,15 @@ architecture imp of address_generator_psum_tb is
 
     signal i_gnt_psum_binary_d_int : integer;
 
-    signal tb_wen : std_logic                                 := '0';
-    signal wen    : std_logic                                 := '0';
-    signal din    : std_logic_vector(data_width - 1 downto 0) := (others => '0');
+    signal tb_wen : std_logic                                := '0';
+    signal wen    : std_logic                                := '0';
+    signal din    : std_logic_vector(mem_width - 1 downto 0) := (others => '0');
 
     signal i_params : parameters_t := (
                                         kernel_size => kernel_size,
                                         w1 => image_width,
                                         m0 => kernel_count,
-                                        requant_enab => false,
+                                        requant_enab => true,
                                         mode_act => passthrough,
                                         bias => (others => 0),
                                         zeropt_fp32 => (others => (others => '0')),
@@ -54,7 +57,7 @@ architecture imp of address_generator_psum_tb is
                                         others => 0
                                     );
 
-    type ram_type is array (0 to 2 ** addr_width - 1) of std_logic_vector(data_width - 1 downto 0);
+    type ram_type is array (0 to 2 ** addr_width - 1) of std_logic_vector(mem_width - 1 downto 0);
 
 begin
 
@@ -63,7 +66,8 @@ begin
             size_x          => size_x,
             size_y          => size_y,
             addr_width_x    => size_x_width,
-            addr_width_psum => addr_width
+            addr_width_psum => addr_width,
+            write_size      => write_size
         )
         port map (
             clk                 => clk,
@@ -81,7 +85,7 @@ begin
     mem : entity accel.ram_dp
         generic map (
             addr_width => addr_width,
-            data_width => data_width
+            data_width => mem_width
         )
         port map (
             clk   => clk,

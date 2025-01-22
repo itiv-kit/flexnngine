@@ -28,12 +28,12 @@ entity functional_tb is
         data_width_psum     : positive := 16;
         line_length_psum    : positive := 128;
         addr_width_psum     : positive := 7;
-        addr_width_psum_mem : positive := 16;
+        addr_width_psum_mem : positive := 20; -- byte-wise addressing, 256kB of psum memory -> future shared spad
 
         data_width_wght     : positive := 8;
         line_length_wght    : positive := 64; /* TODO check influence on tiling - does not work for length 32, kernel 4 and channels 10. Does not work for length 30, kernel 3 and channels 10*/
         addr_width_wght     : positive := 6;
-        addr_width_wght_mem : positive := 15;
+        addr_width_wght_mem : positive := 16;
 
         fifo_width : positive := 16;
 
@@ -102,14 +102,17 @@ architecture imp of functional_tb is
     signal scale_fp32  : array_t(max_output_channels - 1 downto 0)(31 downto 0);
 
     constant spad_ext_addr_width_iact : integer := addr_width_iact_mem - 2;
-    constant spad_ext_addr_width_psum : integer := addr_width_psum_mem - 1;
+    constant spad_ext_addr_width_psum : integer := addr_width_psum_mem - 3; -- word-wise addressing (word size see below)
     constant spad_ext_addr_width_wght : integer := addr_width_wght_mem - 2;
     constant spad_ext_data_width_iact : integer := 32;
-    constant spad_ext_data_width_psum : integer := 128;
+    constant spad_ext_data_width_psum : integer := 64;
     constant spad_ext_data_width_wght : integer := 32;
     constant iact_words_per_mem_word  : integer := 2 ** (addr_width_iact_mem - spad_ext_addr_width_iact);
     constant psum_words_per_mem_word  : integer := 2 ** (addr_width_psum_mem - spad_ext_addr_width_psum);
     constant wght_words_per_mem_word  : integer := 2 ** (addr_width_wght_mem - spad_ext_addr_width_wght);
+
+    -- TODO: in the future all mem words will be larger than iact/wght/psum words
+    constant iact_words_per_psum_mem_word : integer := spad_ext_data_width_psum / data_width_iact;
 
     type ram_type is array (0 to 2 ** spad_ext_addr_width_psum - 1) of std_logic_vector(spad_ext_data_width_psum - 1 downto 0);
 
@@ -425,7 +428,7 @@ begin
         alias r_state                 is << signal accelerator_inst.control_address_generator_inst.g_control.control_inst.r_state : t_control_state >>;
         alias r_preload_fifos_started is << signal accelerator_inst.scratchpad_interface_inst.i_start : std_logic >>;
         alias r_preload_fifos_done    is << signal accelerator_inst.scratchpad_interface_inst.r_preload_fifos_done : std_logic >>;
-        alias r_write_en_psum         is << signal accelerator_inst.scratchpad_interface_inst.o_write_en_psum : std_logic_vector(15 downto 0) >>;
+        alias r_write_en_psum         is << signal accelerator_inst.scratchpad_interface_inst.o_write_en_psum : std_logic_vector(7 downto 0) >>;
         alias r_empty_psum_fifo       is << signal accelerator_inst.address_generator_psum_inst.i_empty_psum_fifo : std_logic_vector(size_x - 1 downto 0) >>;
         alias r_data_iact_valid       is << signal accelerator_inst.scratchpad_interface_inst.o_data_iact_valid : std_logic_vector(size_rows - 1 downto 0) >>;
         alias r_data_wght_valid       is << signal accelerator_inst.scratchpad_interface_inst.o_data_wght_valid : std_logic_vector(size_y - 1 downto 0) >>;
@@ -592,10 +595,10 @@ begin
 
         if g_requant > 0 then
             actual_data_width := data_width_iact;
-            actual_word_count := iact_words_per_mem_word;
-            assert spad_ext_data_width_iact = spad_ext_data_width_psum
-                report "subword readout for requantized data only available for equal iact / psum mem width"
-                severity error;
+            actual_word_count := iact_words_per_psum_mem_word; -- iact_words_per_mem_word;
+        -- assert spad_ext_data_width_iact = spad_ext_data_width_psum
+        --     report "subword readout for requantized data only available for equal iact / psum mem width"
+        --     severity error;
         else
             actual_data_width := data_width_psum;
             actual_word_count := psum_words_per_mem_word;

@@ -1,4 +1,4 @@
-set SIM_TIME "15 us"
+set SIM_TIME "30 us"
 set SIM_TOP_LEVEL "address_generator_psum_tb"
 set SIM_UNIT_NAMES [list utilities mux ram_dp address_generator_psum]
 set TB_DIR [file normalize "."]
