@@ -20,6 +20,7 @@ image: gitlab.itiv.kit.edu:1443/itiv/docker/rocky9:latest
 
 .vsg_test:
     stage: lint
+    image: gitlab.itiv.kit.edu:1443/itiv/docker/vhdl-style-guide:latest
 
 .sim_test:
     tags:
