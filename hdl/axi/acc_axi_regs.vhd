@@ -11,7 +11,7 @@ entity acc_axi_regs is
   generic (
     -- Users to add parameters here
     -- number of registers to present, rest is read 0 / writes ignored
-    NUM_REGS : integer := 64;
+    NUM_REGS : integer := 80;
 
     -- static accelerator hardware info
     size_x : positive := 5;
