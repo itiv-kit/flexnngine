@@ -137,51 +137,114 @@ begin
 
     end process wght;
 
-    psum : process is
+    psum_gen : if ext_data_width_psum = 32 generate
+        psum : process is
 
-        variable index : integer;
+            variable index : integer;
 
-    begin
+        begin
 
-        wait until rising_edge(clk);
+            wait until rising_edge(clk);
 
-        if write_half_psum = '1' then
-            index := to_integer(unsigned(write_adr_psum(addr_width_psum - ext_addr_width_psum downto 0)));
+            if write_half_psum = '1' then
+                index := to_integer(unsigned(write_adr_psum(addr_width_psum - ext_addr_width_psum downto 0)));
 
-            addrb_psum <= '0' & write_adr_psum(addr_width_psum - 1 downto addr_width_psum - ext_addr_width_psum + 1);
-            datab_psum <= din_psum(data_width_iact - 1 downto 0) & din_psum(data_width_iact - 1 downto 0) & din_psum(data_width_iact - 1 downto 0) & din_psum(data_width_iact - 1 downto 0);
-            enb_psum   <= write_en_psum;
-            web_psum   <= (others => '0');
+                addrb_psum <= '0' & write_adr_psum(addr_width_psum - 1 downto addr_width_psum - ext_addr_width_psum + 1);
+                datab_psum <= din_psum(data_width_iact - 1 downto 0) & din_psum(data_width_iact - 1 downto 0) & din_psum(data_width_iact - 1 downto 0) & din_psum(data_width_iact - 1 downto 0);
+                enb_psum   <= write_en_psum;
+                web_psum   <= (others => '0');
 
-            if write_en_psum = '1' then
-                with index select web_psum <=
-                    "1000" when 3,
-                    "0100" when 2,
-                    "0010" when 1,
-                    "0001" when others;
-            end if;
-        else
-            index := to_integer(unsigned(write_adr_psum(addr_width_psum - ext_addr_width_psum - 1 downto 0)));
-
-            addrb_psum <= write_adr_psum(addr_width_psum - 1 downto addr_width_psum - ext_addr_width_psum);
-            datab_psum <= din_psum & din_psum;
-            enb_psum   <= write_en_psum;
-            web_psum   <= (others => '0');
-
-            -- TODO: generalize, currently fixed for 32bit spad 8bit cols 16bit psums
-            if write_en_psum = '1' then
-                if index = 1 then
-                    web_psum <= "1100";
-                else
-                    web_psum <= "0011";
+                if write_en_psum = '1' then
+                    with index select web_psum <=
+                        "1000" when 3,
+                        "0100" when 2,
+                        "0010" when 1,
+                        "0001" when others;
                 end if;
-            -- datab_psum <= (others => '0');
-            -- datab_psum(data_width_psum * (index + 1) - 1 downto data_width_psum * index) <= din_psum;
-            -- web_psum(index)                                                              <= '1';
-            end if;
-        end if;
+            else
+                index := to_integer(unsigned(write_adr_psum(addr_width_psum - ext_addr_width_psum - 1 downto 0)));
 
-    end process psum;
+                addrb_psum <= write_adr_psum(addr_width_psum - 1 downto addr_width_psum - ext_addr_width_psum);
+                datab_psum <= din_psum & din_psum;
+                enb_psum   <= write_en_psum;
+                web_psum   <= (others => '0');
+
+                -- TODO: generalize, currently fixed for 32bit spad 8bit cols 16bit psums
+                if write_en_psum = '1' then
+                    if index = 1 then
+                        web_psum <= "1100";
+                    else
+                        web_psum <= "0011";
+                    end if;
+                -- datab_psum <= (others => '0');
+                -- datab_psum(data_width_psum * (index + 1) - 1 downto data_width_psum * index) <= din_psum;
+                -- web_psum(index)                                                              <= '1';
+                end if;
+            end if;
+
+        end process psum;
+
+    elsif ext_data_width_psum = 64 generate
+        psum : process is
+
+            variable index : integer;
+
+        begin
+
+            wait until rising_edge(clk);
+
+            if write_half_psum = '1' then
+                index := to_integer(unsigned(write_adr_psum(addr_width_psum - ext_addr_width_psum downto 0)));
+
+                addrb_psum <= '0' & write_adr_psum(addr_width_psum - 1 downto addr_width_psum - ext_addr_width_psum + 1);
+                enb_psum   <= write_en_psum;
+                web_psum   <= (others => '0');
+
+                -- concat iact data n=8 times to make full 64 bit word
+                for i in 0 to ext_data_width_psum / data_width_iact - 1 loop
+                    datab_psum(data_width_iact * (i + 1) - 1 downto data_width_iact * i) <= din_psum(data_width_iact - 1 downto 0);
+                end loop;
+
+                -- select subword to write to
+                if write_en_psum = '1' then
+                    with index select web_psum <=
+                        "10000000" when 7,
+                        "01000000" when 6,
+                        "00100000" when 5,
+                        "00010000" when 4,
+                        "00001000" when 3,
+                        "00000100" when 2,
+                        "00000010" when 1,
+                        "00000001" when others;
+                end if;
+            else
+                index := to_integer(unsigned(write_adr_psum(addr_width_psum - ext_addr_width_psum - 1 downto 0)));
+
+                addrb_psum <= write_adr_psum(addr_width_psum - 1 downto addr_width_psum - ext_addr_width_psum);
+                datab_psum <= din_psum & din_psum & din_psum & din_psum;
+                enb_psum   <= write_en_psum;
+                web_psum   <= (others => '0');
+
+                if write_en_psum = '1' then
+                    with index select web_psum <=
+                        "11000000" when 3,
+                        "00110000" when 2,
+                        "00001100" when 1,
+                        "00000011" when others;
+                end if;
+            end if;
+
+        end process psum;
+
+    else generate
+
+        psum : process is
+        begin
+            report "psum spad width " & integer'image(ext_addr_width_psum) & " not implemented"
+                severity failure;
+        end process psum;
+
+    end generate psum_gen;
 
     ram_iact : entity accel.ram_dp_bwe
         generic map (
