@@ -39,7 +39,7 @@ entity acc_axi_regs is
     -- Width of S_AXI data bus
     C_S_AXI_DATA_WIDTH : integer := 32;
     -- Width of S_AXI address bus
-    C_S_AXI_ADDR_WIDTH : integer := 16
+    C_S_AXI_ADDR_WIDTH : integer := 9
   );
   port (
     -- Users to add ports here
@@ -145,7 +145,7 @@ architecture arch_imp of acc_axi_regs is
   signal byte_index   : integer;
   signal aw_en        : std_logic;
 
-  constant MAGIC_REG_VALUE : std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0) := x"41434303"; -- "ACC" + register set version
+  constant MAGIC_REG_VALUE : std_logic_vector(31 downto 0) := x"41434303"; -- "ACC" + register set version
 begin
   -- I/O Connections assignments
 
@@ -270,7 +270,7 @@ begin
         slv_regs(1)(4) <= i_status.spadif.preload_fifos_done;
 
         -- debug status registers
-        slv_regs(22) <= std_logic_vector(i_status.cycle_counter);
+        slv_regs(22) <= std_logic_vector(resize(i_status.cycle_counter, C_S_AXI_DATA_WIDTH));
         slv_regs(23)(0) <= i_status.spadif.spad_iact_full;
         slv_regs(23)(1) <= i_status.spadif.spad_iact_empty;
         slv_regs(23)(2) <= i_status.spadif.spad_wght_full;
@@ -290,7 +290,7 @@ begin
         slv_regs(29) <= std_logic_vector(resize(to_unsigned(spad_axi_addr_width_psum, 8) & to_unsigned(spad_axi_addr_width_wght, 8) & to_unsigned(spad_axi_addr_width_iact, 8), C_S_AXI_DATA_WIDTH));
         slv_regs(30) <= std_logic_vector(resize(capabilities & to_unsigned(max_output_channels, 8), C_S_AXI_DATA_WIDTH));
 
-        slv_regs(31) <= MAGIC_REG_VALUE;
+        slv_regs(31)(MAGIC_REG_VALUE'range) <= MAGIC_REG_VALUE;
       end if;
     end if;
   end process;

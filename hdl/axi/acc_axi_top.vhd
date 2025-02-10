@@ -6,8 +6,6 @@ library accel;
 use accel.utilities.all;
 use accel.sync.bit_sync;
 
-library xil_defaultlib;
-
 entity acc_axi_top is
   generic (
     size_x : positive := 5;
@@ -168,7 +166,7 @@ begin
   w_axi_rstn <= not w_axi_rst;
 
   -- Instantiation of AXI Bus Interface S00_AXI
-  acc_axi_regs_inst : entity xil_defaultlib.acc_axi_regs generic map (
+  acc_axi_regs_inst : entity accel.acc_axi_regs generic map (
     C_S_AXI_DATA_WIDTH => C_S00_AXI_DATA_WIDTH,
     C_S_AXI_ADDR_WIDTH => C_S00_AXI_ADDR_WIDTH,
     size_x => size_x,
