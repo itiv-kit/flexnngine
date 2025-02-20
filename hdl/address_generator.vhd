@@ -51,24 +51,9 @@ end entity address_generator;
 
 architecture rs_dataflow of address_generator is
 
-    constant read_size : integer := 8; -- todo: make generic
-
-    signal r_iact_count_words : uint10_line_t(0 to size_rows - 1); -- shall have range 0 to max_line_length_iact;
-    signal r_iact_words       : uint10_line_t(0 to size_rows - 1); -- shall have range 0 to max_line_length_iact;
-    signal r_iact_next_words  : uint10_line_t(0 to size_rows - 1); -- shall have range 0 to max_line_length_iact;
-    signal r_iact_addr        : uns_array_t  (0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
-    signal r_iact_next_base   : uns_array_t  (0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
-    signal r_iact_cur_base    : uns_array_t  (0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
-    signal r_iact_next_valid  : std_logic;
-    signal r_iact_next_used   : std_logic_vector(0 to size_rows - 1);
-    signal r_iact_cur_base_valid : std_logic_vector(0 to size_rows - 1);
-    signal r_count_w1_iact    : uint10_line_t(0 to size_rows - 1);
-
-    -- OLD STUFF
-
-    -- type   t_state_type is (s_idle, s_processing);
-    -- signal r_state_wght : t_state_type;
-    -- signal r_state_iact : t_state_type;
+    type   t_state_type is (s_idle, s_processing);
+    signal r_state_wght : t_state_type;
+    signal r_state_iact : t_state_type;
 
     signal r_mapped_pe_rows : integer;
 
@@ -76,7 +61,7 @@ architecture rs_dataflow of address_generator is
     signal r_count_c0_iact : integer;
 
     signal w_w1            : integer;
-    -- signal r_count_w1_iact : integer;
+    signal r_count_w1_iact : integer;
 
     signal w_c1            : integer;
     signal r_count_c1_iact : integer;
@@ -145,7 +130,7 @@ begin
     w_c0_wght <= i_params.c0 when r_count_c1_wght /= w_c1 - 1 else
                  i_params.c0_last_c1;
 
-    -- w_offset_mem_iact <= r_offset_c_iact * i_params.image_x + r_count_w1_iact;
+    w_offset_mem_iact <= r_offset_c_iact * i_params.image_x + r_count_w1_iact;
     w_offset_mem_wght <= r_offset_c_wght * i_params.kernel_size + r_count_w1_wght;
 
     r_mapped_pe_rows <= i_params.m0 * i_params.kernel_size when rising_edge(clk);
@@ -156,68 +141,27 @@ begin
         -- o_address_iact_valid(i) <= '1' when i_start = '1' and i_fifo_full_iact = '0' and r_iact_done = '0' else
         --                            '0';
 
-        iact_address_out : process is
+        iact_address_out : process (clk, rstn) is
         begin
-
-            wait until rising_edge(clk);
 
             if not rstn then
                 o_address_iact_valid(i) <= '0';
-
-                r_iact_cur_base_valid(i)   <= '0'; -- start by requesting the next base address
-                r_iact_next_used(i)   <= '0';
-                r_iact_count_words(i) <= 0;
-                r_iact_words(i)       <= 0;
-                r_iact_addr(i)        <= (others => '0'); -- TODO: remove
-                r_count_w1_iact(i)    <= 0;
-            else
-                if i_start = '1' and i_fifo_full_iact = '0' and r_iact_done = '0' and r_iact_cur_base_valid(i) = '1' then
+                o_address_iact(i)       <= (others => '0');
+                r_delay_iact_valid(i)   <= '0';
+            elsif rising_edge(clk) then
+                r_delay_iact_valid(i) <= '0';
+                if i_start = '1' and i_fifo_full_iact = '0' and r_iact_done = '0' and r_delay_iact_valid(i) = '0' then
+                    r_delay_iact_valid(i)   <= '1';
                     o_address_iact_valid(i) <= '1';
-
-                    if r_iact_count_words(i) < r_iact_words(i) then
-                        -- loading a row, load the specified number of words to get w0 channels
-                        -- TODO: for partial loads, set valid bits for first/last load
-                        r_iact_count_words(i) <= r_iact_count_words(i) + 1;
-                        r_iact_addr(i) <= r_iact_addr(i) + i_params.stride_iact_hw;
+                    if r_index_h_iact + i < i_params.image_y then
+                        o_address_iact(i) <= std_logic_vector(to_unsigned(r_count_w1_iact + i_params.image_x * (r_index_h_iact + i) + (i_params.image_x * i_params.image_x) * (r_index_c_iact), addr_width_iact_mem));
+                    -- o_address_iact(i) <= std_logic_vector(to_unsigned(w_offset_mem_iact + i * i_params.image_x, addr_width_iact_mem));
                     else
-                        -- reset to base address in any case. if within w1, reuse it and add w1
-                        r_iact_addr(i) <= r_iact_cur_base(i) + r_count_w1_iact(i) + 1;
-
-                        if r_count_w1_iact(i) /= i_params.w1 - 1 then
-                            -- we are within the current image row, go to the next iact pixel in this row
-                            r_count_w1_iact(i) <= r_count_w1_iact(i) + 1;
-                            r_iact_count_words(i) <= 0;
-                        else
-                            -- done with loading c0 channels for the full image row, advance to next set of c0 channels
-                            r_count_w1_iact(i) <= 0;
-
-                            -- load a new base address
-                            r_iact_cur_base_valid(i) <= '0';
-                            o_address_iact_valid(i) <= '0';
-                        end if;
+                        o_address_iact(i) <= std_logic_vector(to_unsigned(r_count_w1_iact + i_params.image_x * (r_index_h_iact + i - i_params.image_x) + (i_params.image_x * i_params.image_x) * (r_index_c_iact), addr_width_iact_mem));
                     end if;
                 else
-                    -- no valid output in case of backpressure
                     o_address_iact_valid(i) <= '0';
-                end if;
-
-                if r_iact_cur_base_valid(i) = '0' and r_iact_next_valid = '1' then
-                    -- one row is done, load next base address and reset row counter
-                    r_iact_words(i) <= r_iact_next_words(i);
-                    r_iact_addr(i) <= r_iact_next_base(i);
-                    r_iact_cur_base(i) <= r_iact_next_base(i);
-                    r_iact_next_used(i) <= '1'; -- signal that we need the next one
-
-                    r_iact_count_words(i) <= 0;
-                    r_iact_cur_base_valid(i) <= '1';
-
-                    -- new base address is the first valid address to load
-                    o_address_iact_valid(i) <= '1';
-                end if;
-
-                -- when a new base address is ready, clear the request field
-                if r_iact_next_used(i) = '1' and r_iact_next_valid = '1' then
-                    r_iact_next_used(i) <= '0';
+                    o_address_iact(i)       <= (others => '0');
                 end if;
             end if;
 
@@ -226,176 +170,6 @@ begin
         o_address_iact(i) <= std_logic_vector(r_iact_addr(i));
 
     end generate gen_iact_address_out;
-
-    -- IACT
-    -- address pattern for spad_reshape with cols=8, image h,w=8,8, channels=16, acc size 5x5
-    -- channel_set 0: load one column of 8 channels from h=0 into row 0
-    --                load one column of 8 channels from h=1 into row 1 (delta to row 0 = image_size_stride)
-    --                ... until h=7, then wrap h back to 0:
-    --                load one column of 8 channels from h=0 into row 8
-    --                load one column of 8 channels from h=1 into row 9
-    --                done for this set of channels
-    -- channel_set 1: load 2nd column of 8 channels from h=0 into row 0 (offset image_width_stride * cols)
-    -- ... until c0 / cols channel_sets are loaded
-
-    -- identical for all rows: channel_set -> image_width_stride * cols offset calculation
-    --                         and matching valid bits for channels mod channel_set in last iteration
-    --                         w1 iteration offset = 1
-    --                         c1 iteration offset = c0 / cols * image_size_stride
-    --                         h2 iteration offset = multiples of image_width_stride * cols * array_size_x
-    -- individual counters for rows: add image_size_stride * row
-
-    p_iact_counter : process is
-        variable v_row : integer := 0;
-        variable v_row_stride : integer := 0;
-        variable v_column : integer := 0;
-        variable v_ch_offset : integer := 0;
-        variable v_c0 : integer := 0;
-    begin
-
-        wait until rising_edge(clk);
-
-        if not rstn then
-            r_iact_done <= '0';
-            r_iact_next_valid <= '0';
-
-            -- OLD STUFF:
-            r_count_c0_iact <= 0;
-            r_count_c1_iact <= 0;
-            r_count_h2_iact <= 0;
-            -- r_count_w1_iact <= 0;
-
-            r_offset_c_iact         <= 0;
-            r_offset_c_last_c1_iact <= 0;
-            r_offset_c_last_h2_iact <= 0;
-
-            r_index_c_iact      <= 0;
-            r_index_c_last_iact <= 0;
-
-        elsif rising_edge(clk) then
-
-            -- if i_start = '1' and r_iact_done = '0' and i_fifo_full_iact = '0' and r_iact_next_valid = '0' then
-            if i_start and not r_iact_done and not r_iact_next_valid then
-
-            -- -- subsequent reads:
-            -- if r_count_c0_iact /= i_params.c0 - 1 then
-            --     -- read c0 channels for the current iact pixel
-            --     r_count_c0_iact <= r_count_c0_iact + read_size;
-            --     if i_params.c0 - r_count_c0_iact <= read_size then
-            --         -- TODO: if the last read is partial, set valid bits appropriately
-            --         r_count_c0_iact <= i_params.c0 - 1; -- set to end, improve!
-            --     end if;
-
-            -- -- reads with jumps:
-            -- else
-                -- a full set of c0 channels of the current iact pixel is done, advance to next
-                -- r_count_c0_iact <= 0;
-
-                -- if r_count_w1_iact /= i_params.w1 - 1 then
-                --     -- we are within the current image row, go to the next iact pixel in this row
-                --     r_count_w1_iact <= r_count_w1_iact + 1;
-
-                --     -- if in the last row, ??
-                --     -- if r_count_w1_iact = i_params.w1 - 2 then
-                --     --     r_offset_c_last_c1_iact <= r_offset_c_iact + i_params.image_x;
-                --     --     r_index_c_last_iact     <= r_index_c_iact + 1;
-                --     -- end if;
-                -- else
-                --     -- done with loading c0 channels for the full image row, advance to next set of c0 channels
-                --     r_count_w1_iact <= 0;
-
-                    if r_count_c1_iact /= i_params.c1 - 1 then
-                        -- next set of channels
-                        r_count_c1_iact <= r_count_c1_iact + 1;
-                        -- r_offset_c_iact <= r_offset_c_iact + i_params.c0;
-                    else
-                        -- all channels of this row loaded, proceed to next row
-                        r_count_c1_iact     <= 0;
-                        -- r_index_c_iact      <= 0;
-                        -- r_index_c_last_iact <= 0;
-                        r_offset_c_iact     <= 0;
-
-                        if r_count_h2_iact /= i_params.h2 - 1 then
-                            r_count_h2_iact <= r_count_h2_iact + 1;
-                            -- r_offset_c_last_h2_iact <= r_offset_c_last_h2_iact + size_x;
-                            -- r_offset_c_last_c1_iact <= r_offset_c_last_h2_iact + size_x;
-                        else
-                            r_iact_done       <= '1';
-                        end if;
-                    end if;
-                -- end if;
-
-                if r_count_c1_iact = i_params.c1 - 1 then
-                    v_c0 := i_params.c0_last_c1;
-                else
-                    v_c0 := i_params.c0;
-                end if;
-
-                for row in 0 to size_rows - 1 loop
-                    -- base address for next set of c0 channels
-
-                    -- stride_iact_w := i_params.image_x * stride_iact_ch
-
-                    -- row differs for each row, i.e. address generator instance
-                    v_row := r_count_h2_iact * size_y + row;
-
-                    v_row_stride := i_params.stride_iact_w * read_size; -- w stride is unpacked to single words on reshaped spad side
-
-                    -- wrap at full image height
-                    if v_row >= i_params.image_y then
-                        v_row := v_row - i_params.image_y;
-                    end if;
-
-                    -- columns of a full set of channels each
-                    -- v_column := r_count_w1_iact;
-
-                    -- advance in sets of c0 channels (= something like a stride for c0 iterations)
-                    v_ch_offset := r_count_c1_iact * i_params.c0 / read_size; -- TODO: if only multiples of read_size are possible for c0, get rid of division
-
-                    r_iact_next_base(row) <= to_unsigned(i_params.base_iact +
-                                                         v_row * v_row_stride +
-                                                        --  v_column * i_params.stride_iact_ch +
-                                                        --  v_column + -- could be moved to row-iteration, just reuse base address for whole w1 iteration?
-                                                         v_ch_offset * i_params.stride_iact_hw,
-                                                         addr_width_iact_mem);
-
-                    -- number of words to load for c0 channels
-                    r_iact_next_words(row) <= (v_c0 + read_size - 1) / read_size; -- TODO: is this efficient? read_size is power-of-two
-                    -- TODO: valid bits for last word if c0 not multiple of read size
-                end loop;
-
-                r_iact_next_valid <= '1';
-
-            end if;
-
-            if and r_iact_next_used then
-                r_iact_next_valid <= '0';
-            end if;
-
-            if i_start = '0' and r_iact_done = '1' then
-                -- reset when i_start is deasserted
-                r_iact_done <= '0';
-                r_iact_next_valid <= '0';
-
-                r_count_c0_iact <= 0;
-                r_count_c1_iact <= 0;
-                r_count_h2_iact <= 0;
-                -- r_count_w1_iact <= 0;
-
-                r_offset_c_iact         <= 0;
-                r_offset_c_last_c1_iact <= 0;
-                r_offset_c_last_h2_iact <= 0;
-
-                r_index_c_iact      <= 0;
-                r_index_c_last_iact <= 0;
-
-                r_data_valid_iact <= '0';
-            end if;
-        end if;
-
-    end process p_iact_counter;
-
-    -- WGHT
 
     wght_address_out : for i in 0 to size_y - 1 generate
 
@@ -429,6 +203,100 @@ begin
         end process wght_address_out;
 
     end generate gen_wght_address_out;
+
+    -- IACT
+
+    p_iact_counter : process (clk, rstn) is
+    begin
+
+        if not rstn then
+            r_count_c0_iact <= 0;
+            r_count_c1_iact <= 0;
+            r_count_h2_iact <= 0;
+            r_count_w1_iact <= 0;
+            r_index_h_iact  <= 0;
+
+            r_offset_c_iact         <= 0;
+            r_offset_c_last_c1_iact <= 0;
+            r_offset_c_last_h2_iact <= 0;
+
+            r_index_c_iact      <= 0;
+            r_index_c_last_iact <= 0;
+
+            r_data_valid_iact <= '0';
+
+            r_iact_done <= '0';
+        elsif rising_edge(clk) then
+            r_data_valid_iact <= '0';
+
+            if i_start = '1' and r_iact_done = '0' and i_fifo_full_iact = '0' and or r_delay_iact_valid = '0' then
+                r_data_valid_iact <= '1';
+
+                if r_count_c0_iact /= w_c0_iact - 1 then
+                    r_count_c0_iact <= r_count_c0_iact + 1;
+                    r_offset_c_iact <= r_offset_c_iact + i_params.image_x;
+                    r_index_c_iact  <= r_index_c_iact + 1;
+                else
+                    r_count_c0_iact <= 0;
+                    r_offset_c_iact <= r_offset_c_last_c1_iact;
+                    r_index_c_iact  <= r_index_c_last_iact;
+
+                    if r_count_w1_iact /= w_w1 - 1 then
+                        r_count_w1_iact <= r_count_w1_iact + 1;
+
+                        if r_count_w1_iact = w_w1 - 2 then
+                            r_offset_c_last_c1_iact <= r_offset_c_iact + i_params.image_x;
+                            r_index_c_last_iact     <= r_index_c_iact + 1;
+                        end if;
+                    else
+                        r_count_w1_iact <= 0;
+
+                        if r_count_c1_iact /= w_c1 - 1 then
+                            r_count_c1_iact <= r_count_c1_iact + 1;
+                        else
+                            r_count_c1_iact     <= 0;
+                            r_index_c_iact      <= 0;
+                            r_index_c_last_iact <= 0;
+                            r_offset_c_iact     <= r_offset_c_last_h2_iact + size_x;
+
+                            if r_count_h2_iact /= w_h2 - 1 then
+                                r_count_h2_iact         <= r_count_h2_iact + 1;
+                                r_index_h_iact          <= r_index_h_iact + size_x;
+                                r_offset_c_last_h2_iact <= r_offset_c_last_h2_iact + size_x;
+                                r_offset_c_last_c1_iact <= r_offset_c_last_h2_iact + size_x;
+                            else
+                                r_data_valid_iact <= '0';
+                                r_iact_done       <= '1';
+                            end if;
+                        end if;
+                    end if;
+                end if;
+            end if;
+
+            if i_start = '0' and r_iact_done = '1' then
+                -- reset when i_start is deasserted
+                r_iact_done <= '0';
+
+                r_count_c0_iact <= 0;
+                r_count_c1_iact <= 0;
+                r_count_h2_iact <= 0;
+                r_count_w1_iact <= 0;
+                r_index_h_iact  <= 0;
+
+                r_offset_c_iact         <= 0;
+                r_offset_c_last_c1_iact <= 0;
+                r_offset_c_last_h2_iact <= 0;
+
+                r_index_c_iact      <= 0;
+                r_index_c_last_iact <= 0;
+
+                r_data_valid_iact <= '0';
+            end if;
+        end if;
+
+    end process p_iact_counter;
+
+    -- WGHT
 
     p_wght_counter : process (clk, rstn) is
     begin
