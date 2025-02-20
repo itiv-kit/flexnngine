@@ -27,6 +27,7 @@ set HDL_FILE_NAMES [list \
     "${HDL_DIR}/parallelizer.vhd" \
     "${HDL_DIR}/scratchpad_interface.vhd" \
     "${HDL_DIR}/address_generator.vhd" \
+    "${HDL_DIR}/address_generator_iact.vhd" \
     "${HDL_DIR}/address_generator_psum.vhd" \
     "${HDL_DIR}/control.vhd" \
     "${HDL_DIR}/control_address_generator.vhd" \

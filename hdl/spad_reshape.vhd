@@ -75,7 +75,7 @@ begin
         w_rsh_en(i)   <= rsh_en;
         w_rsh_addr(i) <= rsh_addr(addr_width - 1 downto col_sel_width);
 
-        ram_iact : entity accel.ram_dp_bwe
+        ram : entity accel.ram_dp_bwe
             generic map (
                 size       => 2 ** ram_addr_width,
                 addr_width => ram_addr_width,
