@@ -16,6 +16,7 @@ entity scratchpad_interface is
         addr_width_y    : positive := 3;
         addr_width_x    : positive := 3;
 
+        data_width_iact_mem : positive := 64; -- iact word width from memory
         data_width_iact     : positive := 8; -- Width of the input data (weights, iacts)
         addr_width_iact     : positive := 5;
         addr_width_iact_mem : positive := 15;
@@ -88,7 +89,7 @@ entity scratchpad_interface is
         o_data_psum     : out   std_logic_vector(data_width_psum_mem - 1 downto 0);
 
         -- Data from Scratchpad
-        i_data_iact : in    std_logic_vector(data_width_iact - 1 downto 0);
+        i_data_iact : in    std_logic_vector(data_width_iact_mem - 1 downto 0);
         i_data_wght : in    std_logic_vector(data_width_wght - 1 downto 0);
 
         i_data_iact_valid : in    std_logic;
@@ -125,14 +126,17 @@ architecture rtl of scratchpad_interface is
     signal r_sel_iact_fifo : std_logic_vector(addr_width_rows - 1 downto 0);
     signal r_sel_wght_fifo : std_logic_vector(addr_width_y - 1 downto 0);
 
-    signal w_demux_iact_out       : array_t(0 to size_rows - 1)(data_width_iact - 1 downto 0);
+    signal w_demux_iact_out       : array_t(0 to size_rows - 1)(data_width_iact_mem - 1 downto 0);
     signal w_demux_wght_out       : array_t(0 to size_y - 1)(data_width_wght - 1 downto 0);
     signal w_demux_iact_out_valid : array_t(0 to size_rows - 1)(0 downto 0);
     signal w_demux_wght_out_valid : array_t(0 to size_y - 1)(0 downto 0);
 
+    signal w_iact_serializer_ready : std_logic_vector(size_rows - 1 downto 0);
+    signal r_dout_iact_f_valid     : std_logic_vector(size_rows - 1 downto 0);
+
     signal w_rd_en_iact_f       : std_logic_vector(size_rows - 1 downto 0);
     signal w_rd_en_iact_f_d     : std_logic_vector(size_rows - 1 downto 0);
-    signal w_dout_iact_f        : array_t(0 to size_rows - 1)(data_width_iact - 1 downto 0);
+    signal w_dout_iact_f        : array_t(0 to size_rows - 1)(data_width_iact_mem - 1 downto 0);
     signal w_full_iact_f        : std_logic_vector(size_rows - 1 downto 0);
     signal w_almost_full_iact_f : std_logic_vector(size_rows - 1 downto 0);
     signal w_empty_iact_f       : std_logic_vector(size_rows - 1 downto 0);
@@ -310,15 +314,31 @@ begin
     o_address_iact <= w_address_iact;
     o_address_wght <= w_address_wght;
 
-    o_data_iact_valid <= w_valid_iact_f;
+    -- o_data_iact_valid <= w_valid_iact_f;
     o_data_wght_valid <= w_valid_wght_f;
 
     gen_pe_arr_iact : for i in 0 to size_rows - 1 generate
 
-        o_data_iact(i) <= w_dout_iact_f(i);
+        serializer_inst : entity accel.serializer
+            generic map (
+                in_width => data_width_iact_mem,
+                out_width => data_width_iact
+            )
+            port map (
+                clk => clk,
+                rstn => rstn,
+                i_valid => w_valid_iact_f(i) or r_dout_iact_f_valid(i),
+                i_data => w_dout_iact_f(i),
+                o_ready => w_iact_serializer_ready(i),
+                i_ready => not i_buffer_full_iact(i) and not r_pause_iact(i),
+                o_data => o_data_iact(i),
+                o_valid => o_data_iact_valid(i)
+            );
 
-        w_rd_en_iact_f(i) <= i_start and not w_empty_iact_f(i) and not r_pause_iact(i) and
-                             not (i_buffer_full_next_iact(i) and (i_buffer_full_iact(i) or w_rd_en_iact_f_d(i)));
+        -- o_data_iact(i) <= w_dout_iact_f(i);
+
+        w_rd_en_iact_f(i) <= i_start and not w_empty_iact_f(i) and w_iact_serializer_ready(i);
+            -- and not (i_buffer_full_next_iact(i) and (i_buffer_full_iact(i) or w_rd_en_iact_f_d(i)));
 
     end generate gen_pe_arr_iact;
 
@@ -446,7 +466,7 @@ begin
 
     demux_iact : entity accel.demux
         generic map (
-            output_width  => data_width_iact,
+            output_width  => data_width_iact_mem,
             output_num    => size_rows,
             address_width => addr_width_rows
         )
@@ -520,6 +540,15 @@ begin
             report "push to full iact fifo " & integer'image(y)
             severity warning;
 
+        fifo_dout_valid_track : process is
+        begin
+            wait until rising_edge(clk);
+            if w_rd_en_iact_f_d(y) or w_iact_serializer_ready(y) then
+                r_dout_iact_f_valid(y) <= w_valid_iact_f(y) and not w_iact_serializer_ready(y);
+            end if;
+            -- r_dout_iact_f_valid(y) <= w_valid_iact_f(y) when rising_edge(clk) and w_rd_en_iact_f_d(y);
+        end process fifo_dout_valid_track;
+
     end generate gen_fifo_iact;
 
     gen_fifo_wght : for y in 0 to size_y - 1 generate
@@ -576,7 +605,7 @@ begin
                 valid       => w_valid_iact_address_f(y)(0)
             );
 
-        assert rstn = '0' or i_address_iact_valid(y) = '0' or w_full_iact_address_f(y) = '0'
+        assert rstn = '0' or i_address_iact_valid(y) = '0' or w_full_iact_address_f(y) = '0' or not rising_edge(clk)
             report "push to full iact address fifo " & integer'image(y)
             severity warning;
 

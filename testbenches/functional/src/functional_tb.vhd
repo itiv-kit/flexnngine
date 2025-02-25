@@ -69,7 +69,10 @@ entity functional_tb is
         g_mode_act     : integer  := 0;
         g_requant      : integer  := 0;
         g_postproc     : integer  := 1;
-        g_dataflow     : integer  := 1
+        g_dataflow     : integer  := 1;
+
+        g_stride_iact_w  : positive := 1;
+        g_stride_iact_hw : positive := 1
     );
 end entity functional_tb;
 
@@ -101,10 +104,10 @@ architecture imp of functional_tb is
     signal zeropt_fp32 : array_t(max_output_channels - 1 downto 0)(31 downto 0);
     signal scale_fp32  : array_t(max_output_channels - 1 downto 0)(31 downto 0);
 
-    constant spad_ext_addr_width_iact : integer := addr_width_iact_mem - 2;
+    constant spad_ext_addr_width_iact : integer := addr_width_iact_mem;
     constant spad_ext_addr_width_psum : integer := addr_width_psum_mem - 3; -- word-wise addressing (word size see below)
     constant spad_ext_addr_width_wght : integer := addr_width_wght_mem - 2;
-    constant spad_ext_data_width_iact : integer := 32;
+    constant spad_ext_data_width_iact : integer := 64;
     constant spad_ext_data_width_psum : integer := 64;
     constant spad_ext_data_width_wght : integer := 32;
     constant iact_words_per_mem_word  : integer := 2 ** (addr_width_iact_mem - spad_ext_addr_width_iact);
@@ -169,6 +172,9 @@ begin
     params.mode_act     <= mode_activation_t'val(g_mode_act);
     params.zeropt_fp32  <= zeropt_fp32;
     params.scale_fp32   <= scale_fp32;
+
+    params.stride_iact_w  <= g_stride_iact_w;
+    params.stride_iact_hw <= g_stride_iact_hw;
 
     accelerator_inst : entity accel.accelerator
         generic map (

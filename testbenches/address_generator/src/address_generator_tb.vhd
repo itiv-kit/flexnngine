@@ -29,18 +29,18 @@ architecture imp of address_generator_tb is
 
     constant params : parameters_t := (
         -- inputchs => 34, -- (c1 - 1) * c0 + c0_last_c1
-        inputchs => 48, -- (c1 - 1) * c0 + c0_last_c1
+        inputchs => 8, -- (c1 - 1) * c0 + c0_last_c1
         outputchs => 3,
-        image_y => 32,
-        image_x => 32,
+        image_y => 16,
+        image_x => 16,
         kernel_size => 3,
-        c1 => 3,
-        w1 => 32, -- output image width
-        h2 => 7, -- number of iterations to process full image height (ceil(image_y/size_x)=4)
+        c1 => 1,
+        w1 => 14, -- output image width
+        h2 => 4, -- number of iterations to process full image height (ceil(image_y/size_x)=4)
         m0 => 3, -- number of mapped kernels (here: three 3x3 kernels)
         m0_last_m1 => 1,
-        c0 => 16, -- number of channels processed at once
-        c0_last_c1 => 16,
+        c0 => 8, -- number of channels processed at once
+        c0_last_c1 => 8,
         -- c0 => 12, -- number of channels processed at once
         -- c0_last_c1 => 10,
         scale_fp32 => (others => (others => '0')),
@@ -50,9 +50,9 @@ architecture imp of address_generator_tb is
         requant_enab => true,
         base_iact => 0,
         -- stride_iact_ch => 5, -- 5 words of read size 8 bytes for inputchs channels (ceil(34/8) = 5)
-        stride_iact_ch => 6, -- 6 words of read size 8 bytes for inputchs channels (ceil(48/8) = 6)
-        stride_iact_w => 32 / 8, -- words of read size 8 bytes for a full image row (with w pixels, padded to multiple of read size)
-        stride_iact_hw => 32*32 / 8, -- 128 8-byte words to load a hxw image
+        -- stride_iact_ch => 1, -- 6 words of read size 8 bytes for inputchs channels (ceil(48/8) = 6)
+        stride_iact_w => 16 / 8, -- words of read size 8 bytes for a full image row (with w pixels, padded to multiple of read size)
+        stride_iact_hw => 16*16 / 8, -- 128 8-byte words to load a hxw image
         others => 0
     );
 
@@ -159,12 +159,12 @@ begin
 
         fifo_iact_address : entity accel.fifo
             generic map (
-                mem_size => 512
+                mem_size => 16
             )
             port map (
                 clk   => clk,
                 rst   => not rstn,
-                wr    => o_address_iact_valid(y) and not i_fifo_full_iact,
+                wr    => o_address_iact_valid(y),
                 din   => o_address_iact(y),
                 full  => fifo_full(y),
                 rd    => fifo_rd(y),
@@ -311,14 +311,14 @@ begin
 
             -- our test pixels are same in all channels and just numbered linearly
             -- after c1 rows are processed, start next h2 iteration -> offset by size_x rows
-            expect := (row_cnt(row) / params.c1) * size_x * params.w1 + row * params.w1 + w1_cnt(row);
+            expect := (row_cnt(row) / params.c1) * size_x * params.image_x + row * params.image_x + w1_cnt(row);
             expect := expect mod 2 ** word_size; -- wrap to 8 bits
 
             for word in 0 to read_size - 1 loop
                 tmp := to_integer(unsigned(mem_rsh_dout((word+1)*word_size - 1 downto word * word_size)));
                 assert tmp = expect
                     report "expected " & integer'image(expect) & " for c0 " & integer'image(c0_cnt(row)) & " w1 " & integer'image(w1_cnt(row)) & " row " & integer'image(row) & ", got " & integer'image(tmp)
-                    severity warning; --failure;
+                    severity failure;
             end loop;
 
             if c0_cnt(row) <= params.c0 - read_size - 1 then
@@ -326,7 +326,7 @@ begin
             else
                 c0_cnt(row) := 0;
 
-                if w1_cnt(row) < params.w1 - 1 then
+                if w1_cnt(row) < params.image_x - 1 then
                     w1_cnt(row) := w1_cnt(row) + 1;
                 else
                     w1_cnt(row) := 0;
@@ -336,7 +336,7 @@ begin
             end if;
         end if;
 
-        if o_iact_done and and fifo_empty then
+        if o_iact_done and not mem_rsh_en_delay and and fifo_empty then
 
             for row in 0 to size_rows - 1 loop
 

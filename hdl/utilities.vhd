@@ -77,9 +77,9 @@ package utilities is
         scale_fp32   : array_t(max_output_channels - 1 downto 0)(31 downto 0);
         -- base/stride count memory words (e.g. 64bit / 8 bytes)
         base_iact    : integer range 0 to 2 ** max_spad_addr_width - 1;
-        stride_iact_ch : integer range 0 to max_line_length_psum - 1; -- word count of c0*c1 channels
-        stride_iact_w  : integer range 0 to 131071; -- word count of c0*c1*w1 columns (outside / "standard" spad view)
-        stride_iact_hw : integer range 0 to 131071; -- word count of an h*w image
+        -- stride_iact_ch : integer range 0 to max_line_length_psum - 1; -- word count of c0*c1 channels
+        stride_iact_w  : integer range 0 to 131071; -- mem cols word count of c0*c1*w1 columns (outside / "standard" spad view)
+        stride_iact_hw : integer range 0 to 131071; -- mem cols word count of an h*w image
     end record parameters_t;
 
     type status_info_spadif_t is record

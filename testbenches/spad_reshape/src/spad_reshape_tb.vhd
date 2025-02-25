@@ -46,7 +46,6 @@ architecture imp of spad_reshape_tb is
     -- "reshaped" interface to read nchw <-> nhwc reshaped data (currently read only)
     signal rsh_en       : std_logic;
     signal rsh_addr     : std_logic_vector(addr_width - 1 downto 0);
-    signal rsh_din      : std_logic_vector(data_width - 1 downto 0);
     signal rsh_dout     : std_logic_vector(data_width - 1 downto 0);
 
 begin
@@ -67,7 +66,6 @@ begin
             std_dout     => std_dout,
             rsh_en       => rsh_en,
             rsh_addr     => rsh_addr,
-            rsh_din      => rsh_din,
             rsh_dout     => rsh_dout
         );
 
@@ -155,7 +153,6 @@ begin
 
         rsh_en   <= '0';
         rsh_addr <= (others => '0');
-        rsh_din  <= (others => '0');
 
         read_data_inflight <= false;
 

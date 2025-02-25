@@ -7,7 +7,7 @@ library accel;
 
 entity scratchpad is
     generic (
-        ext_data_width_iact : positive := 32;
+        ext_data_width_iact : positive := 64;
         ext_addr_width_iact : positive := 13;
 
         ext_data_width_psum : positive := 64; -- TODO: this is the word width of the future shared spad
@@ -48,7 +48,7 @@ entity scratchpad is
         dout_iact_valid : out   std_logic;
         dout_wght_valid : out   std_logic;
 
-        dout_iact : out   std_logic_vector(data_width_iact - 1 downto 0);
+        dout_iact : out   std_logic_vector(ext_data_width_iact - 1 downto 0);
         dout_wght : out   std_logic_vector(data_width_wght - 1 downto 0);
         din_psum  : in    std_logic_vector(ext_data_width_psum - 1 downto 0);
 
@@ -77,7 +77,7 @@ end entity scratchpad;
 
 architecture rtl of scratchpad is
 
-    constant cols_iact : integer := ext_data_width_iact / 8;
+    constant cols_iact : integer := ext_data_width_iact / 8; -- TODO: different type of cols for reshape spad
     constant cols_wght : integer := ext_data_width_wght / 8;
     constant cols_psum : integer := ext_data_width_psum / 8;
 
@@ -110,7 +110,8 @@ begin
     web_wght <= (others => '0');
 
     -- addresses for portb
-    addrb_iact <= read_adr_iact(addr_width_iact - 1 downto addr_width_iact - ext_addr_width_iact);
+    -- addrb_iact <= read_adr_iact(addr_width_iact - 1 downto addr_width_iact - ext_addr_width_iact);
+    addrb_iact <= read_adr_iact;
     addrb_wght <= read_adr_wght(addr_width_wght - 1 downto addr_width_wght - ext_addr_width_wght);
 
     read_adr_iact_buff <= read_adr_iact when rising_edge(clk);
@@ -121,8 +122,9 @@ begin
 
     begin
 
-        index     := to_integer(unsigned(read_adr_iact_buff(addr_width_iact - ext_addr_width_iact - 1 downto 0)));
-        dout_iact <= datab_iact(data_width_iact * (index + 1) - 1 downto data_width_iact * index);
+        -- index     := to_integer(unsigned(read_adr_iact_buff(addr_width_iact - ext_addr_width_iact - 1 downto 0)));
+        -- dout_iact <= datab_iact(data_width_iact * (index + 1) - 1 downto data_width_iact * index);
+        dout_iact <= datab_iact;
 
     end process iact;
 
@@ -189,31 +191,52 @@ begin
 
     end process psum;
 
-    ram_iact : entity accel.ram_dp_bwe
+    ram_iact : entity accel.spad_reshape
         generic map (
-            size       => 2 ** ext_addr_width_iact,
-            addr_width => ext_addr_width_iact,
-            col_width  => 8,
-            nb_col     => cols_iact,
-            initialize => initialize_mems,
-            init_file  => g_files_dir & "_mem_iact.txt"
+            word_size   => data_width_iact,
+            cols        => cols_iact,
+            addr_width  => ext_addr_width_iact,
+            initialize  => initialize_mems,
+            g_files_dir => g_files_dir
         )
         port map (
-            -- external access
-            clka  => ext_clk,
-            ena   => ext_en_iact,
-            wea   => ext_write_en_iact,
-            addra => ext_addr_iact,
-            dia   => ext_din_iact,
-            doa   => ext_dout_iact,
-            -- internal access
-            clkb  => clk,
-            enb   => enb_iact,
-            web   => web_iact,
-            addrb => addrb_iact,
-            dib   => (others => '0'),
-            dob   => datab_iact
+            clk      => clk,
+            rstn     => rstn,
+            std_en   => ext_en_iact,
+            std_wen  => ext_write_en_iact,
+            std_addr => ext_addr_iact,
+            std_din  => ext_din_iact,
+            std_dout => ext_dout_iact,
+            rsh_en   => enb_iact,
+            rsh_addr => addrb_iact,
+            rsh_dout => datab_iact
         );
+
+    -- ram_iact : entity accel.ram_dp_bwe
+    --     generic map (
+    --         size       => 2 ** ext_addr_width_iact,
+    --         addr_width => ext_addr_width_iact,
+    --         col_width  => 8,
+    --         nb_col     => cols_iact,
+    --         initialize => initialize_mems,
+    --         init_file  => g_files_dir & "_mem_iact.txt"
+    --     )
+    --     port map (
+    --         -- external access
+    --         clka  => ext_clk,
+    --         ena   => ext_en_iact,
+    --         wea   => ext_write_en_iact,
+    --         addra => ext_addr_iact,
+    --         dia   => ext_din_iact,
+    --         doa   => ext_dout_iact,
+    --         -- internal access
+    --         clkb  => clk,
+    --         enb   => enb_iact,
+    --         web   => web_iact,
+    --         addrb => addrb_iact,
+    --         dib   => (others => '0'),
+    --         dob   => datab_iact
+    --     );
 
     ram_wght : entity accel.ram_dp_bwe
         generic map (

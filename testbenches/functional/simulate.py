@@ -68,6 +68,7 @@ class Accelerator:
         self.clk_period = clk_period
         self.clk_sp_period = clk_sp_period
         self.dataflow = dataflow
+        self.spad_word_size = 8
 
 
 @dataclass
@@ -99,17 +100,12 @@ class Setting:
         rq = int(self.convolution.requantize) if not isinstance(self.convolution.requantize, list) else 'X'
         return f'HW_{hw}_RS_{rs}_C_{c}_Li_{li}_Lw_{lw}_Lp_{lp}_Fi_{fifoi}_Fw_{fifow}_Fp_{fifop}_Clk_{clk}_ClkSp_{clk_sp}_X_{x}_Y_{y}_Df_{df}_Bi_{bias}_Rq_{rq}'
 
-def write_memory_file_int8_wordsize8(filename, image):
+def write_memory_file_int8(filename, image, wordsize=32):
+    pixels_per_word = wordsize // 8
+    pixels = image.flatten().astype(np.int8)
+    num_words = math.ceil(pixels.size / pixels_per_word)
+    pixels.resize(num_words * pixels_per_word)
     with open(filename, "w") as f:
-        pixels = image.flatten().astype(np.int8)
-        for pixel in pixels:
-            f.write(np.binary_repr(pixel, 8)+'\n')
-
-def write_memory_file_int8_wordsize32(filename, image):
-    with open(filename, "w") as f:
-        pixels = image.flatten().astype(np.int8)
-        num_words = math.ceil(pixels.size / 4)
-        pixels.resize(num_words * 4)
         for nibble in np.split(pixels, num_words):
             f.write(''.join([np.binary_repr(x, 8) for x in reversed(nibble)])+'\n')
 
@@ -132,6 +128,9 @@ class Test:
         # Generate input activations
         # Generate weights
         # Generate expected output activations
+
+        self.stride_iact_w = math.ceil(self.convolution.image_size / self.accelerator.spad_word_size)
+        self.stride_iact_hw = math.ceil(self.convolution.image_size * self.convolution.image_size / self.accelerator.spad_word_size)
 
         if self.accelerator.dataflow == 1:
             self.M0 = self.accelerator.size_y
@@ -361,10 +360,13 @@ class Test:
 
         # save mem files
         # save image as 8-bit binary values in _mem_iact.txt in two's complement
-        write_memory_file_int8_wordsize32(self.test_dir / "_mem_iact.txt", image_stack)
+        for column in range(0, 8):
+            image_col = image[column::8]
+            # TODO: pad channels to multiples of 8 (i.e. image stride)
+            write_memory_file_int8(self.test_dir / f"_mem_col{column}.txt", image_col, wordsize=64)
 
         # save kernels as 8-bit binary values in _mem_wght_stack.txt in two's complement
-        write_memory_file_int8_wordsize32(self.test_dir / "_mem_wght_stack.txt", kernels_stack)
+        write_memory_file_int8(self.test_dir / "_mem_wght_stack.txt", kernels_stack, wordsize=32)
 
         return True
 
@@ -417,6 +419,8 @@ class Test:
             'g_c0_last_c1':        self.C0_last_c1,
             'g_c0w0':              self.C0W0,
             'g_c0w0_last_c1':      self.C0W0_last_c1,
+            'g_stride_iact_w':     self.stride_iact_w,
+            'g_stride_iact_hw':    self.stride_iact_hw,
             'g_clk':               self.accelerator.clk_period,
             'g_clk_sp':            self.accelerator.clk_sp_period,
             'g_mode_act':          int(self.convolution.activation),
@@ -488,11 +492,11 @@ class Test:
 
             if np.less_equal(delta, acceptable_delta).all():
                 if self.convolution.requantize:
-                    print(f'{self.name}: Output matches! Maximum requant delta: {np.max(delta)}')
+                    print(f'{self.name}: Output matches! Maximum delta: {np.max(delta)}')
                 else:
                     print(f'{self.name}: Output matches!')
             else:
-                print(f'{self.name}: Output differs!')
+                print(f'{self.name}: Output differs! Maximum delta: {np.max(delta)}')
                 index = 0
                 for actual_row, expected_row in zip(actual_output, expected_output):
                     if not np.equal(actual_row, expected_row).all():

@@ -26,25 +26,24 @@ entity spad_reshape is
         addr_width : positive := 8; -- address width for standard & reshaped ports
         data_width : positive := cols * word_size;
 
-        initialize_mems : boolean := false;
-        g_files_dir     : string  := ""
+        initialize  : boolean := false;
+        g_files_dir : string  := ""
     );
     port (
         clk  : in    std_logic;
         rstn : in    std_logic;
 
         -- "standard" interface for non-reshaped data I/O
-        std_en       : in    std_logic;
-        std_write_en : in    std_logic_vector(cols - 1 downto 0);
-        std_addr     : in    std_logic_vector(addr_width - 1 downto 0);
-        std_din      : in    std_logic_vector(data_width - 1 downto 0);
-        std_dout     : out   std_logic_vector(data_width - 1 downto 0);
+        std_en   : in    std_logic;
+        std_wen  : in    std_logic_vector(cols - 1 downto 0);
+        std_addr : in    std_logic_vector(addr_width - 1 downto 0);
+        std_din  : in    std_logic_vector(data_width - 1 downto 0);
+        std_dout : out   std_logic_vector(data_width - 1 downto 0);
 
         -- "reshaped" interface to read nchw <-> nhwc reshaped data (currently read only)
-        rsh_en       : in    std_logic;
-        rsh_addr     : in    std_logic_vector(addr_width - 1 downto 0);
-        rsh_din      : in    std_logic_vector(data_width - 1 downto 0);
-        rsh_dout     : out   std_logic_vector(data_width - 1 downto 0)
+        rsh_en   : in    std_logic;
+        rsh_addr : in    std_logic_vector(addr_width - 1 downto 0);
+        rsh_dout : out   std_logic_vector(data_width - 1 downto 0)
     );
 end entity spad_reshape;
 
@@ -53,14 +52,14 @@ architecture rtl of spad_reshape is
     constant col_sel_width  : integer := integer(ceil(log2(real(cols))));
     constant ram_addr_width : integer := addr_width - col_sel_width;
 
-    signal w_std_en       : std_logic_vector(0 to cols - 1);
-    signal w_std_write_en : array_t(0 to cols - 1)(cols - 1 downto 0);
-    signal w_std_addr     : array_t(0 to cols - 1)(ram_addr_width - 1 downto 0);
-    signal w_std_din      : array_t(0 to cols - 1)(data_width - 1 downto 0);
-    signal w_std_dout     : array_t(0 to cols - 1)(data_width - 1 downto 0);
-    signal w_rsh_en       : std_logic_vector(0 to cols - 1);
-    signal w_rsh_addr     : array_t(0 to cols - 1)(ram_addr_width - 1 downto 0);
-    signal w_rsh_dout     : array_t(0 to cols - 1)(data_width - 1 downto 0);
+    signal w_std_en   : std_logic_vector(0 to cols - 1);
+    signal w_std_wen  : array_t(0 to cols - 1)(cols - 1 downto 0);
+    signal w_std_addr : array_t(0 to cols - 1)(ram_addr_width - 1 downto 0);
+    signal w_std_din  : array_t(0 to cols - 1)(data_width - 1 downto 0);
+    signal w_std_dout : array_t(0 to cols - 1)(data_width - 1 downto 0);
+    signal w_rsh_en   : std_logic_vector(0 to cols - 1);
+    signal w_rsh_addr : array_t(0 to cols - 1)(ram_addr_width - 1 downto 0);
+    signal w_rsh_dout : array_t(0 to cols - 1)(data_width - 1 downto 0);
 
     signal r_std_addr_delay : std_logic_vector(addr_width - 1 downto 0);
     signal r_rsh_addr_delay : std_logic_vector(addr_width - 1 downto 0);
@@ -69,7 +68,7 @@ begin
 
     gen_cols : for i in 0 to cols - 1 generate
 
-        w_std_write_en(i) <= std_write_en;
+        w_std_wen(i) <= std_wen;
         w_std_addr(i) <= std_addr(ram_addr_width - 1 downto 0);
         w_std_din(i)  <= std_din;
         w_rsh_en(i)   <= rsh_en;
@@ -81,14 +80,14 @@ begin
                 addr_width => ram_addr_width,
                 col_width  => word_size,
                 nb_col     => cols, -- only required for external partial access, could be different from our "cols"
-                initialize => initialize_mems,
-                init_file  => g_files_dir & "_mem_iact_col" & integer'image(i) & ".txt"
+                initialize => initialize,
+                init_file  => g_files_dir & "_mem_col" & integer'image(i) & ".txt"
             )
             port map (
                 -- standard access
                 clka  => clk,
                 ena   => w_std_en(i),
-                wea   => w_std_write_en(i),
+                wea   => w_std_wen(i),
                 addra => w_std_addr(i),
                 dia   => w_std_din(i),
                 doa   => w_std_dout(i),
@@ -112,7 +111,7 @@ begin
             r_rsh_addr_delay <= (others => '0');
         else
 
-            if std_en and not (or std_write_en) then
+            if std_en and not (or std_wen) then
                 r_std_addr_delay <= std_addr;
             end if;
 
