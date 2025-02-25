@@ -53,7 +53,7 @@ begin
                 shift_reg <= i_data;
                 has_data  <= '1';
                 o_valid   <= '1';
-                counter <= 0;
+                counter   <= 0;
             end if;
 
             if has_data and i_ready then
@@ -70,7 +70,7 @@ begin
 
     end process serialize_proc;
 
-    o_data <= shift_reg(out_width - 1 downto 0);
+    o_data  <= shift_reg(out_width - 1 downto 0);
     o_ready <= not has_data;
 
 end architecture behavioral;

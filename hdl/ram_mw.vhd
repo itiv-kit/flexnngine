@@ -14,9 +14,9 @@ entity ram_mw is
         data_width_a     : positive := 8;  -- data width of port A, port B is larger
         addr_width_delta : positive := 2;  -- number of bits which address A is larger than address B.
         -- computed generics, usually no need to change them:
-        words_a_per_b    : positive := 2 ** addr_width_delta;
-        addr_width_a     : positive := addr_width_b + addr_width_delta;
-        data_width_b     : positive := data_width_a * words_a_per_b
+        words_a_per_b : positive := 2 ** addr_width_delta;
+        addr_width_a  : positive := addr_width_b + addr_width_delta;
+        data_width_b  : positive := data_width_a * words_a_per_b
     );
     port (
         clka  : in    std_logic;
@@ -52,19 +52,20 @@ begin
             addr_width => addr_width_b,
             col_width  => data_width_a,
             nb_col     => words_a_per_b
-        ) port map (
-            clka => clka,
-            ena => '1',
-            wea => s_wea,
+        )
+        port map (
+            clka  => clka,
+            ena   => '1',
+            wea   => s_wea,
             addra => s_addra_upper,
-            dia => s_dina,
-            doa => s_douta,
-            clkb => clkb,
-            enb => '1',
-            web => s_web,
+            dia   => s_dina,
+            doa   => s_douta,
+            clkb  => clkb,
+            enb   => '1',
+            web   => s_web,
             addrb => addrb,
-            dib => dinb,
-            dob => doutb
+            dib   => dinb,
+            dob   => doutb
         );
 
     s_web <= (others => wenb);
@@ -76,8 +77,11 @@ begin
     douta <= s_douta_slices(to_integer(unsigned(s_addra_lower_delay)));
 
     p_porta : process (all) is
+
         variable index : integer range 0 to words_a_per_b - 1;
+
     begin
+
         index := to_integer(unsigned(s_addra_lower));
 
         s_wea        <= (others => '0');
@@ -90,6 +94,7 @@ begin
             s_douta_slices(i) <= s_douta((i + 1) * data_width_a - 1 downto i * data_width_a);
 
         end loop;
+
     end process p_porta;
 
 end architecture syn;

@@ -6,12 +6,12 @@ library ieee;
 
 package utilities is
 
-    constant max_output_channels  : integer := 16; -- maximum number of output channels mapped on array
-    constant max_size_x           : integer := 32; -- maximum array size x
+    constant max_output_channels  : integer := 16;  -- maximum number of output channels mapped on array
+    constant max_size_x           : integer := 32;  -- maximum array size x
     constant max_line_length_iact : integer := 64;
     constant max_line_length_wght : integer := 64;
     constant max_line_length_psum : integer := 128; -- currently equals maximum image width
-    constant max_spad_addr_width  : integer := 20; -- maximum memory address width in bits, can be less physically
+    constant max_spad_addr_width  : integer := 20;  -- maximum memory address width in bits, can be less physically
 
     type t_control_state is (s_idle, s_init, s_calculate, s_output, s_incr_c1, s_incr_h1, s_done);
     type mode_activation_t is (passthrough, relu, sigmoid, leaky_relu, elu);
@@ -76,7 +76,7 @@ package utilities is
         zeropt_fp32  : array_t(max_output_channels - 1 downto 0)(31 downto 0);
         scale_fp32   : array_t(max_output_channels - 1 downto 0)(31 downto 0);
         -- base/stride count memory words (e.g. 64bit / 8 bytes)
-        base_iact    : integer range 0 to 2 ** max_spad_addr_width - 1;
+        base_iact : integer range 0 to 2 ** max_spad_addr_width - 1;
         -- stride_iact_ch : integer range 0 to max_line_length_psum - 1; -- word count of c0*c1 channels
         stride_iact_w  : integer range 0 to 131071; -- mem cols word count of c0*c1*w1 columns (outside / "standard" spad view)
         stride_iact_hw : integer range 0 to 131071; -- mem cols word count of an h*w image

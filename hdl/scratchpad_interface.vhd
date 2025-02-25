@@ -17,7 +17,7 @@ entity scratchpad_interface is
         addr_width_x    : positive := 3;
 
         data_width_iact_mem : positive := 64; -- iact word width from memory
-        data_width_iact     : positive := 8; -- Width of the input data (weights, iacts)
+        data_width_iact     : positive := 8;  -- Width of the input data (weights, iacts)
         addr_width_iact     : positive := 5;
         addr_width_iact_mem : positive := 15;
 
@@ -321,24 +321,24 @@ begin
 
         serializer_inst : entity accel.serializer
             generic map (
-                in_width => data_width_iact_mem,
+                in_width  => data_width_iact_mem,
                 out_width => data_width_iact
             )
             port map (
-                clk => clk,
-                rstn => rstn,
+                clk     => clk,
+                rstn    => rstn,
                 i_valid => w_valid_iact_f(i) or r_dout_iact_f_valid(i),
-                i_data => w_dout_iact_f(i),
+                i_data  => w_dout_iact_f(i),
                 o_ready => w_iact_serializer_ready(i),
                 i_ready => not i_buffer_full_iact(i) and not r_pause_iact(i),
-                o_data => o_data_iact(i),
+                o_data  => o_data_iact(i),
                 o_valid => o_data_iact_valid(i)
             );
 
         -- o_data_iact(i) <= w_dout_iact_f(i);
 
         w_rd_en_iact_f(i) <= i_start and not w_empty_iact_f(i) and w_iact_serializer_ready(i);
-            -- and not (i_buffer_full_next_iact(i) and (i_buffer_full_iact(i) or w_rd_en_iact_f_d(i)));
+    -- and not (i_buffer_full_next_iact(i) and (i_buffer_full_iact(i) or w_rd_en_iact_f_d(i)));
 
     end generate gen_pe_arr_iact;
 
@@ -542,11 +542,15 @@ begin
 
         fifo_dout_valid_track : process is
         begin
+
             wait until rising_edge(clk);
+
             if w_rd_en_iact_f_d(y) or w_iact_serializer_ready(y) then
                 r_dout_iact_f_valid(y) <= w_valid_iact_f(y) and not w_iact_serializer_ready(y);
             end if;
-            -- r_dout_iact_f_valid(y) <= w_valid_iact_f(y) when rising_edge(clk) and w_rd_en_iact_f_d(y);
+
+        -- r_dout_iact_f_valid(y) <= w_valid_iact_f(y) when rising_edge(clk) and w_rd_en_iact_f_d(y);
+
         end process fifo_dout_valid_track;
 
     end generate gen_fifo_iact;

@@ -68,7 +68,7 @@ begin
 
     gen_cols : for i in 0 to cols - 1 generate
 
-        w_std_wen(i) <= std_wen;
+        w_std_wen(i)  <= std_wen;
         w_std_addr(i) <= std_addr(ram_addr_width - 1 downto 0);
         w_std_din(i)  <= std_din;
         w_rsh_en(i)   <= rsh_en;
@@ -79,7 +79,7 @@ begin
                 size       => 2 ** ram_addr_width,
                 addr_width => ram_addr_width,
                 col_width  => word_size,
-                nb_col     => cols, -- only required for external partial access, could be different from our "cols"
+                nb_col     => cols,
                 initialize => initialize,
                 init_file  => g_files_dir & "_mem_col" & integer'image(i) & ".txt"
             )
@@ -104,13 +104,13 @@ begin
 
     addr_delay : process is
     begin
+
         wait until rising_edge(clk);
 
         if rstn = '0' then
             r_std_addr_delay <= (others => '0');
             r_rsh_addr_delay <= (others => '0');
         else
-
             if std_en and not (or std_wen) then
                 r_std_addr_delay <= std_addr;
             end if;
@@ -118,7 +118,6 @@ begin
             if rsh_en then
                 r_rsh_addr_delay <= rsh_addr;
             end if;
-
         end if;
 
     end process addr_delay;
@@ -130,7 +129,7 @@ begin
     begin
 
         -- from std view, memories are connected serially in the address space
-        index := to_integer(unsigned(std_addr(addr_width - 1 downto ram_addr_width)));
+        index           := to_integer(unsigned(std_addr(addr_width - 1 downto ram_addr_width)));
         w_std_en        <= (others => '0');
         w_std_en(index) <= std_en;
 
@@ -142,7 +141,7 @@ begin
 
     begin
 
-        index := to_integer(unsigned(r_std_addr_delay(addr_width - 1 downto ram_addr_width)));
+        index    := to_integer(unsigned(r_std_addr_delay(addr_width - 1 downto ram_addr_width)));
         std_dout <= w_std_dout(index);
 
     end process std_read;
@@ -156,7 +155,9 @@ begin
         index := to_integer(unsigned(r_rsh_addr_delay(col_sel_width - 1 downto 0)));
 
         for c in 0 to cols - 1 loop
+
             rsh_dout((c + 1) * word_size - 1 downto c * word_size) <= w_rsh_dout(c)((index + 1) * word_size - 1 downto index * word_size);
+
         end loop;
 
     end process rsh_read;

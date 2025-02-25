@@ -29,3 +29,5 @@ rule:
     disable: true
   procedure_013:
     disable: true
+  element_association_100:
+    disable: true
