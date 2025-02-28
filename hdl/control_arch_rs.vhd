@@ -54,7 +54,7 @@ architecture rs_dataflow of control is
 
     signal r_command : command_pe_array_t(0 to size_y - 1);
 
-    signal r_m0_dist         : array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
+    signal r_m0_dist         : uns_array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
     signal r_m0_count_idx    : integer range 0 to size_y + 1;
     signal r_m0_count_kernel : integer range 0 to size_y + 1;
 
@@ -412,7 +412,7 @@ begin
 
     g_psum_pe_commands : for i in 0 to size_y - 1 generate
 
-        w_output_sequence(i) <= (i - (to_integer(unsigned(r_m0_dist(i)))) * i_params.kernel_size + i_params.kernel_size);
+        w_output_sequence(i) <= (i - (to_integer(r_m0_dist(i))) * i_params.kernel_size + i_params.kernel_size);
 
         -- Commands to control dataflow within PE (psum / mult / passthrough)
         p_command : process (clk, rstn) is
@@ -428,10 +428,10 @@ begin
 
                         if r_count_w1 = 1 and r_count_c0w0 < i_params.kernel_size then
                             r_command(i) <= c_pe_conv_psum;
-                        elsif to_integer(unsigned(r_m0_dist(i))) = 0 then
+                        elsif to_integer(r_m0_dist(i)) = 0 then
                             r_command(i) <= c_pe_conv_psum;
                         elsif r_count_c0w0 > i_params.kernel_size then
-                            if w_output_sequence(i) = i_params.kernel_size - r_count_c0w0 - 1 + to_integer(unsigned(r_m0_dist(i))) then
+                            if w_output_sequence(i) = i_params.kernel_size - r_count_c0w0 - 1 + to_integer(r_m0_dist(i)) then
                                 r_command(i) <= c_pe_conv_psum;
                             elsif r_count_w1 = 2 then
                                 r_command(i) <= c_pe_conv_pass;
@@ -512,7 +512,7 @@ begin
                                     r_command_psum(i) <= c_lb_read_update;
                                 elsif r_count_c0w0 = i_params.kernel_size then
                                     r_command_psum(i) <= c_lb_idle;
-                                elsif w_output_sequence(i) = i_params.kernel_size - r_count_c0w0 - 1 + to_integer(unsigned(r_m0_dist(i))) and r_count_c0w0 >= i_params.kernel_size + 1 then
+                                elsif w_output_sequence(i) = i_params.kernel_size - r_count_c0w0 - 1 + to_integer(r_m0_dist(i)) and r_count_c0w0 >= i_params.kernel_size + 1 then
                                     r_command_psum(i) <= c_lb_read;
                                 else
                                     r_command_psum(i) <= c_lb_idle;
@@ -568,12 +568,12 @@ begin
                     r_m0_count_idx <= r_m0_count_idx + 1;
                     if r_m0_count_kernel /= i_params.kernel_size then
                         r_m0_count_kernel         <= r_m0_count_kernel + 1;
-                        r_m0_dist(r_m0_count_idx) <= std_logic_vector(to_unsigned(v_m0_count, addr_width_y));
+                        r_m0_dist(r_m0_count_idx) <= to_unsigned(v_m0_count, addr_width_y);
                     else
                         if r_m0_count_idx + i_params.kernel_size <= size_y then -- check if one more kernel can be mapped
                             r_m0_count_kernel         <= 1;
                             v_m0_count                := v_m0_count + 1;
-                            r_m0_dist(r_m0_count_idx) <= std_logic_vector(to_unsigned(v_m0_count, addr_width_y));
+                            r_m0_dist(r_m0_count_idx) <= to_unsigned(v_m0_count, addr_width_y);
                         end if;
                     end if;
                 else

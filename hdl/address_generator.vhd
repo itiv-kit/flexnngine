@@ -33,7 +33,7 @@ entity address_generator is
 
         i_start   : in    std_logic;
         i_params  : in    parameters_t;
-        i_m0_dist : in    array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
+        i_m0_dist : in    uns_array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
 
         o_iact_done : out   std_logic;
         o_wght_done : out   std_logic;
@@ -191,8 +191,8 @@ begin
                     r_delay_wght_valid(i)   <= '1';
                     -- o_address_wght(i)       <= std_logic_vector(to_unsigned(w_offset_mem_wght + i * i_params.kernel_size, addr_width_wght_mem));
                     if i < r_mapped_pe_rows then
-                        o_address_wght(i) <= std_logic_vector(to_unsigned(w_offset_mem_wght + (i - (to_integer(unsigned(i_m0_dist(i)))) * i_params.kernel_size + i_params.kernel_size) * i_params.kernel_size +
-                                                                          ((to_integer(unsigned(i_m0_dist(i))) - 1) * i_params.kernel_size * i_params.kernel_size * i_params.inputchs), addr_width_wght_mem));
+                        o_address_wght(i) <= std_logic_vector(to_unsigned(w_offset_mem_wght + (i - (to_integer(i_m0_dist(i))) * i_params.kernel_size + i_params.kernel_size) * i_params.kernel_size +
+                                                                          ((to_integer(i_m0_dist(i)) - 1) * i_params.kernel_size * i_params.kernel_size * i_params.inputchs), addr_width_wght_mem));
                     end if;
                 else
                     o_address_wght_valid(i) <= '0';

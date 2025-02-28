@@ -72,7 +72,10 @@ entity functional_tb is
         g_dataflow     : integer  := 1;
 
         g_stride_iact_w  : positive := 1;
-        g_stride_iact_hw : positive := 1
+        g_stride_iact_hw : positive := 1;
+
+        g_stride_wght_krnl : positive := 1;
+        g_stride_wght_och  : positive := 1
     );
 end entity functional_tb;
 
@@ -106,10 +109,10 @@ architecture imp of functional_tb is
 
     constant spad_ext_addr_width_iact : integer := addr_width_iact_mem;
     constant spad_ext_addr_width_psum : integer := addr_width_psum_mem - 3; -- word-wise addressing (word size see below)
-    constant spad_ext_addr_width_wght : integer := addr_width_wght_mem - 2;
+    constant spad_ext_addr_width_wght : integer := addr_width_wght_mem;
     constant spad_ext_data_width_iact : integer := 64;
     constant spad_ext_data_width_psum : integer := 64;
-    constant spad_ext_data_width_wght : integer := 32;
+    constant spad_ext_data_width_wght : integer := 64;
     constant iact_words_per_mem_word  : integer := 2 ** (addr_width_iact_mem - spad_ext_addr_width_iact);
     constant psum_words_per_mem_word  : integer := 2 ** (addr_width_psum_mem - spad_ext_addr_width_psum);
     constant wght_words_per_mem_word  : integer := 2 ** (addr_width_wght_mem - spad_ext_addr_width_wght);
@@ -175,6 +178,9 @@ begin
 
     params.stride_iact_w  <= g_stride_iact_w;
     params.stride_iact_hw <= g_stride_iact_hw;
+
+    params.stride_wght_kernel <= g_stride_wght_krnl;
+    params.stride_wght_och    <= g_stride_wght_och;
 
     accelerator_inst : entity accel.accelerator
         generic map (

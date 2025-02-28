@@ -57,9 +57,9 @@ architecture rs_dataflow of address_generator_iact is
     signal r_cur_base_valid : std_logic_vector(0 to size_rows - 1);
     signal r_cur_base       : uns_array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
 
-    signal r_count_w1_iact : uint10_line_t(0 to size_rows - 1);
-    signal r_count_c1_iact : integer;
-    signal r_count_h2_iact : integer;
+    signal r_count_w1 : uint10_line_t(0 to size_rows - 1);
+    signal r_count_c1 : integer;
+    signal r_count_h2 : integer;
 
     signal r_next_base_last : std_logic;
     signal r_cur_base_last  : std_logic_vector(size_rows - 1 downto 0);
@@ -85,7 +85,7 @@ begin
                 r_next_used(i)      <= '0';
                 r_count_words(i)    <= 0;
                 r_words(i)          <= 0;
-                r_count_w1_iact(i)  <= 0;
+                r_count_w1(i)       <= 0;
             else
                 if i_start = '1' and r_done(i) = '0' and r_cur_base_valid(i) = '1' then
                     r_addr_valid(i) <= '1'; -- keep valid up in case of backpressure
@@ -98,16 +98,16 @@ begin
                             r_addr(i)        <= r_addr(i) + i_params.stride_iact_hw * read_size;
                         else
                             -- reset to base address in any case. if within w1, reuse it and add w1
-                            r_addr(i) <= r_cur_base(i) + r_count_w1_iact(i) + 1;
+                            r_addr(i) <= r_cur_base(i) + r_count_w1(i) + 1;
 
                             -- a full set of c0 channels of the current iact pixel is done, advance to next
-                            if r_count_w1_iact(i) /= i_params.image_x - 1 then
+                            if r_count_w1(i) /= i_params.image_x - 1 then
                                 -- we are within the current image row, go to the next iact pixel in this row
-                                r_count_w1_iact(i) <= r_count_w1_iact(i) + 1;
-                                r_count_words(i)   <= 0;
+                                r_count_w1(i)    <= r_count_w1(i) + 1;
+                                r_count_words(i) <= 0;
                             else
                                 -- done with loading c0 channels for the full image row, advance to next set of c0 channels
-                                r_count_w1_iact(i) <= 0;
+                                r_count_w1(i) <= 0;
 
                                 -- load a new base address
                                 r_cur_base_valid(i) <= '0';
@@ -145,8 +145,8 @@ begin
                 end if;
 
                 if i_start = '0' and r_done(i) = '1' then
-                    r_done(i)          <= '0';
-                    r_count_w1_iact(i) <= 0;
+                    r_done(i)     <= '0';
+                    r_count_w1(i) <= 0;
                 end if;
             end if;
 
@@ -190,25 +190,25 @@ begin
             r_next_base_last <= '0';
             r_next_valid     <= '0';
 
-            r_count_c1_iact <= 0;
-            r_count_h2_iact <= 0;
+            r_count_c1 <= 0;
+            r_count_h2 <= 0;
         else
             if i_start and not r_next_base_last and not r_next_valid then
-                if r_count_c1_iact /= i_params.c1 - 1 then
+                if r_count_c1 /= i_params.c1 - 1 then
                     -- next set of channels
-                    r_count_c1_iact <= r_count_c1_iact + 1;
+                    r_count_c1 <= r_count_c1 + 1;
                 else
                     -- all channels of this row loaded, proceed to next row
-                    r_count_c1_iact <= 0;
+                    r_count_c1 <= 0;
 
-                    if r_count_h2_iact /= i_params.h2 - 1 then
-                        r_count_h2_iact <= r_count_h2_iact + 1;
+                    if r_count_h2 /= i_params.h2 - 1 then
+                        r_count_h2 <= r_count_h2 + 1;
                     else
                         r_next_base_last <= '1';
                     end if;
                 end if;
 
-                if r_count_c1_iact = i_params.c1 - 1 then
+                if r_count_c1 = i_params.c1 - 1 then
                     v_c0 := i_params.c0_last_c1;
                 else
                     v_c0 := i_params.c0;
@@ -217,7 +217,7 @@ begin
                 for row in 0 to size_rows - 1 loop
 
                     -- row differs for each row, i.e. address generator instance
-                    v_row := r_count_h2_iact * size_x + row;
+                    v_row := r_count_h2 * size_x + row;
 
                     v_row_stride := i_params.stride_iact_w * read_size; -- w stride is unpacked to single words on reshaped spad side
 
@@ -227,7 +227,7 @@ begin
                     end if;
 
                     -- advance in sets of c0 channels (= something like a stride for c0 iterations)
-                    v_ch_offset := r_count_c1_iact * i_params.c0 / read_size; -- TODO: if only multiples of read_size are possible for c0, get rid of division
+                    v_ch_offset := r_count_c1 * i_params.c0 / read_size; -- TODO: if only multiples of read_size are possible for c0, get rid of division
 
                     -- base address for next set of c0 channels
                     r_next_base(row) <= to_unsigned(i_params.base_iact +
@@ -236,8 +236,8 @@ begin
                                                     addr_width_iact_mem);
 
                     -- number of words to load for c0 channels
+                    -- TODO: valid bits for last word if c0 not multiple of read size
                     r_next_words(row) <= (v_c0 + read_size - 1) / read_size; -- TODO: is this efficient? read_size is power-of-two. could also move - 1 from comparison here
-                -- TODO: valid bits for last word if c0 not multiple of read size
 
                 end loop;
 

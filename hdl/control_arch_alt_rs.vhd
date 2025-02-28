@@ -30,7 +30,7 @@ architecture alternative_rs_dataflow of control is
     signal r_incr_w1 : std_logic;
 
     signal w_m0         : integer range 0 to 1023;
-    signal r_m0_dist    : array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
+    signal r_m0_dist    : uns_array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
     signal w_m0_last_m1 : integer range 0 to 1023;
 
     signal r_command_iact       : command_lb_array_t(0 to size_y);

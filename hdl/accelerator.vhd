@@ -36,7 +36,7 @@ entity accelerator is
         spad_ext_addr_width_wght : positive := 13; -- word size spad_ext_data_width_wght
         spad_ext_addr_width_psum : positive := 14; -- word size spad_ext_data_width_psum
         spad_ext_data_width_iact : positive := 64;
-        spad_ext_data_width_wght : positive := 32;
+        spad_ext_data_width_wght : positive := 64;
         spad_ext_data_width_psum : positive := 64;
 
         fifo_width : positive := 16;
@@ -142,7 +142,7 @@ architecture rtl of accelerator is
     signal w_write_adr_psum : std_logic_vector(spad_addr_width_psum - 1 downto 0);
 
     signal w_dout_iact : std_logic_vector(spad_ext_data_width_iact - 1 downto 0);
-    signal w_dout_wght : std_logic_vector(data_width_wght - 1 downto 0);
+    signal w_dout_wght : std_logic_vector(spad_ext_data_width_wght - 1 downto 0);
     signal w_din_psum  : std_logic_vector(spad_ext_data_width_psum - 1 downto 0);
 
     signal w_write_en_psum           : std_logic_vector(words_psum - 1 downto 0);

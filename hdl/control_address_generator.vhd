@@ -74,7 +74,7 @@ architecture rtl of control_address_generator is
 
     signal w_control_init_done : std_logic;
 
-    signal w_m0_dist : array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
+    signal w_m0_dist : uns_array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
 
 begin
 
@@ -206,39 +206,39 @@ begin
     else generate
     begin
 
-        address_generator_inst : entity accel.address_generator(rs_dataflow)
-            generic map (
-                size_x              => size_x,
-                size_y              => size_y,
-                size_rows           => size_rows,
-                addr_width_rows     => addr_width_rows,
-                addr_width_y        => addr_width_y,
-                addr_width_x        => addr_width_x,
-                line_length_iact    => line_length_iact,
-                addr_width_iact     => addr_width_iact,
-                addr_width_iact_mem => addr_width_iact_mem,
-                line_length_psum    => line_length_psum,
-                addr_width_psum     => addr_width_psum,
-                addr_width_psum_mem => addr_width_psum_mem,
-                line_length_wght    => line_length_wght,
-                addr_width_wght     => addr_width_wght,
-                addr_width_wght_mem => addr_width_wght_mem
-            )
-            port map (
-                clk                  => clk,
-                rstn                 => rstn,
-                i_start              => w_control_init_done,
-                i_params             => i_params,
-                i_m0_dist            => w_m0_dist,
-                o_iact_done          => open,
-                o_wght_done          => o_addr_wght_done,
-                i_fifo_full_iact     => '0',
-                i_fifo_full_wght     => i_fifo_wght_address_full,
-                o_address_iact       => open,
-                o_address_wght       => o_address_wght,
-                o_address_iact_valid => open,
-                o_address_wght_valid => o_address_wght_valid
-            );
+        -- address_generator_inst : entity accel.address_generator(rs_dataflow)
+        --     generic map (
+        --         size_x              => size_x,
+        --         size_y              => size_y,
+        --         size_rows           => size_rows,
+        --         addr_width_rows     => addr_width_rows,
+        --         addr_width_y        => addr_width_y,
+        --         addr_width_x        => addr_width_x,
+        --         line_length_iact    => line_length_iact,
+        --         addr_width_iact     => addr_width_iact,
+        --         addr_width_iact_mem => addr_width_iact_mem,
+        --         line_length_psum    => line_length_psum,
+        --         addr_width_psum     => addr_width_psum,
+        --         addr_width_psum_mem => addr_width_psum_mem,
+        --         line_length_wght    => line_length_wght,
+        --         addr_width_wght     => addr_width_wght,
+        --         addr_width_wght_mem => addr_width_wght_mem
+        --     )
+        --     port map (
+        --         clk                  => clk,
+        --         rstn                 => rstn,
+        --         i_start              => w_control_init_done,
+        --         i_params             => i_params,
+        --         i_m0_dist            => w_m0_dist,
+        --         o_iact_done          => open,
+        --         o_wght_done          => o_addr_wght_done,
+        --         i_fifo_full_iact     => '0',
+        --         i_fifo_full_wght     => i_fifo_wght_address_full,
+        --         o_address_iact       => open,
+        --         o_address_wght       => o_address_wght,
+        --         o_address_iact_valid => open,
+        --         o_address_wght_valid => o_address_wght_valid
+        --     );
 
         address_generator_iact_inst : entity accel.address_generator_iact(rs_dataflow)
             generic map (
@@ -267,6 +267,24 @@ begin
                 i_fifo_full_iact     => i_fifo_iact_address_full,
                 o_address_iact       => o_address_iact,
                 o_address_iact_valid => o_address_iact_valid
+            );
+
+        address_generator_wght_inst : entity accel.address_generator_wght(rs_dataflow)
+            generic map (
+                size_y              => size_y,
+                addr_width_y        => addr_width_y,
+                addr_width_wght_mem => addr_width_wght_mem
+            )
+            port map (
+                clk                  => clk,
+                rstn                 => rstn,
+                i_start              => w_control_init_done,
+                i_params             => i_params,
+                i_m0_dist            => w_m0_dist,
+                o_wght_done          => o_addr_wght_done,
+                i_fifo_full_wght     => i_fifo_wght_address_full,
+                o_address_wght       => o_address_wght,
+                o_address_wght_valid => o_address_wght_valid
             );
 
     end generate g_address_generator;

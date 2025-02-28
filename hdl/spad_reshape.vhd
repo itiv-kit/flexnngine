@@ -27,7 +27,7 @@ entity spad_reshape is
         data_width : positive := cols * word_size;
 
         initialize  : boolean := false;
-        g_files_dir : string  := ""
+        file_prefix : string  := "_mem_col"
     );
     port (
         clk  : in    std_logic;
@@ -81,7 +81,7 @@ begin
                 col_width  => word_size,
                 nb_col     => cols,
                 initialize => initialize,
-                init_file  => g_files_dir & "_mem_col" & integer'image(i) & ".txt"
+                init_file  => file_prefix & integer'image(i) & ".txt"
             )
             port map (
                 -- standard access

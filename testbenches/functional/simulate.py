@@ -132,6 +132,10 @@ class Test:
         self.stride_iact_w = math.ceil(self.convolution.image_size / self.accelerator.spad_word_size)
         self.stride_iact_hw = math.ceil(self.convolution.image_size * self.convolution.image_size / self.accelerator.spad_word_size)
 
+        # tightly packed kernels without padding between single kernels or output channel kernel sets
+        self.stride_wght_kernel = self.convolution.kernel_size * self.convolution.kernel_size
+        self.stride_wght_och = math.ceil(self.stride_wght_kernel * self.convolution.input_channels / self.accelerator.spad_word_size)
+
         if self.accelerator.dataflow == 1:
             self.M0 = self.accelerator.size_y
             self.H1 = self.accelerator.size_x
@@ -358,6 +362,11 @@ class Test:
         np.savetxt(self.test_dir / "_convolution_stack.txt", self.convolved_images_stack, fmt="%d", delimiter=" ")
         np.savetxt(self.test_dir / "_zeropt_scale.txt",      zeropt_scale_vals,           fmt="%f", delimiter=" ")
 
+        # print(kernels.shape)
+        # print(kernels_stack.shape)
+        kernels_stack_och = np.vstack(kernels) # all output channel kernels stacked as 3D array
+        # print(kernels_stack_och.shape)
+        # print(kernels)
         # save mem files
         # save image as 8-bit binary values in _mem_iact.txt in two's complement
         for column in range(0, 8):
@@ -365,8 +374,13 @@ class Test:
             # TODO: pad channels to multiples of 8 (i.e. image stride)
             write_memory_file_int8(self.test_dir / f"_mem_col{column}.txt", image_col, wordsize=64)
 
+            wght_col = kernels_stack_och[column::8] # get every 8th kernel
+            # print(f"weight column {column}:")
+            # print(wght_col)
+            write_memory_file_int8(self.test_dir / f"_mem_wght_col{column}.txt", wght_col, wordsize=64)
+
         # save kernels as 8-bit binary values in _mem_wght_stack.txt in two's complement
-        write_memory_file_int8(self.test_dir / "_mem_wght_stack.txt", kernels_stack, wordsize=32)
+        # write_memory_file_int8(self.test_dir / "_mem_wght_stack.txt", kernels_stack, wordsize=32)
 
         return True
 
@@ -421,6 +435,8 @@ class Test:
             'g_c0w0_last_c1':      self.C0W0_last_c1,
             'g_stride_iact_w':     self.stride_iact_w,
             'g_stride_iact_hw':    self.stride_iact_hw,
+            'g_stride_wght_krnl':  self.stride_wght_kernel,
+            'g_stride_wght_och':   self.stride_wght_och,
             'g_clk':               self.accelerator.clk_period,
             'g_clk_sp':            self.accelerator.clk_sp_period,
             'g_mode_act':          int(self.convolution.activation),
