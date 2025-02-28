@@ -1,9 +1,11 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
-    use work.utilities.all;
+    -- use work.utilities.all;
     use std.env.finish;
     use std.env.stop;
+
+library accel;
 
 entity rr_arbiter_tb is
     generic (
@@ -169,19 +171,18 @@ begin
 
     end process end_sim;
 
-    rr_arbiter_inst : entity work.rr_arbiter
+    rr_arbiter_inst : entity accel.rr_arbiter
         generic map (
             arbiter_width => arbiter_width
         )
         port map (
             clk  => clk,
             rstn => rstn,
-
             i_req => req,
             o_gnt => gnt
         );
 
-    onehot_binary_inst : entity work.onehot_binary
+    onehot_binary_inst : entity accel.onehot_binary
         generic map (
             onehot_width => arbiter_width,
             binary_width => binary_width
