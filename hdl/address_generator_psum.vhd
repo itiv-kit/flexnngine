@@ -25,9 +25,9 @@ entity address_generator_psum is
         i_dataflow : in    std_logic;
         i_params   : in    parameters_t;
 
-        i_valid_psum_out    : in    std_logic_vector(size_x - 1 downto 0);
-        i_gnt_psum_binary_d : in    std_logic_vector(addr_width_x - 1 downto 0);
-        i_empty_psum_fifo   : in    std_logic_vector(size_x - 1 downto 0); -- currently unused
+        i_valid_psum_out  : in    std_logic_vector(size_x - 1 downto 0);
+        i_gnt_psum_idx_d  : in    std_logic_vector(addr_width_x - 1 downto 0);
+        i_empty_psum_fifo : in    std_logic_vector(size_x - 1 downto 0); -- currently unused
 
         o_address_psum      : out   std_logic_vector(addr_width_psum - 1 downto 0);
         o_suppress_out      : out   std_logic;
@@ -71,11 +71,11 @@ begin
         )
         port map (
             v_i => w_address_mux,
-            sel => i_gnt_psum_binary_d,
+            sel => i_gnt_psum_idx_d,
             z_o => o_address_psum
         );
 
-    o_suppress_out <= r_suppress_out(to_integer(unsigned(i_gnt_psum_binary_d)));
+    o_suppress_out <= r_suppress_out(to_integer(unsigned(i_gnt_psum_idx_d)));
 
     gen_counter : for x in 0 to size_x - 1 generate
 

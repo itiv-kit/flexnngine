@@ -176,7 +176,7 @@ architecture rtl of accelerator is
     signal w_fifo_wght_address_full : std_logic;
 
     signal w_valid_psums_out   : std_logic_vector(size_x - 1 downto 0);
-    signal w_gnt_psum_binary_d : std_logic_vector(addr_width_x - 1 downto 0);
+    signal w_gnt_psum_idx_d : std_logic_vector(addr_width_x - 1 downto 0);
     signal w_empty_psum_fifo   : std_logic_vector(size_x - 1 downto 0);
     signal w_all_psum_finished : std_logic;
 
@@ -413,7 +413,7 @@ begin
             i_addr_iact_done          => w_address_iact_done,
             i_addr_wght_done          => w_address_wght_done,
             o_valid_psums_out         => w_valid_psums_out,
-            o_gnt_psum_binary_d       => w_gnt_psum_binary_d,
+            o_gnt_psum_idx_d          => w_gnt_psum_idx_d,
             o_empty_psum_fifo         => w_empty_psum_fifo,
             o_all_psum_finished       => w_all_psum_finished,
             o_address_iact            => w_read_adr_iact,
@@ -458,7 +458,7 @@ begin
             i_dataflow          => w_dataflow,
             i_params            => w_params_sp,
             i_valid_psum_out    => w_valid_psums_out,
-            i_gnt_psum_binary_d => w_gnt_psum_binary_d,
+            i_gnt_psum_idx_d    => w_gnt_psum_idx_d,
             i_empty_psum_fifo   => w_empty_psum_fifo,
             o_address_psum      => w_write_adr_psum,
             o_suppress_out      => w_write_suppress_psum,

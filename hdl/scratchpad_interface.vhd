@@ -73,7 +73,7 @@ entity scratchpad_interface is
         i_addr_wght_done : in    std_logic;
 
         o_valid_psums_out   : out   std_logic_vector(size_x - 1 downto 0); -- to calculate psum address
-        o_gnt_psum_binary_d : out   std_logic_vector(addr_width_x - 1 downto 0);
+        o_gnt_psum_idx_d    : out   std_logic_vector(addr_width_x - 1 downto 0);
         o_empty_psum_fifo   : out   std_logic_vector(size_x - 1 downto 0);
         o_all_psum_finished : out   std_logic;
 
@@ -165,20 +165,20 @@ architecture rtl of scratchpad_interface is
     signal w_empty_wght_address_f : std_logic_vector(size_y - 1 downto 0);
     signal w_valid_wght_address_f : array_t(0 to size_y - 1)(0 downto 0);
 
-    signal w_arb_req_iact      : std_logic_vector(size_rows - 1 downto 0);
-    signal w_gnt_iact          : std_logic_vector(size_rows - 1 downto 0);
-    signal w_gnt_iact_binary   : std_logic_vector(addr_width_rows - 1 downto 0);
-    signal r_gnt_iact_binary_d : std_logic_vector(addr_width_rows - 1 downto 0) := (others => '0');
+    signal w_arb_req_iact   : std_logic_vector(size_rows - 1 downto 0);
+    signal w_gnt_iact       : std_logic_vector(size_rows - 1 downto 0);
+    signal w_gnt_iact_idx   : std_logic_vector(addr_width_rows - 1 downto 0);
+    signal r_gnt_iact_idx_d : std_logic_vector(addr_width_rows - 1 downto 0) := (others => '0');
 
-    signal w_arb_req_wght      : std_logic_vector(size_y - 1 downto 0);
-    signal w_gnt_wght          : std_logic_vector(size_y - 1 downto 0);
-    signal w_gnt_wght_binary   : std_logic_vector(addr_width_y - 1 downto 0);
-    signal r_gnt_wght_binary_d : std_logic_vector(addr_width_y - 1 downto 0) := (others => '0');
+    signal w_arb_req_wght   : std_logic_vector(size_y - 1 downto 0);
+    signal w_gnt_wght       : std_logic_vector(size_y - 1 downto 0);
+    signal w_gnt_wght_idx   : std_logic_vector(addr_width_y - 1 downto 0);
+    signal r_gnt_wght_idx_d : std_logic_vector(addr_width_y - 1 downto 0) := (others => '0');
 
-    signal w_arb_req_psum      : std_logic_vector(size_x - 1 downto 0);
-    signal w_gnt_psum          : std_logic_vector(size_x - 1 downto 0);
-    signal w_gnt_psum_binary   : std_logic_vector(addr_width_x - 1 downto 0);
-    signal r_gnt_psum_binary_d : std_logic_vector(addr_width_x - 1 downto 0) := (others => '0');
+    signal w_arb_req_psum   : std_logic_vector(size_x - 1 downto 0);
+    signal w_gnt_psum       : std_logic_vector(size_x - 1 downto 0);
+    signal w_gnt_psum_idx   : std_logic_vector(addr_width_x - 1 downto 0);
+    signal r_gnt_psum_idx_d : std_logic_vector(addr_width_x - 1 downto 0) := (others => '0');
 
     signal w_address_iact : std_logic_vector(addr_width_iact_mem - 1 downto 0);
     signal w_address_wght : std_logic_vector(addr_width_wght_mem - 1 downto 0);
@@ -372,18 +372,18 @@ begin
     w_rd_en_iact_f_d <= w_rd_en_iact_f when rising_edge(clk);
     w_rd_en_wght_f_d <= w_rd_en_wght_f when rising_edge(clk);
 
-    w_rd_en_iact_address_f <= w_gnt_iact when not w_empty_iact_address_f(to_integer(unsigned(w_gnt_iact_binary))) else -- Selected with arbiter
+    w_rd_en_iact_address_f <= w_gnt_iact when not w_empty_iact_address_f(to_integer(unsigned(w_gnt_iact_idx))) else -- Selected with arbiter
                               (others => '0');
 
-    w_rd_en_wght_address_f <= w_gnt_wght when not w_empty_wght_address_f(to_integer(unsigned(w_gnt_wght_binary))) else -- Selected with arbiter
+    w_rd_en_wght_address_f <= w_gnt_wght when not w_empty_wght_address_f(to_integer(unsigned(w_gnt_wght_idx))) else -- Selected with arbiter
                               (others => '0');
 
-    r_sel_iact_fifo <= r_gnt_iact_binary_d when rising_edge(clk_sp);
-    r_sel_wght_fifo <= r_gnt_wght_binary_d when rising_edge(clk_sp);
+    r_sel_iact_fifo <= r_gnt_iact_idx_d when rising_edge(clk_sp);
+    r_sel_wght_fifo <= r_gnt_wght_idx_d when rising_edge(clk_sp);
 
-    r_gnt_iact_binary_d <= w_gnt_iact_binary when rising_edge(clk_sp);
-    r_gnt_wght_binary_d <= w_gnt_wght_binary when rising_edge(clk_sp);
-    r_gnt_psum_binary_d <= w_gnt_psum_binary when rising_edge(clk_sp);
+    r_gnt_iact_idx_d <= w_gnt_iact_idx when rising_edge(clk_sp);
+    r_gnt_wght_idx_d <= w_gnt_wght_idx when rising_edge(clk_sp);
+    r_gnt_psum_idx_d <= w_gnt_psum_idx when rising_edge(clk_sp);
 
     w_arb_req_iact <= (others => '0') when i_start = '0' or r_done_iact = '1' else not w_almost_full_iact_f;
     w_arb_req_wght <= (others => '0') when i_start = '0' or r_done_wght = '1' else not w_almost_full_wght_f;
@@ -400,7 +400,7 @@ begin
         )
         port map (
             v_i => w_dout_iact_address_f,
-            sel => r_gnt_iact_binary_d,
+            sel => r_gnt_iact_idx_d,
             z_o => w_address_iact
         );
 
@@ -412,7 +412,7 @@ begin
         )
         port map (
             v_i => w_dout_wght_address_f,
-            sel => r_gnt_wght_binary_d,
+            sel => r_gnt_wght_idx_d,
             z_o => w_address_wght
         );
 
@@ -424,7 +424,7 @@ begin
         )
         port map (
             v_i    => w_valid_iact_address_f,
-            sel    => r_gnt_iact_binary_d,
+            sel    => r_gnt_iact_idx_d,
             z_o(0) => o_address_iact_valid
         );
 
@@ -436,7 +436,7 @@ begin
         )
         port map (
             v_i    => w_valid_wght_address_f,
-            sel    => r_gnt_wght_binary_d,
+            sel    => r_gnt_wght_idx_d,
             z_o(0) => o_address_wght_valid
         );
 
@@ -458,7 +458,7 @@ begin
         )
         port map (
             i_onehot => w_gnt_iact,
-            o_binary => w_gnt_iact_binary
+            o_binary => w_gnt_iact_idx
         );
 
     rr_arbiter_wght : entity accel.rr_arbiter
@@ -479,7 +479,7 @@ begin
         )
         port map (
             i_onehot => w_gnt_wght,
-            o_binary => w_gnt_wght_binary
+            o_binary => w_gnt_wght_idx
         );
 
     demux_iact : entity accel.demux
@@ -735,7 +735,7 @@ begin
         )
         port map (
             v_i => w_psum_out,
-            sel => r_gnt_psum_binary_d,
+            sel => r_gnt_psum_idx_d,
             z_o => w_data_psum
         );
 
@@ -745,20 +745,19 @@ begin
     o_data_psum <= w_data_psum(data_width_psum_mem - 1 downto 0);
 
     -- generate write enable from psum fifo word count
-    -- psum_wen_gen : entity accel.write_enable_gen
+    -- psum_wen_gen : accel.write_enable_gen
     --     generic map (
     --         count_width => c_psum_wide_words_width,
     --         wen_width => words_psum
     --     )
-    --     port map (
-    --         i_count => w_word_count_psum,
+    --     port map (--         i_count => w_word_count_psum,
     --         o_wen => w_wen_psum
     --     );
 
-    o_write_en_psum     <= w_wen_psum when w_psum_valid_out = '1' else (others => '0');
-    o_valid_psums_out   <= w_valid_psum_f;
-    o_gnt_psum_binary_d <= r_gnt_psum_binary_d;
-    o_empty_psum_fifo   <= w_empty_psum_f;
+    o_write_en_psum   <= w_wen_psum when w_psum_valid_out = '1' else (others => '0');
+    o_valid_psums_out <= w_valid_psum_f;
+    o_gnt_psum_idx_d  <= r_gnt_psum_idx_d;
+    o_empty_psum_fifo <= w_empty_psum_f;
 
     mux_psum_valid : entity accel.mux
         generic map (
@@ -768,7 +767,7 @@ begin
         )
         port map (
             v_i    => w_valid_psum,
-            sel    => r_gnt_psum_binary_d,
+            sel    => r_gnt_psum_idx_d,
             z_o(0) => w_psum_valid_out
         );
 
@@ -790,7 +789,7 @@ begin
         )
         port map (
             i_onehot => w_gnt_psum,
-            o_binary => w_gnt_psum_binary
+            o_binary => w_gnt_psum_idx
         );
 
     sync_all_psum_finished : entity accel.bit_sync
