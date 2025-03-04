@@ -5,9 +5,9 @@ library ieee;
 
 entity div16_8_8 is
     generic (
-        a_width      : POSITIVE := 17;
-        b_width      : POSITIVE := 8;
-        result_width : POSITIVE := 9
+        a_width      : positive := 17;
+        b_width      : positive := 8;
+        result_width : positive := 9
     );
     port (
         clk    : in    std_logic;

@@ -44,10 +44,10 @@ architecture imp of address_generator_psum_tb is
 
     signal i_params : parameters_t := (
                                         kernel_size => kernel_size,
-                                       w1 => image_width,
-                                       m0 => kernel_count,
-                                       others => 0
-                                   );
+                                        w1 => image_width,
+                                        m0 => kernel_count,
+                                        others => 0
+                                    );
 
     type ram_type is array (0 to 2 ** addr_width - 1) of std_logic_vector(data_width - 1 downto 0);
 

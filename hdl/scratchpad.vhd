@@ -138,6 +138,7 @@ begin
     end process wght;
 
     psum_gen : if ext_data_width_psum = 32 generate
+
         psum : process is
 
             variable index : integer;
@@ -185,6 +186,7 @@ begin
         end process psum;
 
     elsif ext_data_width_psum = 64 generate
+
         psum : process is
 
             variable index : integer;
@@ -202,7 +204,9 @@ begin
 
                 -- concat iact data n=8 times to make full 64 bit word
                 for i in 0 to ext_data_width_psum / data_width_iact - 1 loop
+
                     datab_psum(data_width_iact * (i + 1) - 1 downto data_width_iact * i) <= din_psum(data_width_iact - 1 downto 0);
+
                 end loop;
 
                 -- select subword to write to
@@ -240,8 +244,10 @@ begin
 
         psum : process is
         begin
+
             report "psum spad width " & integer'image(ext_addr_width_psum) & " not implemented"
                 severity failure;
+
         end process psum;
 
     end generate psum_gen;
