@@ -17,9 +17,9 @@ entity acc_axi_regs is
     size_x : positive := 5;
     size_y : positive := 5;
 
-    line_length_iact : positive := 512;
-    line_length_psum : positive := 1024;
-    line_length_wght : positive := 512;
+    line_length_iact : positive := 64;
+    line_length_psum : positive := 128;
+    line_length_wght : positive := 64;
 
     -- Width of the pe input/output data (weights, iacts, psums)
     data_width_iact : positive := 8;
@@ -27,9 +27,7 @@ entity acc_axi_regs is
     data_width_psum : positive := 16;
 
     -- external addresses are byte wise
-    spad_axi_addr_width_iact : positive := 16;
-    spad_axi_addr_width_wght : positive := 16;
-    spad_axi_addr_width_psum : positive := 17;
+    mem_addr_width : positive := 18;
 
     dataflow         : integer := 0;
     postproc_enabled : boolean := true;

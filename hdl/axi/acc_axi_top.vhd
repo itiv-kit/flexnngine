@@ -11,37 +11,25 @@ entity acc_axi_top is
     size_x : positive := 5;
     size_y : positive := 5;
 
-    -- iact line buffer length & matching offset addressing width
+    -- pe line buffer length per data type
     line_length_iact : positive := 64;
-    addr_width_iact  : positive := 6;
-
-    -- psum line buffer length & matching offset addressing width
-    line_length_psum : positive := 128;
-    addr_width_psum  : positive := 7;
-
-    -- wght line buffer length & matching offset addressing width
     line_length_wght : positive := 64;
-    addr_width_wght  : positive := 6;
+    line_length_psum : positive := 128;
 
-    -- Width of the pe input/output data (weights, iacts, psums)
-    data_width_iact : positive := 8;
-    data_width_wght : positive := 8;
-    data_width_psum : positive := 16;
+    -- internal data types
+    data_width_input : positive := 8;  -- size of a iact/wght word
+    data_width_psum  : positive := 16; -- size of a result word in the PE accumulator / line buffer
 
-    -- internal addresses are word wise (8 bit for iact/wght, 16 bit for psum)
-    spad_addr_width_iact : positive := 16;
-    spad_addr_width_wght : positive := 16;
-    spad_addr_width_psum : positive := 16;
+    -- address widths scratchpad <-> external, port_a is exposed as i/o on this module
+    mem_addr_width_bytes : positive := 18; -- defines memory size in bytes, default to 256KiB
+    mem_word_count       : positive := 8;
+    mem_data_width       : positive := mem_word_count * data_width_input;
 
-    -- external addresses are byte wise
-    spad_axi_addr_width_iact : positive := 16;
-    spad_axi_addr_width_wght : positive := 16;
-    spad_axi_addr_width_psum : positive := 17;
-    spad_ext_data_width_iact : positive := 32;
-    spad_ext_data_width_wght : positive := 32;
-    spad_ext_data_width_psum : positive := 32;
+    iact_fifo_size : positive := 16;
+    wght_fifo_size : positive := 16;
+    psum_fifo_size : positive := 32;
 
-    dataflow             : integer := 0;
+    dataflow         : integer := 0;
     postproc_enabled : boolean := true;
 
     -- enable cdc between AXI and accelerator clock domains if clocks differ
@@ -55,34 +43,14 @@ entity acc_axi_top is
     clk    : in std_logic;
     clk_sp : in std_logic;
 
-    -- unused clk/rst ports to make up a valid Vivado interface spec (VLNV)
-    i_dummy_clk_iact : in std_logic;
-    i_dummy_rst_iact : in std_logic;
-    i_dummy_clk_wght : in std_logic;
-    i_dummy_rst_wght : in std_logic;
-    i_dummy_clk_psum : in std_logic;
-    i_dummy_rst_psum : in std_logic;
+    -- unused rst port to make up a valid Vivado interface spec (VLNV)
+    i_dummy_rst : in std_logic;
 
-    i_en_iact : in std_logic;
-    i_en_wght : in std_logic;
-    i_en_psum : in std_logic;
-
-    i_write_en_iact : in std_logic_vector(spad_ext_data_width_iact/8 - 1 downto 0);
-    i_write_en_wght : in std_logic_vector(spad_ext_data_width_wght/8 - 1 downto 0);
-    i_write_en_psum : in std_logic_vector(spad_ext_data_width_psum/8 - 1 downto 0);
-
-    -- external addresses are byte wise
-    i_addr_iact : in std_logic_vector(spad_axi_addr_width_iact - 1 downto 0);
-    i_addr_wght : in std_logic_vector(spad_axi_addr_width_wght - 1 downto 0);
-    i_addr_psum : in std_logic_vector(spad_axi_addr_width_psum - 1 downto 0);
-
-    i_din_iact : in std_logic_vector(spad_ext_data_width_iact - 1 downto 0);
-    i_din_wght : in std_logic_vector(spad_ext_data_width_wght - 1 downto 0);
-    i_din_psum : in std_logic_vector(spad_ext_data_width_psum - 1 downto 0);
-
-    o_dout_iact : out std_logic_vector(spad_ext_data_width_iact - 1 downto 0);
-    o_dout_wght : out std_logic_vector(spad_ext_data_width_wght - 1 downto 0);
-    o_dout_psum : out std_logic_vector(spad_ext_data_width_psum - 1 downto 0);
+    i_en       : in std_logic;
+    i_write_en : in std_logic_vector(mem_word_count - 1 downto 0);
+    i_addr     : in std_logic_vector(mem_addr_width_bytes - 1 downto 0);
+    i_din      : in std_logic_vector(mem_data_width - 1 downto 0);
+    o_dout     : out std_logic_vector(mem_data_width - 1 downto 0);
 
     -- Ports of Axi Slave Bus Interface S00_AXI
     s00_axi_aclk    : in  std_logic;
@@ -111,6 +79,8 @@ end acc_axi_top;
 
 architecture arch_imp of acc_axi_top is
 
+  constant mem_addr_width : integer := mem_addr_width_bytes / integer(ceil(log2(real(mem_word_count))));
+
   signal w_axi_rst,   w_axi_rstn  : std_logic;
   signal w_acc_rstn               : std_logic;
   signal w_axi_start, w_acc_start : std_logic;
@@ -119,6 +89,8 @@ architecture arch_imp of acc_axi_top is
   signal w_params, r_params : parameters_t;
   signal w_status, r_status : status_info_t;
 
+  signal w_mem_addr : std_logic_vector(mem_addr_width - 1 downto 0);
+
   attribute x_interface_mode      : string;
   attribute x_interface_info      : string;
   attribute x_interface_parameter : string;
@@ -126,36 +98,16 @@ architecture arch_imp of acc_axi_top is
   attribute x_interface_info      of s00_axi_aclk : signal is "xilinx.com:signal:clock:1.0 s00_axi_aclk CLK";
   attribute x_interface_parameter of s00_axi_aclk : signal is "ASSOCIATED_BUSIF s00_axi, ASSOCIATED_RESET s00_axi_aresetn, FREQ_HZ 100000000";
 
-  attribute x_interface_parameter of i_dummy_clk_iact : signal is "XIL_INTERFACENAME bram_iact, MASTER_TYPE BRAM_CTRL, MEM_SIZE 65536, MEM_WIDTH 32, MEM_ECC NONE, READ_WRITE_MODE READ_WRITE, READ_LATENCY 1";
-  attribute x_interface_parameter of i_dummy_clk_wght : signal is "XIL_INTERFACENAME bram_wght, MASTER_TYPE BRAM_CTRL, MEM_SIZE 65536, MEM_WIDTH 32, MEM_ECC NONE, READ_WRITE_MODE READ_WRITE, READ_LATENCY 1";
-  attribute x_interface_parameter of i_dummy_clk_psum : signal is "XIL_INTERFACENAME bram_psum, MASTER_TYPE BRAM_CTRL, MEM_SIZE 131072, MEM_WIDTH 32, MEM_ECC NONE, READ_WRITE_MODE READ_WRITE, READ_LATENCY 1";
+  attribute x_interface_parameter of clk_sp : signal is "XIL_INTERFACENAME scratchpad, MASTER_TYPE BRAM_CTRL, MEM_SIZE 262144, MEM_WIDTH 64, MEM_ECC NONE, READ_WRITE_MODE READ_WRITE, READ_LATENCY 1";
 
-  attribute x_interface_mode of i_dummy_clk_iact : signal is "Slave";
-  attribute x_interface_info of i_dummy_clk_iact : signal is "xilinx.com:interface:bram_rtl:1.0 bram_iact CLK";
-  attribute x_interface_info of i_dummy_rst_iact : signal is "xilinx.com:interface:bram_rtl:1.0 bram_iact RST";
-  attribute x_interface_info of i_en_iact        : signal is "xilinx.com:interface:bram_rtl:1.0 bram_iact EN";
-  attribute x_interface_info of i_write_en_iact  : signal is "xilinx.com:interface:bram_rtl:1.0 bram_iact WE";
-  attribute x_interface_info of i_addr_iact      : signal is "xilinx.com:interface:bram_rtl:1.0 bram_iact ADDR";
-  attribute x_interface_info of i_din_iact       : signal is "xilinx.com:interface:bram_rtl:1.0 bram_iact DIN";
-  attribute x_interface_info of o_dout_iact      : signal is "xilinx.com:interface:bram_rtl:1.0 bram_iact DOUT";
-
-  attribute x_interface_mode of i_dummy_clk_wght : signal is "Slave";
-  attribute x_interface_info of i_dummy_clk_wght : signal is "xilinx.com:interface:bram_rtl:1.0 bram_wght CLK";
-  attribute x_interface_info of i_dummy_rst_wght : signal is "xilinx.com:interface:bram_rtl:1.0 bram_wght RST";
-  attribute x_interface_info of i_en_wght        : signal is "xilinx.com:interface:bram_rtl:1.0 bram_wght EN";
-  attribute x_interface_info of i_write_en_wght  : signal is "xilinx.com:interface:bram_rtl:1.0 bram_wght WE";
-  attribute x_interface_info of i_addr_wght      : signal is "xilinx.com:interface:bram_rtl:1.0 bram_wght ADDR";
-  attribute x_interface_info of i_din_wght       : signal is "xilinx.com:interface:bram_rtl:1.0 bram_wght DIN";
-  attribute x_interface_info of o_dout_wght      : signal is "xilinx.com:interface:bram_rtl:1.0 bram_wght DOUT";
-
-  attribute x_interface_mode of i_dummy_clk_psum : signal is "Slave";
-  attribute x_interface_info of i_dummy_clk_psum : signal is "xilinx.com:interface:bram_rtl:1.0 bram_psum CLK";
-  attribute x_interface_info of i_dummy_rst_psum : signal is "xilinx.com:interface:bram_rtl:1.0 bram_psum RST";
-  attribute x_interface_info of i_en_psum        : signal is "xilinx.com:interface:bram_rtl:1.0 bram_psum EN";
-  attribute x_interface_info of i_write_en_psum  : signal is "xilinx.com:interface:bram_rtl:1.0 bram_psum WE";
-  attribute x_interface_info of i_addr_psum      : signal is "xilinx.com:interface:bram_rtl:1.0 bram_psum ADDR";
-  attribute x_interface_info of i_din_psum       : signal is "xilinx.com:interface:bram_rtl:1.0 bram_psum DIN";
-  attribute x_interface_info of o_dout_psum      : signal is "xilinx.com:interface:bram_rtl:1.0 bram_psum DOUT";
+  attribute x_interface_mode of clk_sp      : signal is "Slave";
+  attribute x_interface_info of clk_sp      : signal is "xilinx.com:interface:bram_rtl:1.0 scratchpad CLK";
+  attribute x_interface_info of i_dummy_rst : signal is "xilinx.com:interface:bram_rtl:1.0 scratchpad RST";
+  attribute x_interface_info of i_en        : signal is "xilinx.com:interface:bram_rtl:1.0 scratchpad EN";
+  attribute x_interface_info of i_write_en  : signal is "xilinx.com:interface:bram_rtl:1.0 scratchpad WE";
+  attribute x_interface_info of i_addr      : signal is "xilinx.com:interface:bram_rtl:1.0 scratchpad ADDR";
+  attribute x_interface_info of i_din       : signal is "xilinx.com:interface:bram_rtl:1.0 scratchpad DIN";
+  attribute x_interface_info of o_dout      : signal is "xilinx.com:interface:bram_rtl:1.0 scratchpad DOUT";
 
   attribute async_reg             : string;
   attribute async_reg of r_status : signal is "TRUE";
@@ -164,6 +116,7 @@ architecture arch_imp of acc_axi_top is
 begin
 
   w_axi_rstn <= not w_axi_rst;
+  w_mem_addr <= i_addr(mem_addr_width_bytes - 1 downto mem_addr_width_bytes - mem_addr_width);
 
   -- Instantiation of AXI Bus Interface S00_AXI
   acc_axi_regs_inst : entity accel.acc_axi_regs generic map (
@@ -174,12 +127,10 @@ begin
     line_length_iact => line_length_iact,
     line_length_psum => line_length_psum,
     line_length_wght => line_length_wght,
-    data_width_iact => data_width_iact,
-    data_width_wght => data_width_wght,
+    data_width_iact => data_width_input,
+    data_width_wght => data_width_input,
     data_width_psum => data_width_psum,
-    spad_axi_addr_width_iact => spad_axi_addr_width_iact,
-    spad_axi_addr_width_wght => spad_axi_addr_width_wght,
-    spad_axi_addr_width_psum => spad_axi_addr_width_psum,
+    mem_addr_width  => mem_addr_width_bytes,
     dataflow => dataflow,
     postproc_enabled => postproc_enabled
   ) port map (
@@ -212,59 +163,37 @@ begin
   );
 
   accelerator_inst : entity accel.accelerator generic map (
-    size_x    => size_x,
-    size_y    => size_y,
+    size_x           => size_x,
+    size_y           => size_y,
     line_length_iact => line_length_iact,
-    addr_width_iact => addr_width_iact,
-    line_length_psum => line_length_psum,
-    addr_width_psum => addr_width_psum,
     line_length_wght => line_length_wght,
-    addr_width_wght => addr_width_wght,
-    data_width_iact => data_width_iact,
-    data_width_wght => data_width_wght,
-    data_width_psum => data_width_psum,
-    spad_addr_width_iact => spad_addr_width_iact,
-    spad_addr_width_psum => spad_addr_width_psum,
-    spad_addr_width_wght => spad_addr_width_wght,
-    spad_ext_data_width_iact => spad_ext_data_width_iact,
-    spad_ext_data_width_wght => spad_ext_data_width_wght,
-    spad_ext_data_width_psum => spad_ext_data_width_psum,
-    spad_ext_addr_width_iact => spad_axi_addr_width_iact - 2, -- convert byte-wise addresses to 32bit-word-wise
-    spad_ext_addr_width_wght => spad_axi_addr_width_wght - 2, -- convert byte-wise addresses to 32bit-word-wise
-    spad_ext_addr_width_psum => spad_axi_addr_width_psum - 2, -- convert byte-wise addresses to 32bit-word-wise
-    g_dataflow => dataflow,
-    g_en_postproc => postproc_enabled
+    line_length_psum => line_length_psum,
+    data_width_input => data_width_input,
+    data_width_psum  => data_width_psum,
+    mem_addr_width   => mem_addr_width,
+    mem_word_count   => mem_word_count,
+    mem_data_width   => mem_data_width,
+    g_iact_fifo_size => iact_fifo_size,
+    g_wght_fifo_size => wght_fifo_size,
+    g_psum_fifo_size => psum_fifo_size,
+    g_dataflow       => dataflow,
+    g_en_postproc    => postproc_enabled
   ) port map (
     clk  => clk,
     rstn => w_acc_rstn,
 
-    clk_sp     => clk_sp,
-    clk_sp_ext => s00_axi_aclk,
+    clk_sp => clk_sp,
 
     i_start  => w_acc_start,
     o_done   => w_acc_done,
     i_params => r_params,
     o_status => w_status,
 
-    i_en_iact => i_en_iact,
-    i_en_wght => i_en_wght,
-    i_en_psum => i_en_psum,
-
-    i_write_en_iact => i_write_en_iact,
-    i_write_en_wght => i_write_en_wght,
-    i_write_en_psum => i_write_en_psum,
-
-    i_addr_iact => i_addr_iact(spad_axi_addr_width_iact - 1 downto 2),
-    i_addr_wght => i_addr_wght(spad_axi_addr_width_wght - 1 downto 2),
-    i_addr_psum => i_addr_psum(spad_axi_addr_width_psum - 1 downto 2),
-
-    i_din_iact => i_din_iact,
-    i_din_wght => i_din_wght,
-    i_din_psum => i_din_psum,
-
-    o_dout_psum => o_dout_psum,
-    o_dout_iact => o_dout_iact,
-    o_dout_wght => o_dout_wght
+    i_en       => i_en,
+    i_write_en => i_write_en,
+    i_addr     => w_mem_addr,
+    i_din      => i_din,
+    o_dout     => o_dout
   );
 
   g_cdc : if axi_acc_cdc generate

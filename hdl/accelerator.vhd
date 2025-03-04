@@ -27,7 +27,7 @@ entity accelerator is
 
         g_iact_fifo_size : positive := 16;
         g_wght_fifo_size : positive := 16;
-        g_psum_fifo_size : positive := 512;
+        g_psum_fifo_size : positive := 32;
 
         g_files_dir   : string  := "";
         g_init_sp     : boolean := false;
@@ -38,8 +38,7 @@ entity accelerator is
         clk  : in    std_logic;
         rstn : in    std_logic;
 
-        clk_sp     : in    std_logic;
-        clk_sp_ext : in    std_logic;
+        clk_sp : in    std_logic;
 
         i_start  : in    std_logic;
         o_done   : out   std_logic;
@@ -295,7 +294,6 @@ begin
         )
         port map (
             clk     => clk_sp,
-            ext_clk => clk_sp_ext,
             rstn    => rstn,
             -- internal access (data load)
             read_adr   => w_read_adr,

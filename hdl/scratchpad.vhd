@@ -20,7 +20,6 @@ entity scratchpad is
     );
     port (
         clk     : in    std_logic;
-        ext_clk : in    std_logic; -- clock for external spad interfaces
         rstn    : in    std_logic;
 
         -- internal addresses and control signals used by the pe array / address generator
