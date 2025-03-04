@@ -16,25 +16,14 @@ entity scratchpad_interface is
         addr_width_y    : positive := 3;
         addr_width_x    : positive := 3;
 
-        data_width_iact_mem : positive := 64; -- iact word width from memory
-        data_width_iact     : positive := 8;  -- Width of the input data (weights, iacts)
-        addr_width_iact     : positive := 5;
-        addr_width_iact_mem : positive := 15;
+        data_width_input : positive := 8; -- width of the input data (weights, iacts)
+        data_width_psum  : positive := 16;
 
-        data_width_psum     : positive := 16;
-        data_width_psum_mem : positive := 64;
-        words_psum          : positive := data_width_psum_mem / data_width_iact;
-        word_offset_width   : positive := integer(ceil(log2(real(words_psum))));
+        mem_addr_width : positive := 15;
+        mem_data_width : positive := 64; -- iact word width from memory
+        mem_word_count : positive := mem_data_width / data_width_input;
 
-        addr_width_psum     : positive := 7;
-        addr_width_psum_mem : positive := 15;
-
-        data_width_wght_mem : positive := 64; -- wght word width from memory
-        data_width_wght     : positive := 8;
-        addr_width_wght     : positive := 5;
-        addr_width_wght_mem : positive := 15;
-
-        fifo_width : positive := 16;
+        word_offset_width   : positive := integer(ceil(log2(real(mem_word_count))));
 
         g_iact_fifo_size         : positive := 16;
         g_wght_fifo_size         : positive := 16;
@@ -54,8 +43,8 @@ entity scratchpad_interface is
         o_status : out   status_info_spadif_t;
 
         -- Data to and from Address generator
-        i_address_iact : in    array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
-        i_address_wght : in    array_t(0 to size_y - 1)(addr_width_wght_mem - 1 downto 0);
+        i_address_iact : in    array_t(0 to size_rows - 1)(mem_addr_width - 1 downto 0);
+        i_address_wght : in    array_t(0 to size_y - 1)(mem_addr_width - 1 downto 0);
 
         i_address_iact_valid : in    std_logic_vector(size_rows - 1 downto 0);
         i_address_wght_valid : in    std_logic_vector(size_y - 1 downto 0);
@@ -78,27 +67,19 @@ entity scratchpad_interface is
         o_all_psum_finished : out   std_logic;
 
         -- Addresses to Scratchpad
-        o_address_iact : out   std_logic_vector(addr_width_iact_mem - 1 downto 0);
-        o_address_wght : out   std_logic_vector(addr_width_wght_mem - 1 downto 0);
+        o_address       : out   std_logic_vector(mem_addr_width - 1 downto 0);
+        o_address_valid : out   std_logic;
 
-        o_address_iact_valid : out   std_logic;
-        o_address_wght_valid : out   std_logic;
-
-        -- o_write_en_psum : out   std_logic;
-        -- o_valid_psum    : out   std_logic_vector(words_psum - 1 downto 0);
-        o_write_en_psum : out   std_logic_vector(words_psum - 1 downto 0);
-        o_data_psum     : out   std_logic_vector(data_width_psum_mem - 1 downto 0);
+        o_write_en_psum : out   std_logic_vector(mem_word_count - 1 downto 0);
+        o_data_psum     : out   std_logic_vector(mem_data_width - 1 downto 0);
 
         -- Data from Scratchpad
-        i_data_iact : in    std_logic_vector(data_width_iact_mem - 1 downto 0);
-        i_data_wght : in    std_logic_vector(data_width_wght_mem - 1 downto 0);
-
-        i_data_iact_valid : in    std_logic;
-        i_data_wght_valid : in    std_logic;
+        i_data       : in    std_logic_vector(mem_data_width - 1 downto 0);
+        i_data_valid : in    std_logic;
 
         -- Data to PE array
-        o_data_iact : out   array_t(0 to size_rows - 1)(data_width_iact - 1 downto 0);
-        o_data_wght : out   array_t(0 to size_y - 1)(data_width_wght - 1 downto 0);
+        o_data_iact : out   array_t(0 to size_rows - 1)(data_width_input - 1 downto 0);
+        o_data_wght : out   array_t(0 to size_y - 1)(data_width_input - 1 downto 0);
 
         o_data_iact_valid : out   std_logic_vector(size_rows - 1 downto 0);
         o_data_wght_valid : out   std_logic_vector(size_y - 1 downto 0);
@@ -122,15 +103,23 @@ end entity scratchpad_interface;
 
 architecture rtl of scratchpad_interface is
 
+    constant load_channels   : integer := size_rows + size_y;
+    constant addr_width_load : integer := integer(ceil(log2(real(load_channels))));
+
+    -- merged load address vectors for unified scratchpad access
+    signal w_arb_req_load         : std_logic_vector(load_channels - 1 downto 0);
+    signal w_load_address_f       : array_t(0 to load_channels - 1)(mem_addr_width - 1 downto 0);
+    signal w_gnt_load             : std_logic_vector(load_channels - 1 downto 0);
+    signal w_gnt_load_idx         : std_logic_vector(addr_width_load - 1 downto 0);
+    signal r_gnt_load_idx_d       : std_logic_vector(addr_width_load - 1 downto 0);
+    signal w_valid_load_address_f : array_t(0 to load_channels - 1)(0 downto 0);
+    signal r_sel_load_fifo        : std_logic_vector(addr_width_load - 1 downto 0);
+
     signal w_rst : std_logic;
 
-    signal r_sel_iact_fifo : std_logic_vector(addr_width_rows - 1 downto 0);
-    signal r_sel_wght_fifo : std_logic_vector(addr_width_y - 1 downto 0);
-
-    signal w_demux_iact_out       : array_t(0 to size_rows - 1)(data_width_iact_mem - 1 downto 0);
-    signal w_demux_wght_out       : array_t(0 to size_y - 1)(data_width_wght_mem - 1 downto 0);
     signal w_demux_iact_out_valid : array_t(0 to size_rows - 1)(0 downto 0);
     signal w_demux_wght_out_valid : array_t(0 to size_y - 1)(0 downto 0);
+    signal w_demux_load_out_valid : array_t(0 to load_channels - 1)(0 downto 0);
 
     signal w_iact_serializer_ready : std_logic_vector(size_rows - 1 downto 0);
     signal w_wght_serializer_ready : std_logic_vector(size_rows - 1 downto 0);
@@ -139,7 +128,7 @@ architecture rtl of scratchpad_interface is
 
     signal w_rd_en_iact_f       : std_logic_vector(size_rows - 1 downto 0);
     signal w_rd_en_iact_f_d     : std_logic_vector(size_rows - 1 downto 0);
-    signal w_dout_iact_f        : array_t(0 to size_rows - 1)(data_width_iact_mem - 1 downto 0);
+    signal w_dout_iact_f        : array_t(0 to size_rows - 1)(mem_data_width - 1 downto 0);
     signal w_full_iact_f        : std_logic_vector(size_rows - 1 downto 0);
     signal w_almost_full_iact_f : std_logic_vector(size_rows - 1 downto 0);
     signal w_empty_iact_f       : std_logic_vector(size_rows - 1 downto 0);
@@ -147,49 +136,42 @@ architecture rtl of scratchpad_interface is
 
     signal w_rd_en_wght_f       : std_logic_vector(size_y - 1 downto 0);
     signal w_rd_en_wght_f_d     : std_logic_vector(size_y - 1 downto 0);
-    signal w_dout_wght_f        : array_t(0 to size_y - 1)(data_width_wght_mem - 1 downto 0);
+    signal w_dout_wght_f        : array_t(0 to size_y - 1)(mem_data_width - 1 downto 0);
     signal w_full_wght_f        : std_logic_vector(size_y - 1 downto 0);
     signal w_almost_full_wght_f : std_logic_vector(size_y - 1 downto 0);
     signal w_empty_wght_f       : std_logic_vector(size_y - 1 downto 0);
     signal w_valid_wght_f       : std_logic_vector(size_y - 1 downto 0);
 
     signal w_rd_en_iact_address_f : std_logic_vector(size_rows - 1 downto 0);
-    signal w_dout_iact_address_f  : array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
+    signal w_dout_iact_address_f  : array_t(0 to size_rows - 1)(mem_addr_width - 1 downto 0);
     signal w_full_iact_address_f  : std_logic_vector(size_rows - 1 downto 0);
     signal w_empty_iact_address_f : std_logic_vector(size_rows - 1 downto 0);
     signal w_valid_iact_address_f : array_t(0 to size_rows - 1)(0 downto 0);
 
     signal w_rd_en_wght_address_f : std_logic_vector(size_y - 1 downto 0);
-    signal w_dout_wght_address_f  : array_t(0 to size_y - 1)(addr_width_wght_mem - 1 downto 0);
+    signal w_dout_wght_address_f  : array_t(0 to size_y - 1)(mem_addr_width - 1 downto 0);
     signal w_full_wght_address_f  : std_logic_vector(size_y - 1 downto 0);
     signal w_empty_wght_address_f : std_logic_vector(size_y - 1 downto 0);
     signal w_valid_wght_address_f : array_t(0 to size_y - 1)(0 downto 0);
 
-    signal w_arb_req_iact   : std_logic_vector(size_rows - 1 downto 0);
-    signal w_gnt_iact       : std_logic_vector(size_rows - 1 downto 0);
-    signal w_gnt_iact_idx   : std_logic_vector(addr_width_rows - 1 downto 0);
-    signal r_gnt_iact_idx_d : std_logic_vector(addr_width_rows - 1 downto 0) := (others => '0');
+    signal w_arb_req_iact : std_logic_vector(size_rows - 1 downto 0);
+    signal w_gnt_iact     : std_logic_vector(size_rows - 1 downto 0);
 
-    signal w_arb_req_wght   : std_logic_vector(size_y - 1 downto 0);
-    signal w_gnt_wght       : std_logic_vector(size_y - 1 downto 0);
-    signal w_gnt_wght_idx   : std_logic_vector(addr_width_y - 1 downto 0);
-    signal r_gnt_wght_idx_d : std_logic_vector(addr_width_y - 1 downto 0) := (others => '0');
+    signal w_arb_req_wght : std_logic_vector(size_y - 1 downto 0);
+    signal w_gnt_wght     : std_logic_vector(size_y - 1 downto 0);
 
     signal w_arb_req_psum   : std_logic_vector(size_x - 1 downto 0);
     signal w_gnt_psum       : std_logic_vector(size_x - 1 downto 0);
     signal w_gnt_psum_idx   : std_logic_vector(addr_width_x - 1 downto 0);
     signal r_gnt_psum_idx_d : std_logic_vector(addr_width_x - 1 downto 0) := (others => '0');
 
-    signal w_address_iact : std_logic_vector(addr_width_iact_mem - 1 downto 0);
-    signal w_address_wght : std_logic_vector(addr_width_wght_mem - 1 downto 0);
+    constant c_psum_wide_words_width : positive := positive(ceil(log2(real(mem_word_count))));
+    constant c_psum_fifo_width       : integer  := mem_data_width + mem_word_count;
 
-    constant c_psum_wide_words_width : positive := positive(ceil(log2(real(words_psum))));
-    constant c_psum_fifo_width       : integer  := data_width_psum_mem + words_psum;
-
-    signal w_psum_wide_data  : array_t(0 to size_x - 1)(data_width_psum_mem - 1 downto 0);
-    signal w_word_count_psum : unsigned(c_psum_wide_words_width - 1 downto 0);
+    signal w_psum_wide_data  : array_t(0 to size_x - 1)(mem_data_width - 1 downto 0);
+    -- signal w_word_count_psum : unsigned(c_psum_wide_words_width - 1 downto 0);
     signal w_psum_valid_out  : std_logic;
-    signal w_wen_psum        : std_logic_vector(words_psum - 1 downto 0);
+    signal w_wen_psum        : std_logic_vector(mem_word_count - 1 downto 0);
 
     signal w_psum_word_offsets       : array_t(0 to size_x - 1)(word_offset_width - 1 downto 0);
     signal r_psum_offset_initialized : std_logic_vector(size_x - 1 downto 0);
@@ -197,7 +179,7 @@ architecture rtl of scratchpad_interface is
     signal w_psum_offset_empty       : std_logic_vector(size_x - 1 downto 0);
 
     signal w_rd_en_psum_f : std_logic_vector(size_x - 1 downto 0);
-    signal w_wr_en_psum_f : array_t(0 to size_x - 1)(words_psum - 1 downto 0);
+    signal w_wr_en_psum_f : array_t(0 to size_x - 1)(mem_word_count - 1 downto 0);
     signal w_din_psum_f   : array_t(0 to size_x - 1)(c_psum_fifo_width - 1 downto 0);
     signal w_dout_psum_f  : array_t(0 to size_x - 1)(c_psum_fifo_width - 1 downto 0);
     signal w_full_psum_f  : std_logic_vector(size_x - 1 downto 0);
@@ -314,18 +296,12 @@ begin
 
     end process p_startup;
 
-    o_address_iact <= w_address_iact;
-    o_address_wght <= w_address_wght;
-
-    -- o_data_iact_valid <= w_valid_iact_f;
-    -- o_data_wght_valid <= w_valid_wght_f;
-
     gen_pe_arr_iact : for i in 0 to size_rows - 1 generate
 
         serializer_inst : entity accel.serializer
             generic map (
-                in_width  => data_width_iact_mem,
-                out_width => data_width_iact
+                in_width  => mem_data_width,
+                out_width => data_width_input
             )
             port map (
                 clk     => clk,
@@ -346,8 +322,8 @@ begin
 
         serializer_inst : entity accel.serializer
             generic map (
-                in_width  => data_width_wght_mem,
-                out_width => data_width_wght
+                in_width  => mem_data_width,
+                out_width => data_width_input
             )
             port map (
                 clk     => clk,
@@ -362,27 +338,16 @@ begin
 
         w_rd_en_wght_f(i) <= i_start and not w_empty_wght_f(i) and w_wght_serializer_ready(i);
 
-        -- o_data_wght(i) <= w_dout_wght_f(i);
-
-        -- w_rd_en_wght_f(i) <= i_start and not w_empty_wght_f(i) and
-        --                      not (i_buffer_full_next_wght(i) and (i_buffer_full_wght(i) or w_rd_en_wght_f_d(i)));
-
     end generate gen_pe_arr_wght;
 
     w_rd_en_iact_f_d <= w_rd_en_iact_f when rising_edge(clk);
     w_rd_en_wght_f_d <= w_rd_en_wght_f when rising_edge(clk);
 
-    w_rd_en_iact_address_f <= w_gnt_iact when not w_empty_iact_address_f(to_integer(unsigned(w_gnt_iact_idx))) else -- Selected with arbiter
-                              (others => '0');
+    w_rd_en_iact_address_f <= w_gnt_iact and not w_empty_iact_address_f;
+    w_rd_en_wght_address_f <= w_gnt_wght and not w_empty_wght_address_f;
 
-    w_rd_en_wght_address_f <= w_gnt_wght when not w_empty_wght_address_f(to_integer(unsigned(w_gnt_wght_idx))) else -- Selected with arbiter
-                              (others => '0');
-
-    r_sel_iact_fifo <= r_gnt_iact_idx_d when rising_edge(clk_sp);
-    r_sel_wght_fifo <= r_gnt_wght_idx_d when rising_edge(clk_sp);
-
-    r_gnt_iact_idx_d <= w_gnt_iact_idx when rising_edge(clk_sp);
-    r_gnt_wght_idx_d <= w_gnt_wght_idx when rising_edge(clk_sp);
+    r_sel_load_fifo  <= r_gnt_load_idx_d when rising_edge(clk_sp);
+    r_gnt_load_idx_d <= w_gnt_load_idx when rising_edge(clk_sp);
     r_gnt_psum_idx_d <= w_gnt_psum_idx when rising_edge(clk_sp);
 
     w_arb_req_iact <= (others => '0') when i_start = '0' or r_done_iact = '1' else not w_almost_full_iact_f;
@@ -392,142 +357,72 @@ begin
     o_fifo_iact_address_full <= or w_full_iact_address_f;
     o_fifo_wght_address_full <= or w_full_wght_address_f;
 
-    mux_iact_address : entity accel.mux
+    -- merge address & grant vectors to access to the unified scratchpad
+    w_arb_req_load         <= w_arb_req_wght & w_arb_req_iact;
+    w_load_address_f       <= w_dout_iact_address_f & w_dout_wght_address_f;
+    w_valid_load_address_f <= w_valid_iact_address_f & w_valid_wght_address_f;
+
+    w_demux_iact_out_valid <= w_demux_load_out_valid(0 to size_rows - 1);
+    w_demux_wght_out_valid <= w_demux_load_out_valid(size_rows to size_rows + size_y - 1);
+
+    w_gnt_iact <= w_gnt_load(size_rows - 1 downto 0);
+    w_gnt_wght <= w_gnt_load(size_rows + size_y - 1 downto size_rows);
+
+    mux_load_address : entity accel.mux
         generic map (
-            input_width   => addr_width_iact_mem,
-            input_num     => size_rows,
-            address_width => addr_width_rows
+            input_width   => mem_addr_width,
+            input_num     => load_channels,
+            address_width => addr_width_load
         )
         port map (
-            v_i => w_dout_iact_address_f,
-            sel => r_gnt_iact_idx_d,
-            z_o => w_address_iact
+            v_i => w_load_address_f,
+            sel => r_gnt_load_idx_d,
+            z_o => o_address
         );
 
-    mux_wght_address : entity accel.mux
-        generic map (
-            input_width   => addr_width_wght_mem,
-            input_num     => size_y,
-            address_width => addr_width_y
-        )
-        port map (
-            v_i => w_dout_wght_address_f,
-            sel => r_gnt_wght_idx_d,
-            z_o => w_address_wght
-        );
-
-    mux_iact_address_valid : entity accel.mux
+    mux_load_address_valid : entity accel.mux
         generic map (
             input_width   => 1,
-            input_num     => size_rows,
-            address_width => addr_width_rows
+            input_num     => load_channels,
+            address_width => addr_width_load
         )
         port map (
-            v_i    => w_valid_iact_address_f,
-            sel    => r_gnt_iact_idx_d,
-            z_o(0) => o_address_iact_valid
+            v_i    => w_valid_load_address_f,
+            sel    => r_gnt_load_idx_d,
+            z_o(0) => o_address_valid
         );
 
-    mux_wght_address_valid : entity accel.mux
+    rr_arbiter_load : entity accel.rr_arbiter
         generic map (
-            input_width   => 1,
-            input_num     => size_y,
-            address_width => addr_width_y
-        )
-        port map (
-            v_i    => w_valid_wght_address_f,
-            sel    => r_gnt_wght_idx_d,
-            z_o(0) => o_address_wght_valid
-        );
-
-    rr_arbiter_iact : entity accel.rr_arbiter
-        generic map (
-            arbiter_width => size_rows
+            arbiter_width => load_channels
         )
         port map (
             clk   => clk_sp,
             rstn  => rstn,
-            i_req => w_arb_req_iact,
-            o_gnt => w_gnt_iact
+            i_req => w_arb_req_load,
+            o_gnt => w_gnt_load
         );
 
-    rr_arbiter_iact_binary : entity accel.onehot_binary
+    rr_arbiter_load_binary : entity accel.onehot_binary
         generic map (
-            onehot_width => size_rows,
-            binary_width => addr_width_rows
+            onehot_width => load_channels,
+            binary_width => addr_width_load
         )
         port map (
-            i_onehot => w_gnt_iact,
-            o_binary => w_gnt_iact_idx
+            i_onehot => w_gnt_load,
+            o_binary => w_gnt_load_idx
         );
 
-    rr_arbiter_wght : entity accel.rr_arbiter
-        generic map (
-            arbiter_width => size_y
-        )
-        port map (
-            clk   => clk_sp,
-            rstn  => rstn,
-            i_req => w_arb_req_wght,
-            o_gnt => w_gnt_wght
-        );
-
-    rr_arbiter_wght_binary : entity accel.onehot_binary
-        generic map (
-            onehot_width => size_y,
-            binary_width => addr_width_y
-        )
-        port map (
-            i_onehot => w_gnt_wght,
-            o_binary => w_gnt_wght_idx
-        );
-
-    demux_iact : entity accel.demux
-        generic map (
-            output_width  => data_width_iact_mem,
-            output_num    => size_rows,
-            address_width => addr_width_rows
-        )
-        port map (
-            v_i => i_data_iact,
-            sel => r_sel_iact_fifo,
-            z_o => w_demux_iact_out
-        );
-
-    demux_iact_valid : entity accel.demux
+    demux_load_valid : entity accel.demux
         generic map (
             output_width  => 1,
-            output_num    => size_rows,
-            address_width => addr_width_rows
+            output_num    => load_channels,
+            address_width => addr_width_load
         )
         port map (
-            v_i(0) => i_data_iact_valid,
-            sel    => r_sel_iact_fifo,
-            z_o    => w_demux_iact_out_valid
-        );
-
-    demux_wght : entity accel.demux
-        generic map (
-            output_width  => data_width_wght_mem,
-            output_num    => size_y,
-            address_width => addr_width_y
-        )
-        port map (
-            v_i => i_data_wght,
-            sel => r_sel_wght_fifo,
-            z_o => w_demux_wght_out
-        );
-
-    demux_wght_valid : entity accel.demux
-        generic map (
-            output_width  => 1,
-            output_num    => size_y,
-            address_width => addr_width_y
-        )
-        port map (
-            v_i(0) => i_data_wght_valid,
-            sel    => r_sel_wght_fifo,
-            z_o    => w_demux_wght_out_valid
+            v_i(0) => i_data_valid,
+            sel    => r_sel_load_fifo,
+            z_o    => w_demux_load_out_valid
         );
 
     gen_fifo_iact : for y in 0 to size_rows - 1 generate
@@ -544,7 +439,7 @@ begin
                 keep        => '0',
                 drop        => '0',
                 rd_clk      => clk,
-                din         => w_demux_iact_out(y),
+                din         => i_data,
                 wr_en       => w_demux_iact_out_valid(y)(0),
                 rd_en       => w_rd_en_iact_f(y),
                 dout        => w_dout_iact_f(y),
@@ -585,7 +480,7 @@ begin
                 keep        => '0',
                 drop        => '0',
                 rd_clk      => clk,
-                din         => w_demux_wght_out(y),
+                din         => i_data,
                 wr_en       => w_demux_wght_out_valid(y)(0),
                 rd_en       => w_rd_en_wght_f(y),
                 dout        => w_dout_wght_f(y),
@@ -666,7 +561,7 @@ begin
                 valid       => w_valid_wght_address_f(y)(0)
             );
 
-        assert rstn = '0' or i_address_wght_valid(y) = '0' or w_full_wght_address_f(y) = '0'
+        assert rstn = '0' or i_address_wght_valid(y) = '0' or w_full_wght_address_f(y) = '0' or not rising_edge(clk)
             report "push to full wght address fifo " & integer'image(y)
             severity warning;
 
@@ -680,7 +575,7 @@ begin
                 rstn     => rstn,
                 i_valid  => i_psums_valid(x) and i_psums_halfword(x),
                 i_last   => i_psums_last(x),
-                i_data   => i_psums(x)(data_width_iact - 1 downto 0),
+                i_data   => i_psums(x)(data_width_input - 1 downto 0),
                 i_offset => unsigned(w_psum_word_offsets(x)),
                 o_valid  => w_wr_en_psum_f(x),
                 o_data   => w_psum_wide_data(x)
@@ -740,15 +635,15 @@ begin
         );
 
     -- unpack data from psum fifo
-    -- w_word_count_psum <= unsigned(w_data_psum(c_psum_fifo_width - 1 downto data_width_psum_mem));
-    w_wen_psum  <= w_data_psum(c_psum_fifo_width - 1 downto data_width_psum_mem);
-    o_data_psum <= w_data_psum(data_width_psum_mem - 1 downto 0);
+    -- w_word_count_psum <= unsigned(w_data_psum(c_psum_fifo_width - 1 downto mem_data_width));
+    w_wen_psum  <= w_data_psum(c_psum_fifo_width - 1 downto mem_data_width);
+    o_data_psum <= w_data_psum(mem_data_width - 1 downto 0);
 
     -- generate write enable from psum fifo word count
     -- psum_wen_gen : accel.write_enable_gen
     --     generic map (
     --         count_width => c_psum_wide_words_width,
-    --         wen_width => words_psum
+    --         wen_width => mem_word_count
     --     )
     --     port map (--         i_count => w_word_count_psum,
     --         o_wen => w_wen_psum

@@ -11,8 +11,8 @@ entity address_generator_psum is
         size_x : positive := 5;
         size_y : positive := 5;
 
-        addr_width_x    : positive := 3;
-        addr_width_psum : positive := 15;
+        addr_width_x   : positive := 3;
+        mem_addr_width : positive := 15;
 
         write_size        : positive := 1;
         word_offset_width : integer  := integer(ceil(log2(real(write_size))))
@@ -29,7 +29,7 @@ entity address_generator_psum is
         i_gnt_psum_idx_d  : in    std_logic_vector(addr_width_x - 1 downto 0);
         i_empty_psum_fifo : in    std_logic_vector(size_x - 1 downto 0); -- currently unused
 
-        o_address_psum      : out   std_logic_vector(addr_width_psum - 1 downto 0);
+        o_address_psum      : out   std_logic_vector(mem_addr_width - 1 downto 0);
         o_suppress_out      : out   std_logic;
         o_word_offsets      : out   array_t(0 to size_x - 1)(word_offset_width - 1 downto 0);
         o_word_offset_valid : out   std_logic_vector(size_x - 1 downto 0)
@@ -38,9 +38,9 @@ end entity address_generator_psum;
 
 architecture rtl of address_generator_psum is
 
-    signal r_next_address : uns_array_t(0 to size_x - 1)(addr_width_psum - 1 downto 0);
-    signal r_address_psum : uns_array_t(0 to size_x - 1)(addr_width_psum - 1 downto 0);
-    signal w_address_mux  : array_t    (0 to size_x - 1)(addr_width_psum - 1 downto 0);
+    signal r_next_address : uns_array_t(0 to size_x - 1)(mem_addr_width - 1 downto 0);
+    signal r_address_psum : uns_array_t(0 to size_x - 1)(mem_addr_width - 1 downto 0);
+    signal w_address_mux  : array_t    (0 to size_x - 1)(mem_addr_width - 1 downto 0);
 
     signal r_next_address_valid : std_logic_vector(0 to size_x - 1);
     signal r_suppress_next_row  : std_logic_vector(0 to size_x - 1);
@@ -65,7 +65,7 @@ begin
     -- Multiplex addresses for PE colums to interface the single Psum scratchpad
     mux_psum_adr : entity accel.mux
         generic map (
-            input_width   => addr_width_psum,
+            input_width   => mem_addr_width,
             input_num     => size_x,
             address_width => addr_width_x
         )
@@ -144,7 +144,7 @@ begin
                 v_new_addr := v_count_m0 * r_image_size + v_cur_row * i_params.w1;
 
                 if r_next_address_valid(x) = '0' or r_start_event = '1' then
-                    r_next_address(x)       <= to_unsigned(v_new_addr, addr_width_psum);
+                    r_next_address(x)       <= to_unsigned(v_new_addr, mem_addr_width);
                     r_next_address_valid(x) <= '1';
                     o_word_offset_valid(x)  <= '1';
                 end if;
@@ -167,7 +167,7 @@ begin
                 if r_start_event = '1' then
                     v_count_w1 := 0;
 
-                    r_address_psum(x)       <= to_unsigned(v_new_addr, addr_width_psum);
+                    r_address_psum(x)       <= to_unsigned(v_new_addr, mem_addr_width);
                     r_suppress_out(x)       <= '0';
                     r_next_address_valid(x) <= '0'; -- immediately trigger calculation of subsequent address
                 elsif i_valid_psum_out(x) then

@@ -44,9 +44,7 @@ class Accelerator:
         line_length_iact,
         line_length_psum,
         line_length_wght,
-        mem_size_iact,
-        mem_size_psum,
-        mem_size_wght,
+        mem_addr_width,
         iact_fifo_size,
         wght_fifo_size,
         psum_fifo_size,
@@ -59,9 +57,7 @@ class Accelerator:
         self.line_length_iact = line_length_iact
         self.line_length_psum = line_length_psum
         self.line_length_wght = line_length_wght
-        self.mem_size_iact = mem_size_iact
-        self.mem_size_psum = mem_size_psum
-        self.mem_size_wght = mem_size_wght
+        self.mem_addr_width = mem_addr_width
         self.iact_fifo_size = iact_fifo_size
         self.wght_fifo_size = wght_fifo_size
         self.psum_fifo_size = psum_fifo_size
@@ -109,6 +105,9 @@ def write_memory_file_int8(filename, image, wordsize=32):
         for nibble in np.split(pixels, num_words):
             f.write(''.join([np.binary_repr(x, 8) for x in reversed(nibble)])+'\n')
 
+def align_to_add(value, divider):
+    return (value + divider - 1) // divider * divider
+
 class Test:
     def __init__(self, name, convolution, accelerator, gui=True):
         self.convolution = convolution
@@ -116,6 +115,12 @@ class Test:
         self.name = name
         self.gui = gui
         self.test_dir = None
+
+        self.wght_base_addr = None
+        self.stride_iact_w = None
+        self.stride_iact_hw = None
+        self.stride_wght_kernel = None
+        self.stride_wght_och = None
 
     def generate_test(self, test_name, test_dir):
         print(f'Generating test: {test_name}')
@@ -362,25 +367,24 @@ class Test:
         np.savetxt(self.test_dir / "_convolution_stack.txt", self.convolved_images_stack, fmt="%d", delimiter=" ")
         np.savetxt(self.test_dir / "_zeropt_scale.txt",      zeropt_scale_vals,           fmt="%f", delimiter=" ")
 
-        # print(kernels.shape)
-        # print(kernels_stack.shape)
         kernels_stack_och = np.vstack(kernels) # all output channel kernels stacked as 3D array
-        # print(kernels_stack_och.shape)
-        # print(kernels)
-        # save mem files
+
         # save image as 8-bit binary values in _mem_iact.txt in two's complement
         for column in range(0, 8):
-            image_col = image[column::8]
             # TODO: pad channels to multiples of 8 (i.e. image stride)
-            write_memory_file_int8(self.test_dir / f"_mem_col{column}.txt", image_col, wordsize=64)
+            image_col = image[column::8].flatten()
+            wght_col = kernels_stack_och[column::8].flatten()
 
-            wght_col = kernels_stack_och[column::8] # get every 8th kernel
-            # print(f"weight column {column}:")
-            # print(wght_col)
-            write_memory_file_int8(self.test_dir / f"_mem_wght_col{column}.txt", wght_col, wordsize=64)
+            # pad the image such that weight data is aligned. technically, multiple of wordsize (currently 8) would suffice.
+            image_pad_size = align_to_add(image_col.shape[0], 32)
+            image_col_pad = np.resize(image_col, image_pad_size)
+            memory_col = np.concat((image_col_pad, wght_col))
 
-        # save kernels as 8-bit binary values in _mem_wght_stack.txt in two's complement
-        # write_memory_file_int8(self.test_dir / "_mem_wght_stack.txt", kernels_stack, wordsize=32)
+            if self.wght_base_addr is not None and self.wght_base_addr != image_pad_size:
+                raise RuntimeError(f'weight base address differs between mem columns ({image_pad_size} / {self.wght_base_addr})')
+            self.wght_base_addr = image_pad_size
+
+            write_memory_file_int8(self.test_dir / f"_mem_col{column}.txt", memory_col, wordsize=64)
 
         return True
 
@@ -403,48 +407,44 @@ class Test:
 
     def build_generics(self):
         return {
-            'g_kernel_size':       self.convolution.kernel_size,
-            'g_image_y':           self.convolution.image_size,
-            'g_image_x':           self.convolution.image_size,
-            'g_inputchs':          self.convolution.input_channels,
-            'g_outputchs':         self.M0, # currently fixed to M0, TODO: make smaller count possible
-            'g_bias':              self.convolution.bias,
-            'line_length_wght':    self.accelerator.line_length_wght,
-            'addr_width_wght':     math.ceil(math.log2(self.accelerator.line_length_wght)),
-            'line_length_iact':    self.accelerator.line_length_iact,
-            'addr_width_iact':     math.ceil(math.log2(self.accelerator.line_length_iact)),
-            'line_length_psum':    self.accelerator.line_length_psum,
-            'addr_width_psum':     math.ceil(math.log2(self.accelerator.line_length_psum)),
-            'addr_width_iact_mem': self.accelerator.mem_size_iact,
-            'addr_width_wght_mem': self.accelerator.mem_size_wght,
-            'addr_width_psum_mem': self.accelerator.mem_size_psum,
-            'size_x':              self.accelerator.size_x,
-            'size_y':              self.accelerator.size_y,
-            'g_iact_fifo_size':    self.accelerator.iact_fifo_size,
-            'g_wght_fifo_size':    self.accelerator.wght_fifo_size,
-            'g_psum_fifo_size':    self.accelerator.psum_fifo_size,
-            'g_c1':                self.C1,
-            'g_w1':                self.W1,
-            'g_h2':                self.H2,
-            'g_m0':                self.M0,
-            'g_m0_last_m1':        self.M0_last_m1,
-            'g_rows_last_h2':      self.rows_last_h2,
-            'g_c0':                self.C0,
-            'g_c0_last_c1':        self.C0_last_c1,
-            'g_c0w0':              self.C0W0,
-            'g_c0w0_last_c1':      self.C0W0_last_c1,
-            'g_stride_iact_w':     self.stride_iact_w,
-            'g_stride_iact_hw':    self.stride_iact_hw,
-            'g_stride_wght_krnl':  self.stride_wght_kernel,
-            'g_stride_wght_och':   self.stride_wght_och,
-            'g_clk':               self.accelerator.clk_period,
-            'g_clk_sp':            self.accelerator.clk_sp_period,
-            'g_mode_act':          int(self.convolution.activation),
-            'g_requant':           1 if self.convolution.requantize else 0,
-            'g_postproc':          1 if self.convolution.requantize or self.convolution.bias != 0 or self.convolution.activation != ActivationMode.passthrough else 0,
-            'g_dataflow':          self.accelerator.dataflow,
-            'g_init_sp':           True,
-            'g_files_dir':         str(self.test_dir.absolute()) + '/',
+            'g_kernel_size':      self.convolution.kernel_size,
+            'g_image_y':          self.convolution.image_size,
+            'g_image_x':          self.convolution.image_size,
+            'g_inputchs':         self.convolution.input_channels,
+            'g_outputchs':        self.M0, # currently fixed to M0, TODO: make smaller count possible
+            'g_bias':             self.convolution.bias,
+            'line_length_wght':   self.accelerator.line_length_wght,
+            'line_length_iact':   self.accelerator.line_length_iact,
+            'line_length_psum':   self.accelerator.line_length_psum,
+            'mem_addr_width':     self.accelerator.mem_addr_width,
+            'size_x':             self.accelerator.size_x,
+            'size_y':             self.accelerator.size_y,
+            'g_iact_fifo_size':   self.accelerator.iact_fifo_size,
+            'g_wght_fifo_size':   self.accelerator.wght_fifo_size,
+            'g_psum_fifo_size':   self.accelerator.psum_fifo_size,
+            'g_c1':               self.C1,
+            'g_w1':               self.W1,
+            'g_h2':               self.H2,
+            'g_m0':               self.M0,
+            'g_m0_last_m1':       self.M0_last_m1,
+            'g_rows_last_h2':     self.rows_last_h2,
+            'g_c0':               self.C0,
+            'g_c0_last_c1':       self.C0_last_c1,
+            'g_c0w0':             self.C0W0,
+            'g_c0w0_last_c1':     self.C0W0_last_c1,
+            'g_stride_iact_w':    self.stride_iact_w,
+            'g_stride_iact_hw':   self.stride_iact_hw,
+            'g_stride_wght_krnl': self.stride_wght_kernel,
+            'g_stride_wght_och':  self.stride_wght_och,
+            'g_wght_base_addr':   self.wght_base_addr,
+            'g_clk':              self.accelerator.clk_period,
+            'g_clk_sp':           self.accelerator.clk_sp_period,
+            'g_mode_act':         int(self.convolution.activation),
+            'g_requant':          1 if self.convolution.requantize else 0,
+            'g_postproc':         1 if self.convolution.requantize or self.convolution.bias != 0 or self.convolution.activation != ActivationMode.passthrough else 0,
+            'g_dataflow':         self.accelerator.dataflow,
+            'g_init_sp':          True,
+            'g_files_dir':        str(self.test_dir.absolute()) + '/',
         }
 
     def run(self):
@@ -545,7 +545,7 @@ presets = {
                       Convolution(image_size = [16], kernel_size = [3], input_channels = [100],
                                   output_channels = [3], bias = [5], requantize = [True], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
-                                  mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
+                                  mem_addr_width = 20,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
                                   clk_period = [10], clk_sp_period = [1], dataflow=[0]), start_gui = True),
 
@@ -554,7 +554,7 @@ presets = {
                       Convolution(image_size = [16], kernel_size = [1,3], input_channels = [10+i*10 for i in range(20)],
                                   output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
-                                  mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
+                                  mem_addr_width = 20,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
                                   clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
 
@@ -563,7 +563,7 @@ presets = {
                       Convolution(image_size = [124], kernel_size = [3], input_channels = [3],
                                   output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
-                                  mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
+                                  mem_addr_width = 20,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
                                   clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
 
@@ -572,7 +572,7 @@ presets = {
                       Convolution(image_size = [16], kernel_size = [1,3], input_channels = [40],
                                   output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
-                                  mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
+                                  mem_addr_width = 20,
                                   iact_fifo_size = [5, 10, 15, 30, 64, 128, 512], wght_fifo_size = [5, 10, 15, 30, 64, 128, 512], psum_fifo_size = [512],
                                   clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
 
@@ -581,7 +581,7 @@ presets = {
                     Convolution(image_size = [16], kernel_size = [1,3], input_channels = [40],
                                 output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [], line_length_psum = [128], line_length_wght = [32, 48, 64, 96, 128, 256, 512, 1024],
-                                mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
+                                mem_addr_width = 20,
                                 iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
                                 clk_period = [10], clk_sp_period = [1], dataflow=[0])),
 
@@ -589,7 +589,7 @@ presets = {
                       Convolution(image_size = [16, 32], kernel_size = [1, 3, 5], input_channels = [40],
                                   output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [5,10,15,20,25,50,100], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
-                                  mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
+                                  mem_addr_width = 20,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [16384],
                                   clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
 
@@ -597,7 +597,7 @@ presets = {
                       Convolution(image_size = [16, 32], kernel_size = [1, 3, 5], input_channels = [40],
                                   output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [10], size_y = [5,10,15,20,25,50,100], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
-                                  mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
+                                  mem_addr_width = 20,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [16384],
                                   clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
 
@@ -605,7 +605,7 @@ presets = {
                       Convolution(image_size = [32], kernel_size = [1, 3], input_channels = [40],
                                   output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
-                                  mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
+                                  mem_addr_width = 20,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
                                   clk_period = [10], clk_sp_period = [1+i for i in range(10)], dataflow=[0,1])),
 
@@ -613,7 +613,7 @@ presets = {
                       Convolution(image_size = [32], kernel_size = [1, 3], input_channels = [40],
                                   output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [12], size_y = [14], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
-                                  mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
+                                  mem_addr_width = 20,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
                                   clk_period = [10], clk_sp_period = [1+i for i in range(10)], dataflow=[0,1])),
 
@@ -622,7 +622,7 @@ presets = {
                     Convolution(image_size = [16], kernel_size = [1,3], input_channels = [40],
                                 output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [], line_length_psum = [128], line_length_wght = [32, 48, 64, 96, 128, 256, 512, 1024],
-                                mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
+                                mem_addr_width = 20,
                                 iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
                                 clk_period = [10], clk_sp_period = [1], dataflow=[1])),
 
@@ -631,7 +631,7 @@ presets = {
                     Convolution(image_size = [16], kernel_size = [1, 3], input_channels = [10+i*1 for i in range(4)],
                                 output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [512], line_length_wght = [64],
-                                mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
+                                mem_addr_width = 20,
                                 iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [128],
                                 clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
 
@@ -640,7 +640,7 @@ presets = {
                     Convolution(image_size = [32], kernel_size = [3], input_channels = [4],
                                 output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
-                                mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
+                                mem_addr_width = 20,
                                 iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [128],
                                 clk_period = [10], clk_sp_period = [1], dataflow=[0]), start_gui = True),
 
@@ -649,7 +649,7 @@ presets = {
                     Convolution(image_size = [32], kernel_size = [3], input_channels = [100],
                                 output_channels = [3], bias = [0,5], requantize = [False,True], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
-                                mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
+                                mem_addr_width = 20,
                                 iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [128],
                                 clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
 }
@@ -779,9 +779,7 @@ if __name__ == "__main__":
                         li,
                         lp,
                         lw,
-                        sim.accelerator.mem_size_iact,
-                        sim.accelerator.mem_size_psum,
-                        sim.accelerator.mem_size_wght,
+                        sim.accelerator.mem_addr_width,
                         fifoi,
                         fifow,
                         fifop,

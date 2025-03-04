@@ -20,22 +20,15 @@ entity functional_tb is
         size_x : positive := 7;
         size_y : positive := 10;
 
-        data_width_iact     : positive := 8;  -- Width of the input data (weights, iacts)
-        line_length_iact    : positive := 64; /* TODO check influence on tiling - does not work for length 32, kernel 4 and channels 10. Does not work for length 30, kernel 3 and channels 10*/
-        addr_width_iact     : positive := 6;
-        addr_width_iact_mem : positive := 16;
+        data_width_input : positive := 8;  -- Width of the input data (weights, iacts)
+        data_width_psum  : positive := 16;
 
-        data_width_psum     : positive := 16;
-        line_length_psum    : positive := 128;
-        addr_width_psum     : positive := 7;
-        addr_width_psum_mem : positive := 20; -- byte-wise addressing, 256kB of psum memory -> future shared spad
+        line_length_iact : positive := 64; /* TODO check influence on tiling - does not work for length 32, kernel 4 and channels 10. Does not work for length 30, kernel 3 and channels 10 */
+        line_length_wght : positive := 64; /* see above */
+        line_length_psum : positive := 128;
 
-        data_width_wght     : positive := 8;
-        line_length_wght    : positive := 64; /* TODO check influence on tiling - does not work for length 32, kernel 4 and channels 10. Does not work for length 30, kernel 3 and channels 10*/
-        addr_width_wght     : positive := 6;
-        addr_width_wght_mem : positive := 16;
-
-        fifo_width : positive := 16;
+        mem_word_count : positive := 8;
+        mem_addr_width : positive := 15; -- addressing words of mem_word_count * data_width_input bits, 256kB of shared spad
 
         g_inputchs    : positive := 30;
         g_outputchs   : positive := 10;
@@ -75,13 +68,18 @@ entity functional_tb is
         g_stride_iact_hw : positive := 1;
 
         g_stride_wght_krnl : positive := 1;
-        g_stride_wght_och  : positive := 1
+        g_stride_wght_och  : positive := 1;
+
+        g_iact_base_addr : integer := 0;
+        g_wght_base_addr : integer := 0
     );
 end entity functional_tb;
 
 architecture imp of functional_tb is
 
-    constant size_rows : positive := size_x + size_y - 1;
+    constant size_rows       : positive := size_x + size_y - 1;
+    constant mem_data_width  : positive := mem_word_count * data_width_input;
+    constant addr_width_iact : positive := positive(ceil(log2(real(line_length_iact))));
 
     signal clk    : std_logic := '0';
     signal clk_sp : std_logic := '0';
@@ -95,9 +93,9 @@ architecture imp of functional_tb is
 
     signal o_psums           : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
     signal o_psums_valid     : std_logic_vector(size_x - 1 downto 0);
-    signal i_data_iact       : array_t (0 to size_rows - 1)(data_width_iact - 1 downto 0);
+    signal i_data_iact       : array_t (0 to size_rows - 1)(data_width_input - 1 downto 0);
     signal i_data_iact_valid : std_logic_vector(size_rows - 1 downto 0);
-    signal i_data_wght       : array_t (0 to size_y - 1)(data_width_wght - 1 downto 0);
+    signal i_data_wght       : array_t (0 to size_y - 1)(data_width_input - 1 downto 0);
     signal i_data_wght_valid : std_logic_vector(size_y - 1 downto 0);
 
     signal s_input_image     : int_image_t(0 to size_rows - 1, 0 to g_image_x * g_inputchs * g_h2 - 1);         -- 2, because two tile_y
@@ -107,20 +105,7 @@ architecture imp of functional_tb is
     signal zeropt_fp32 : array_t(max_output_channels - 1 downto 0)(31 downto 0);
     signal scale_fp32  : array_t(max_output_channels - 1 downto 0)(31 downto 0);
 
-    constant spad_ext_addr_width_iact : integer := addr_width_iact_mem;
-    constant spad_ext_addr_width_psum : integer := addr_width_psum_mem - 3; -- word-wise addressing (word size see below)
-    constant spad_ext_addr_width_wght : integer := addr_width_wght_mem;
-    constant spad_ext_data_width_iact : integer := 64;
-    constant spad_ext_data_width_psum : integer := 64;
-    constant spad_ext_data_width_wght : integer := 64;
-    constant iact_words_per_mem_word  : integer := 2 ** (addr_width_iact_mem - spad_ext_addr_width_iact);
-    constant psum_words_per_mem_word  : integer := 2 ** (addr_width_psum_mem - spad_ext_addr_width_psum);
-    constant wght_words_per_mem_word  : integer := 2 ** (addr_width_wght_mem - spad_ext_addr_width_wght);
-
-    -- TODO: in the future all mem words will be larger than iact/wght/psum words
-    constant iact_words_per_psum_mem_word : integer := spad_ext_data_width_psum / data_width_iact;
-
-    type ram_type is array (0 to 2 ** spad_ext_addr_width_psum - 1) of std_logic_vector(spad_ext_data_width_psum - 1 downto 0);
+    type ram_type is array (0 to 2 ** mem_addr_width - 1) of std_logic_vector(mem_data_width - 1 downto 0);
 
     signal r_iact_command     : command_lb_t;
     signal r_iact_read_offset : std_logic_vector(addr_width_iact - 1 downto 0);
@@ -136,9 +121,9 @@ begin
 
     o_psums           <= << signal accelerator_inst.w_psums : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0) >>;
     o_psums_valid     <= << signal accelerator_inst.w_psums_valid : std_logic_vector(size_x - 1 downto 0) >>;
-    i_data_iact       <= << signal accelerator_inst.w_data_iact : array_t (0 to size_rows - 1)(data_width_iact - 1 downto 0) >>;
+    i_data_iact       <= << signal accelerator_inst.w_data_iact : array_t (0 to size_rows - 1)(data_width_input - 1 downto 0) >>;
     i_data_iact_valid <= << signal accelerator_inst.w_data_iact_valid : std_logic_vector(size_rows - 1 downto 0) >>;
-    i_data_wght       <= << signal accelerator_inst.w_data_wght : array_t (0 to size_y - 1)(data_width_wght - 1 downto 0) >>;
+    i_data_wght       <= << signal accelerator_inst.w_data_wght : array_t (0 to size_y - 1)(data_width_input - 1 downto 0) >>;
     i_data_wght_valid <= << signal accelerator_inst.w_data_wght_valid : std_logic_vector(size_y - 1 downto 0) >>;
 
     r_iact_command     <= << signal accelerator_inst.pe_array_inst.pe_inst_y(0).pe_inst_x(0).pe_north.pe_inst.line_buffer_iact.i_command : command_lb_t >>;
@@ -182,29 +167,20 @@ begin
     params.stride_wght_kernel <= g_stride_wght_krnl;
     params.stride_wght_och    <= g_stride_wght_och;
 
+    params.base_iact <= g_iact_base_addr;
+    params.base_wght <= g_wght_base_addr;
+
     accelerator_inst : entity accel.accelerator
         generic map (
             size_x                   => size_x,
             size_y                   => size_y,
-            data_width_iact          => data_width_iact,
-            line_length_iact         => line_length_iact,
-            addr_width_iact          => addr_width_iact,
-            spad_addr_width_iact     => addr_width_iact_mem,
+            data_width_input         => data_width_input,
             data_width_psum          => data_width_psum,
-            line_length_psum         => line_length_psum,
-            addr_width_psum          => addr_width_psum,
-            spad_addr_width_psum     => addr_width_psum_mem,
-            data_width_wght          => data_width_wght,
+            line_length_iact         => line_length_iact,
             line_length_wght         => line_length_wght,
-            addr_width_wght          => addr_width_wght,
-            spad_addr_width_wght     => addr_width_wght_mem,
-            spad_ext_addr_width_iact => spad_ext_addr_width_iact,
-            spad_ext_addr_width_psum => spad_ext_addr_width_psum,
-            spad_ext_addr_width_wght => spad_ext_addr_width_wght,
-            spad_ext_data_width_iact => spad_ext_data_width_iact,
-            spad_ext_data_width_psum => spad_ext_data_width_psum,
-            spad_ext_data_width_wght => spad_ext_data_width_wght,
-            fifo_width               => fifo_width,
+            line_length_psum         => line_length_psum,
+            mem_addr_width           => mem_addr_width,
+            mem_word_count           => mem_word_count,
             g_iact_fifo_size         => g_iact_fifo_size,
             g_wght_fifo_size         => g_wght_fifo_size,
             g_psum_fifo_size         => g_psum_fifo_size,
@@ -220,20 +196,16 @@ begin
             o_done     => done,
             i_params   => params,
             -- memory i/o not used in this testbench
-            i_en_iact       => '0',
-            i_en_wght       => '0',
+            i_mem_en       => '0',
+            i_mem_write_en => (others => '0'),
+            i_mem_addr     => (others => '0'),
+            i_mem_din      => (others => '0'),
+            o_mem_dout     => open,
+            -- todo: remove
             i_en_psum       => '0',
-            i_write_en_iact => (others => '0'),
-            i_write_en_wght => (others => '0'),
             i_write_en_psum => (others => '0'),
-            i_addr_iact     => (others => '0'),
-            i_addr_wght     => (others => '0'),
             i_addr_psum     => (others => '0'),
-            i_din_iact      => (others => '0'),
-            i_din_wght      => (others => '0'),
             i_din_psum      => (others => '0'),
-            o_dout_iact     => open,
-            o_dout_wght     => open,
             o_dout_psum     => open
         );
 
@@ -302,18 +274,6 @@ begin
             report "Psum buffer has to hold output values of one row, must not be smaller than output row size"
             severity failure; /* TODO To be changed by splitting the task and propagating as many psums that the buffer can hold through the array at once */
 
-        assert addr_width_iact = integer(ceil(log2(real(line_length_iact))))
-            report "Check iact address width!"
-            severity failure;
-
-        assert addr_width_psum = integer(ceil(log2(real(line_length_psum))))
-            report "Check psum address width!"
-            severity failure;
-
-        assert addr_width_wght = integer(ceil(log2(real(line_length_wght))))
-            report "Check wght address width!"
-            severity failure;
-
         wait;
 
     end process p_constant_check;
@@ -374,8 +334,8 @@ begin
 
                 wait until rising_edge(clk) and i_data_iact_valid(y) = '1';
 
-                if i_data_iact(y) /= std_logic_vector(to_signed(s_input_image(y, i), data_width_iact)) then
-                    assert i_data_iact(y) = std_logic_vector(to_signed(s_input_image(y, i), data_width_iact))
+                if i_data_iact(y) /= std_logic_vector(to_signed(s_input_image(y, i), data_width_input)) then
+                    assert i_data_iact(y) = std_logic_vector(to_signed(s_input_image(y, i), data_width_input))
                         report "Input iact " & integer'image(i) & " wrong. Iact is " & integer'image(to_integer(signed(i_data_iact(y)))) & " - should be "
                                & integer'image(s_input_image(y, i))
                         severity warning;
@@ -408,7 +368,7 @@ begin
 
                 wait until rising_edge(clk) and i_data_wght_valid(y) = '1';
 
-                assert i_data_wght(y) = std_logic_vector(to_signed(s_input_weights(y, i), data_width_wght))
+                assert i_data_wght(y) = std_logic_vector(to_signed(s_input_weights(y, i), data_width_input))
                     report "Input wght (" & integer'image(y) & ") wrong. Wght is " & integer'image(to_integer(signed(i_data_wght(y)))) & " - should be "
                            & integer'image(s_input_weights(y, i))
                     severity warning;
@@ -606,14 +566,14 @@ begin
         output_done <= false;
 
         if g_requant > 0 then
-            actual_data_width := data_width_iact;
-            actual_word_count := iact_words_per_psum_mem_word; -- iact_words_per_mem_word;
-        -- assert spad_ext_data_width_iact = spad_ext_data_width_psum
+            actual_data_width := data_width_input;
+            actual_word_count := mem_word_count;
+        -- assert mem_data_width = mem_data_width
         --     report "subword readout for requantized data only available for equal iact / psum mem width"
         --     severity error;
         else
             actual_data_width := data_width_psum;
-            actual_word_count := psum_words_per_mem_word;
+            actual_word_count := mem_data_width / data_width_psum;
         end if;
 
         wait until done = '1';
