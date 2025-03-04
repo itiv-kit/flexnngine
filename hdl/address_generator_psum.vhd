@@ -13,6 +13,7 @@ entity address_generator_psum is
 
         addr_width_x   : positive := 3;
         mem_addr_width : positive := 15;
+        mem_columns    : positive := 8;
 
         write_size        : positive := 1;
         word_offset_width : integer  := integer(ceil(log2(real(write_size))))
@@ -25,9 +26,8 @@ entity address_generator_psum is
         i_dataflow : in    std_logic;
         i_params   : in    parameters_t;
 
-        i_valid_psum_out  : in    std_logic_vector(size_x - 1 downto 0);
-        i_gnt_psum_idx_d  : in    std_logic_vector(addr_width_x - 1 downto 0);
-        i_empty_psum_fifo : in    std_logic_vector(size_x - 1 downto 0); -- currently unused
+        i_valid_psum_out : in    std_logic_vector(size_x - 1 downto 0);
+        i_gnt_psum_idx_d : in    std_logic_vector(addr_width_x - 1 downto 0);
 
         o_address_psum      : out   std_logic_vector(mem_addr_width - 1 downto 0);
         o_suppress_out      : out   std_logic;
@@ -38,8 +38,17 @@ end entity address_generator_psum;
 
 architecture rtl of address_generator_psum is
 
-    signal r_next_address : uns_array_t(0 to size_x - 1)(mem_addr_width - 1 downto 0);
-    signal r_address_psum : uns_array_t(0 to size_x - 1)(mem_addr_width - 1 downto 0);
+    -- consecutive output channels are placed in one column of spad_reshape each
+    -- this is the columns size in bytes
+    constant mem_col_offset : positive := 2 ** mem_addr_width / mem_columns * write_size;
+
+    -- internally, this module works with byte-wise addresses
+    -- on the output, it is split in a address for units of write_size and
+    -- the word_offsets stream, which is used to align output data below write_size
+    constant addr_width_bytewise : positive := mem_addr_width + word_offset_width;
+
+    signal r_next_address : uns_array_t(0 to size_x - 1)(addr_width_bytewise - 1 downto 0);
+    signal r_address_psum : uns_array_t(0 to size_x - 1)(addr_width_bytewise - 1 downto 0);
     signal w_address_mux  : array_t    (0 to size_x - 1)(mem_addr_width - 1 downto 0);
 
     signal r_next_address_valid : std_logic_vector(0 to size_x - 1);
@@ -80,7 +89,7 @@ begin
     gen_counter : for x in 0 to size_x - 1 generate
 
         o_word_offsets(x) <= std_logic_vector(r_next_address(x)(word_offset_width - 1 downto 0));
-        w_address_mux(x)  <= std_logic_vector(r_address_psum(x));
+        w_address_mux(x)  <= std_logic_vector(r_address_psum(x)(addr_width_bytewise - 1 downto word_offset_width));
 
         p_psum_counter : process is
 
@@ -141,10 +150,20 @@ begin
                     v_cur_row := v_cur_row - (i_params.w1 + i_params.kernel_size - 1);
                 end if;
 
-                v_new_addr := v_count_m0 * r_image_size + v_cur_row * i_params.w1;
+                -- start with the base address
+                v_new_addr := i_params.base_psum;
+
+                -- jump to the respective output channel column
+                v_new_addr := v_new_addr + v_count_m0 mod mem_columns * mem_col_offset;
+
+                -- if more than mem_columns output channels, put output channels after each other (with stride offset)
+                v_new_addr := v_new_addr + v_count_m0 / mem_columns * i_params.stride_psum_och * write_size;
+
+                -- finally, add the row offset
+                v_new_addr := v_new_addr + v_cur_row * i_params.w1;
 
                 if r_next_address_valid(x) = '0' or r_start_event = '1' then
-                    r_next_address(x)       <= to_unsigned(v_new_addr, mem_addr_width);
+                    r_next_address(x)       <= to_unsigned(v_new_addr, addr_width_bytewise);
                     r_next_address_valid(x) <= '1';
                     o_word_offset_valid(x)  <= '1';
                 end if;
@@ -167,7 +186,7 @@ begin
                 if r_start_event = '1' then
                     v_count_w1 := 0;
 
-                    r_address_psum(x)       <= to_unsigned(v_new_addr, mem_addr_width);
+                    r_address_psum(x)       <= to_unsigned(v_new_addr, addr_width_bytewise);
                     r_suppress_out(x)       <= '0';
                     r_next_address_valid(x) <= '0'; -- immediately trigger calculation of subsequent address
                 elsif i_valid_psum_out(x) then
@@ -188,7 +207,6 @@ begin
                         else
                             v_count_w1 := v_count_w1 + write_size;
                         end if;
-                        -- v_count_w1        := v_count_w1 + write_size;
                         r_address_psum(x) <= r_address_psum(x) + write_size;
                     end if;
                 end if;

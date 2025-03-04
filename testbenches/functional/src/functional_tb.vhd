@@ -1,13 +1,11 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
-    use ieee.math_real.ceil;
-    use ieee.math_real.floor;
+    use ieee.math_real.all;
+    use ieee.float_pkg.all;
     use std.env.finish;
     use std.env.stop;
-    use ieee.math_real.log2;
     use std.textio.all;
-    use ieee.float_pkg.all;
 
 library accel;
     use accel.utilities.all;
@@ -20,7 +18,7 @@ entity functional_tb is
         size_x : positive := 7;
         size_y : positive := 10;
 
-        data_width_input : positive := 8;  -- Width of the input data (weights, iacts)
+        data_width_input : positive := 8; -- Width of the input data (weights, iacts)
         data_width_psum  : positive := 16;
 
         line_length_iact : positive := 64; /* TODO check influence on tiling - does not work for length 32, kernel 4 and channels 10. Does not work for length 30, kernel 3 and channels 10 */
@@ -69,17 +67,20 @@ entity functional_tb is
 
         g_stride_wght_krnl : positive := 1;
         g_stride_wght_och  : positive := 1;
+        g_stride_psum_och  : positive := 1;
 
         g_iact_base_addr : integer := 0;
-        g_wght_base_addr : integer := 0
+        g_wght_base_addr : integer := 0;
+        g_psum_base_addr : integer := 0
     );
 end entity functional_tb;
 
 architecture imp of functional_tb is
 
-    constant size_rows       : positive := size_x + size_y - 1;
-    constant mem_data_width  : positive := mem_word_count * data_width_input;
-    constant addr_width_iact : positive := positive(ceil(log2(real(line_length_iact))));
+    constant size_rows         : positive := size_x + size_y - 1;
+    constant mem_data_width    : positive := mem_word_count * data_width_input;
+    constant mem_col_idx_width : positive := positive(ceil(log2(real(mem_word_count))));
+    constant addr_width_iact   : positive := positive(ceil(log2(real(line_length_iact))));
 
     signal clk    : std_logic := '0';
     signal clk_sp : std_logic := '0';
@@ -105,7 +106,9 @@ architecture imp of functional_tb is
     signal zeropt_fp32 : array_t(max_output_channels - 1 downto 0)(31 downto 0);
     signal scale_fp32  : array_t(max_output_channels - 1 downto 0)(31 downto 0);
 
-    type ram_type is array (0 to 2 ** mem_addr_width - 1) of std_logic_vector(mem_data_width - 1 downto 0);
+    type   ram_type is array (0 to 2 ** mem_addr_width / mem_word_count - 1) of std_logic_vector(mem_data_width - 1 downto 0);
+    type   ram_cols_type is array(0 to mem_word_count) of ram_type;
+    signal ram_cols : ram_cols_type;
 
     signal r_iact_command     : command_lb_t;
     signal r_iact_read_offset : std_logic_vector(addr_width_iact - 1 downto 0);
@@ -166,26 +169,28 @@ begin
 
     params.stride_wght_kernel <= g_stride_wght_krnl;
     params.stride_wght_och    <= g_stride_wght_och;
+    params.stride_psum_och    <= g_stride_psum_och;
 
     params.base_iact <= g_iact_base_addr;
     params.base_wght <= g_wght_base_addr;
+    params.base_psum <= g_psum_base_addr;
 
     accelerator_inst : entity accel.accelerator
         generic map (
-            size_x                   => size_x,
-            size_y                   => size_y,
-            data_width_input         => data_width_input,
-            data_width_psum          => data_width_psum,
-            line_length_iact         => line_length_iact,
-            line_length_wght         => line_length_wght,
-            line_length_psum         => line_length_psum,
-            mem_addr_width           => mem_addr_width,
-            mem_word_count           => mem_word_count,
-            g_iact_fifo_size         => g_iact_fifo_size,
-            g_wght_fifo_size         => g_wght_fifo_size,
-            g_psum_fifo_size         => g_psum_fifo_size,
-            g_dataflow               => g_dataflow,
-            g_en_postproc            => g_postproc > 0
+            size_x           => size_x,
+            size_y           => size_y,
+            data_width_input => data_width_input,
+            data_width_psum  => data_width_psum,
+            line_length_iact => line_length_iact,
+            line_length_wght => line_length_wght,
+            line_length_psum => line_length_psum,
+            mem_addr_width   => mem_addr_width,
+            mem_word_count   => mem_word_count,
+            g_iact_fifo_size => g_iact_fifo_size,
+            g_wght_fifo_size => g_wght_fifo_size,
+            g_psum_fifo_size => g_psum_fifo_size,
+            g_dataflow       => g_dataflow,
+            g_en_postproc    => g_postproc > 0
         )
         port map (
             clk        => clk,
@@ -200,13 +205,7 @@ begin
             i_mem_write_en => (others => '0'),
             i_mem_addr     => (others => '0'),
             i_mem_din      => (others => '0'),
-            o_mem_dout     => open,
-            -- todo: remove
-            i_en_psum       => '0',
-            i_write_en_psum => (others => '0'),
-            i_addr_psum     => (others => '0'),
-            i_din_psum      => (others => '0'),
-            o_dout_psum     => open
+            o_mem_dout     => open
         );
 
     rstn_gen : process is
@@ -283,10 +282,6 @@ begin
         variable v_zeropt_scale : float32_arr2d_t(0 to max_output_channels - 1, 0 to 1);
 
     begin
-
-        -- s_input_image <= read_file(file_name => g_files_dir & "_image_reordered_2.txt", num_col => g_image_x * g_inputchs * g_h2, num_row => size_rows);
-        -- s_input_weights   <= read_file(file_name => "src/_kernel_reordered.txt", num_col => g_kernel_size * g_inputchs * g_tiles_y, num_row => g_kernel_size);
-        -- s_expected_output <= read_file(file_name => g_files_dir & "_convolution.txt", num_col => g_image_x - g_kernel_size + 1, num_row => g_image_y - g_kernel_size + 1);
 
         for g in 0 to max_output_channels - 1 loop
 
@@ -401,7 +396,7 @@ begin
         alias r_preload_fifos_started is << signal accelerator_inst.scratchpad_interface_inst.i_start : std_logic >>;
         alias r_preload_fifos_done    is << signal accelerator_inst.scratchpad_interface_inst.r_preload_fifos_done : std_logic >>;
         alias r_write_en_psum         is << signal accelerator_inst.scratchpad_interface_inst.o_write_en_psum : std_logic_vector(7 downto 0) >>;
-        alias r_empty_psum_fifo       is << signal accelerator_inst.address_generator_psum_inst.i_empty_psum_fifo : std_logic_vector(size_x - 1 downto 0) >>;
+        alias r_empty_psum_fifo       is << signal accelerator_inst.scratchpad_interface_inst.w_empty_psum_f : std_logic_vector(size_x - 1 downto 0) >>;
         alias r_data_iact_valid       is << signal accelerator_inst.scratchpad_interface_inst.o_data_iact_valid : std_logic_vector(size_rows - 1 downto 0) >>;
         alias r_data_wght_valid       is << signal accelerator_inst.scratchpad_interface_inst.o_data_wght_valid : std_logic_vector(size_y - 1 downto 0) >>;
         alias r_enable_pe_array       is << signal accelerator_inst.pe_array_inst.i_enable : std_logic >>;
@@ -548,18 +543,37 @@ begin
 
     end process eval_status;
 
+    -- assemble all scratchpad columns into ram_cols for easy access
+
+    gen_ram_alias : for i in 0 to mem_word_count - 1 generate
+
+        ram_alias : process is
+
+            alias ram is << variable ^.accelerator_inst.scratchpad_inst.ram.gen_cols(i).ram.ram : ram_type >>;
+
+        begin
+
+            wait until done = '1';
+            wait for 900 ns;
+            ram_cols(i) <= ram;
+            wait;
+
+        end process ram_alias;
+
+    end generate gen_ram_alias;
+
     write_outputs : process is
 
-        file     outfile  : text open write_mode is g_files_dir & "_output.txt";
-        variable outline  : line;
-        variable idx      : integer;
-        variable word_idx : integer;
-        variable data     : std_logic_vector(data_width_psum - 1 downto 0);
+        file     outfile   : text open write_mode is g_files_dir & "_output.txt";
+        variable outline   : line;
+        variable idx       : integer;
+        variable word_idx  : integer;
+        variable column    : integer;
+        variable base_addr : integer;
+        variable data      : std_logic_vector(data_width_psum - 1 downto 0);
 
         variable actual_data_width : integer;
         variable actual_word_count : integer;
-
-        alias ram is << variable accelerator_inst.scratchpad_inst.ram_psum.ram : ram_type >>;
 
     begin
 
@@ -580,17 +594,19 @@ begin
 
         wait for 1000 ns;
 
-        idx      := 0;
-        word_idx := 0;
-
         for m0 in 0 to g_m0 - 1 loop
+
+            column    := m0 mod mem_word_count;
+            base_addr := g_psum_base_addr / mem_word_count + m0 / mem_word_count * g_stride_psum_och;
+            idx       := 0;
+            word_idx  := 0;
 
             for row in 0 to g_image_y - g_kernel_size loop
 
                 for pix in 0 to g_image_x - g_kernel_size loop
 
                     data                                 := (others => '0');
-                    data(actual_data_width - 1 downto 0) := ram(idx)(actual_data_width * (word_idx + 1) - 1 downto actual_data_width * word_idx);
+                    data(actual_data_width - 1 downto 0) := ram_cols(column)(base_addr + idx)(actual_data_width * (word_idx + 1) - 1 downto actual_data_width * word_idx);
                     write(outline, integer'image(to_integer(signed(data(actual_data_width - 1 downto 0)))));
                     write(outline, string'(" "));
 

@@ -23,7 +23,7 @@ entity scratchpad_interface is
         mem_data_width : positive := 64; -- iact word width from memory
         mem_word_count : positive := mem_data_width / data_width_input;
 
-        word_offset_width   : positive := integer(ceil(log2(real(mem_word_count))));
+        word_offset_width : positive := integer(ceil(log2(real(mem_word_count))));
 
         g_iact_fifo_size         : positive := 16;
         g_wght_fifo_size         : positive := 16;
@@ -63,7 +63,6 @@ entity scratchpad_interface is
 
         o_valid_psums_out   : out   std_logic_vector(size_x - 1 downto 0); -- to calculate psum address
         o_gnt_psum_idx_d    : out   std_logic_vector(addr_width_x - 1 downto 0);
-        o_empty_psum_fifo   : out   std_logic_vector(size_x - 1 downto 0);
         o_all_psum_finished : out   std_logic;
 
         -- Addresses to Scratchpad
@@ -168,10 +167,10 @@ architecture rtl of scratchpad_interface is
     constant c_psum_wide_words_width : positive := positive(ceil(log2(real(mem_word_count))));
     constant c_psum_fifo_width       : integer  := mem_data_width + mem_word_count;
 
-    signal w_psum_wide_data  : array_t(0 to size_x - 1)(mem_data_width - 1 downto 0);
+    signal w_psum_wide_data : array_t(0 to size_x - 1)(mem_data_width - 1 downto 0);
     -- signal w_word_count_psum : unsigned(c_psum_wide_words_width - 1 downto 0);
-    signal w_psum_valid_out  : std_logic;
-    signal w_wen_psum        : std_logic_vector(mem_word_count - 1 downto 0);
+    signal w_psum_valid_out : std_logic;
+    signal w_wen_psum       : std_logic_vector(mem_word_count - 1 downto 0);
 
     signal w_psum_word_offsets       : array_t(0 to size_x - 1)(word_offset_width - 1 downto 0);
     signal r_psum_offset_initialized : std_logic_vector(size_x - 1 downto 0);
@@ -652,7 +651,6 @@ begin
     o_write_en_psum   <= w_wen_psum when w_psum_valid_out = '1' else (others => '0');
     o_valid_psums_out <= w_valid_psum_f;
     o_gnt_psum_idx_d  <= r_gnt_psum_idx_d;
-    o_empty_psum_fifo <= w_empty_psum_f;
 
     mux_psum_valid : entity accel.mux
         generic map (

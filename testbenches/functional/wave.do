@@ -30,26 +30,23 @@ add wave -noupdate -group Start -radix symbolic -label "spadif w_empty_wght_addr
 add wave -noupdate -group Start -radix symbolic -label "spadif w_full_wght_address_f"  /functional_tb/accelerator_inst/scratchpad_interface_inst/w_full_wght_address_f
 
 # unpacked signals of psum write data
-quietly virtual signal -install /functional_tb/accelerator_inst/scratchpad_inst { /functional_tb/accelerator_inst/scratchpad_inst/datab_psum(63 downto 56)} psum7
-quietly virtual signal -install /functional_tb/accelerator_inst/scratchpad_inst { /functional_tb/accelerator_inst/scratchpad_inst/datab_psum(55 downto 48)} psum6
-quietly virtual signal -install /functional_tb/accelerator_inst/scratchpad_inst { /functional_tb/accelerator_inst/scratchpad_inst/datab_psum(47 downto 40)} psum5
-quietly virtual signal -install /functional_tb/accelerator_inst/scratchpad_inst { /functional_tb/accelerator_inst/scratchpad_inst/datab_psum(39 downto 32)} psum4
-quietly virtual signal -install /functional_tb/accelerator_inst/scratchpad_inst { /functional_tb/accelerator_inst/scratchpad_inst/datab_psum(31 downto 24)} psum3
-quietly virtual signal -install /functional_tb/accelerator_inst/scratchpad_inst { /functional_tb/accelerator_inst/scratchpad_inst/datab_psum(24 downto 17)} psum2
-quietly virtual signal -install /functional_tb/accelerator_inst/scratchpad_inst { /functional_tb/accelerator_inst/scratchpad_inst/datab_psum(15 downto  8)} psum1
-quietly virtual signal -install /functional_tb/accelerator_inst/scratchpad_inst { /functional_tb/accelerator_inst/scratchpad_inst/datab_psum( 7 downto  0)} psum0
+quietly virtual signal -install /functional_tb/accelerator_inst/scratchpad_inst { /functional_tb/accelerator_inst/scratchpad_inst/din_psum(63 downto 56)} psum7
+quietly virtual signal -install /functional_tb/accelerator_inst/scratchpad_inst { /functional_tb/accelerator_inst/scratchpad_inst/din_psum(55 downto 48)} psum6
+quietly virtual signal -install /functional_tb/accelerator_inst/scratchpad_inst { /functional_tb/accelerator_inst/scratchpad_inst/din_psum(47 downto 40)} psum5
+quietly virtual signal -install /functional_tb/accelerator_inst/scratchpad_inst { /functional_tb/accelerator_inst/scratchpad_inst/din_psum(39 downto 32)} psum4
+quietly virtual signal -install /functional_tb/accelerator_inst/scratchpad_inst { /functional_tb/accelerator_inst/scratchpad_inst/din_psum(31 downto 24)} psum3
+quietly virtual signal -install /functional_tb/accelerator_inst/scratchpad_inst { /functional_tb/accelerator_inst/scratchpad_inst/din_psum(24 downto 17)} psum2
+quietly virtual signal -install /functional_tb/accelerator_inst/scratchpad_inst { /functional_tb/accelerator_inst/scratchpad_inst/din_psum(15 downto  8)} psum1
+quietly virtual signal -install /functional_tb/accelerator_inst/scratchpad_inst { /functional_tb/accelerator_inst/scratchpad_inst/din_psum( 7 downto  0)} psum0
 
-add wave -noupdate -group Scratchpad -radix binary   /functional_tb/accelerator_inst/scratchpad_inst/read_en
-add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/read_adr
-add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/dout_valid
+add wave -noupdate -group Scratchpad -radix symbolic    /functional_tb/accelerator_inst/scratchpad_inst/read_en
+add wave -noupdate -group Scratchpad -radix unsigned    /functional_tb/accelerator_inst/scratchpad_inst/read_adr
+add wave -noupdate -group Scratchpad -radix unsigned    /functional_tb/accelerator_inst/scratchpad_inst/dout_valid
 add wave -noupdate -group Scratchpad -radix hexadecimal /functional_tb/accelerator_inst/scratchpad_inst/dout
-add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/write_en_psum
-add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/write_adr_psum
+add wave -noupdate -group Scratchpad -radix symbolic    /functional_tb/accelerator_inst/scratchpad_inst/write_en_psum
+add wave -noupdate -group Scratchpad -radix symbolic    /functional_tb/accelerator_inst/scratchpad_inst/write_supp_psum
+add wave -noupdate -group Scratchpad -radix unsigned    /functional_tb/accelerator_inst/scratchpad_inst/write_adr_psum
 add wave -noupdate -group Scratchpad -radix hexadecimal /functional_tb/accelerator_inst/scratchpad_inst/din_psum
-add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/enb_psum
-add wave -noupdate -group Scratchpad -radix binary   /functional_tb/accelerator_inst/scratchpad_inst/web_psum
-add wave -noupdate -group Scratchpad -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/addrb_psum
-add wave -noupdate -group Scratchpad -radix hexadecimal /functional_tb/accelerator_inst/scratchpad_inst/datab_psum
 add wave -noupdate -expand -group Scratchpad -radix decimal /functional_tb/accelerator_inst/scratchpad_inst/psum7
 add wave -noupdate -expand -group Scratchpad -radix decimal /functional_tb/accelerator_inst/scratchpad_inst/psum6
 add wave -noupdate -expand -group Scratchpad -radix decimal /functional_tb/accelerator_inst/scratchpad_inst/psum5
@@ -58,17 +55,6 @@ add wave -noupdate -expand -group Scratchpad -radix decimal /functional_tb/accel
 add wave -noupdate -expand -group Scratchpad -radix decimal /functional_tb/accelerator_inst/scratchpad_inst/psum2
 add wave -noupdate -expand -group Scratchpad -radix decimal /functional_tb/accelerator_inst/scratchpad_inst/psum1
 add wave -noupdate -expand -group Scratchpad -radix decimal /functional_tb/accelerator_inst/scratchpad_inst/psum0
-
-add wave -noupdate -group Scratchpad_external -radix symbolic    /functional_tb/accelerator_inst/scratchpad_inst/ext_en
-add wave -noupdate -group Scratchpad_external -radix symbolic    /functional_tb/accelerator_inst/scratchpad_inst/ext_write_en
-add wave -noupdate -group Scratchpad_external -radix unsigned    /functional_tb/accelerator_inst/scratchpad_inst/ext_addr
-add wave -noupdate -group Scratchpad_external -radix hexadecimal /functional_tb/accelerator_inst/scratchpad_inst/ext_din
-add wave -noupdate -group Scratchpad_external -radix hexadecimal /functional_tb/accelerator_inst/scratchpad_inst/ext_dout
-add wave -noupdate -group Scratchpad_external -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/ext_en_psum
-add wave -noupdate -group Scratchpad_external -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/ext_write_en_psum
-add wave -noupdate -group Scratchpad_external -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/ext_addr_psum
-add wave -noupdate -group Scratchpad_external -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/ext_din_psum
-add wave -noupdate -group Scratchpad_external -radix unsigned /functional_tb/accelerator_inst/scratchpad_inst/ext_dout_psum
 
 add wave -noupdate -group FIFO_iact -radix symbolic    /functional_tb/accelerator_inst/scratchpad_interface_inst/w_demux_iact_out_valid
 add wave -noupdate -group FIFO_iact -radix hexadecimal /functional_tb/accelerator_inst/scratchpad_interface_inst/i_data
@@ -430,8 +416,8 @@ for {set y 0} {$y < $size_y} {incr y} {
 TreeUpdate [SetDefaultTree]
 WaveRestoreCursors {{Cursor 1} {0 ns} 0}
 quietly wave cursor active 0
-configure wave -namecolwidth 300
-configure wave -valuecolwidth 120
+configure wave -namecolwidth 220
+configure wave -valuecolwidth 150
 configure wave -justifyvalue left
 configure wave -signalnamewidth 1
 configure wave -snapdistance 10

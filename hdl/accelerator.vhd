@@ -50,19 +50,13 @@ entity accelerator is
         i_mem_write_en : in    std_logic_vector(mem_word_count - 1 downto 0);
         i_mem_addr     : in    std_logic_vector(mem_addr_width - 1 downto 0);
         i_mem_din      : in    std_logic_vector(mem_data_width - 1 downto 0);
-        o_mem_dout     : out   std_logic_vector(mem_data_width - 1 downto 0);
-
-        i_en_psum : in    std_logic;
-        i_write_en_psum : in    std_logic_vector(mem_data_width / 8 - 1 downto 0);
-        i_addr_psum : in    std_logic_vector(mem_addr_width - 1 downto 0);
-        i_din_psum : in    std_logic_vector(mem_data_width - 1 downto 0);
-        o_dout_psum : out   std_logic_vector(mem_data_width - 1 downto 0)
+        o_mem_dout     : out   std_logic_vector(mem_data_width - 1 downto 0)
     );
 end entity accelerator;
 
 architecture rtl of accelerator is
 
-    constant size_rows  : positive := size_x + size_y - 1;
+    constant size_rows : positive := size_x + size_y - 1;
 
     constant psum_word_offset_width : positive := integer(ceil(log2(real(mem_word_count))));
 
@@ -148,8 +142,7 @@ architecture rtl of accelerator is
     signal w_fifo_wght_address_full : std_logic;
 
     signal w_valid_psums_out   : std_logic_vector(size_x - 1 downto 0);
-    signal w_gnt_psum_idx_d : std_logic_vector(addr_width_x - 1 downto 0);
-    signal w_empty_psum_fifo   : std_logic_vector(size_x - 1 downto 0);
+    signal w_gnt_psum_idx_d    : std_logic_vector(addr_width_x - 1 downto 0);
     signal w_all_psum_finished : std_logic;
 
     signal w_address_iact       : array_t(0 to size_rows - 1)(mem_addr_width - 1 downto 0);
@@ -293,13 +286,12 @@ begin
 
     scratchpad_inst : entity accel.scratchpad
         generic map (
-            data_width_input    => data_width_input,
-            word_count          => 8,
-            mem_addr_width      => mem_addr_width,
-            data_width_psum     => data_width_psum,
-            addr_width_psum     => mem_addr_width,
-            initialize_mems     => g_init_sp,
-            init_files_dir      => g_files_dir
+            data_width_input => data_width_input,
+            data_width_psum  => data_width_psum,
+            word_count       => 8,
+            mem_addr_width   => mem_addr_width,
+            initialize_mems  => g_init_sp,
+            init_files_dir   => g_files_dir
         )
         port map (
             clk     => clk_sp,
@@ -320,31 +312,25 @@ begin
             ext_write_en => i_mem_write_en,
             ext_addr     => i_mem_addr,
             ext_din      => i_mem_din,
-            ext_dout     => o_mem_dout,
-            -- TODO: merge to single spad
-            ext_en_psum       => i_en_psum,
-            ext_write_en_psum => i_write_en_psum,
-            ext_addr_psum     => i_addr_psum,
-            ext_din_psum      => i_din_psum,
-            ext_dout_psum     => o_dout_psum
+            ext_dout     => o_mem_dout
         );
 
     scratchpad_interface_inst : entity accel.scratchpad_interface
         generic map (
-            size_x              => size_x,
-            size_y              => size_y,
-            size_rows           => size_rows,
-            addr_width_rows     => addr_width_rows,
-            addr_width_y        => addr_width_y,
-            addr_width_x        => addr_width_x,
-            data_width_input    => data_width_input,
-            data_width_psum     => data_width_psum,
-            mem_addr_width      => mem_addr_width,
-            mem_data_width      => mem_data_width,
-            mem_word_count      => mem_word_count,
-            g_iact_fifo_size    => g_iact_fifo_size,
-            g_wght_fifo_size    => g_wght_fifo_size,
-            g_psum_fifo_size    => g_psum_fifo_size
+            size_x           => size_x,
+            size_y           => size_y,
+            size_rows        => size_rows,
+            addr_width_rows  => addr_width_rows,
+            addr_width_y     => addr_width_y,
+            addr_width_x     => addr_width_x,
+            data_width_input => data_width_input,
+            data_width_psum  => data_width_psum,
+            mem_addr_width   => mem_addr_width,
+            mem_data_width   => mem_data_width,
+            mem_word_count   => mem_word_count,
+            g_iact_fifo_size => g_iact_fifo_size,
+            g_wght_fifo_size => g_wght_fifo_size,
+            g_psum_fifo_size => g_psum_fifo_size
         )
         port map (
             clk                       => clk,
@@ -366,7 +352,6 @@ begin
             i_addr_wght_done          => w_address_wght_done,
             o_valid_psums_out         => w_valid_psums_out,
             o_gnt_psum_idx_d          => w_gnt_psum_idx_d,
-            o_empty_psum_fifo         => w_empty_psum_fifo,
             o_all_psum_finished       => w_all_psum_finished,
             o_address                 => w_read_adr,
             o_address_valid           => w_read_en,
@@ -397,6 +382,7 @@ begin
             size_y         => size_y,
             addr_width_x   => addr_width_x,
             mem_addr_width => mem_addr_width,
+            mem_columns    => mem_word_count,
             write_size     => mem_word_count
         )
         port map (
@@ -407,7 +393,6 @@ begin
             i_params            => w_params_sp,
             i_valid_psum_out    => w_valid_psums_out,
             i_gnt_psum_idx_d    => w_gnt_psum_idx_d,
-            i_empty_psum_fifo   => w_empty_psum_fifo,
             o_address_psum      => w_write_adr_psum,
             o_suppress_out      => w_write_suppress_psum,
             o_word_offsets      => w_psum_word_offsets,

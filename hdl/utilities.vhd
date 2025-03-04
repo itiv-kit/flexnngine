@@ -78,11 +78,13 @@ package utilities is
         -- base/stride count memory words (e.g. 64bit / 8 bytes)
         base_iact : integer range 0 to 2 ** max_spad_addr_width - 1;
         base_wght : integer range 0 to 2 ** max_spad_addr_width - 1;
+        base_psum : integer range 0 to 2 ** max_spad_addr_width - 1;
         -- stride_iact_ch : integer range 0 to max_line_length_psum - 1; -- word count of c0*c1 channels
         stride_iact_w      : integer range 0 to 131071; -- mem cols word count of c0*c1*w1 columns (outside / "standard" spad view)
         stride_iact_hw     : integer range 0 to 131071; -- mem cols word count of an h*w image
         stride_wght_kernel : integer range 0 to 63;     -- offset between full kernels in bytes (e.g. 9 for packed 3x3 kernels)
         stride_wght_och    : integer range 0 to 1023;   -- offset between each output channel kernel set (e.g. 2*9 for packed c=16 * 3x3, read size 8 kernels per och)
+        stride_psum_och    : integer range 0 to 4095;   -- offset between output channels within a scratchpad column in units of read_size (e.g. 16*16/8=32 for a 16x16 output image, read size 8)
     end record parameters_t;
 
     type status_info_spadif_t is record

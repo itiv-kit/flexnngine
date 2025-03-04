@@ -17,10 +17,10 @@ entity spad_reshape_tb is
         addr_width : positive := 12; -- address width for standard & reshaped ports
         data_width : positive := cols * word_size;
 
-        image_width  : positive := 8; -- image columns
-        image_height : positive := 8; -- image rows
+        image_width  : positive := 8;                          -- image columns
+        image_height : positive := 8;                          -- image rows
         image_size   : positive := image_height * image_width; -- number of words per image
-        channels     : positive := 16 -- number of channels (= image count)
+        channels     : positive := 16                          -- number of channels (= image count)
     );
 end entity spad_reshape_tb;
 
@@ -29,7 +29,7 @@ architecture imp of spad_reshape_tb is
     -- address offset within channel packets (i.e. sets of cols channels)
     constant channel_stride : integer := 2 ** addr_width / cols;
 
-    signal write_done : boolean := false;
+    signal write_done         : boolean := false;
     signal read_data_inflight : boolean;
     signal read_data_expected : array_t(0 to cols - 1)(word_size - 1 downto 0);
 
@@ -44,9 +44,9 @@ architecture imp of spad_reshape_tb is
     signal std_dout     : std_logic_vector(data_width - 1 downto 0);
 
     -- "reshaped" interface to read nchw <-> nhwc reshaped data (currently read only)
-    signal rsh_en       : std_logic;
-    signal rsh_addr     : std_logic_vector(addr_width - 1 downto 0);
-    signal rsh_dout     : std_logic_vector(data_width - 1 downto 0);
+    signal rsh_en   : std_logic;
+    signal rsh_addr : std_logic_vector(addr_width - 1 downto 0);
+    signal rsh_dout : std_logic_vector(data_width - 1 downto 0);
 
 begin
 
@@ -89,8 +89,10 @@ begin
     end process gen_rst;
 
     gen_inputs : process is
+
         variable element : unsigned(word_size - 1 downto 0);
         variable address : unsigned(addr_width - 1 downto 0);
+
     begin
 
         std_en       <= '0';
@@ -118,8 +120,10 @@ begin
                 std_din      <= (others => '0');
 
                 for w in 0 to cols - 1 loop
-                    element := to_unsigned((image_size * channel + i * cols + w) mod 2 ** word_size, word_size);
+
+                    element                                               := to_unsigned((image_size * channel + i * cols + w) mod 2 ** word_size, word_size);
                     std_din(word_size * (w + 1) - 1 downto word_size * w) <= std_logic_vector(element);
+
                 end loop;
 
                 address := address + 1;
@@ -181,7 +185,7 @@ begin
 
                 end loop;
 
-                -- report "got read " & integer'image(to_integer(unsigned(rsh_dout(7 downto 0))));
+            -- report "got read " & integer'image(to_integer(unsigned(rsh_dout(7 downto 0))));
 
             end loop;
 
@@ -193,22 +197,6 @@ begin
         read_data_inflight <= false;
 
         wait;
-
-        -- for n in 0 to equations'high loop
-
-        --     wait until rising_edge(clk) and o_data_valid = '1';
-        --     eq := equations(n);
-        --     tmp_out := to_integer(signed(o_data));
-
-        --     assert eq.output = tmp_out report "Output invalid, expected " & integer'image(eq.output) & " but got " & integer'image(tmp_out)
-        --         severity failure;
-
-        -- end loop;
-
-        -- report "Output check is finished."
-        --     severity note;
-
-        -- finish;
 
     end process read_data;
 
@@ -223,16 +211,17 @@ begin
 
         if read_data_inflight then
 
-                for channel in 0 to cols - 1 loop
+            for channel in 0 to cols - 1 loop
 
-                    expect := to_integer(unsigned(read_data_expected(channel)));
+                expect := to_integer(unsigned(read_data_expected(channel)));
 
-                    element := to_integer(unsigned(rsh_dout(word_size * (channel + 1) - 1 downto word_size * channel)));
+                element := to_integer(unsigned(rsh_dout(word_size * (channel + 1) - 1 downto word_size * channel)));
 
-                    assert element = expect report "Output invalid, expected " & integer'image(expect) & " but got " & integer'image(element)
-                        severity warning; --failure;
+                assert element = expect
+                    report "Output invalid, expected " & integer'image(expect) & " but got " & integer'image(element)
+                    severity failure;
 
-                end loop;
+            end loop;
 
         end if;
 

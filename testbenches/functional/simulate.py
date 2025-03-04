@@ -117,10 +117,12 @@ class Test:
         self.test_dir = None
 
         self.wght_base_addr = None
+        self.psum_base_addr = None
         self.stride_iact_w = None
         self.stride_iact_hw = None
         self.stride_wght_kernel = None
         self.stride_wght_och = None
+        self.stride_psum_och = None
 
     def generate_test(self, test_name, test_dir):
         print(f'Generating test: {test_name}')
@@ -130,17 +132,8 @@ class Test:
 
     def _generate_stimuli(self):
         print(f'Generating stimuli for test: {self.name}')
-        # Generate input activations
-        # Generate weights
-        # Generate expected output activations
 
-        self.stride_iact_w = math.ceil(self.convolution.image_size / self.accelerator.spad_word_size)
-        self.stride_iact_hw = math.ceil(self.convolution.image_size * self.convolution.image_size / self.accelerator.spad_word_size)
-
-        # tightly packed kernels without padding between single kernels or output channel kernel sets
-        self.stride_wght_kernel = self.convolution.kernel_size * self.convolution.kernel_size
-        self.stride_wght_och = math.ceil(self.stride_wght_kernel * self.convolution.input_channels / self.accelerator.spad_word_size)
-
+        # calculate accelerator parameters
         if self.accelerator.dataflow == 1:
             self.M0 = self.accelerator.size_y
             self.H1 = self.accelerator.size_x
@@ -216,10 +209,7 @@ class Test:
             self.M0_last_m1 = 1 # not used yet
 
             if self.M0 == 0:
-                self.H2 = math.ceil(
-                    (self.convolution.image_size - self.convolution.kernel_size + 1)
-                    / self.accelerator.size_x
-                )
+                self.H2 = math.ceil(self.W1 / self.accelerator.size_x)
             else:
                 self.H2 = math.ceil(self.convolution.image_size / self.accelerator.size_x)
 
@@ -273,6 +263,17 @@ class Test:
                 print("C0W0 = ", self.C0W0)
                 print("C0W0_last_c1 = ", self.C0W0_last_c1)
                 return False
+
+        # calculate parameters for scratchpad data layout
+        self.stride_iact_w = math.ceil(self.convolution.image_size / self.accelerator.spad_word_size)
+        self.stride_iact_hw = math.ceil(self.convolution.image_size * self.convolution.image_size / self.accelerator.spad_word_size)
+
+        # tightly packed kernels without padding between single kernels or output channel kernel sets
+        self.stride_wght_kernel = self.convolution.kernel_size * self.convolution.kernel_size
+        self.stride_wght_och = math.ceil(self.stride_wght_kernel * self.convolution.input_channels / self.accelerator.spad_word_size)
+
+        # psum stride must be multiple of word size, still pack as tightly as possible
+        self.stride_psum_och = math.ceil(self.W1 * self.W1 / self.accelerator.spad_word_size)
 
         # fixed random seed for reproducibility
         np.random.seed(2)
@@ -384,6 +385,11 @@ class Test:
                 raise RuntimeError(f'weight base address differs between mem columns ({image_pad_size} / {self.wght_base_addr})')
             self.wght_base_addr = image_pad_size
 
+            memory_col_pad_size = align_to_add(memory_col.shape[0], 32)
+            if self.psum_base_addr is not None and self.psum_base_addr != memory_col_pad_size:
+                raise RuntimeError(f'psum base address differs between mem columns ({memory_col_pad_size} / {self.psum_base_addr})')
+            self.psum_base_addr = memory_col_pad_size
+
             write_memory_file_int8(self.test_dir / f"_mem_col{column}.txt", memory_col, wordsize=64)
 
         return True
@@ -436,7 +442,9 @@ class Test:
             'g_stride_iact_hw':   self.stride_iact_hw,
             'g_stride_wght_krnl': self.stride_wght_kernel,
             'g_stride_wght_och':  self.stride_wght_och,
+            'g_stride_psum_och':  self.stride_psum_och,
             'g_wght_base_addr':   self.wght_base_addr,
+            'g_psum_base_addr':   self.psum_base_addr,
             'g_clk':              self.accelerator.clk_period,
             'g_clk_sp':           self.accelerator.clk_sp_period,
             'g_mode_act':         int(self.convolution.activation),
@@ -545,7 +553,7 @@ presets = {
                       Convolution(image_size = [16], kernel_size = [3], input_channels = [100],
                                   output_channels = [3], bias = [5], requantize = [True], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
-                                  mem_addr_width = 20,
+                                  mem_addr_width = 15,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
                                   clk_period = [10], clk_sp_period = [1], dataflow=[0]), start_gui = True),
 
@@ -554,7 +562,7 @@ presets = {
                       Convolution(image_size = [16], kernel_size = [1,3], input_channels = [10+i*10 for i in range(20)],
                                   output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
-                                  mem_addr_width = 20,
+                                  mem_addr_width = 15,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
                                   clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
 
@@ -563,7 +571,7 @@ presets = {
                       Convolution(image_size = [124], kernel_size = [3], input_channels = [3],
                                   output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
-                                  mem_addr_width = 20,
+                                  mem_addr_width = 15,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
                                   clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
 
@@ -572,7 +580,7 @@ presets = {
                       Convolution(image_size = [16], kernel_size = [1,3], input_channels = [40],
                                   output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
-                                  mem_addr_width = 20,
+                                  mem_addr_width = 15,
                                   iact_fifo_size = [5, 10, 15, 30, 64, 128, 512], wght_fifo_size = [5, 10, 15, 30, 64, 128, 512], psum_fifo_size = [512],
                                   clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
 
@@ -581,7 +589,7 @@ presets = {
                     Convolution(image_size = [16], kernel_size = [1,3], input_channels = [40],
                                 output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [], line_length_psum = [128], line_length_wght = [32, 48, 64, 96, 128, 256, 512, 1024],
-                                mem_addr_width = 20,
+                                mem_addr_width = 15,
                                 iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
                                 clk_period = [10], clk_sp_period = [1], dataflow=[0])),
 
@@ -589,7 +597,7 @@ presets = {
                       Convolution(image_size = [16, 32], kernel_size = [1, 3, 5], input_channels = [40],
                                   output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [5,10,15,20,25,50,100], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
-                                  mem_addr_width = 20,
+                                  mem_addr_width = 15,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [16384],
                                   clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
 
@@ -597,7 +605,7 @@ presets = {
                       Convolution(image_size = [16, 32], kernel_size = [1, 3, 5], input_channels = [40],
                                   output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [10], size_y = [5,10,15,20,25,50,100], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
-                                  mem_addr_width = 20,
+                                  mem_addr_width = 15,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [16384],
                                   clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
 
@@ -605,7 +613,7 @@ presets = {
                       Convolution(image_size = [32], kernel_size = [1, 3], input_channels = [40],
                                   output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
-                                  mem_addr_width = 20,
+                                  mem_addr_width = 15,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
                                   clk_period = [10], clk_sp_period = [1+i for i in range(10)], dataflow=[0,1])),
 
@@ -613,7 +621,7 @@ presets = {
                       Convolution(image_size = [32], kernel_size = [1, 3], input_channels = [40],
                                   output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [12], size_y = [14], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
-                                  mem_addr_width = 20,
+                                  mem_addr_width = 15,
                                   iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
                                   clk_period = [10], clk_sp_period = [1+i for i in range(10)], dataflow=[0,1])),
 
@@ -622,7 +630,7 @@ presets = {
                     Convolution(image_size = [16], kernel_size = [1,3], input_channels = [40],
                                 output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [], line_length_psum = [128], line_length_wght = [32, 48, 64, 96, 128, 256, 512, 1024],
-                                mem_addr_width = 20,
+                                mem_addr_width = 15,
                                 iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
                                 clk_period = [10], clk_sp_period = [1], dataflow=[1])),
 
@@ -631,7 +639,7 @@ presets = {
                     Convolution(image_size = [16], kernel_size = [1, 3], input_channels = [10+i*1 for i in range(4)],
                                 output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [512], line_length_wght = [64],
-                                mem_addr_width = 20,
+                                mem_addr_width = 15,
                                 iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [128],
                                 clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
 
@@ -640,7 +648,7 @@ presets = {
                     Convolution(image_size = [32], kernel_size = [3], input_channels = [4],
                                 output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
-                                mem_addr_width = 20,
+                                mem_addr_width = 15,
                                 iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [128],
                                 clk_period = [10], clk_sp_period = [1], dataflow=[0]), start_gui = True),
 
@@ -649,7 +657,7 @@ presets = {
                     Convolution(image_size = [32], kernel_size = [3], input_channels = [100],
                                 output_channels = [3], bias = [0,5], requantize = [False,True], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
-                                mem_addr_width = 20,
+                                mem_addr_width = 15,
                                 iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [128],
                                 clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
 }

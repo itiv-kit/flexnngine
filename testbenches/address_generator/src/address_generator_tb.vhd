@@ -327,7 +327,7 @@ begin
             -- our test pixels are same in all channels and just numbered linearly
             -- after c1 rows are processed, start next h2 iteration -> offset by size_x rows
             expect := (row_cnt(row) / params.c1) * size_x * params.image_x + row * params.image_x + w1_cnt(row);
-            expect := expect mod 2 ** word_size; -- wrap to 8 bits
+            expect := expect mod 2 ** word_size;
 
             for word in 0 to read_size - 1 loop
 
@@ -339,7 +339,8 @@ begin
             end loop;
 
             if c0_cnt(row) <= params.c0 - read_size - 1 then
-                c0_cnt(row) := c0_cnt(row) + read_size; -- TODO: smaller for partial reads once implemented
+                -- TODO: smaller for partial reads once implemented
+                c0_cnt(row) := c0_cnt(row) + read_size;
             else
                 c0_cnt(row) := 0;
 

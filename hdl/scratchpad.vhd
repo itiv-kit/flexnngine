@@ -1,6 +1,7 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
+    use ieee.math_real.all;
 
 library accel;
     use accel.utilities.all;
@@ -8,12 +9,11 @@ library accel;
 entity scratchpad is
     generic (
         data_width_input : positive := 8;
-        word_count       : positive := 8; -- number of input words per memory word
-        mem_data_width   : positive := word_count * data_width_input;
-        mem_addr_width   : positive := 15;
+        data_width_psum  : positive := 16;
 
-        data_width_psum : positive := 16;
-        addr_width_psum : positive := 15;
+        word_count     : positive := 8; -- number of input words per memory word
+        mem_data_width : positive := word_count * data_width_input;
+        mem_addr_width : positive := 15;
 
         initialize_mems : boolean := false;
         init_files_dir  : string  := ""
@@ -39,48 +39,56 @@ entity scratchpad is
         ext_write_en : in    std_logic_vector(word_count - 1 downto 0);
         ext_addr     : in    std_logic_vector(mem_addr_width - 1 downto 0);
         ext_din      : in    std_logic_vector(mem_data_width - 1 downto 0);
-        ext_dout     : out   std_logic_vector(mem_data_width - 1 downto 0);
-
-        ext_en_psum       : in    std_logic;
-        ext_write_en_psum : in    std_logic_vector(word_count - 1 downto 0);
-        ext_addr_psum     : in    std_logic_vector(mem_addr_width - 1 downto 0);
-        ext_din_psum      : in    std_logic_vector(mem_data_width - 1 downto 0);
-        ext_dout_psum     : out   std_logic_vector(mem_data_width - 1 downto 0)
+        ext_dout     : out   std_logic_vector(mem_data_width - 1 downto 0)
     );
 end entity scratchpad;
 
 architecture rtl of scratchpad is
 
-    constant psum_addr_width_physical : integer := mem_addr_width - 3;
+    -- address_generator_psum generates byte-wise addresses, we have word-wise (with word_count words) here
+    constant psum_addr_width_physical : integer := mem_addr_width - integer(ceil(log2(real(word_count))));
 
     constant cols : integer := word_count; -- note: could be different from word_count, e.g. 128 bit external access but 64 bit on reshape interface
 
-    signal web : std_logic_vector(cols - 1 downto 0) := (others => '0');
-
-    signal enb_psum      : std_logic;
-    signal web_psum      : std_logic_vector(cols - 1 downto 0);
-    signal addrb_psum    : std_logic_vector(psum_addr_width_physical - 1 downto 0);
-    signal datab_psum    : std_logic_vector(mem_data_width - 1 downto 0);
+    signal std_en   : std_logic;
+    signal std_wen  : std_logic_vector(word_count - 1 downto 0);
+    signal std_addr : std_logic_vector(mem_addr_width - 1 downto 0);
+    signal std_din  : std_logic_vector(mem_data_width - 1 downto 0);
 
 begin
 
     -- bram/sram: data valid after one cycle
     dout_valid <= read_en when rising_edge(clk);
 
-    -- iact & wght never written internally
-    web <= (others => '0');
+    std_if_arb : process (all) is
+
+        variable psum_interface_active : std_logic;
+
+    begin
+
+        -- enable psum write interface if a request is present (disables external access)
+        psum_interface_active := or write_en_psum and not write_supp_psum;
+
+        if psum_interface_active then
+            std_en   <= psum_interface_active;
+            std_wen  <= write_en_psum;
+            std_addr <= write_adr_psum;
+            std_din  <= din_psum;
+        else
+            std_en   <= ext_en;
+            std_wen  <= ext_write_en;
+            std_addr <= ext_addr;
+            std_din  <= ext_din;
+        end if;
+
+    end process std_if_arb;
 
     psum : process is
     begin
 
         wait until rising_edge(clk);
-        -- index := to_integer(unsigned(write_adr_psum(addr_width_psum - mem_addr_width downto 0)));
 
-        addrb_psum <= write_adr_psum(mem_addr_width - 1 downto mem_addr_width - psum_addr_width_physical);
-        -- datab_psum <= din_psum(data_width_iact - 1 downto 0) & din_psum(data_width_iact - 1 downto 0) & din_psum(data_width_iact - 1 downto 0) & din_psum(data_width_iact - 1 downto 0);
-        datab_psum <= din_psum;
-        enb_psum   <= or write_en_psum and not write_supp_psum;
-        web_psum   <= write_en_psum;
+    -- index := to_integer(unsigned(write_adr_psum(addr_width_psum - mem_addr_width downto 0)));
 
     -- if write_half_psum = '1' then
     --     index := to_integer(unsigned(write_adr_psum(addr_width_psum - mem_addr_width downto 0)));
@@ -131,40 +139,14 @@ begin
         port map (
             clk      => clk,
             rstn     => rstn,
-            std_en   => ext_en,
-            std_wen  => ext_write_en,
-            std_addr => ext_addr,
-            std_din  => ext_din,
+            std_en   => std_en,
+            std_wen  => std_wen,
+            std_addr => std_addr,
+            std_din  => std_din,
             std_dout => ext_dout,
             rsh_en   => read_en,
             rsh_addr => read_adr,
             rsh_dout => dout
-        );
-
-    ram_psum : entity accel.ram_dp_bwe
-        generic map (
-            size       => 2 ** mem_addr_width,
-            addr_width => psum_addr_width_physical,
-            col_width  => 8,
-            nb_col     => cols,
-            initialize => false,
-            init_file  => init_files_dir & "_mem_psum.txt"
-        )
-        port map (
-            -- external access
-            clka  => ext_clk,
-            ena   => ext_en_psum,
-            wea   => ext_write_en_psum,
-            addra => ext_addr_psum(mem_addr_width - 1 downto mem_addr_width - psum_addr_width_physical),
-            dia   => ext_din_psum,
-            doa   => ext_dout_psum,
-            -- internal access
-            clkb  => clk,
-            enb   => enb_psum,
-            web   => web_psum,
-            addrb => addrb_psum,
-            dib   => datab_psum,
-            dob   => open
         );
 
 end architecture rtl;
