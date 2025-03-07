@@ -379,7 +379,7 @@ class Test:
             # pad the image such that weight data is aligned. technically, multiple of wordsize (currently 8) would suffice.
             image_pad_size = align_to_add(image_col.shape[0], 32)
             image_col_pad = np.resize(image_col, image_pad_size)
-            memory_col = np.concat((image_col_pad, wght_col))
+            memory_col = np.concatenate((image_col_pad, wght_col))
 
             if self.wght_base_addr is not None and self.wght_base_addr != image_pad_size:
                 raise RuntimeError(f'weight base address differs between mem columns ({image_pad_size} / {self.wght_base_addr})')
