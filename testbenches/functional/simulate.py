@@ -292,11 +292,16 @@ class Test:
             ),
         )
 
-        if args.same_kernel:
-            # DEBUG: just copy the first kernel for all output channels
+        if args.same_kernels_ich:
+            # DEBUG: just copy the first kernel this output channel
+            for m0 in range(0, self.M0):
+                kernels[m0] = np.broadcast_to(kernels[m0][0], (self.convolution.input_channels,) + kernels[m0][0].shape)
+
+        if args.same_kernels_och:
+            # DEBUG: just copy the first set of kernels for all output channels
             kernels = np.broadcast_to(kernels[0], (self.M0,) + kernels[0].shape)
 
-        if args.only_first_kernel:
+        if args.only_first_och:
             # DEBUG: zero out all but first output channel
             kernels = np.stack([kernels[0]] + (self.M0-1) * [np.zeros(kernels[0].shape)])
 
@@ -690,8 +695,9 @@ if __name__ == "__main__":
     parser.add_argument('--input-bits',        default=4, type=int, help='Set bit range for iact/wght input values')
     parser.add_argument('--pool',              default=1, type=int, help='Number of parallel simulations')
     parser.add_argument('--list-presets',      action='store_true', help='List all available simulation presets')
-    parser.add_argument('--same-kernel',       action='store_true', help='Use the same kernel for each output channel (M0)')
-    parser.add_argument('--only-first-kernel', action='store_true', help='Zero-out kernels for m0 > 0')
+    parser.add_argument('--same-kernels-och',  action='store_true', help='Use the same kernels for all output channels (M0)')
+    parser.add_argument('--same-kernels-ich',  action='store_true', help='Use the same kernels for all input channels (C1*C0)')
+    parser.add_argument('--only-first-och',    action='store_true', help='Zero-out kernels for m0 > 0')
     parser.add_argument('--linear-image',      action='store_true', help='Generate a input image with linearly increasing pixels instead of random')
     args = parser.parse_args()
 

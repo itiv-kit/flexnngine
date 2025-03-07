@@ -231,10 +231,10 @@ add wave -noupdate -group {PE arr outputs} -radix binary   /functional_tb/accele
 add wave -noupdate -group {PE arr outputs} -radix signed   /functional_tb/accelerator_inst/pe_array_inst/w_data_out
 add wave -noupdate -group {PE arr outputs} -radix binary   /functional_tb/accelerator_inst/pe_array_inst/w_data_out_valid
 
-add wave -noupdate -group WGHT_INPUT -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_wght/ram/ram_instance
-add wave -noupdate -group WGHT_INPUT -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/ram/ram_instance
-add wave -noupdate -group WGHT_INPUT -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/ram/ram_instance
-add wave -noupdate -group WGHT_INPUT -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/ram/ram_instance
+add wave -noupdate -group WGHT_INPUT -radix decimal -label "PE_0_0 lb wght ram" /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_wght/ram/ram_instance
+add wave -noupdate -group WGHT_INPUT -radix decimal -label "PE_1_0 lb wght ram" /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(1)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/ram/ram_instance
+add wave -noupdate -group WGHT_INPUT -radix decimal -label "PE_2_0 lb wght ram" /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(2)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/ram/ram_instance
+add wave -noupdate -group WGHT_INPUT -radix decimal -label "PE_3_0 lb wght ram" /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(3)/pe_inst_x(0)/pe_middle/pe_inst/line_buffer_wght/ram/ram_instance
 add wave -noupdate -group WGHT_INPUT -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/w_data_wght
 add wave -noupdate -group WGHT_INPUT -radix decimal  /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/w_data_wght_valid
 add wave -noupdate -group WGHT_INPUT -radix symbolic /functional_tb/accelerator_inst/pe_array_inst/pe_inst_y(0)/pe_inst_x(0)/pe_north/pe_inst/line_buffer_wght/i_command
