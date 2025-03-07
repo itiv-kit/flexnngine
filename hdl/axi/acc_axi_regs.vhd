@@ -11,15 +11,15 @@ entity acc_axi_regs is
   generic (
     -- Users to add parameters here
     -- number of registers to present, rest is read 0 / writes ignored
-    NUM_REGS : integer := 80;
+    NUM_REGS : integer := 82;
 
     -- static accelerator hardware info
     size_x : positive := 5;
     size_y : positive := 5;
 
     line_length_iact : positive := 64;
-    line_length_psum : positive := 128;
     line_length_wght : positive := 64;
+    line_length_psum : positive := 128;
 
     -- Width of the pe input/output data (weights, iacts, psums)
     data_width_iact : positive := 8;
@@ -28,6 +28,7 @@ entity acc_axi_regs is
 
     -- external addresses are byte wise
     mem_addr_width : positive := 18;
+    mem_word_count : positive := 8;
 
     dataflow         : integer := 0;
     postproc_enabled : boolean := true;
@@ -143,7 +144,7 @@ architecture arch_imp of acc_axi_regs is
   signal byte_index   : integer;
   signal aw_en        : std_logic;
 
-  constant MAGIC_REG_VALUE : std_logic_vector(31 downto 0) := x"41434303"; -- "ACC" + register set version
+  constant MAGIC_REG_VALUE : std_logic_vector(31 downto 0) := x"41434304"; -- "ACC" + register set version
 begin
   -- I/O Connections assignments
 
@@ -266,14 +267,10 @@ begin
         slv_regs(1)(2) <= i_status.spadif.spad_iact_done;
         slv_regs(1)(3) <= i_status.spadif.spad_wght_done;
         slv_regs(1)(4) <= i_status.spadif.preload_fifos_done;
-
-        -- debug status registers
-        slv_regs(22) <= std_logic_vector(resize(i_status.cycle_counter, C_S_AXI_DATA_WIDTH));
-        slv_regs(23)(0) <= i_status.spadif.spad_iact_full;
-        slv_regs(23)(1) <= i_status.spadif.spad_iact_empty;
-        slv_regs(23)(2) <= i_status.spadif.spad_wght_full;
-        slv_regs(23)(3) <= i_status.spadif.spad_wght_empty;
-        slv_regs(24) <= std_logic_vector(resize(i_status.spadif.psum_overflows, C_S_AXI_DATA_WIDTH));
+        slv_regs(1)(28) <= i_status.spadif.spad_iact_full;
+        slv_regs(1)(29) <= i_status.spadif.spad_iact_empty;
+        slv_regs(1)(30) <= i_status.spadif.spad_wght_full;
+        slv_regs(1)(31) <= i_status.spadif.spad_wght_empty;
 
         -- static hardware info registers
         capabilities := (
@@ -285,10 +282,14 @@ begin
         slv_regs(26) <= std_logic_vector(resize(to_unsigned(line_length_wght, 16) & to_unsigned(line_length_iact, 16), C_S_AXI_DATA_WIDTH));
         slv_regs(27) <= std_logic_vector(resize(to_unsigned(line_length_psum, 16), C_S_AXI_DATA_WIDTH));
         slv_regs(28) <= std_logic_vector(resize(to_unsigned(data_width_psum, 8) & to_unsigned(data_width_wght, 8) & to_unsigned(data_width_iact, 8), C_S_AXI_DATA_WIDTH));
-        slv_regs(29) <= std_logic_vector(resize(to_unsigned(spad_axi_addr_width_psum, 8) & to_unsigned(spad_axi_addr_width_wght, 8) & to_unsigned(spad_axi_addr_width_iact, 8), C_S_AXI_DATA_WIDTH));
+        slv_regs(29) <= std_logic_vector(resize(to_unsigned(mem_word_count, 8) & to_unsigned(mem_addr_width, 8), C_S_AXI_DATA_WIDTH));
         slv_regs(30) <= std_logic_vector(resize(capabilities & to_unsigned(max_output_channels, 8), C_S_AXI_DATA_WIDTH));
 
         slv_regs(31)(MAGIC_REG_VALUE'range) <= MAGIC_REG_VALUE;
+
+        -- debug status registers
+        slv_regs(80) <= std_logic_vector(resize(i_status.cycle_counter, C_S_AXI_DATA_WIDTH));
+        slv_regs(81) <= std_logic_vector(resize(i_status.spadif.psum_overflows, C_S_AXI_DATA_WIDTH));
       end if;
     end if;
   end process;
@@ -427,6 +428,15 @@ begin
   o_params.c0_last_c1   <= to_integer(unsigned(slv_regs(14)( 9 downto 0)));
   o_params.c0w0         <= to_integer(unsigned(slv_regs(15)( 9 downto 0)));
   o_params.c0w0_last_c1 <= to_integer(unsigned(slv_regs(16)( 9 downto 0)));
+
+  o_params.base_iact          <= to_integer(unsigned(slv_regs(17)(max_spad_addr_width - 1 downto 0)));
+  o_params.base_wght          <= to_integer(unsigned(slv_regs(18)(max_spad_addr_width - 1 downto 0)));
+  o_params.base_psum          <= to_integer(unsigned(slv_regs(19)(max_spad_addr_width - 1 downto 0)));
+  o_params.stride_iact_w      <= to_integer(unsigned(slv_regs(20)( 9 downto 0)));
+  o_params.stride_iact_hw     <= to_integer(unsigned(slv_regs(21)( 9 downto 0)));
+  o_params.stride_wght_kernel <= to_integer(unsigned(slv_regs(22)( 9 downto 0)));
+  o_params.stride_wght_och    <= to_integer(unsigned(slv_regs(23)( 9 downto 0)));
+  o_params.stride_psum_och    <= to_integer(unsigned(slv_regs(24)( 9 downto 0)));
 
   -- registers for bias, scale, zeropt per output channel, limited by maximum m0 value max_output_channels
   g_bias_req_regs : for x in 0 to max_output_channels - 1 generate

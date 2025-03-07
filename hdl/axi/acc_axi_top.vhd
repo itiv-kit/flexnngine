@@ -1,10 +1,11 @@
 library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
+    use ieee.std_logic_1164.all;
+    use ieee.numeric_std.all;
+    use ieee.math_real.all;
 
 library accel;
-use accel.utilities.all;
-use accel.sync.bit_sync;
+    use accel.utilities.all;
+    use accel.sync.bit_sync;
 
 entity acc_axi_top is
   generic (
@@ -21,13 +22,13 @@ entity acc_axi_top is
     data_width_psum  : positive := 16; -- size of a result word in the PE accumulator / line buffer
 
     -- address widths scratchpad <-> external, port_a is exposed as i/o on this module
-    mem_addr_width_bytes : positive := 18; -- defines memory size in bytes, default to 256KiB
+    mem_addr_width_bytes : positive := 19; -- defines memory size in bytes, default to 512KiB
     mem_word_count       : positive := 8;
-    mem_data_width       : positive := mem_word_count * data_width_input;
+    mem_data_width       : positive := 64; -- vivado does not like expressions here: mem_word_count * data_width_input
 
-    iact_fifo_size : positive := 16;
-    wght_fifo_size : positive := 16;
-    psum_fifo_size : positive := 32;
+    fifo_size_iact : positive := 16;
+    fifo_size_wght : positive := 16;
+    fifo_size_psum : positive := 32;
 
     dataflow         : integer := 0;
     postproc_enabled : boolean := true;
@@ -79,7 +80,7 @@ end acc_axi_top;
 
 architecture arch_imp of acc_axi_top is
 
-  constant mem_addr_width : integer := mem_addr_width_bytes / integer(ceil(log2(real(mem_word_count))));
+  constant mem_addr_width : integer := mem_addr_width_bytes - integer(ceil(log2(real(mem_word_count))));
 
   signal w_axi_rst,   w_axi_rstn  : std_logic;
   signal w_acc_rstn               : std_logic;
@@ -98,7 +99,7 @@ architecture arch_imp of acc_axi_top is
   attribute x_interface_info      of s00_axi_aclk : signal is "xilinx.com:signal:clock:1.0 s00_axi_aclk CLK";
   attribute x_interface_parameter of s00_axi_aclk : signal is "ASSOCIATED_BUSIF s00_axi, ASSOCIATED_RESET s00_axi_aresetn, FREQ_HZ 100000000";
 
-  attribute x_interface_parameter of clk_sp : signal is "XIL_INTERFACENAME scratchpad, MASTER_TYPE BRAM_CTRL, MEM_SIZE 262144, MEM_WIDTH 64, MEM_ECC NONE, READ_WRITE_MODE READ_WRITE, READ_LATENCY 1";
+  attribute x_interface_parameter of clk_sp : signal is "XIL_INTERFACENAME scratchpad, MASTER_TYPE BRAM_CTRL, MEM_SIZE 524288, MEM_WIDTH 64, MEM_ECC NONE, READ_WRITE_MODE READ_WRITE, READ_LATENCY 1";
 
   attribute x_interface_mode of clk_sp      : signal is "Slave";
   attribute x_interface_info of clk_sp      : signal is "xilinx.com:interface:bram_rtl:1.0 scratchpad CLK";
@@ -125,12 +126,13 @@ begin
     size_x => size_x,
     size_y => size_y,
     line_length_iact => line_length_iact,
-    line_length_psum => line_length_psum,
     line_length_wght => line_length_wght,
+    line_length_psum => line_length_psum,
     data_width_iact => data_width_input,
     data_width_wght => data_width_input,
     data_width_psum => data_width_psum,
     mem_addr_width  => mem_addr_width_bytes,
+    mem_word_count  => mem_word_count,
     dataflow => dataflow,
     postproc_enabled => postproc_enabled
   ) port map (
@@ -173,9 +175,9 @@ begin
     mem_addr_width   => mem_addr_width,
     mem_word_count   => mem_word_count,
     mem_data_width   => mem_data_width,
-    g_iact_fifo_size => iact_fifo_size,
-    g_wght_fifo_size => wght_fifo_size,
-    g_psum_fifo_size => psum_fifo_size,
+    g_iact_fifo_size => fifo_size_iact,
+    g_wght_fifo_size => fifo_size_wght,
+    g_psum_fifo_size => fifo_size_psum,
     g_dataflow       => dataflow,
     g_en_postproc    => postproc_enabled
   ) port map (
@@ -189,19 +191,19 @@ begin
     i_params => r_params,
     o_status => w_status,
 
-    i_en       => i_en,
-    i_write_en => i_write_en,
-    i_addr     => w_mem_addr,
-    i_din      => i_din,
-    o_dout     => o_dout
+    i_mem_en       => i_en,
+    i_mem_write_en => i_write_en,
+    i_mem_addr     => w_mem_addr,
+    i_mem_din      => i_din,
+    o_mem_dout     => o_dout
   );
 
   g_cdc : if axi_acc_cdc generate
   begin
 
-    inst_sync_rst   : entity accel.bit_sync port map (clk, '0', w_axi_rstn,  w_acc_rstn);
-    inst_sync_start : entity accel.bit_sync port map (clk, '0', w_axi_start, w_acc_start);
-    inst_sync_done  : entity accel.bit_sync port map (s00_axi_aclk, '0', w_acc_done, w_axi_done);
+    inst_sync_rst   : entity accel.bit_sync generic map (stages => 8) port map (clk, '0', w_axi_rstn,  w_acc_rstn);
+    inst_sync_start : entity accel.bit_sync generic map (stages => 4) port map (clk, '0', w_axi_start, w_acc_start);
+    inst_sync_done  : entity accel.bit_sync generic map (stages => 4) port map (s00_axi_aclk, '0', w_acc_done, w_axi_done);
 
   end generate;
 
