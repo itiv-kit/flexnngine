@@ -20,10 +20,8 @@ set HDL_FILE_NAMES [list \
     "${HDL_DIR}/postproc.vhd" \
     "${HDL_DIR}/pe_array.vhd" \
     "${HDL_DIR}/ram_dp_bwe.vhd" \
-    "${HDL_DIR}/ram_mw.vhd" \
     "${HDL_DIR}/spad_reshape.vhd" \
     "${HDL_DIR}/scratchpad.vhd" \
-    "${HDL_DIR}/reformatter.vhd" \
     "${HDL_DIR}/parallelizer.vhd" \
     "${HDL_DIR}/serializer.vhd" \
     "${HDL_DIR}/scratchpad_interface.vhd" \
