@@ -214,7 +214,8 @@ class Test:
                 self.H2 = math.ceil(self.convolution.image_size / self.accelerator.size_x)
 
             self.C1 = math.ceil(self.convolution.input_channels * self.convolution.kernel_size / self.line_length_wght_usable)
-            self.C0 = math.floor(self.convolution.input_channels / self.C1)
+            # self.C0 = math.floor(self.convolution.input_channels / self.C1)
+            self.C0 = math.floor(self.line_length_wght_usable / self.convolution.kernel_size / 8) * 8
 
             self.C0_last_c1 = self.convolution.input_channels - (self.C1 - 1) * self.C0
             self.rows_last_h2 = 1 # not required for dataflow 0
