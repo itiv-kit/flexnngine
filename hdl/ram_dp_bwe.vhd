@@ -12,21 +12,21 @@ library ieee;
 
 entity ram_dp_bwe is
     generic (
-        size       : integer := 1024;
-        addr_width : integer := 10;
-        col_width  : integer := 8;
-        nb_col     : integer := 4;
-        initialize : boolean := false;
-        init_file  : string  := ""
+        size        : integer := 1024;
+        addr_width  : integer := 10;
+        col_width   : integer := 8;
+        nb_col      : integer := 4;
+        always_read : boolean := false; -- false for URAM compatibility
+        initialize  : boolean := false;
+        init_file   : string  := ""
     );
     port (
-        clka  : in    std_logic;
+        clk   : in    std_logic;
         ena   : in    std_logic;
         wea   : in    std_logic_vector(nb_col - 1 downto 0);
         addra : in    std_logic_vector(addr_width - 1 downto 0);
         dia   : in    std_logic_vector(nb_col * col_width - 1 downto 0);
         doa   : out   std_logic_vector(nb_col * col_width - 1 downto 0);
-        clkb  : in    std_logic;
         enb   : in    std_logic;
         web   : in    std_logic_vector(nb_col - 1 downto 0);
         addrb : in    std_logic_vector(addr_width - 1 downto 0);
@@ -89,16 +89,22 @@ architecture byte_wr_ram_rf of ram_dp_bwe is
     -- vsg_disable_next_line variable_007
     shared variable ram : ram_type := init_file_or_zero(init_file);
 
+    -- prefer UltraRAM for large memories
+    attribute ram_style : string;
+    attribute ram_style of ram : variable is "ultra";
+
 begin
 
     ------- Port A -------
     port_a : process is
     begin
 
-        wait until rising_edge(clka);
+        wait until rising_edge(clk);
 
         if ena = '1' then
-            doa <= ram(conv_integer(addra));
+            if always_read or wea = (wea'range => '0') then
+                doa <= ram(conv_integer(addra));
+            end if;
 
             for i in 0 to nb_col - 1 loop
 
@@ -116,10 +122,12 @@ begin
     port_b : process is
     begin
 
-        wait until rising_edge(clkb);
+        wait until rising_edge(clk);
 
         if enb = '1' then
-            dob <= ram(conv_integer(addrb));
+            if always_read or web = (web'range => '0') then
+                dob <= ram(conv_integer(addrb));
+            end if;
 
             for i in 0 to nb_col - 1 loop
 

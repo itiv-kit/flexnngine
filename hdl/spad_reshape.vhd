@@ -84,15 +84,14 @@ begin
                 init_file  => file_prefix & integer'image(i) & ".txt"
             )
             port map (
+                clk => clk,
                 -- standard access
-                clka  => clk,
                 ena   => w_std_en(i),
                 wea   => w_std_wen(i),
                 addra => w_std_addr(i),
                 dia   => w_std_din(i),
                 doa   => w_std_dout(i),
                 -- reshaped read-only access
-                clkb  => clk,
                 enb   => w_rsh_en(i),
                 web   => (others => '0'),
                 addrb => w_rsh_addr(i),

@@ -19,8 +19,8 @@ entity scratchpad is
         init_files_dir  : string  := ""
     );
     port (
-        clk     : in    std_logic;
-        rstn    : in    std_logic;
+        clk  : in    std_logic;
+        rstn : in    std_logic;
 
         -- internal addresses and control signals used by the pe array / address generator
         read_adr   : in    std_logic_vector(mem_addr_width - 1 downto 0);

@@ -295,8 +295,8 @@ begin
             init_files_dir   => g_files_dir
         )
         port map (
-            clk     => clk_sp,
-            rstn    => rstn,
+            clk  => clk_sp,
+            rstn => rstn,
             -- internal access (data load)
             read_adr   => w_read_adr,
             read_en    => w_read_en,
