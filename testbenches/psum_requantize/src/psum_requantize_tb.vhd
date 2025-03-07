@@ -15,7 +15,7 @@ entity psum_requantize_tb is
     generic (
         data_width_psum : positive := 16;
         data_width_iact : positive := 8;
-        pipeline_length : positive := 4
+        pipeline_length : positive := 19 -- latency of float ip
     );
 end entity psum_requantize_tb;
 
@@ -58,7 +58,8 @@ begin
         generic map (
             data_width_psum => data_width_psum,
             data_width_iact => data_width_iact,
-            pipeline_length => pipeline_length
+            pipeline_length => pipeline_length,
+            use_float_ip    => true
         )
         port map (
             clk             => clk,
@@ -124,15 +125,20 @@ begin
             wait until rising_edge(clk);
             i_data_valid <= '1';
             i_data <= std_logic_vector(to_signed(eq.input, data_width_psum));
+            if n = equations'high then
+                i_data_last <= '1';
+            end if;
 
             for n in 0 to pipeline_length - 1 loop
                 wait until rising_edge(clk);
                 i_data_valid <= '0';
+                i_data_last <= '0';
             end loop;
 
         end loop;
 
         i_data_valid <= '0';
+        i_data_last <= '0';
 
         wait for 200 ns;
 

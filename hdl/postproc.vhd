@@ -92,7 +92,9 @@ begin
             requantize_inst : entity accel.psum_requantize
                 generic map (
                     data_width_psum => data_width_psum,
-                    data_width_iact => data_width_iact
+                    data_width_iact => data_width_iact,
+                    pipeline_length => 19,
+                    use_float_ip    => false
                 )
                 port map (
                     clk             => clk,

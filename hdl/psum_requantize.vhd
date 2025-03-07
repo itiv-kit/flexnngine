@@ -15,7 +15,7 @@ entity psum_requantize is
     generic (
         data_width_psum : positive := 16;
         data_width_iact : positive := 8;
-        pipeline_length : positive := 5;
+        pipeline_length : positive := 12; -- needs to match float ip latency if enabled
         use_float_ip    : boolean  := false
     );
     port (
@@ -66,13 +66,13 @@ architecture behavioral of psum_requantize is
         port (
             aclk                 : in    std_logic;
             s_axis_a_tvalid      : in    std_logic;
-            s_axis_a_tdata       : in    std_logic_vector( 31 downto 0);
+            s_axis_a_tdata       : in    std_logic_vector(31 downto 0);
             s_axis_b_tvalid      : in    std_logic;
-            s_axis_b_tdata       : in    std_logic_vector( 31 downto 0);
+            s_axis_b_tdata       : in    std_logic_vector(31 downto 0);
             s_axis_c_tvalid      : in    std_logic;
-            s_axis_c_tdata       : in    std_logic_vector( 31 downto 0);
+            s_axis_c_tdata       : in    std_logic_vector(31 downto 0);
             m_axis_result_tvalid : out   std_logic;
-            m_axis_result_tdata  : out   std_logic_vector( 31 downto 0)
+            m_axis_result_tdata  : out   std_logic_vector(31 downto 0)
         );
     end component float32_mac;
 
@@ -118,27 +118,29 @@ begin
 
     else generate
 
-        p_pipe : process is
-        begin
-
-            wait until rising_edge(clk);
-
-            -- construct the o_status record, currently consists of scratchpad interface signals only
-            pipe(0)              <= (w_input_valid, w_input_last, w_input_och, to_float(w_input), scale, zeropoint);
-            pipe(1)              <= pipe(0);
-            pipe(1).data         <= pipe(0).data * pipe(0).scale;
-            pipe(2)              <= pipe(1);
-            pipe(2).data         <= pipe(1).data + pipe(1).zeropt;
-            pipe(3 to pipe'high) <= pipe(2 to pipe'high - 1);
-
-        end process p_pipe;
-
         w_output_valid <= pipe(pipe'high).valid;
-        w_output_last  <= pipe(pipe'high).last;
         w_output       <= to_slv(pipe(pipe'high).data);
-        w_output_och   <= pipe(pipe'high).och;
 
     end generate float_proc;
+
+    -- run the pipeline in any case, even if use_float_ip, to forward "last" and "channel" info
+    w_output_last <= pipe(pipe'high).last;
+    w_output_och  <= pipe(pipe'high).och;
+
+    p_pipe : process is
+    begin
+
+        wait until rising_edge(clk);
+
+        -- construct the o_status record, currently consists of scratchpad interface signals only
+        pipe(0)              <= (w_input_valid, w_input_last, w_input_och, to_float(w_input), scale, zeropoint);
+        pipe(1)              <= pipe(0);
+        pipe(1).data         <= pipe(0).data * pipe(0).scale;
+        pipe(2)              <= pipe(1);
+        pipe(2).data         <= pipe(1).data + pipe(1).zeropt;
+        pipe(3 to pipe'high) <= pipe(2 to pipe'high - 1);
+
+    end process p_pipe;
 
     p_output_reg : process is
     begin
