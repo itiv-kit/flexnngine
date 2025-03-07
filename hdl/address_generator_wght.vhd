@@ -209,7 +209,7 @@ begin
                     v_och_offset := to_integer(i_m0_dist(row)) - 1; -- offset between output channel kernel sets
 
                     -- advance in sets of c0 channels (= something like a stride for c0 iterations)
-                    v_c1_offset := r_count_c1 * i_params.c0;
+                    v_c1_offset := r_count_c1 * i_params.c0 / read_size; -- TODO: is the division efficient if 2^n?
 
                     -- base address for next set of c0 channels
                     r_next_base(row) <= to_unsigned(i_params.base_wght +
