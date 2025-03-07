@@ -104,6 +104,7 @@ package utilities is
     end record status_info_t;
 
     type status_info_pipe_t is array(natural range <>) of status_info_t;
+    type parameters_pipe_t is array(natural range <>) of parameters_t;
 
 end package utilities;
 

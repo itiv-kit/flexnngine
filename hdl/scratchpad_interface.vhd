@@ -192,6 +192,7 @@ architecture rtl of scratchpad_interface is
     signal r_done_iact,      r_done_wght      : std_logic;
 
     signal r_start_delay : std_logic;
+    signal r_start_sp    : std_logic;
     signal r_pause_iact  : std_logic_vector(size_rows - 1 downto 0);
     signal r_startup     : std_logic_vector(10 downto 0); /* TODO Depending on clk_sp / clk factor */
 
@@ -583,8 +584,6 @@ begin
         -- store wide data words & number of valid words in fifo_psum_out
         w_din_psum_f(x) <= w_wr_en_psum_f(x) & w_psum_wide_data(x);
 
-        /* TODO use feasible size for Psum FIFO */
-
         fifo_psum_out : entity accel.dc_fifo
             generic map (
                 mem_size    => g_psum_fifo_size,
@@ -651,6 +650,14 @@ begin
     o_write_en_psum   <= w_wen_psum when w_psum_valid_out = '1' else (others => '0');
     o_valid_psums_out <= w_valid_psum_f;
     o_gnt_psum_idx_d  <= r_gnt_psum_idx_d;
+
+    sync_init_done : entity accel.bit_sync
+        port map (
+            clk     => clk_sp,
+            rst     => '0',
+            bit_in  => i_start,
+            bit_out => r_start_sp
+        );
 
     mux_psum_valid : entity accel.mux
         generic map (
@@ -760,9 +767,9 @@ begin
 
     end process p_psum_overflow;
 
-    o_status.spad_iact_full  <= or w_full_iact_f;
-    o_status.spad_iact_empty <= or w_empty_iact_f;
-    o_status.spad_wght_full  <= or w_full_wght_f;
-    o_status.spad_wght_empty <= or w_empty_wght_f;
+    o_status.spad_iact_full  <= or w_full_iact_f;  -- clk_sp domain
+    o_status.spad_iact_empty <= or w_empty_iact_f; -- clk domain
+    o_status.spad_wght_full  <= or w_full_wght_f;  -- clk_sp domain
+    o_status.spad_wght_empty <= or w_empty_wght_f; -- clk domain
 
 end architecture rtl;

@@ -196,7 +196,6 @@ begin
             clk        => clk,
             rstn       => rstn,
             clk_sp     => clk_sp,
-            clk_sp_ext => clk_sp,
             i_start    => start,
             o_done     => done,
             i_params   => params,

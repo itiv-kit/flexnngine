@@ -123,16 +123,14 @@ architecture rtl of accelerator is
     signal w_psum_word_offsets       : array_t(0 to size_x - 1)(psum_word_offset_width - 1 downto 0);
     signal w_psum_word_offsets_valid : std_logic_vector(size_x - 1 downto 0);
 
-    signal w_control_init_done : std_logic;
+    signal w_control_init_done    : std_logic;
+    signal w_control_init_done_sp : std_logic;
 
     signal w_enable    : std_logic;
     signal w_enable_if : std_logic;
     signal w_dataflow  : std_logic;
 
-    signal w_params_sp : parameters_t;
-    attribute async_reg : string;
-    attribute async_reg of w_params_sp : signal is "TRUE";
-
+    signal r_params_sp_pipe : parameters_pipe_t(2 downto 0);
     signal r_status_pipe    : status_info_pipe_t(2 downto 0);
     signal w_status_spad_if : status_info_spadif_t;
     signal w_cyclectr       : unsigned(31 downto 0);
@@ -150,6 +148,10 @@ architecture rtl of accelerator is
     signal w_address_wght_valid : std_logic_vector(size_y - 1 downto 0);
     signal w_address_iact_done  : std_logic;
     signal w_address_wght_done  : std_logic;
+
+    attribute async_reg : string;
+    attribute async_reg of r_params_sp_pipe : signal is "TRUE";
+    attribute async_reg of r_status_pipe    : signal is "TRUE";
 
 begin
 
@@ -372,7 +374,13 @@ begin
             i_pause_iact              => w_pause_iact
         );
 
-    w_params_sp <= i_params when rising_edge(clk_sp);
+    sync_init_done : entity accel.bit_sync
+        port map (
+            clk     => clk_sp,
+            rst     => '0',
+            bit_in  => w_control_init_done,
+            bit_out => w_control_init_done_sp
+        );
 
     address_generator_psum_inst : entity accel.address_generator_psum
         generic map (
@@ -386,9 +394,9 @@ begin
         port map (
             clk                 => clk_sp,
             rstn                => rstn,
-            i_start             => w_control_init_done,
+            i_start             => w_control_init_done_sp,
             i_dataflow          => w_dataflow,
-            i_params            => w_params_sp,
+            i_params            => r_params_sp_pipe(r_params_sp_pipe'high),
             i_valid_psum_out    => w_valid_psums_out,
             i_gnt_psum_idx_d    => w_gnt_psum_idx_d,
             o_address_psum      => w_write_adr_psum,
@@ -404,6 +412,9 @@ begin
     -- add a pipeline to relax timing on the status record signals
     r_status_pipe(r_status_pipe'high downto 1) <= r_status_pipe(r_status_pipe'high - 1 downto 0) when rising_edge(clk);
     o_status                                   <= r_status_pipe(r_status_pipe'high);
+
+    r_params_sp_pipe(0)                              <= i_params when rising_edge(clk_sp);
+    r_params_sp_pipe(r_params_sp_pipe'high downto 1) <= r_params_sp_pipe(r_params_sp_pipe'high - 1 downto 0) when rising_edge(clk_sp);
 
     assert g_dataflow = 0 or max_output_channels >= size_y
         report "Dataflow 1 requires max_output_channels to be at least size_y"
