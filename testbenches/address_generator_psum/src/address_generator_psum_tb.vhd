@@ -32,12 +32,12 @@ architecture imp of address_generator_psum_tb is
     signal rstn : std_logic := '0';
     signal done : boolean   := false;
 
-    signal i_start           : std_logic;
-    signal i_dataflow        : std_logic;
-    signal i_valid_psum_out  : std_logic_vector(size_x - 1 downto 0);
-    signal i_gnt_psum_idx_d  : std_logic_vector(size_x_width - 1 downto 0);
-    signal o_address_psum    : std_logic_vector(addr_width - 1 downto 0);
-    signal o_suppress_out    : std_logic;
+    signal i_start          : std_logic;
+    signal i_dataflow       : std_logic;
+    signal i_valid_psum_out : std_logic_vector(size_x - 1 downto 0);
+    signal i_gnt_psum_idx_d : std_logic_vector(size_x_width - 1 downto 0);
+    signal o_address_psum   : std_logic_vector(addr_width - 1 downto 0);
+    signal o_suppress_out   : std_logic;
 
     signal i_gnt_psum_idx_d_int : integer;
 
@@ -73,15 +73,15 @@ begin
             write_size     => write_size
         )
         port map (
-            clk               => clk,
-            rstn              => rstn,
-            i_start           => i_start,
-            i_dataflow        => i_dataflow,
-            i_params          => i_params,
-            i_valid_psum_out  => i_valid_psum_out,
-            i_gnt_psum_idx_d  => i_gnt_psum_idx_d,
-            o_address_psum    => o_address_psum,
-            o_suppress_out    => o_suppress_out
+            clk              => clk,
+            rstn             => rstn,
+            i_start          => i_start,
+            i_dataflow       => i_dataflow,
+            i_params         => i_params,
+            i_valid_psum_out => i_valid_psum_out,
+            i_gnt_psum_idx_d => i_gnt_psum_idx_d,
+            o_address_psum   => o_address_psum,
+            o_suppress_out   => o_suppress_out
         );
 
     mem : entity accel.ram_dp
@@ -124,7 +124,7 @@ begin
     gen_inputs : process is
     begin
 
-        i_start           <= '0';
+        i_start <= '0';
 
         if rstn = '0' then
             wait until rstn = '1';
@@ -181,9 +181,9 @@ begin
                             current_row := (step * size_x + start_row + pe_x) mod (image_width + kernel_size - 1);
                             -- dummy output data is generated as 1..x for each row, up to x*x. channels are + 1000 each
                             din(data_width - 1 downto 0) <= std_logic_vector(to_unsigned(current_row * image_width + img_x + 1000 * m0 + 10000 * count_dataflow + 1, data_width));
-                            i_gnt_psum_idx_d_int   <= pe_x;
-                            i_valid_psum_out       <= (others => '0');
-                            i_valid_psum_out(pe_x) <= '1';
+                            i_gnt_psum_idx_d_int         <= pe_x;
+                            i_valid_psum_out             <= (others => '0');
+                            i_valid_psum_out(pe_x)       <= '1';
 
                         end loop;
 

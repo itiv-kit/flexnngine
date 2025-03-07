@@ -38,7 +38,7 @@ begin
 
     dut : entity accel.serializer
         generic map (
-            in_width => in_width,
+            in_width  => in_width,
             out_width => out_width
         )
         port map (
@@ -70,7 +70,9 @@ begin
     end process gen_rst;
 
     gen_inputs : process is
+
         variable element : unsigned(out_width - 1 downto 0);
+
     begin
 
         i_valid <= '0';
@@ -88,8 +90,11 @@ begin
             i_valid <= '1';
 
             for i in 0 to factor - 1 loop
+
                 element := to_unsigned(factor * word + i, out_width);
+
                 i_data(out_width * (i + 1) - 1 downto out_width * i) <= std_logic_vector(element);
+
             end loop;
 
         end loop;

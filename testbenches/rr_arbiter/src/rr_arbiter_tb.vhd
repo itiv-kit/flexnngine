@@ -176,8 +176,8 @@ begin
             arbiter_width => arbiter_width
         )
         port map (
-            clk  => clk,
-            rstn => rstn,
+            clk   => clk,
+            rstn  => rstn,
             i_req => req,
             o_gnt => gnt
         );

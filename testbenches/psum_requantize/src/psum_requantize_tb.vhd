@@ -43,13 +43,13 @@ architecture imp of psum_requantize_tb is
 
     constant equations : equation_arr_t(0 to 3) := (
         -- 1000 * 0.09 - 26.3 = 64
-        (1000, x"3db851ec", x"c1d26666", 64),
+        (1000, x"3DB851EC", x"C1D26666", 64),
         -- 147 * -0.0673 + 76.7941 = 67 (problem: wird 66?)
-        (147, x"bd89d495", x"42999694", 67),
+        (147, x"BD89D495", x"42999694", 67),
         -- -327 * 0.39144 + 0 = -128
-        (-327, x"3ec86a79", x"00000000", -128),
+        (-327, x"3EC86A79", x"00000000", -128),
         -- 1234 * 0.09724 + 7 = 127
-        (1234, x"3dc7283f", x"40e00000", 127)
+        (1234, x"3DC7283F", x"40E00000", 127)
     );
 
 begin
@@ -92,16 +92,19 @@ begin
     end process gen_rstn;
 
     gen_inputs : process is
+
         variable eq : equation_t;
+
     begin
 
-        i_params <= (
-            scale_fp32 => (others => (others => '0')),
-            zeropt_fp32 => (others => (others => '0')),
-            mode_act => passthrough,
-            bias => (others => 0),
+        i_params <=
+        (
+            scale_fp32   => (others => (others => '0')),
+            zeropt_fp32  => (others => (others => '0')),
+            mode_act     => passthrough,
+            bias         => (others => 0),
             requant_enab => true,
-            others => 0
+            others       => 0
         );
 
         i_data_valid <= '0';
@@ -117,36 +120,41 @@ begin
         for n in 0 to equations'high loop
 
             wait until rising_edge(clk);
-            eq := equations(n);
-            i_params.scale_fp32(0) <= eq.scale_fp32;
+            eq                      := equations(n);
+            i_params.scale_fp32(0)  <= eq.scale_fp32;
             i_params.zeropt_fp32(0) <= eq.zeropt_fp32;
 
             -- assert data a cycle later than scale / zeropt, as it has latency of one cycle
             wait until rising_edge(clk);
             i_data_valid <= '1';
-            i_data <= std_logic_vector(to_signed(eq.input, data_width_psum));
+            i_data       <= std_logic_vector(to_signed(eq.input, data_width_psum));
+
             if n = equations'high then
                 i_data_last <= '1';
             end if;
 
             for n in 0 to pipeline_length - 1 loop
+
                 wait until rising_edge(clk);
                 i_data_valid <= '0';
-                i_data_last <= '0';
+                i_data_last  <= '0';
+
             end loop;
 
         end loop;
 
         i_data_valid <= '0';
-        i_data_last <= '0';
+        i_data_last  <= '0';
 
         wait for 200 ns;
 
     end process gen_inputs;
 
     check_output : process is
+
         variable eq      : equation_t;
         variable tmp_out : integer;
+
     begin
 
         if rstn = '0' then
@@ -156,10 +164,11 @@ begin
         for n in 0 to equations'high loop
 
             wait until rising_edge(clk) and o_data_valid = '1';
-            eq := equations(n);
+            eq      := equations(n);
             tmp_out := to_integer(signed(o_data));
 
-            assert eq.output = tmp_out report "Output invalid, expected " & integer'image(eq.output) & " but got " & integer'image(tmp_out)
+            assert eq.output = tmp_out
+                report "Output invalid, expected " & integer'image(eq.output) & " but got " & integer'image(tmp_out)
                 severity failure;
 
         end loop;

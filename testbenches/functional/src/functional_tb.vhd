@@ -193,12 +193,12 @@ begin
             g_en_postproc    => g_postproc > 0
         )
         port map (
-            clk        => clk,
-            rstn       => rstn,
-            clk_sp     => clk_sp,
-            i_start    => start,
-            o_done     => done,
-            i_params   => params,
+            clk      => clk,
+            rstn     => rstn,
+            clk_sp   => clk_sp,
+            i_start  => start,
+            o_done   => done,
+            i_params => params,
             -- memory i/o not used in this testbench
             i_mem_en       => '0',
             i_mem_write_en => (others => '0'),
