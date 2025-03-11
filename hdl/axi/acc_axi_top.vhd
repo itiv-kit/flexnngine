@@ -49,7 +49,7 @@ entity acc_axi_top is
 
     -- Parameters of Axi Slave Bus Interface S00_AXI
     C_S00_AXI_DATA_WIDTH : integer := 32;
-    C_S00_AXI_ADDR_WIDTH : integer := 7
+    C_S00_AXI_ADDR_WIDTH : integer := 9
   );
   port (
     clk    : in std_logic;
