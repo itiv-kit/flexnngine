@@ -174,7 +174,7 @@ architecture rtl of scratchpad_interface is
 
     signal w_psum_word_offsets       : array_t(0 to size_x - 1)(word_offset_width - 1 downto 0);
     signal r_psum_offset_initialized : std_logic_vector(size_x - 1 downto 0);
-    signal w_psum_offset_rd_en       : std_logic_vector(size_x - 1 downto 0);
+    signal r_psum_offset_rd_en       : std_logic_vector(size_x - 1 downto 0);
     signal w_psum_offset_empty       : std_logic_vector(size_x - 1 downto 0);
 
     signal w_rd_en_psum_f : std_logic_vector(size_x - 1 downto 0);
@@ -569,6 +569,7 @@ begin
 
     gen_fifo_psum_out : for x in 0 to size_x - 1 generate
 
+        -- TODO: raw psum (non-requantized) datapath
         psum_parallel_requantized : entity accel.parallelizer
             port map (
                 clk      => clk,
@@ -715,7 +716,7 @@ begin
                 keep   => '0',
                 drop   => '0',
                 rd_clk => clk,
-                rd_en  => w_psum_offset_rd_en(x),
+                rd_en  => r_psum_offset_rd_en(x),
                 dout   => w_psum_word_offsets(x),
                 empty  => w_psum_offset_empty(x)
             );
@@ -725,18 +726,27 @@ begin
 
             wait until rising_edge(clk);
 
-            w_psum_offset_rd_en(x) <= '0';
+            if not w_psum_offset_empty(x) then
+                r_psum_offset_rd_en(x) <= '0';
+            end if;
 
             if i_start = '0' or rstn = '0' then
+                r_psum_offset_rd_en(x)       <= '0';
                 r_psum_offset_initialized(x) <= '0';
             elsif not w_psum_offset_empty(x) and not r_psum_offset_initialized(x) then
-                w_psum_offset_rd_en(x)       <= '1';
+                r_psum_offset_rd_en(x)       <= '1';
                 r_psum_offset_initialized(x) <= '1';
-            elsif i_psums_last(x) = '1' then
-                w_psum_offset_rd_en(x) <= '1';
+            elsif i_psums_last(x) then
+                r_psum_offset_rd_en(x) <= '1';
             end if;
 
         end process sample_word_offset;
+
+        -- note: this assertion does not catch a corner case when offset was just updated one
+        -- cycle before a new valid psum - however then the parallelizer has not sampled it yet
+        assert rstn = '0' or r_psum_offset_rd_en(x) = '0' or i_psums_valid(x) = '0'
+            report "new psum in column " & integer'image(x) & " while still waiting for offset"
+            severity warning;
 
     end generate word_offset_sync;
 
