@@ -54,6 +54,7 @@ architecture rtl of address_generator_psum is
     signal r_next_address_valid : std_logic_vector(0 to size_x - 1);
     signal r_suppress_next_row  : std_logic_vector(0 to size_x - 1);
     signal r_suppress_next_col  : std_logic_vector(0 to size_x - 1);
+    signal r_done               : std_logic_vector(0 to size_x - 1);
 
     signal r_count_w1 : uint10_line_t(0 to size_x - 1);
     signal r_count_m0 : uint10_line_t(0 to size_x - 1);
@@ -71,7 +72,7 @@ begin
     r_start_event <= i_start and not r_start_delay;
     r_image_size  <= i_params.w1 * i_params.w1 when rising_edge(clk);
 
-    -- Multiplex addresses for PE colums to interface the single Psum scratchpad
+    -- Multiplex addresses for PE colums according to current psum output fifo grant
     mux_psum_adr : entity accel.mux
         generic map (
             input_width   => mem_addr_width,
@@ -99,6 +100,7 @@ begin
             variable v_cur_row  : integer; -- current row
             variable v_offset   : integer; -- offset of the address to full write_size memory words
             variable v_new_addr : integer;
+            variable v_done     : boolean;
 
         begin
 
@@ -116,10 +118,12 @@ begin
                 r_count_w1(x) <= 0;
                 r_count_m0(x) <= 0;
                 r_count_h2(x) <= 0;
+                r_done(x)     <= '0';
             else
                 v_count_w1 := r_count_w1(x);
                 v_count_m0 := r_count_m0(x);
                 v_count_h2 := r_count_h2(x);
+                v_done     := r_done(x) = '1';
 
                 -- address output/increment and calculation of new base addresses are decoupled
                 -- if timing issues occur, this can be pipelined
@@ -128,11 +132,17 @@ begin
                     -- start of a totally new result, reset all counters
                     v_count_m0 := 0;
                     v_count_h2 := 0;
+                    v_done     := false;
                 elsif not r_next_address_valid(x) then
                     if v_count_m0 = i_params.m0 - 1 then
-                        -- all kernels of this step done, prepare for next step
-                        v_count_m0 := 0;
-                        v_count_h2 := v_count_h2 + 1;
+                        if v_count_h2 = i_params.h2 then
+                            -- full image processed, don't generate any more addresses
+                            v_done := true;
+                        else
+                            -- all kernels of this step done, prepare for next step
+                            v_count_m0 := 0;
+                            v_count_h2 := v_count_h2 + 1;
+                        end if;
                     else
                         -- advance to the next mapped kernel, set address to next output image and advance by mapped rows difference
                         v_count_m0 := v_count_m0 + 1;
@@ -162,7 +172,7 @@ begin
                 -- finally, add the row offset
                 v_new_addr := v_new_addr + v_cur_row * i_params.w1;
 
-                if r_next_address_valid(x) = '0' or r_start_event = '1' then
+                if (r_next_address_valid(x) = '0' or r_start_event = '1') and not v_done then
                     r_next_address(x)       <= to_unsigned(v_new_addr, addr_width_bytewise);
                     r_next_address_valid(x) <= '1';
                     o_word_offset_valid(x)  <= '1';
@@ -214,6 +224,7 @@ begin
                 r_count_w1(x) <= v_count_w1;
                 r_count_m0(x) <= v_count_m0;
                 r_count_h2(x) <= v_count_h2;
+                r_done(x)     <= '1' when v_done else '0';
             end if;
 
         end process p_psum_counter;
