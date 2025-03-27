@@ -106,9 +106,8 @@ architecture rtl of accelerator is
     signal w_psums_last     : std_logic_vector(size_x - 1 downto 0);
     signal w_psums_halfword : std_logic_vector(size_x - 1 downto 0);
 
-    signal w_psums_raw          : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
-    signal w_psums_raw_valid    : std_logic_vector(size_x - 1 downto 0);
-    signal w_psums_raw_halfword : std_logic_vector(size_x - 1 downto 0);
+    signal w_psums_raw       : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
+    signal w_psums_raw_valid : std_logic_vector(size_x - 1 downto 0);
 
     signal w_read_adr   : std_logic_vector(mem_addr_width - 1 downto 0);
     signal w_read_en    : std_logic;
@@ -210,8 +209,7 @@ begin
             i_read_offset_psum      => w_read_offset_psum,
             i_read_offset_wght      => w_read_offset_wght,
             o_psums                 => w_psums_raw,
-            o_psums_valid           => w_psums_raw_valid,
-            o_psums_halfword        => w_psums_raw_halfword
+            o_psums_valid           => w_psums_raw_valid
         );
 
     postproc_inst : entity accel.postproc
@@ -228,7 +226,6 @@ begin
             i_params        => i_params,
             i_data          => w_psums_raw,
             i_data_valid    => w_psums_raw_valid,
-            i_data_halfword => w_psums_raw_halfword,
             o_data          => w_psums,
             o_data_valid    => w_psums_valid,
             o_data_last     => w_psums_last,

@@ -61,9 +61,8 @@ entity pe_array is
         i_read_offset_psum : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_psum - 1 downto 0);
         i_read_offset_wght : in    array_row_col_t(0 to size_y - 1, 0 to size_x - 1)(addr_width_wght - 1 downto 0);
 
-        o_psums          : out   array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
-        o_psums_valid    : out   std_logic_vector(size_x - 1 downto 0);
-        o_psums_halfword : out   std_logic_vector(size_x - 1 downto 0)
+        o_psums       : out   array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
+        o_psums_valid : out   std_logic_vector(size_x - 1 downto 0)
     );
 end entity pe_array;
 
@@ -223,9 +222,8 @@ begin
 
     psum_output : for i in 0 to size_x - 1 generate
 
-        o_psums(i)          <= w_data_out(0, i);
-        o_psums_valid(i)    <= w_data_out_valid(0, i);
-        o_psums_halfword(i) <= '0';
+        o_psums(i)       <= w_data_out(0, i);
+        o_psums_valid(i) <= w_data_out_valid(0, i);
 
     end generate psum_output;
 

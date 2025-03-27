@@ -19,9 +19,8 @@ entity postproc is
 
         i_params : in    parameters_t;
 
-        i_data          : in    array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
-        i_data_valid    : in    std_logic_vector(size_x - 1 downto 0);
-        i_data_halfword : in    std_logic_vector(size_x - 1 downto 0);
+        i_data       : in    array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
+        i_data_valid : in    std_logic_vector(size_x - 1 downto 0);
 
         o_data          : out   array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
         o_data_valid    : out   std_logic_vector(size_x - 1 downto 0);
