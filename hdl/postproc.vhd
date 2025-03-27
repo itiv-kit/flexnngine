@@ -10,7 +10,8 @@ entity postproc is
         size_x          : positive := 3;
         data_width_iact : positive := 8;
         data_width_psum : positive := 16;
-        g_en_postproc   : boolean  := true
+        use_float_ip    : boolean  := false;
+        postproc_enable : boolean  := true
     );
     port (
         clk  : in    std_logic;
@@ -47,7 +48,7 @@ architecture behavioral of postproc is
 
 begin
 
-    gen_postproc : if g_en_postproc generate
+    gen_postproc : if postproc_enable generate
 
         psum_output : for i in 0 to size_x - 1 generate
 
@@ -94,7 +95,7 @@ begin
                     data_width_psum => data_width_psum,
                     data_width_iact => data_width_iact,
                     pipeline_length => 19,
-                    use_float_ip    => false
+                    use_float_ip    => use_float_ip
                 )
                 port map (
                     clk             => clk,

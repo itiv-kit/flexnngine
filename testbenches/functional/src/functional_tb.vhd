@@ -190,7 +190,8 @@ begin
             g_wght_fifo_size => g_wght_fifo_size,
             g_psum_fifo_size => g_psum_fifo_size,
             g_dataflow       => g_dataflow,
-            g_en_postproc    => g_postproc > 0
+            use_float_ip     => false,
+            postproc_enable  => g_postproc > 0
         )
         port map (
             clk      => clk,

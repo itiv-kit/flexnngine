@@ -29,10 +29,11 @@ entity accelerator is
         g_wght_fifo_size : positive := 16;
         g_psum_fifo_size : positive := 32;
 
-        g_files_dir   : string  := "";
-        g_init_sp     : boolean := false;
-        g_dataflow    : integer := 1;
-        g_en_postproc : boolean := true
+        g_files_dir     : string  := "";
+        g_init_sp       : boolean := false;
+        g_dataflow      : integer := 1;
+        use_float_ip    : boolean := false;
+        postproc_enable : boolean := true
     );
     port (
         clk  : in    std_logic;
@@ -178,8 +179,7 @@ begin
             line_length_psum => line_length_psum,
             addr_width_iact  => addr_width_iact,
             addr_width_psum  => addr_width_psum,
-            addr_width_wght  => addr_width_wght,
-            g_en_postproc    => g_en_postproc
+            addr_width_wght  => addr_width_wght
         )
         port map (
             clk                     => clk,
@@ -219,7 +219,8 @@ begin
             size_x          => size_x,
             data_width_iact => data_width_input,
             data_width_psum => data_width_psum,
-            g_en_postproc   => g_en_postproc
+            postproc_enable => postproc_enable,
+            use_float_ip    => use_float_ip
         )
         port map (
             clk             => clk,

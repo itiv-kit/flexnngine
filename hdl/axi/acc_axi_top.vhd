@@ -32,6 +32,7 @@ entity acc_axi_top is
 
     dataflow         : integer := 0;
     postproc_enabled : boolean := true;
+    use_float_ip     : boolean := true;
 
     -- enable cdc between AXI and accelerator clock domains if clocks differ
     axi_acc_cdc : boolean := false;
@@ -179,7 +180,8 @@ begin
     g_wght_fifo_size => fifo_size_wght,
     g_psum_fifo_size => fifo_size_psum,
     g_dataflow       => dataflow,
-    g_en_postproc    => postproc_enabled
+    use_float_ip     => use_float_ip,
+    postproc_enable  => postproc_enabled
   ) port map (
     clk  => clk,
     rstn => w_acc_rstn,

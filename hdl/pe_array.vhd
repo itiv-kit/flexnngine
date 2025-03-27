@@ -22,9 +22,7 @@ entity pe_array is
 
         data_width_wght  : positive := 8;
         line_length_wght : positive := 32;
-        addr_width_wght  : positive := 5;
-
-        g_en_postproc : boolean := true
+        addr_width_wght  : positive := 5
     );
     port (
         clk  : in    std_logic;
