@@ -1,13 +1,14 @@
 onerror {resume}
 quietly WaveActivateNextPane {} 0
-add wave -noupdate -group generics -radix unsigned /address_generator_psum_tb/addr_width
-add wave -noupdate -group generics -radix unsigned /address_generator_psum_tb/data_width
-add wave -noupdate -group generics -radix unsigned /address_generator_psum_tb/image_width
-add wave -noupdate -group generics -radix unsigned /address_generator_psum_tb/kernel_count
-add wave -noupdate -group generics -radix unsigned /address_generator_psum_tb/kernel_size
-add wave -noupdate -group generics -radix unsigned /address_generator_psum_tb/size_x
-add wave -noupdate -group generics -radix unsigned /address_generator_psum_tb/size_x_width
-add wave -noupdate -group generics -radix unsigned /address_generator_psum_tb/size_y
+add wave -noupdate -group {generics & params} -radix unsigned /address_generator_psum_tb/addr_width
+add wave -noupdate -group {generics & params} -radix unsigned /address_generator_psum_tb/data_width
+add wave -noupdate -group {generics & params} -radix unsigned /address_generator_psum_tb/image_width
+add wave -noupdate -group {generics & params} -radix unsigned /address_generator_psum_tb/kernel_count
+add wave -noupdate -group {generics & params} -radix unsigned /address_generator_psum_tb/kernel_size
+add wave -noupdate -group {generics & params} -radix unsigned /address_generator_psum_tb/size_x
+add wave -noupdate -group {generics & params} -radix unsigned /address_generator_psum_tb/size_x_width
+add wave -noupdate -group {generics & params} -radix unsigned /address_generator_psum_tb/size_y
+add wave -noupdate -group {generics & params} /address_generator_psum_tb/dut/i_params
 add wave -noupdate /address_generator_psum_tb/clk
 add wave -noupdate /address_generator_psum_tb/rstn
 add wave -noupdate -expand -group I/O -radix unsigned /address_generator_psum_tb/dut/i_start

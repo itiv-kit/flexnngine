@@ -50,7 +50,7 @@ architecture imp of address_generator_psum_tb is
                                         kernel_size => kernel_size,
                                         w1 => image_width,
                                         m0 => kernel_count,
-                                        h2 => integer(ceil(real(image_height) / real(size_x))),
+                                        h2 => (image_width + size_x - 1) / size_x,
                                         requant_enab => true,
                                         mode_act => passthrough,
                                         bias => (others => 0),
@@ -161,7 +161,7 @@ begin
 
             wait for 150 ns;
 
-            for step in 0 to (image_width + size_x - 1) / size_x loop
+            for step in 0 to i_params.h2 - 1 loop
 
                 wait for 150 ns;
                 wait until rising_edge(clk);

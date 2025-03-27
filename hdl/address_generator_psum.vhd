@@ -135,7 +135,7 @@ begin
                     v_done     := false;
                 elsif not r_next_address_valid(x) then
                     if v_count_m0 = i_params.m0 - 1 then
-                        if v_count_h2 = i_params.h2 then
+                        if v_count_h2 = i_params.h2 - 1 then
                             -- full image processed, don't generate any more addresses
                             v_done := true;
                         else
