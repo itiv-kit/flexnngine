@@ -529,7 +529,7 @@ class Test:
                 print(f'{self.name}: Output differs! Maximum delta: {np.max(delta)}')
                 index = 0
                 for actual_row, expected_row in zip(actual_output, expected_output):
-                    if not np.equal(actual_row, expected_row).all():
+                    if not np.less_equal(np.abs(actual_row - expected_row), acceptable_delta).all():
                         print(f'{self.name}: first incorrect row {index}')
                         print(f'{self.name}: got row {actual_row}')
                         print(f'{self.name}: expected row {expected_row}')
