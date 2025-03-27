@@ -167,9 +167,9 @@ begin
 
     p_wght_counter : process is
 
-        variable v_och_offset : integer;
-        variable v_c1_offset  : integer;
-        variable v_c0         : integer;
+        variable v_och_offset : natural;
+        variable v_c1_offset  : natural;
+        variable v_c0         : natural;
 
     begin
 
@@ -206,7 +206,7 @@ begin
 
                 for row in 0 to size_y - 1 loop
 
-                    v_och_offset := to_integer(i_m0_dist(row)) - 1; -- offset between output channel kernel sets
+                    v_och_offset := to_integer(i_m0_dist(row) - 1); -- offset between output channel kernel sets
 
                     -- advance in sets of c0 channels (= something like a stride for c0 iterations)
                     v_c1_offset := r_count_c1 * i_params.c0 / read_size; -- TODO: is the division efficient if 2^n?
@@ -215,7 +215,7 @@ begin
                     r_next_base(row) <= to_unsigned(i_params.base_wght +
                                                     v_och_offset * i_params.stride_wght_och +
                                                     v_c1_offset * i_params.stride_wght_kernel +
-                                                    row mod i_params.kernel_size * i_params.kernel_size,
+                                                    natural(row) mod i_params.kernel_size * i_params.kernel_size,
                                                     addr_width_wght_mem);
 
                     -- number of words to load for c0 channels
