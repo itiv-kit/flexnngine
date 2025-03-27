@@ -560,7 +560,7 @@ presets = {
                                   output_channels = [3], bias = [5], requantize = [True], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_addr_width = 15,
-                                  iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
+                                  iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
                                   clk_period = [10], clk_sp_period = [1], dataflow=[0]), start_gui = True),
 
     # Test with different dataflow. Kernel_size 1,3 and medium image size 16, 10-200 channels
@@ -569,7 +569,7 @@ presets = {
                                   output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_addr_width = 15,
-                                  iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
+                                  iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
                                   clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
 
     # Test with different dataflow. Kernel_size 3 and large image size 124, 3 channels
@@ -578,7 +578,7 @@ presets = {
                                   output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_addr_width = 15,
-                                  iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
+                                  iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
                                   clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
 
     # Test with different FIFO sizes. Kernel_size 1,3 and medium image size 16, 40 channels
@@ -587,7 +587,7 @@ presets = {
                                   output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_addr_width = 15,
-                                  iact_fifo_size = [5, 10, 15, 30, 64, 128, 512], wght_fifo_size = [5, 10, 15, 30, 64, 128, 512], psum_fifo_size = [512],
+                                  iact_fifo_size = [5, 10, 15, 30, 64, 128, 512], wght_fifo_size = [5, 10, 15, 30, 64, 128, 512], psum_fifo_size = [32],
                                   clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
 
     # Test with different Line buffer sizes. Kernel_size 1,3 and medium image size 16, 40 channels, DF 0
@@ -596,7 +596,7 @@ presets = {
                                 output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [], line_length_psum = [128], line_length_wght = [32, 48, 64, 96, 128, 256, 512, 1024],
                                 mem_addr_width = 15,
-                                iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
+                                iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
                                 clk_period = [10], clk_sp_period = [1], dataflow=[0])),
 
     'hw_rs_array_x_size': Setting(
@@ -604,7 +604,7 @@ presets = {
                                   output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [5,10,15,20,25,50,100], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_addr_width = 15,
-                                  iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [16384],
+                                  iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
                                   clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
 
     'hw_rs_array_y_size': Setting(
@@ -612,7 +612,7 @@ presets = {
                                   output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [10], size_y = [5,10,15,20,25,50,100], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_addr_width = 15,
-                                  iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [16384],
+                                  iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
                                   clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
 
     'rs_df_clk_sp_10x7': Setting(
@@ -620,7 +620,7 @@ presets = {
                                   output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_addr_width = 15,
-                                  iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
+                                  iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
                                   clk_period = [10], clk_sp_period = [1+i for i in range(10)], dataflow=[0,1])),
 
     'rs_df_clk_sp_14x12': Setting(
@@ -628,7 +628,7 @@ presets = {
                                   output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [12], size_y = [14], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_addr_width = 15,
-                                  iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
+                                  iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
                                   clk_period = [10], clk_sp_period = [1+i for i in range(10)], dataflow=[0,1])),
 
     # Test with different Line buffer sizes. Kernel_size 1,3 and medium image size 16, 40 channels, DF 1
@@ -637,7 +637,7 @@ presets = {
                                 output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [], line_length_psum = [128], line_length_wght = [32, 48, 64, 96, 128, 256, 512, 1024],
                                 mem_addr_width = 15,
-                                iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
+                                iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
                                 clk_period = [10], clk_sp_period = [1], dataflow=[1])),
 
     # small test - 20 simulations
@@ -646,7 +646,7 @@ presets = {
                                 output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [512], line_length_wght = [64],
                                 mem_addr_width = 15,
-                                iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [128],
+                                iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
                                 clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
 
     # the test-conv2d.cpp configuration
@@ -655,7 +655,7 @@ presets = {
                                 output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                 mem_addr_width = 15,
-                                iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [128],
+                                iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
                                 clk_period = [10], clk_sp_period = [1], dataflow=[0]), start_gui = True),
 
     # a configuration for continuous integration, testing the most important set of features
@@ -664,7 +664,7 @@ presets = {
                                 output_channels = [3], bias = [0,5], requantize = [False,True], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                 mem_addr_width = 15,
-                                iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [128],
+                                iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
                                 clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
 }
 

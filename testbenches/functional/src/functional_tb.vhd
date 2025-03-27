@@ -35,9 +35,9 @@ entity functional_tb is
         g_kernel_size : positive := 1;
         g_bias        : integer  := 5;
 
-        g_iact_fifo_size : positive := 15;
-        g_wght_fifo_size : positive := 15;
-        g_psum_fifo_size : positive := 128;
+        g_iact_fifo_size : positive := 16;
+        g_wght_fifo_size : positive := 16;
+        g_psum_fifo_size : positive := 32;
 
         g_clk    : time := 10 ns;
         g_clk_sp : time := 2 ns;
