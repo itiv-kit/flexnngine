@@ -46,6 +46,11 @@ architecture imp of address_generator_psum_tb is
                                         kernel_size => kernel_size,
                                         w1 => image_width,
                                         m0 => kernel_count,
+                                        requant_enab => false,
+                                        mode_act => passthrough,
+                                        bias => (others => 0),
+                                        zeropt_fp32 => (others => (others => '0')),
+                                        scale_fp32 => (others => (others => '0')),
                                         others => 0
                                     );
 

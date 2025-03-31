@@ -32,6 +32,7 @@ architecture imp of control_conv_tb is
     signal done         : std_logic;
     signal start        : std_logic;
     signal enable_if    : std_logic;
+    signal params       : parameters_t;
     signal image_x      : integer range 0 to 1023;
     signal image_y      : integer range 0 to 1023;
     signal channels     : integer range 0 to 4095;
@@ -57,19 +58,16 @@ begin
             addr_width_wght  => addr_width_wght
         )
         port map (
-            clk            => clk,
-            rstn           => rstn,
-            i_start        => start,
-            i_enable_if    => enable_if,
-            i_image_x      => image_x,
-            i_image_y      => image_y,
-            i_channels     => channels,
-            i_kernels      => kernels,
-            i_kernel_size  => kernel_size,
-            o_command      => command,
-            o_command_iact => command_iact,
-            o_command_psum => command_psum,
-            o_command_wght => command_wght
+            clk                 => clk,
+            rstn                => rstn,
+            i_start             => start,
+            i_enable_if         => enable_if,
+            i_all_psum_finished => '0',
+            i_params            => params,
+            o_command           => command,
+            o_command_iact      => command_iact,
+            o_command_psum      => command_psum,
+            o_command_wght      => command_wght
         );
 
     rstn_gen : process is
@@ -98,11 +96,11 @@ begin
         start     <= '0';
         enable_if <= '0';
 
-        image_x     <= 14;
-        image_y     <= 14;
-        kernels     <= 3;
-        channels    <= 5;
-        kernel_size <= 5;
+        params.image_x     <= 14;
+        params.image_y     <= 14;
+        params.m0          <= 3;
+        params.inputchs    <= 5;
+        params.kernel_size <= 5;
 
         wait for 50 ns;
         start <= '1';

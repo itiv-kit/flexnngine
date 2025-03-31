@@ -14,26 +14,22 @@ entity control_conv_acc_tb is
     generic (
         size_x    : positive := 5;
         size_y    : positive := 5;
-        size_rows : positive := 9;
-
-        addr_width_rows : positive := 4;
-        addr_width_y    : positive := 3;
-        addr_width_x    : positive := 3;
 
         data_width_iact     : positive := 8; -- Width of the input data (weights, iacts)
         line_length_iact    : positive := 32;
         addr_width_iact     : positive := 5;
-        addr_width_iact_mem : positive := 15;
 
         data_width_psum     : positive := 16; -- or 17??
         line_length_psum    : positive := 127;
         addr_width_psum     : positive := 7;
-        addr_width_psum_mem : positive := 15;
 
         data_width_wght     : positive := 8;
         line_length_wght    : positive := 32;
         addr_width_wght     : positive := 5;
-        addr_width_wght_mem : positive := 15;
+
+        spad_ext_addr_width_iact : positive := 15;
+        spad_ext_addr_width_psum : positive := 15;
+        spad_ext_addr_width_wght : positive := 15;
 
         fifo_width : positive := 16;
 
@@ -47,6 +43,8 @@ entity control_conv_acc_tb is
 end entity control_conv_acc_tb;
 
 architecture imp of control_conv_acc_tb is
+
+    constant size_rows : positive := size_x + size_y - 1;
 
     signal clk    : std_logic := '0';
     signal clk_sp : std_logic := '0';
@@ -65,12 +63,20 @@ architecture imp of control_conv_acc_tb is
     signal s_input_weights   : int_image_t(0 to g_kernel_size - 1, 0 to g_kernel_size * g_channels * g_h2 - 1); -- not *2 because kernel stays the same across tile_y
     signal s_expected_output : int_image_t(0 to g_image_y - g_kernel_size, 0 to g_image_x - g_kernel_size);
 
-    signal dout_psum       : std_logic_vector(data_width_psum - 1 downto 0);
-    signal dout_psum_valid : std_logic;
-    signal write_en_iact   : std_logic;
-    signal write_en_wght   : std_logic;
-    signal din_iact        : std_logic_vector(data_width_iact - 1 downto 0);
-    signal din_wght        : std_logic_vector(data_width_wght - 1 downto 0);
+    signal params : parameters_t := (
+                                      kernel_size => g_kernel_size,
+                                      image_x => g_image_x,
+                                      image_y => g_image_y,
+                                      inputchs => g_channels,
+                                      w1 => g_image_x,
+                                      m0 => 1,
+                                      requant_enab => false,
+                                      mode_act => passthrough,
+                                      bias => (others => 0),
+                                      zeropt_fp32 => (others => (others => '0')),
+                                      scale_fp32 => (others => (others => '0')),
+                                      others => 0
+                                  );
 
 begin
 
@@ -81,48 +87,44 @@ begin
     i_data_wght       <= << signal accelerator_inst.w_data_wght : array_t (0 to size_y - 1)(data_width_wght - 1 downto 0) >>;
     i_data_wght_valid <= << signal accelerator_inst.w_data_wght_valid : std_logic_vector(size_y - 1 downto 0) >>;
 
-    write_en_iact <= '0';
-    write_en_wght <= '0';
-    din_iact      <= (others => '0');
-    din_wght      <= (others => '0');
-
     accelerator_inst : entity work.accelerator
         generic map (
-            size_x              => size_x,
-            size_y              => size_y,
-            size_rows           => size_rows,
-            addr_width_rows     => addr_width_rows,
-            addr_width_y        => addr_width_y,
-            addr_width_x        => addr_width_x,
-            data_width_iact     => data_width_iact,
-            line_length_iact    => line_length_iact,
-            addr_width_iact     => addr_width_iact,
-            addr_width_iact_mem => addr_width_iact_mem,
-            data_width_psum     => data_width_psum,
-            line_length_psum    => line_length_psum,
-            addr_width_psum     => addr_width_psum,
-            addr_width_psum_mem => addr_width_psum_mem,
-            data_width_wght     => data_width_wght,
-            line_length_wght    => line_length_wght,
-            addr_width_wght     => addr_width_wght,
-            addr_width_wght_mem => addr_width_wght_mem,
-            fifo_width          => fifo_width,
-            g_channels          => g_channels,
-            g_image_y           => g_image_y,
-            g_image_x           => g_image_x,
-            g_kernel_size       => g_kernel_size
+            size_x           => size_x,
+            size_y           => size_y,
+            data_width_iact  => data_width_iact,
+            line_length_iact => line_length_iact,
+            addr_width_iact  => addr_width_iact,
+            data_width_psum  => data_width_psum,
+            line_length_psum => line_length_psum,
+            addr_width_psum  => addr_width_psum,
+            data_width_wght  => data_width_wght,
+            line_length_wght => line_length_wght,
+            addr_width_wght  => addr_width_wght,
+            fifo_width       => fifo_width,
+
+            spad_ext_addr_width_iact => spad_ext_addr_width_iact,
+            spad_ext_addr_width_psum => spad_ext_addr_width_psum,
+            spad_ext_addr_width_wght => spad_ext_addr_width_wght
         )
         port map (
-            clk               => clk,
-            rstn              => rstn,
-            clk_sp            => clk_sp,
-            i_start           => start,
-            o_dout_psum       => dout_psum,
-            o_dout_psum_valid => dout_psum_valid,
-            i_write_en_iact   => write_en_iact,
-            i_write_en_wght   => write_en_wght,
-            i_din_iact        => din_iact,
-            i_din_wght        => din_wght
+            clk             => clk,
+            rstn            => rstn,
+            clk_sp          => clk_sp,
+            clk_sp_ext      => clk_sp,
+            i_start         => start,
+            i_params        => params,
+            i_en_iact       => '0',
+            i_en_wght       => '0',
+            i_en_psum       => '0',
+            i_write_en_iact => (others => '0'),
+            i_write_en_wght => (others => '0'),
+            i_write_en_psum => (others => '0'),
+            i_addr_iact     => (others => '0'),
+            i_addr_wght     => (others => '0'),
+            i_addr_psum     => (others => '0'),
+            i_din_iact      => (others => '0'),
+            i_din_wght      => (others => '0'),
+            i_din_psum      => (others => '0')
         );
 
     rstn_gen : process is
@@ -181,18 +183,6 @@ begin
 
         assert addr_width_wght = integer(ceil(log2(real(line_length_wght))))
             report "Check wght address width!"
-            severity failure;
-
-        assert addr_width_x = integer(ceil(log2(real(size_x))))
-            report "Check address width x!"
-            severity failure;
-
-        assert addr_width_y = integer(ceil(log2(real(size_y))))
-            report "Check address width y!"
-            severity failure;
-
-        assert addr_width_rows = integer(ceil(log2(real(size_rows))))
-            report "Check address width rows!"
             severity failure;
 
         wait;
