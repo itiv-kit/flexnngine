@@ -104,7 +104,7 @@ def write_memory_file_int8_wordsize8(filename, image):
     with open(filename, "w") as f:
         pixels = image.flatten().astype(np.int8)
         for pixel in pixels:
-            f.write(f'{pixel&0xff:08b}\n')
+            f.write(np.binary_repr(pixel, 8)+'\n')
 
 def write_memory_file_int8_wordsize32(filename, image):
     with open(filename, "w") as f:
@@ -112,7 +112,7 @@ def write_memory_file_int8_wordsize32(filename, image):
         num_words = math.ceil(pixels.size / 4)
         pixels.resize(num_words * 4)
         for nibble in np.split(pixels, num_words):
-            f.write(''.join([f'{x&0xff:08b}' for x in reversed(nibble)])+'\n')
+            f.write(''.join([np.binary_repr(x, 8) for x in reversed(nibble)])+'\n')
 
 class Test:
     def __init__(self, name, convolution, accelerator, gui=True):
