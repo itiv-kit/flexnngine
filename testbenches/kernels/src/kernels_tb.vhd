@@ -14,22 +14,22 @@ library ieee;
 
 entity kernels_tb is
     generic (
-        size_x    : positive := 7;
-        size_y    : positive := 10;
+        size_x : positive := 7;
+        size_y : positive := 10;
 
-        data_width_iact     : positive := 8;  -- Width of the input data (weights, iacts)
-        line_length_iact    : positive := 32; /* TODO check influence on tiling - does not work for length 32, kernel 4 and channels 10. Does not work for length 30, kernel 3 and channels 10*/
-        addr_width_iact     : positive := 5;
+        data_width_iact      : positive := 8;  -- Width of the input data (weights, iacts)
+        line_length_iact     : positive := 32; /* TODO check influence on tiling - does not work for length 32, kernel 4 and channels 10. Does not work for length 30, kernel 3 and channels 10*/
+        addr_width_iact      : positive := 5;
         spad_addr_width_iact : positive := 16;
 
-        data_width_psum     : positive := 16; -- or 17??
-        line_length_psum    : positive := 128;
-        addr_width_psum     : positive := 7;
+        data_width_psum      : positive := 16; -- or 17??
+        line_length_psum     : positive := 128;
+        addr_width_psum      : positive := 7;
         spad_addr_width_psum : positive := 16;
 
-        data_width_wght     : positive := 8;
-        line_length_wght    : positive := 32; /* TODO check influence on tiling - does not work for length 32, kernel 4 and channels 10. Does not work for length 30, kernel 3 and channels 10*/
-        addr_width_wght     : positive := 5;
+        data_width_wght      : positive := 8;
+        line_length_wght     : positive := 32; /* TODO check influence on tiling - does not work for length 32, kernel 4 and channels 10. Does not work for length 30, kernel 3 and channels 10*/
+        addr_width_wght      : positive := 5;
         spad_addr_width_wght : positive := 15;
 
         fifo_width : positive := 16;
@@ -76,10 +76,10 @@ architecture imp of kernels_tb is
     signal s_input_weights   : int_image_t(0 to g_kernel_size - 1, 0 to g_kernel_size * g_channels * g_h2 - 1); -- not *2 because kernel stays the same across tile_y
     signal s_expected_output : int_image_t(0 to g_image_y - g_kernel_size, 0 to g_image_x - g_kernel_size);
 
-    signal write_en_iact   : std_logic;
-    signal write_en_wght   : std_logic;
-    signal din_iact        : std_logic_vector(data_width_iact - 1 downto 0);
-    signal din_wght        : std_logic_vector(data_width_wght - 1 downto 0);
+    signal write_en_iact : std_logic;
+    signal write_en_wght : std_logic;
+    signal din_iact      : std_logic_vector(data_width_iact - 1 downto 0);
+    signal din_wght      : std_logic_vector(data_width_wght - 1 downto 0);
 
     signal start_adr : std_logic;
     signal w_h2      : integer;
@@ -92,7 +92,6 @@ architecture imp of kernels_tb is
     type t_state is (s_calculate, s_output, s_incr_c1);
 
     signal r_state : t_state;
-
 
     signal params : parameters_t := (
                                       kernel_size => g_kernel_size,
@@ -133,26 +132,26 @@ begin
 
     accelerator_inst : entity work.accelerator
         generic map (
-            size_x              => size_x,
-            size_y              => size_y,
-            data_width_iact     => data_width_iact,
-            line_length_iact    => line_length_iact,
-            addr_width_iact     => addr_width_iact,
-            data_width_psum     => data_width_psum,
-            line_length_psum    => line_length_psum,
-            addr_width_psum     => addr_width_psum,
-            data_width_wght     => data_width_wght,
-            line_length_wght    => line_length_wght,
-            addr_width_wght     => addr_width_wght,
+            size_x               => size_x,
+            size_y               => size_y,
+            data_width_iact      => data_width_iact,
+            line_length_iact     => line_length_iact,
+            addr_width_iact      => addr_width_iact,
+            data_width_psum      => data_width_psum,
+            line_length_psum     => line_length_psum,
+            addr_width_psum      => addr_width_psum,
+            data_width_wght      => data_width_wght,
+            line_length_wght     => line_length_wght,
+            addr_width_wght      => addr_width_wght,
             spad_addr_width_iact => spad_addr_width_iact,
             spad_addr_width_psum => spad_addr_width_psum,
             spad_addr_width_wght => spad_addr_width_wght,
-            fifo_width          => fifo_width,
-            g_iact_fifo_size    => g_iact_fifo_size,
-            g_wght_fifo_size    => g_wght_fifo_size,
-            g_psum_fifo_size    => g_psum_fifo_size,
-            g_files_dir         => g_files_dir,
-            g_init_sp           => g_init_sp
+            fifo_width           => fifo_width,
+            g_iact_fifo_size     => g_iact_fifo_size,
+            g_wght_fifo_size     => g_wght_fifo_size,
+            g_psum_fifo_size     => g_psum_fifo_size,
+            g_files_dir          => g_files_dir,
+            g_init_sp            => g_init_sp
         )
         port map (
             clk             => clk,

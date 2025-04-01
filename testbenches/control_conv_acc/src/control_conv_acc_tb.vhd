@@ -12,20 +12,20 @@ library ieee;
 
 entity control_conv_acc_tb is
     generic (
-        size_x    : positive := 5;
-        size_y    : positive := 5;
+        size_x : positive := 5;
+        size_y : positive := 5;
 
-        data_width_iact     : positive := 8; -- Width of the input data (weights, iacts)
-        line_length_iact    : positive := 32;
-        addr_width_iact     : positive := 5;
+        data_width_iact  : positive := 8; -- Width of the input data (weights, iacts)
+        line_length_iact : positive := 32;
+        addr_width_iact  : positive := 5;
 
-        data_width_psum     : positive := 16; -- or 17??
-        line_length_psum    : positive := 127;
-        addr_width_psum     : positive := 7;
+        data_width_psum  : positive := 16; -- or 17??
+        line_length_psum : positive := 127;
+        addr_width_psum  : positive := 7;
 
-        data_width_wght     : positive := 8;
-        line_length_wght    : positive := 32;
-        addr_width_wght     : positive := 5;
+        data_width_wght  : positive := 8;
+        line_length_wght : positive := 32;
+        addr_width_wght  : positive := 5;
 
         spad_ext_addr_width_iact : positive := 15;
         spad_ext_addr_width_psum : positive := 15;
