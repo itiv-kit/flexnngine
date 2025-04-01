@@ -71,9 +71,8 @@ begin
                 '1' when r_state = s_output else
                 '0';
 
-    -- suppress iact input when in c_pe_conv_pass. otherwise, stray iacts could show up on the psum datapath
-    -- because the southmost PEs get iact input as their "psum pass" input
-    o_pause_iact <= '1' when r_command(0) = c_pe_conv_pass else '0';
+    -- for RS dataflow, the lowest PE row does not get c_pe_conv_pass command and thus does not pass through any data
+    o_pause_iact <= '0';
 
     r_command_psum_d       <= r_command_psum when rising_edge(clk);
     r_read_offset_psum_d   <= r_read_offset_psum when rising_edge(clk);
@@ -433,7 +432,7 @@ begin
                         elsif r_count_c0w0 > i_params.kernel_size then
                             if w_output_sequence(i) = i_params.kernel_size - r_count_c0w0 - 1 + to_integer(r_m0_dist(i)) then
                                 r_command(i) <= c_pe_conv_psum;
-                            elsif r_count_w1 = 2 then
+                            elsif r_count_w1 = 2 and i /= size_y - 1 then
                                 r_command(i) <= c_pe_conv_pass;
                             else
                             -- r_command(i) <= c_pe_conv_psum;
