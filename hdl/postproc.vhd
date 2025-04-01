@@ -111,29 +111,6 @@ begin
                     o_channel       => open
                 );
 
-            p_track_channel : process is
-            begin
-
-                wait until rising_edge(clk);
-
-                if rstn = '0' then
-                    r_count_w1(i)        <= 0;
-                    r_current_channel(i) <= 0;
-                elsif i_data_valid(i) = '1' then
-                    r_count_w1(i) <= r_count_w1(i) + 1;
-                    if r_count_w1(i) = i_params.w1 - 1 then
-                        r_count_w1(i)        <= 0;
-                        r_current_channel(i) <= r_current_channel(i) + 1;
-                        if r_current_channel(i) = i_params.m0 - 1 then
-                            r_current_channel(i) <= 0;
-                        end if;
-                    end if;
-                end if;
-
-            end process p_track_channel;
-
-            w_i_data_last(i) <= '1' when r_count_w1(i) = i_params.w1 - 1 else '0';
-
         end generate psum_output;
 
     else generate
@@ -144,10 +121,38 @@ begin
 
             o_data(i)          <= i_data(i);
             o_data_valid(i)    <= i_data_valid(i);
+            o_data_last(i)     <= w_i_data_last(i);
             o_data_halfword(i) <= '0';
 
         end generate psum_output;
 
     end generate gen_postproc;
+
+    trackers : for i in 0 to size_x - 1 generate
+
+        p_track_channel : process is
+        begin
+
+            wait until rising_edge(clk);
+
+            if rstn = '0' then
+                r_count_w1(i)        <= 0;
+                r_current_channel(i) <= 0;
+            elsif i_data_valid(i) = '1' then
+                r_count_w1(i) <= r_count_w1(i) + 1;
+                if r_count_w1(i) = i_params.w1 - 1 then
+                    r_count_w1(i)        <= 0;
+                    r_current_channel(i) <= r_current_channel(i) + 1;
+                    if r_current_channel(i) = i_params.m0 - 1 then
+                        r_current_channel(i) <= 0;
+                    end if;
+                end if;
+            end if;
+
+        end process p_track_channel;
+
+        w_i_data_last(i) <= '1' when r_count_w1(i) = i_params.w1 - 1 else '0';
+
+    end generate trackers;
 
 end architecture behavioral;

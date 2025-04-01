@@ -164,13 +164,20 @@ architecture rtl of scratchpad_interface is
     constant c_psum_wide_words_width : positive := positive(ceil(log2(real(mem_word_count))));
     constant c_psum_fifo_width       : integer  := mem_data_width + mem_word_count + mem_addr_width;
 
-    signal w_psum_wide_data  : array_t(0 to size_x - 1)(mem_data_width - 1 downto 0);
-    signal w_psum_wide_valid : array_t(0 to size_x - 1)(mem_word_count - 1 downto 0);
-    signal w_psum_valid_out  : std_logic;
-    signal w_wen_psum        : std_logic_vector(mem_word_count - 1 downto 0);
+    signal w_psum_wide_data      : array_t(0 to size_x - 1)(mem_data_width - 1 downto 0);
+    signal w_psum_wide_data_raw  : array_t(0 to size_x - 1)(mem_data_width - 1 downto 0);
+    signal w_psum_wide_valid     : array_t(0 to size_x - 1)(mem_word_count - 1 downto 0);
+    signal w_psum_wide_valid_raw : array_t(0 to size_x - 1)(mem_word_count - 1 downto 0);
+    signal w_psum_valid_out      : std_logic;
+    signal w_wen_psum            : std_logic_vector(mem_word_count - 1 downto 0);
+    signal r_psums_halfword_d    : std_logic_vector(size_x - 1 downto 0);
 
     signal w_psum_address : array_t(0 to size_x - 1)(mem_addr_width - 1 downto 0);
     signal w_psum_offset  : array_t(0 to size_x - 1)(mem_offset_width - 1 downto 0);
+
+    -- TODO: we just assume raw is double the size of non-raw (16bit vs 8bit) and give it one bit more
+    -- signal w_psum_address_raw : array_t(0 to size_x - 1)(mem_addr_width - 1 downto 0);
+    -- signal w_psum_offset_raw  : array_t(0 to size_x - 1)(mem_offset_width - 1 downto 0);
 
     signal w_rd_en_psum_f : std_logic_vector(size_x - 1 downto 0);
     signal w_wr_en_psum_f : std_logic_vector(size_x - 1 downto 0);
@@ -567,7 +574,6 @@ begin
         w_psum_address(x) <= i_address_psum(x)(mem_addr_width + mem_offset_width - 1 downto mem_offset_width);
         w_psum_offset(x)  <= i_address_psum(x)(mem_offset_width - 1 downto 0);
 
-        -- TODO: raw psum (non-requantized) datapath
         psum_parallel_requantized : entity accel.parallelizer
             port map (
                 clk      => clk,
@@ -580,9 +586,37 @@ begin
                 o_data   => w_psum_wide_data(x)
             );
 
-        -- store wide data words & number of valid words in fifo_psum_out
-        w_din_psum_f(x)   <= w_psum_wide_valid(x) & w_psum_address(x) & w_psum_wide_data(x);
-        w_wr_en_psum_f(x) <= (or w_psum_wide_valid(x)) and not i_psum_suppress(x);
+        -- w_psum_address_raw(x) <= i_address_psum(x)(mem_addr_width + mem_offset_width - 1 downto mem_offset_width);
+        -- w_psum_offset_raw(x)  <= i_address_psum(x)(mem_offset_width - 1 downto 0);
+
+        psum_parallel_requantized_raw : entity accel.parallelizer
+            port map (
+                clk      => clk,
+                rstn     => rstn,
+                i_valid  => i_psums_valid(x) and not i_psums_halfword(x),
+                i_last   => i_psums_last(x),
+                i_data   => i_psums(x),
+                i_offset => unsigned(w_psum_offset(x)),
+                o_valid  => w_psum_wide_valid_raw(x),
+                o_data   => w_psum_wide_data_raw(x)
+            );
+
+        -- select correct parallelizer depending on data format (raw vs requantized), and add pipeline stage
+        process is
+        begin
+            wait until rising_edge(clk);
+
+            r_psums_halfword_d(x) <= i_psums_halfword(x);
+
+            -- store wide data words & number of valid words in fifo_psum_out
+            if r_psums_halfword_d(x) then
+                w_wr_en_psum_f(x) <= (or w_psum_wide_valid(x)) and not i_psum_suppress(x);
+                w_din_psum_f(x)   <= w_psum_wide_valid(x) & w_psum_address(x) & w_psum_wide_data(x);
+            else
+                w_wr_en_psum_f(x) <= (or w_psum_wide_valid_raw(x)) and not i_psum_suppress(x);
+                w_din_psum_f(x)   <= w_psum_wide_valid_raw(x) & w_psum_address(x) & w_psum_wide_data_raw(x);
+            end if;
+        end process;
 
         fifo_psum_out : entity accel.dc_fifo
             generic map (

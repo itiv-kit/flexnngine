@@ -9,7 +9,8 @@ library ieee;
 
 entity parallelizer is
     generic (
-        little_endian : boolean := false
+        little_endian   : boolean := false;
+        byte_wise_valid : boolean := true
     );
     port (
         clk  : in    std_logic;
@@ -35,6 +36,27 @@ architecture behavioral of parallelizer is
     signal shift_reg   : std_logic_vector(o_data'range);
     signal valid_words : std_logic_vector(c_words - 1 downto 0);
 
+    -- repeat_bits("010",3) => "000111000"
+    function repeat_bits (input : in std_logic_vector; times : in positive) return std_logic_vector is
+
+        variable res : std_logic_vector(input'length * times - 1 downto 0);
+
+    begin
+
+        for idx in input'range loop
+
+            for n in 0 to times - 1 loop
+
+                res(times * idx + n) := input(idx);
+
+            end loop;
+
+        end loop;
+
+        return res;
+
+    end function repeat_bits;
+
 begin
 
     proc : process is
@@ -54,8 +76,13 @@ begin
             end if;
 
             if full = '1' then
-                o_data  <= shift_reg;
-                o_valid <= valid_words;
+                o_data <= shift_reg;
+
+                if byte_wise_valid then
+                    o_valid <= repeat_bits(valid_words, i_data'length / 8);
+                else
+                    o_valid <= valid_words;
+                end if;
 
                 valid_words <= (others => '0');
                 full        <= '0';

@@ -56,12 +56,14 @@ architecture rtl of address_generator_psum is
     signal r_start_event : std_logic;
 
     signal r_image_size : integer; -- output image size per channel, currently rectangular images only = w1*w1
+    signal r_write_size : integer range 1 to write_size; -- pixels per output word (64bit/8bit for int8, 64bit/16bit for int16)
 
 begin
 
     r_start_delay <= i_start when rising_edge(clk);
     r_start_event <= i_start and not r_start_delay;
     r_image_size  <= i_params.w1 * i_params.w1 when rising_edge(clk);
+    r_write_size  <= write_size when i_params.requant_enab else write_size / 2 when rising_edge(clk);
 
     gen_counter : for x in 0 to size_x - 1 generate
 
@@ -173,7 +175,7 @@ begin
                     r_next_address_valid(x) <= '0'; -- immediately trigger calculation of subsequent address
                 elsif i_valid_psum_out(x) then
                     -- common output of one word (write_size pixels)
-                    if v_count_w1 >= i_params.w1 - write_size then
+                    if v_count_w1 >= i_params.w1 - r_write_size then
                         -- one row is done
                         v_count_w1 := 0;
 
@@ -183,11 +185,11 @@ begin
                         o_suppress_out(x) <= r_suppress_next_row(x) or r_suppress_next_col(x);
                     else
                         -- we are within a image row
-                        if write_size > 1 and v_count_w1 = 0 then
+                        if r_write_size > 1 and v_count_w1 = 0 then
                             v_offset   := to_integer(r_address_psum(x)(mem_offset_width - 1 downto 0));
-                            v_count_w1 := write_size - v_offset;
+                            v_count_w1 := r_write_size - v_offset; -- TODO: offset for raw psums?
                         else
-                            v_count_w1 := v_count_w1 + write_size;
+                            v_count_w1 := v_count_w1 + r_write_size;
                         end if;
                         r_address_psum(x) <= r_address_psum(x) + write_size;
                     end if;
