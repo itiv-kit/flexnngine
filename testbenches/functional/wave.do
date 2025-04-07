@@ -186,8 +186,8 @@ add wave -noupdate -group PSUM_OUTPUT -radix binary   /functional_tb/accelerator
 add wave -noupdate -group PSUM_OUTPUT -radix symbolic /functional_tb/accelerator_inst/scratchpad_interface_inst/i_psum_word_offsets_valid
 add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/i_psum_word_offsets
 add wave -noupdate -group PSUM_OUTPUT -radix symbolic /functional_tb/accelerator_inst/scratchpad_interface_inst/r_psum_offset_initialized
-add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/r_psum_offset_rd_en
-add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/w_psum_offset_empty
+add wave -noupdate -group PSUM_OUTPUT -radix symbolic /functional_tb/accelerator_inst/scratchpad_interface_inst/r_psum_offset_rd_en
+add wave -noupdate -group PSUM_OUTPUT -radix symbolic /functional_tb/accelerator_inst/scratchpad_interface_inst/w_psum_offset_empty
 add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/w_psum_word_offsets
 for {set x 0} {$x < $size_x} {incr x} {
     quietly set para_path "/functional_tb/accelerator_inst/scratchpad_interface_inst/fifo_psum_out(${x})/psum_parallel_requantized"
@@ -199,7 +199,7 @@ for {set x 0} {$x < $size_x} {incr x} {
     add wave -noupdate -group PSUM_OUTPUT -group "para${x}" -radix unsigned    ${para_path}/i_offset
     add wave -noupdate -group PSUM_OUTPUT -group "para${x}" -radix unsigned    ${para_path}/counter
     add wave -noupdate -group PSUM_OUTPUT -group "para${x}" -radix symbolic    ${para_path}/idle
-    add wave -noupdate -group PSUM_OUTPUT -group "para${x}" -radix unsigned    ${para_path}/valid_words
+    add wave -noupdate -group PSUM_OUTPUT -group "para${x}" -radix symbolic    ${para_path}/valid_words
 }
 add wave -noupdate -group PSUM_OUTPUT -radix binary   /functional_tb/accelerator_inst/scratchpad_interface_inst/w_full_psum_f
 add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/w_gnt_psum_idx

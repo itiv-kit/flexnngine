@@ -65,6 +65,7 @@ class Accelerator:
         self.clk_sp_period = clk_sp_period
         self.dataflow = dataflow
         self.spad_word_size = 8
+        self.mem_size = 2 ** mem_addr_width * self.spad_word_size
 
 
 @dataclass
@@ -374,13 +375,13 @@ class Test:
         np.savetxt(self.test_dir / "_convolution_stack.txt", self.convolved_images_stack, fmt="%d", delimiter=" ")
         np.savetxt(self.test_dir / "_zeropt_scale.txt",      zeropt_scale_vals,           fmt="%f", delimiter=" ")
 
-        kernels_stack_och = np.vstack(kernels) # all output channel kernels stacked as 3D array
+        kernels_stack_och = np.vstack(kernels) # all kernels stacked as 3D array in, kernel sets per output channel in sequence
 
-        # save image as 8-bit binary values in _mem_iact.txt in two's complement
-        for column in range(0, 8):
+        # assemble data per memory column and export as txt file for simulation
+        for column in range(0, self.accelerator.spad_word_size):
             # TODO: pad channels to multiples of 8 (i.e. image stride)
-            image_col = image[column::8].flatten()
-            wght_col = kernels_stack_och[column::8].flatten()
+            image_col = image[column::self.accelerator.spad_word_size].flatten()
+            wght_col = kernels_stack_och[column::self.accelerator.spad_word_size].flatten()
 
             # pad the image such that weight data is aligned. technically, multiple of wordsize (currently 8) would suffice.
             image_pad_size = align_to_add(image_col.shape[0], 32)
@@ -397,6 +398,10 @@ class Test:
             self.psum_base_addr = memory_col_pad_size
 
             write_memory_file_int8(self.test_dir / f"_mem_col{column}.txt", memory_col, wordsize=64)
+
+        alloc_size_per_column = self.psum_base_addr + self.convolved_images_stack.size // 8
+        if alloc_size_per_column > self.accelerator.mem_size / 8:
+            raise RuntimeError(f'scratchpad memory too small (need {alloc_size_per_column * 8} bytes, got {self.accelerator.mem_size})')
 
         return True
 
@@ -556,10 +561,10 @@ def run_test(setting):
 
 presets = {
     'default': Setting(
-                      Convolution(image_size = [16], kernel_size = [3], input_channels = [100],
+                      Convolution(image_size = [16], kernel_size = [3], input_channels = [64],
                                   output_channels = [3], bias = [5], requantize = [True], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
-                                  mem_addr_width = 15,
+                                  mem_addr_width = 16,
                                   iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
                                   clk_period = [10], clk_sp_period = [1], dataflow=[0]), start_gui = True),
 
@@ -660,7 +665,7 @@ presets = {
 
     # a configuration for continuous integration, testing the most important set of features
     'ci': Setting(
-                    Convolution(image_size = [32], kernel_size = [3], input_channels = [100],
+                    Convolution(image_size = [32], kernel_size = [3], input_channels = [128],
                                 output_channels = [3], bias = [0,5], requantize = [False,True], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                 mem_addr_width = 15,
