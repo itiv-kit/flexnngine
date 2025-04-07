@@ -433,11 +433,11 @@ begin
   o_params.base_iact          <= to_integer(unsigned(slv_regs(17)(max_spad_addr_width - 1 downto 0)));
   o_params.base_wght          <= to_integer(unsigned(slv_regs(18)(max_spad_addr_width - 1 downto 0)));
   o_params.base_psum          <= to_integer(unsigned(slv_regs(19)(max_spad_addr_width - 1 downto 0)));
-  o_params.stride_iact_w      <= to_integer(unsigned(slv_regs(20)( 9 downto 0)));
-  o_params.stride_iact_hw     <= to_integer(unsigned(slv_regs(21)( 9 downto 0)));
-  o_params.stride_wght_kernel <= to_integer(unsigned(slv_regs(22)( 9 downto 0)));
+  o_params.stride_iact_w      <= to_integer(unsigned(slv_regs(20)(16 downto 0)));
+  o_params.stride_iact_hw     <= to_integer(unsigned(slv_regs(21)(16 downto 0)));
+  o_params.stride_wght_kernel <= to_integer(unsigned(slv_regs(22)( 5 downto 0)));
   o_params.stride_wght_och    <= to_integer(unsigned(slv_regs(23)( 9 downto 0)));
-  o_params.stride_psum_och    <= to_integer(unsigned(slv_regs(24)( 9 downto 0)));
+  o_params.stride_psum_och    <= to_integer(unsigned(slv_regs(24)(11 downto 0)));
 
   -- registers for bias, scale, zeropt per output channel, limited by maximum m0 value max_output_channels
   g_bias_req_regs : for x in 0 to max_output_channels - 1 generate
