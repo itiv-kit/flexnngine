@@ -267,6 +267,7 @@ begin
         slv_regs(1)(2) <= i_status.spadif.spad_iact_done;
         slv_regs(1)(3) <= i_status.spadif.spad_wght_done;
         slv_regs(1)(4) <= i_status.spadif.preload_fifos_done;
+        slv_regs(1)(27) <= i_status.spadif.spad_offset_empty;
         slv_regs(1)(28) <= i_status.spadif.spad_iact_full;
         slv_regs(1)(29) <= i_status.spadif.spad_iact_empty;
         slv_regs(1)(30) <= i_status.spadif.spad_wght_full;

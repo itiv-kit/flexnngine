@@ -96,6 +96,7 @@ package utilities is
         spad_iact_empty    : std_logic;
         spad_wght_full     : std_logic;
         spad_wght_empty    : std_logic;
+        spad_offset_empty  : std_logic;
     end record status_info_spadif_t;
 
     type status_info_t is record

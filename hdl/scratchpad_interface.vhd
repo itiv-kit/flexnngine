@@ -777,9 +777,10 @@ begin
 
     end process p_psum_overflow;
 
-    o_status.spad_iact_full  <= or w_full_iact_f;  -- clk_sp domain
-    o_status.spad_iact_empty <= or w_empty_iact_f; -- clk domain
-    o_status.spad_wght_full  <= or w_full_wght_f;  -- clk_sp domain
-    o_status.spad_wght_empty <= or w_empty_wght_f; -- clk domain
+    o_status.spad_iact_full    <= or  w_full_iact_f;       -- clk_sp domain
+    o_status.spad_iact_empty   <= and w_empty_iact_f;      -- clk domain
+    o_status.spad_wght_full    <= or  w_full_wght_f;       -- clk_sp domain
+    o_status.spad_wght_empty   <= and w_empty_wght_f;      -- clk domain
+    o_status.spad_offset_empty <= and w_psum_offset_empty; -- clk domain
 
 end architecture rtl;
