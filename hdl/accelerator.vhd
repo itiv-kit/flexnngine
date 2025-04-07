@@ -130,6 +130,7 @@ architecture rtl of accelerator is
     signal w_enable_if : std_logic;
     signal w_dataflow  : std_logic;
 
+    signal w_params_sp      : parameters_t;
     signal r_params_sp_pipe : parameters_pipe_t(2 downto 0);
     signal r_status_pipe    : status_info_pipe_t(2 downto 0);
     signal w_status_spad_if : status_info_spadif_t;
@@ -394,7 +395,7 @@ begin
             rstn                => rstn,
             i_start             => w_control_init_done_sp,
             i_dataflow          => w_dataflow,
-            i_params            => r_params_sp_pipe(r_params_sp_pipe'high),
+            i_params            => w_params_sp,
             i_valid_psum_out    => w_valid_psums_out,
             i_gnt_psum_idx_d    => w_gnt_psum_idx_d,
             o_address_psum      => w_write_adr_psum,
@@ -413,6 +414,7 @@ begin
 
     r_params_sp_pipe(0)                              <= i_params when rising_edge(clk_sp);
     r_params_sp_pipe(r_params_sp_pipe'high downto 1) <= r_params_sp_pipe(r_params_sp_pipe'high - 1 downto 0) when rising_edge(clk_sp);
+    w_params_sp                                      <= r_params_sp_pipe(r_params_sp_pipe'high);
 
     assert g_dataflow = 0 or max_output_channels >= size_y
         report "Dataflow 1 requires max_output_channels to be at least size_y"
