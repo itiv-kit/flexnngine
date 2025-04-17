@@ -175,23 +175,17 @@ add wave -noupdate -group PSUM_OUTPUT -group addrgen -radix symbolic /functional
 add wave -noupdate -group PSUM_OUTPUT -group addrgen -radix symbolic /functional_tb/accelerator_inst/control_address_generator_inst/address_generator_psum_inst/r_suppress_next_col
 add wave -noupdate -group PSUM_OUTPUT -group addrgen -radix symbolic /functional_tb/accelerator_inst/control_address_generator_inst/address_generator_psum_inst/o_suppress_out
 add wave -noupdate -group PSUM_OUTPUT -group addrgen -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/address_generator_psum_inst/o_address_psum
-add wave -noupdate -group PSUM_OUTPUT -group addrgen -radix symbolic /functional_tb/accelerator_inst/control_address_generator_inst/address_generator_psum_inst/o_word_offset_valid
-add wave -noupdate -group PSUM_OUTPUT -group addrgen -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/address_generator_psum_inst/o_word_offsets
 
 add wave -noupdate -group PSUM_OUTPUT -radix decimal  /functional_tb/accelerator_inst/scratchpad_interface_inst/i_psums
-add wave -noupdate -group PSUM_OUTPUT -radix binary   /functional_tb/accelerator_inst/scratchpad_interface_inst/i_psums_valid
-add wave -noupdate -group PSUM_OUTPUT -radix binary   /functional_tb/accelerator_inst/scratchpad_interface_inst/i_psums_last
-add wave -noupdate -group PSUM_OUTPUT -radix binary   /functional_tb/accelerator_inst/scratchpad_interface_inst/i_psums_halfword
-add wave -noupdate -group PSUM_OUTPUT -radix binary   /functional_tb/accelerator_inst/scratchpad_interface_inst/i_psum_suppress
-add wave -noupdate -group PSUM_OUTPUT -radix symbolic /functional_tb/accelerator_inst/scratchpad_interface_inst/i_psum_word_offsets_valid
-add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/i_psum_word_offsets
-add wave -noupdate -group PSUM_OUTPUT -radix symbolic /functional_tb/accelerator_inst/scratchpad_interface_inst/r_psum_offset_initialized
-add wave -noupdate -group PSUM_OUTPUT -radix symbolic /functional_tb/accelerator_inst/scratchpad_interface_inst/r_psum_offset_rd_en
-add wave -noupdate -group PSUM_OUTPUT -radix symbolic /functional_tb/accelerator_inst/scratchpad_interface_inst/w_psum_offset_empty
-add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/w_psum_word_offsets
+add wave -noupdate -group PSUM_OUTPUT -radix symbolic /functional_tb/accelerator_inst/scratchpad_interface_inst/i_psums_valid
+add wave -noupdate -group PSUM_OUTPUT -radix symbolic /functional_tb/accelerator_inst/scratchpad_interface_inst/i_psums_last
+add wave -noupdate -group PSUM_OUTPUT -radix symbolic /functional_tb/accelerator_inst/scratchpad_interface_inst/i_psums_halfword
+add wave -noupdate -group PSUM_OUTPUT -radix symbolic /functional_tb/accelerator_inst/scratchpad_interface_inst/i_psum_suppress
+add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/i_address_psum
+add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/w_psum_address
+add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/w_psum_offset
 
 add wave -noupdate -group PSUM_OUTPUT -radix symbolic    /functional_tb/accelerator_inst/scratchpad_interface_inst/w_wr_en_psum_f
-add wave -noupdate -group PSUM_OUTPUT -radix unsigned    /functional_tb/accelerator_inst/scratchpad_interface_inst/w_address_psum
 add wave -noupdate -group PSUM_OUTPUT -radix symbolic    /functional_tb/accelerator_inst/scratchpad_interface_inst/w_psum_wide_valid
 add wave -noupdate -group PSUM_OUTPUT -radix hexadecimal /functional_tb/accelerator_inst/scratchpad_interface_inst/w_psum_wide_data
 add wave -noupdate -group PSUM_OUTPUT -radix symbolic    /functional_tb/accelerator_inst/scratchpad_interface_inst/w_full_psum_f
@@ -206,8 +200,6 @@ for {set x 0} {$x < $size_x} {incr x} {
     add wave -noupdate -group PSUM_OUTPUT -group "para${x}" -radix decimal     ${para_path}/i_data
     add wave -noupdate -group PSUM_OUTPUT -group "para${x}" -radix binary      ${para_path}/i_last
     add wave -noupdate -group PSUM_OUTPUT -group "para${x}" -radix binary      ${para_path}/i_valid
-    add wave -noupdate -group PSUM_OUTPUT -group "para${x}" -radix unsigned    ${para_path}/i_addr
-    add wave -noupdate -group PSUM_OUTPUT -group "para${x}" -radix unsigned    ${para_path}/o_addr
     add wave -noupdate -group PSUM_OUTPUT -group "para${x}" -radix hexadecimal ${para_path}/o_data
     add wave -noupdate -group PSUM_OUTPUT -group "para${x}" -radix binary      ${para_path}/o_valid
     add wave -noupdate -group PSUM_OUTPUT -group "para${x}" -radix unsigned    ${para_path}/i_offset

@@ -12,9 +12,7 @@ entity scratchpad_interface is
         size_y    : positive := 5;
         size_rows : positive := 9;
 
-        addr_width_rows : positive := 4;
-        addr_width_y    : positive := 3;
-        addr_width_x    : positive := 3;
+        addr_width_x : positive := 3;
 
         data_width_input : positive := 8; -- width of the input data (weights, iacts)
         data_width_psum  : positive := 16;
@@ -23,7 +21,7 @@ entity scratchpad_interface is
         mem_data_width : positive := 64; -- iact word width from memory
         mem_word_count : positive := mem_data_width / data_width_input;
 
-        word_offset_width : positive := integer(ceil(log2(real(mem_word_count))));
+        mem_offset_width : positive := integer(ceil(log2(real(mem_word_count))));
 
         g_iact_fifo_size         : positive := 16;
         g_wght_fifo_size         : positive := 16;
@@ -45,15 +43,10 @@ entity scratchpad_interface is
         -- Data to and from Address generator
         i_address_iact : in    array_t(0 to size_rows - 1)(mem_addr_width - 1 downto 0);
         i_address_wght : in    array_t(0 to size_y - 1)(mem_addr_width - 1 downto 0);
-        i_address_psum : in    array_t(0 to size_x - 1)(mem_addr_width - 1 downto 0);
+        i_address_psum : in    array_t(0 to size_x - 1)(mem_addr_width + mem_offset_width - 1 downto 0);
 
         i_address_iact_valid : in    std_logic_vector(size_rows - 1 downto 0);
         i_address_wght_valid : in    std_logic_vector(size_y - 1 downto 0);
-
-        -- offsets from psum address generator for image row <-> memory row alignment
-        i_psum_word_offsets       : in    array_t(0 to size_x - 1)(word_offset_width - 1 downto 0);
-        i_psum_word_offsets_valid : in    std_logic_vector(size_x - 1 downto 0);
-        i_psum_suppress           : in    std_logic_vector(size_x - 1 downto 0);
 
         -- to pause address generator
         o_fifo_iact_address_full : out   std_logic;
@@ -63,9 +56,9 @@ entity scratchpad_interface is
         i_addr_iact_done : in    std_logic;
         i_addr_wght_done : in    std_logic;
 
-        -- to psum address generator
+        -- from / to psum address generator
+        i_psum_suppress     : in    std_logic_vector(size_x - 1 downto 0);
         o_req_addr_psum     : out   std_logic_vector(size_x - 1 downto 0);
-        o_gnt_psum_idx_d    : out   std_logic_vector(addr_width_x - 1 downto 0);
         o_all_psum_finished : out   std_logic;
 
         -- Addresses to Scratchpad
@@ -176,10 +169,8 @@ architecture rtl of scratchpad_interface is
     signal w_psum_valid_out  : std_logic;
     signal w_wen_psum        : std_logic_vector(mem_word_count - 1 downto 0);
 
-    signal w_psum_word_offsets       : array_t(0 to size_x - 1)(word_offset_width - 1 downto 0);
-    signal r_psum_offset_initialized : std_logic_vector(size_x - 1 downto 0);
-    signal r_psum_offset_rd_en       : std_logic_vector(size_x - 1 downto 0);
-    signal w_psum_offset_empty       : std_logic_vector(size_x - 1 downto 0);
+    signal w_psum_address : array_t(0 to size_x - 1)(mem_addr_width - 1 downto 0);
+    signal w_psum_offset  : array_t(0 to size_x - 1)(mem_offset_width - 1 downto 0);
 
     signal w_rd_en_psum_f : std_logic_vector(size_x - 1 downto 0);
     signal w_wr_en_psum_f : std_logic_vector(size_x - 1 downto 0);
@@ -573,6 +564,9 @@ begin
 
     gen_fifo_psum_out : for x in 0 to size_x - 1 generate
 
+        w_psum_address(x) <= i_address_psum(x)(mem_addr_width + mem_offset_width - 1 downto mem_offset_width);
+        w_psum_offset(x)  <= i_address_psum(x)(mem_offset_width - 1 downto 0);
+
         -- TODO: raw psum (non-requantized) datapath
         psum_parallel_requantized : entity accel.parallelizer
             port map (
@@ -581,13 +575,13 @@ begin
                 i_valid  => i_psums_valid(x) and i_psums_halfword(x),
                 i_last   => i_psums_last(x),
                 i_data   => i_psums(x)(data_width_input - 1 downto 0),
-                i_offset => unsigned(i_psum_word_offsets(x)),
+                i_offset => unsigned(w_psum_offset(x)),
                 o_valid  => w_psum_wide_valid(x),
                 o_data   => w_psum_wide_data(x)
             );
 
         -- store wide data words & number of valid words in fifo_psum_out
-        w_din_psum_f(x)   <= w_psum_wide_valid(x) & i_address_psum(x) & w_psum_wide_data(x);
+        w_din_psum_f(x)   <= w_psum_wide_valid(x) & w_psum_address(x) & w_psum_wide_data(x);
         w_wr_en_psum_f(x) <= (or w_psum_wide_valid(x)) and not i_psum_suppress(x);
 
         fifo_psum_out : entity accel.dc_fifo
@@ -645,8 +639,7 @@ begin
     o_addr_psum <= w_data_psum(mem_data_width + mem_addr_width - 1 downto mem_data_width);
     o_data_psum <= w_data_psum(mem_data_width - 1 downto 0);
 
-    o_write_en_psum  <= w_wen_psum when w_psum_valid_out = '1' else (others => '0');
-    o_gnt_psum_idx_d <= r_gnt_psum_idx_d;
+    o_write_en_psum <= w_wen_psum when w_psum_valid_out = '1' else (others => '0');
 
     sync_init_done : entity accel.bit_sync
         port map (
@@ -697,21 +690,6 @@ begin
             bit_out => o_all_psum_finished
         );
 
-    word_offset_sync : for x in 0 to size_x - 1 generate
-
-        sample_word_offset : process is
-        begin
-
-            wait until rising_edge(clk);
-
-            if i_psum_word_offsets_valid(x) then
-                w_psum_word_offsets(x) <= i_psum_word_offsets(x);
-            end if;
-
-        end process sample_word_offset;
-
-    end generate word_offset_sync;
-
     p_psum_overflow : process is
 
         variable temp : natural;
@@ -739,10 +717,10 @@ begin
 
     end process p_psum_overflow;
 
-    o_status.spad_iact_full    <= or  w_full_iact_f;       -- clk_sp domain
-    o_status.spad_iact_empty   <= and w_empty_iact_f;      -- clk domain
-    o_status.spad_wght_full    <= or  w_full_wght_f;       -- clk_sp domain
-    o_status.spad_wght_empty   <= and w_empty_wght_f;      -- clk domain
-    o_status.spad_offset_empty <= and w_psum_offset_empty; -- clk domain
+    o_status.spad_iact_full  <= or  w_full_iact_f;  -- clk_sp domain
+    o_status.spad_iact_empty <= and w_empty_iact_f; -- clk domain
+    o_status.spad_wght_full  <= or  w_full_wght_f;  -- clk_sp domain
+    o_status.spad_wght_empty <= and w_empty_wght_f; -- clk domain
+    o_status.spad_psum_empty <= and w_empty_psum_f; -- clk_sp domain
 
 end architecture rtl;

@@ -1,6 +1,7 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
+    use ieee.math_real.all;
 
 library accel;
     use accel.utilities.all;
@@ -15,19 +16,16 @@ entity control_address_generator is
         addr_width_y    : positive := 3;
         addr_width_x    : positive := 3;
 
-        addr_width_iact_mem : positive := 15;
-        addr_width_wght_mem : positive := 15;
-        addr_width_psum_mem : positive := 15;
+        mem_addr_width   : positive := 15;
+        mem_word_count   : positive := 8;
+        mem_offset_width : positive := integer(ceil(log2(real(mem_word_count))));
 
-        line_length_iact : positive := 64;
         addr_width_iact  : positive := 6;
-        line_length_psum : positive := 128;
-        addr_width_psum  : positive := 7;
-        line_length_wght : positive := 64;
         addr_width_wght  : positive := 6;
-
-        mem_word_count         : positive := 8;
-        psum_word_offset_width : positive := 4;
+        addr_width_psum  : positive := 7;
+        line_length_iact : positive := 64;
+        line_length_wght : positive := 64;
+        line_length_psum : positive := 128;
 
         g_dataflow : integer := 1
     );
@@ -67,17 +65,15 @@ entity control_address_generator is
         o_addr_iact_done : out   std_logic;
         o_addr_wght_done : out   std_logic;
 
-        o_address_iact       : out   array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
-        o_address_wght       : out   array_t(0 to size_y - 1)(addr_width_wght_mem - 1 downto 0);
+        o_address_iact       : out   array_t(0 to size_rows - 1)(mem_addr_width - 1 downto 0);
+        o_address_wght       : out   array_t(0 to size_y - 1)(mem_addr_width - 1 downto 0);
         o_address_iact_valid : out   std_logic_vector(size_rows - 1 downto 0);
         o_address_wght_valid : out   std_logic_vector(size_y - 1 downto 0);
 
         i_req_addr_psum : in    std_logic_vector(size_x - 1 downto 0);
 
-        o_address_psum      : out   array_t(0 to size_x - 1)(addr_width_psum_mem - 1 downto 0);
-        o_psum_suppress_out : out   std_logic_vector(size_x - 1 downto 0);
-        o_word_offsets      : out   array_t(0 to size_x - 1)(psum_word_offset_width - 1 downto 0);
-        o_word_offset_valid : out   std_logic_vector(size_x - 1 downto 0)
+        o_address_psum      : out   array_t(0 to size_x - 1)(mem_addr_width + mem_offset_width - 1 downto 0);
+        o_psum_suppress_out : out   std_logic_vector(size_x - 1 downto 0)
     );
 end entity control_address_generator;
 
@@ -190,13 +186,13 @@ begin
                 addr_width_x        => addr_width_x,
                 line_length_iact    => line_length_iact,
                 addr_width_iact     => addr_width_iact,
-                addr_width_iact_mem => addr_width_iact_mem,
+                addr_width_iact_mem => mem_addr_width,
                 line_length_psum    => line_length_psum,
                 addr_width_psum     => addr_width_psum,
-                addr_width_psum_mem => addr_width_psum_mem,
+                addr_width_psum_mem => mem_addr_width,
                 line_length_wght    => line_length_wght,
                 addr_width_wght     => addr_width_wght,
-                addr_width_wght_mem => addr_width_wght_mem
+                addr_width_wght_mem => mem_addr_width
             )
             port map (
                 clk                  => clk,
@@ -253,21 +249,11 @@ begin
 
         address_generator_iact_inst : entity accel.address_generator_iact(rs_dataflow)
             generic map (
-                size_x              => size_x,
-                size_y              => size_y,
-                size_rows           => size_rows,
-                addr_width_rows     => addr_width_rows,
-                addr_width_y        => addr_width_y,
-                addr_width_x        => addr_width_x,
-                line_length_iact    => line_length_iact,
-                addr_width_iact     => addr_width_iact,
-                addr_width_iact_mem => addr_width_iact_mem,
-                line_length_psum    => line_length_psum,
-                addr_width_psum     => addr_width_psum,
-                addr_width_psum_mem => addr_width_psum_mem,
-                line_length_wght    => line_length_wght,
-                addr_width_wght     => addr_width_wght,
-                addr_width_wght_mem => addr_width_wght_mem
+                size_x         => size_x,
+                size_y         => size_y,
+                size_rows      => size_rows,
+                mem_addr_width => mem_addr_width,
+                read_size      => mem_word_count
             )
             port map (
                 clk                  => clk,
@@ -282,9 +268,10 @@ begin
 
         address_generator_wght_inst : entity accel.address_generator_wght(rs_dataflow)
             generic map (
-                size_y              => size_y,
-                addr_width_y        => addr_width_y,
-                addr_width_wght_mem => addr_width_wght_mem
+                size_y         => size_y,
+                addr_width_y   => addr_width_y,
+                mem_addr_width => mem_addr_width,
+                read_size      => mem_word_count
             )
             port map (
                 clk                  => clk,
@@ -304,22 +291,19 @@ begin
         generic map (
             size_x         => size_x,
             size_y         => size_y,
-            addr_width_x   => addr_width_x,
-            mem_addr_width => addr_width_psum_mem,
+            mem_addr_width => mem_addr_width,
             mem_columns    => mem_word_count,
             write_size     => mem_word_count
         )
         port map (
-            clk                 => clk,
-            rstn                => rstn,
-            i_start             => w_control_init_done,
-            i_dataflow          => i_dataflow,
-            i_params            => i_params,
-            i_valid_psum_out    => i_req_addr_psum,
-            o_address_psum      => o_address_psum,
-            o_suppress_out      => o_psum_suppress_out,
-            o_word_offsets      => o_word_offsets,
-            o_word_offset_valid => o_word_offset_valid
+            clk              => clk,
+            rstn             => rstn,
+            i_start          => w_control_init_done,
+            i_dataflow       => i_dataflow,
+            i_params         => i_params,
+            i_valid_psum_out => i_req_addr_psum,
+            o_address_psum   => o_address_psum,
+            o_suppress_out   => o_psum_suppress_out
         );
 
     -- cycle counter from start to done

@@ -11,21 +11,7 @@ entity address_generator_iact is
         size_y    : positive := 5;
         size_rows : positive := 9;
 
-        addr_width_rows : positive := 4;
-        addr_width_y    : positive := 3;
-        addr_width_x    : positive := 3;
-
-        line_length_iact    : positive := 512;
-        addr_width_iact     : positive := 9;
-        addr_width_iact_mem : positive := 15;
-
-        line_length_psum    : positive := 512;
-        addr_width_psum     : positive := 9;
-        addr_width_psum_mem : positive := 15;
-
-        line_length_wght    : positive := 512;
-        addr_width_wght     : positive := 9;
-        addr_width_wght_mem : positive := 15;
+        mem_addr_width : positive := 15;
 
         fifo_full_write_protect : boolean := true; -- pull output valid low if full is high
         read_size               : integer := 8     -- number of words per read request
@@ -39,7 +25,7 @@ entity address_generator_iact is
 
         o_iact_done          : out   std_logic;
         i_fifo_full_iact     : in    std_logic;
-        o_address_iact       : out   array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
+        o_address_iact       : out   array_t(0 to size_rows - 1)(mem_addr_width - 1 downto 0);
         o_address_iact_valid : out   std_logic_vector(size_rows - 1 downto 0)
     );
 end entity address_generator_iact;
@@ -50,12 +36,12 @@ architecture rs_dataflow of address_generator_iact is
     signal r_words          : uint10_line_t(0 to size_rows - 1); -- shall have range 0 to max_line_length_iact;
     signal r_next_words     : uint10_line_t(0 to size_rows - 1); -- shall have range 0 to max_line_length_iact;
     signal r_addr_valid     : std_logic_vector(size_rows - 1 downto 0);
-    signal r_addr           : uns_array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
+    signal r_addr           : uns_array_t(0 to size_rows - 1)(mem_addr_width - 1 downto 0);
     signal r_next_valid     : std_logic;
     signal r_next_used      : std_logic_vector(0 to size_rows - 1);
-    signal r_next_base      : uns_array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
+    signal r_next_base      : uns_array_t(0 to size_rows - 1)(mem_addr_width - 1 downto 0);
     signal r_cur_base_valid : std_logic_vector(0 to size_rows - 1);
-    signal r_cur_base       : uns_array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
+    signal r_cur_base       : uns_array_t(0 to size_rows - 1)(mem_addr_width - 1 downto 0);
 
     signal r_count_w1 : uint10_line_t(0 to size_rows - 1);
     signal r_count_c1 : integer;
@@ -233,7 +219,7 @@ begin
                     r_next_base(row) <= to_unsigned(i_params.base_iact +
                                                     v_row * v_row_stride +
                                                     v_ch_offset * i_params.stride_iact_hw * read_size,
-                                                    addr_width_iact_mem);
+                                                    mem_addr_width);
 
                     -- number of words to load for c0 channels
                     -- TODO: valid bits for last word if c0 not multiple of read size
@@ -307,7 +293,7 @@ begin
 
     iact_address_out : for i in 0 to size_rows - 1 generate
 
-        -- o_address_iact(i)       <= std_logic_vector(to_unsigned(w_offset_mem_iact + i * i_params.image_x, addr_width_iact_mem));
+        -- o_address_iact(i)       <= std_logic_vector(to_unsigned(w_offset_mem_iact + i * i_params.image_x, mem_addr_width));
         -- o_address_iact_valid(i) <= '1' when i_start = '1' and i_fifo_full_iact = '0' and r_iact_done = '0' else --
         --                            '0';
 
@@ -326,7 +312,7 @@ begin
                     if i_start = '1' and i_fifo_full_iact = '0' and r_iact_done = '0' and r_delay_iact_valid(i) = '0' then
                         r_delay_iact_valid(i)   <= '1';
                         o_address_iact_valid(i) <= '1';
-                        o_address_iact(i)       <= std_logic_vector(to_unsigned(w_offset_mem_iact + (i - size_y + 1) * i_params.image_x, addr_width_iact_mem));
+                        o_address_iact(i)       <= std_logic_vector(to_unsigned(w_offset_mem_iact + (i - size_y + 1) * i_params.image_x, mem_addr_width));
                     else
                         r_delay_iact_valid(i)   <= '0';
                         o_address_iact_valid(i) <= '0';

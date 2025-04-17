@@ -10,8 +10,8 @@ entity address_generator_wght is
         size_y    : positive := 5;
         read_size : integer  := 8; -- number of words per read request
 
-        addr_width_y        : positive := 3;
-        addr_width_wght_mem : positive := 15;
+        addr_width_y   : positive := 3;
+        mem_addr_width : positive := 15;
 
         fifo_full_write_protect : boolean := true -- pull output valid low if full is high
     );
@@ -25,7 +25,7 @@ entity address_generator_wght is
 
         o_wght_done          : out   std_logic;
         i_fifo_full_wght     : in    std_logic;
-        o_address_wght       : out   array_t(0 to size_y - 1)(addr_width_wght_mem - 1 downto 0);
+        o_address_wght       : out   array_t(0 to size_y - 1)(mem_addr_width - 1 downto 0);
         o_address_wght_valid : out   std_logic_vector(size_y - 1 downto 0)
     );
 end entity address_generator_wght;
@@ -36,12 +36,12 @@ architecture rs_dataflow of address_generator_wght is
     signal r_words          : uint10_line_t(0 to size_y - 1); -- shall have range 0 to max_line_length_wght;
     signal r_next_words     : uint10_line_t(0 to size_y - 1); -- shall have range 0 to max_line_length_wght;
     signal r_addr_valid     : std_logic_vector(size_y - 1 downto 0);
-    signal r_addr           : uns_array_t(0 to size_y - 1)(addr_width_wght_mem - 1 downto 0);
+    signal r_addr           : uns_array_t(0 to size_y - 1)(mem_addr_width - 1 downto 0);
     signal r_next_valid     : std_logic;
     signal r_next_used      : std_logic_vector(0 to size_y - 1);
-    signal r_next_base      : uns_array_t(0 to size_y - 1)(addr_width_wght_mem - 1 downto 0);
+    signal r_next_base      : uns_array_t(0 to size_y - 1)(mem_addr_width - 1 downto 0);
     signal r_cur_base_valid : std_logic_vector(0 to size_y - 1);
-    signal r_cur_base       : uns_array_t(0 to size_y - 1)(addr_width_wght_mem - 1 downto 0);
+    signal r_cur_base       : uns_array_t(0 to size_y - 1)(mem_addr_width - 1 downto 0);
 
     signal r_count_s  : uint10_line_t(0 to size_y - 1); -- kernel width
     signal r_count_c1 : integer;
@@ -216,7 +216,7 @@ begin
                                                     v_och_offset * i_params.stride_wght_och +
                                                     v_c1_offset * i_params.stride_wght_kernel +
                                                     natural(row) mod i_params.kernel_size * i_params.kernel_size,
-                                                    addr_width_wght_mem);
+                                                    mem_addr_width);
 
                     -- number of words to load for c0 channels
                     -- TODO: valid bits for last word if c0 not multiple of read size

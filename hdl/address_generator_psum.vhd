@@ -11,12 +11,12 @@ entity address_generator_psum is
         size_x : positive := 5;
         size_y : positive := 5;
 
-        addr_width_x   : positive := 3;
         mem_addr_width : positive := 15;
         mem_columns    : positive := 8;
 
-        write_size        : positive := 1;
-        word_offset_width : integer  := integer(ceil(log2(real(write_size))))
+        write_size          : positive := 1;
+        mem_offset_width    : integer  := integer(ceil(log2(real(write_size))));
+        addr_width_bytewise : positive := mem_addr_width + mem_offset_width
     );
     port (
         clk  : in    std_logic;
@@ -28,10 +28,9 @@ entity address_generator_psum is
 
         i_valid_psum_out : in    std_logic_vector(size_x - 1 downto 0);
 
-        o_address_psum      : out   array_t(0 to size_x - 1)(mem_addr_width - 1 downto 0);
-        o_suppress_out      : out   std_logic_vector(size_x - 1 downto 0);
-        o_word_offsets      : out   array_t(0 to size_x - 1)(word_offset_width - 1 downto 0);
-        o_word_offset_valid : out   std_logic_vector(size_x - 1 downto 0)
+        -- this module works with byte-wise addresses
+        o_address_psum : out   array_t(0 to size_x - 1)(addr_width_bytewise - 1 downto 0);
+        o_suppress_out : out   std_logic_vector(size_x - 1 downto 0)
     );
 end entity address_generator_psum;
 
@@ -40,11 +39,6 @@ architecture rtl of address_generator_psum is
     -- consecutive output channels are placed in one column of spad_reshape each
     -- this is the columns size in bytes
     constant mem_col_offset : positive := 2 ** mem_addr_width / mem_columns * write_size;
-
-    -- internally, this module works with byte-wise addresses
-    -- on the output, it is split in a address for units of write_size and
-    -- the word_offsets stream, which is used to align output data below write_size
-    constant addr_width_bytewise : positive := mem_addr_width + word_offset_width;
 
     signal r_next_address : uns_array_t(0 to size_x - 1)(addr_width_bytewise - 1 downto 0);
     signal r_address_psum : uns_array_t(0 to size_x - 1)(addr_width_bytewise - 1 downto 0);
@@ -71,8 +65,7 @@ begin
 
     gen_counter : for x in 0 to size_x - 1 generate
 
-        o_word_offsets(x) <= std_logic_vector(r_address_psum(x)(word_offset_width - 1 downto 0));
-        o_address_psum(x) <= std_logic_vector(r_address_psum(x)(addr_width_bytewise - 1 downto word_offset_width));
+        o_address_psum(x) <= std_logic_vector(r_address_psum(x));
 
         p_psum_counter : process is
 
@@ -87,8 +80,6 @@ begin
         begin
 
             wait until rising_edge(clk);
-
-            o_word_offset_valid(x) <= '0';
 
             if not rstn then
                 o_suppress_out(x) <= '0';
@@ -157,7 +148,6 @@ begin
                 if (r_next_address_valid(x) = '0' or r_start_event = '1') and not v_done then
                     r_next_address(x)       <= to_unsigned(v_new_addr, addr_width_bytewise);
                     r_next_address_valid(x) <= '1';
-                    o_word_offset_valid(x)  <= '1';
                 end if;
 
                 -- check condition to suppress the current row (when output row > output image rows = i_params.w1 - i_params.kernel_size)
@@ -194,7 +184,7 @@ begin
                     else
                         -- we are within a image row
                         if write_size > 1 and v_count_w1 = 0 then
-                            v_offset   := to_integer(r_address_psum(x)(word_offset_width - 1 downto 0));
+                            v_offset   := to_integer(r_address_psum(x)(mem_offset_width - 1 downto 0));
                             v_count_w1 := write_size - v_offset;
                         else
                             v_count_w1 := v_count_w1 + write_size;
