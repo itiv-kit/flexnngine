@@ -26,6 +26,9 @@ entity control_address_generator is
         line_length_wght : positive := 64;
         addr_width_wght  : positive := 6;
 
+        mem_word_count         : positive := 8;
+        psum_word_offset_width : positive := 4;
+
         g_dataflow : integer := 1
     );
     port (
@@ -35,6 +38,7 @@ entity control_address_generator is
         i_start             : in    std_logic;
         i_enable_if         : in    std_logic;
         i_all_psum_finished : in    std_logic;
+        i_dataflow          : in    std_logic;
 
         o_init_done  : out   std_logic;
         o_enable     : out   std_logic;
@@ -66,7 +70,14 @@ entity control_address_generator is
         o_address_iact       : out   array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
         o_address_wght       : out   array_t(0 to size_y - 1)(addr_width_wght_mem - 1 downto 0);
         o_address_iact_valid : out   std_logic_vector(size_rows - 1 downto 0);
-        o_address_wght_valid : out   std_logic_vector(size_y - 1 downto 0)
+        o_address_wght_valid : out   std_logic_vector(size_y - 1 downto 0);
+
+        i_req_addr_psum : in    std_logic_vector(size_x - 1 downto 0);
+
+        o_address_psum      : out   array_t(0 to size_x - 1)(addr_width_psum_mem - 1 downto 0);
+        o_psum_suppress_out : out   std_logic_vector(size_x - 1 downto 0);
+        o_word_offsets      : out   array_t(0 to size_x - 1)(psum_word_offset_width - 1 downto 0);
+        o_word_offset_valid : out   std_logic_vector(size_x - 1 downto 0)
     );
 end entity control_address_generator;
 
@@ -288,6 +299,28 @@ begin
             );
 
     end generate g_address_generator;
+
+    address_generator_psum_inst : entity accel.address_generator_psum
+        generic map (
+            size_x         => size_x,
+            size_y         => size_y,
+            addr_width_x   => addr_width_x,
+            mem_addr_width => addr_width_psum_mem,
+            mem_columns    => mem_word_count,
+            write_size     => mem_word_count
+        )
+        port map (
+            clk                 => clk,
+            rstn                => rstn,
+            i_start             => w_control_init_done,
+            i_dataflow          => i_dataflow,
+            i_params            => i_params,
+            i_valid_psum_out    => i_req_addr_psum,
+            o_address_psum      => o_address_psum,
+            o_suppress_out      => o_psum_suppress_out,
+            o_word_offsets      => o_word_offsets,
+            o_word_offset_valid => o_word_offset_valid
+        );
 
     -- cycle counter from start to done
     count_cycles : process is

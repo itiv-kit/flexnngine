@@ -119,7 +119,7 @@ architecture rtl of accelerator is
 
     signal w_write_en_psum           : std_logic_vector(mem_word_count - 1 downto 0);
     signal w_write_adr_psum          : std_logic_vector(mem_addr_width - 1 downto 0);
-    signal w_write_suppress_psum     : std_logic;
+    signal w_write_suppress_psum     : std_logic_vector(size_x - 1 downto 0);
     signal w_psum_word_offsets       : array_t(0 to size_x - 1)(psum_word_offset_width - 1 downto 0);
     signal w_psum_word_offsets_valid : std_logic_vector(size_x - 1 downto 0);
 
@@ -139,12 +139,12 @@ architecture rtl of accelerator is
     signal w_fifo_iact_address_full : std_logic;
     signal w_fifo_wght_address_full : std_logic;
 
-    signal w_valid_psums_out   : std_logic_vector(size_x - 1 downto 0);
-    signal w_gnt_psum_idx_d    : std_logic_vector(addr_width_x - 1 downto 0);
+    signal w_req_addr_psum     : std_logic_vector(size_x - 1 downto 0);
     signal w_all_psum_finished : std_logic;
 
     signal w_address_iact       : array_t(0 to size_rows - 1)(mem_addr_width - 1 downto 0);
     signal w_address_wght       : array_t(0 to size_y - 1)(mem_addr_width - 1 downto 0);
+    signal w_address_psum       : array_t(0 to size_x - 1)(mem_addr_width - 1 downto 0);
     signal w_address_iact_valid : std_logic_vector(size_rows - 1 downto 0);
     signal w_address_wght_valid : std_logic_vector(size_y - 1 downto 0);
     signal w_address_iact_done  : std_logic;
@@ -235,22 +235,24 @@ begin
 
     control_address_generator_inst : entity accel.control_address_generator
         generic map (
-            size_x              => size_x,
-            size_y              => size_y,
-            size_rows           => size_rows,
-            addr_width_rows     => addr_width_rows,
-            addr_width_y        => addr_width_y,
-            addr_width_x        => addr_width_x,
-            addr_width_iact_mem => mem_addr_width,
-            addr_width_wght_mem => mem_addr_width,
-            addr_width_psum_mem => mem_addr_width,
-            line_length_iact    => line_length_iact,
-            addr_width_iact     => addr_width_iact,
-            line_length_psum    => line_length_psum,
-            addr_width_psum     => addr_width_psum,
-            line_length_wght    => line_length_wght,
-            addr_width_wght     => addr_width_wght,
-            g_dataflow          => g_dataflow
+            size_x                 => size_x,
+            size_y                 => size_y,
+            size_rows              => size_rows,
+            addr_width_rows        => addr_width_rows,
+            addr_width_y           => addr_width_y,
+            addr_width_x           => addr_width_x,
+            addr_width_iact_mem    => mem_addr_width,
+            addr_width_wght_mem    => mem_addr_width,
+            addr_width_psum_mem    => mem_addr_width,
+            line_length_iact       => line_length_iact,
+            addr_width_iact        => addr_width_iact,
+            line_length_psum       => line_length_psum,
+            addr_width_psum        => addr_width_psum,
+            line_length_wght       => line_length_wght,
+            addr_width_wght        => addr_width_wght,
+            mem_word_count         => mem_word_count,
+            psum_word_offset_width => psum_word_offset_width,
+            g_dataflow             => g_dataflow
         )
         port map (
             clk                      => clk,
@@ -258,6 +260,7 @@ begin
             i_start                  => i_start,
             i_enable_if              => w_enable_if,
             i_all_psum_finished      => w_all_psum_finished,
+            i_dataflow               => w_dataflow,
             o_init_done              => w_control_init_done,
             o_enable                 => w_enable,
             o_pause_iact             => w_pause_iact,
@@ -281,7 +284,12 @@ begin
             o_address_iact           => w_address_iact,
             o_address_wght           => w_address_wght,
             o_address_iact_valid     => w_address_iact_valid,
-            o_address_wght_valid     => w_address_wght_valid
+            o_address_wght_valid     => w_address_wght_valid,
+            i_req_addr_psum          => w_req_addr_psum,
+            o_address_psum           => w_address_psum,
+            o_psum_suppress_out      => w_write_suppress_psum,
+            o_word_offsets           => w_psum_word_offsets,
+            o_word_offset_valid      => w_psum_word_offsets_valid
         );
 
     scratchpad_inst : entity accel.scratchpad
@@ -302,10 +310,9 @@ begin
             dout_valid => w_dout_valid,
             dout       => w_dout,
             -- internal access (data store)
-            write_adr_psum  => w_write_adr_psum,
-            write_en_psum   => w_write_en_psum,
-            write_supp_psum => w_write_suppress_psum,
-            din_psum        => w_din_psum,
+            write_adr_psum => w_write_adr_psum,
+            write_en_psum  => w_write_en_psum,
+            din_psum       => w_din_psum,
             -- external access
             ext_en       => i_mem_en,
             ext_write_en => i_mem_write_en,
@@ -341,20 +348,22 @@ begin
             o_status                  => w_status_spad_if,
             i_address_iact            => w_address_iact,
             i_address_wght            => w_address_wght,
+            i_address_psum            => w_address_psum,
             i_address_iact_valid      => w_address_iact_valid,
             i_address_wght_valid      => w_address_wght_valid,
             i_psum_word_offsets       => w_psum_word_offsets,
             i_psum_word_offsets_valid => w_psum_word_offsets_valid,
+            i_psum_suppress           => w_write_suppress_psum,
             o_fifo_iact_address_full  => w_fifo_iact_address_full,
             o_fifo_wght_address_full  => w_fifo_wght_address_full,
             i_addr_iact_done          => w_address_iact_done,
             i_addr_wght_done          => w_address_wght_done,
-            o_valid_psums_out         => w_valid_psums_out,
-            o_gnt_psum_idx_d          => w_gnt_psum_idx_d,
+            o_req_addr_psum           => w_req_addr_psum,
             o_all_psum_finished       => w_all_psum_finished,
             o_address                 => w_read_adr,
             o_address_valid           => w_read_en,
             o_write_en_psum           => w_write_en_psum,
+            o_addr_psum               => w_write_adr_psum,
             o_data_psum               => w_din_psum,
             i_data                    => w_dout,
             i_data_valid              => w_dout_valid,
@@ -379,29 +388,6 @@ begin
             rst     => '0',
             bit_in  => w_control_init_done,
             bit_out => w_control_init_done_sp
-        );
-
-    address_generator_psum_inst : entity accel.address_generator_psum
-        generic map (
-            size_x         => size_x,
-            size_y         => size_y,
-            addr_width_x   => addr_width_x,
-            mem_addr_width => mem_addr_width,
-            mem_columns    => mem_word_count,
-            write_size     => mem_word_count
-        )
-        port map (
-            clk                 => clk_sp,
-            rstn                => rstn,
-            i_start             => w_control_init_done_sp,
-            i_dataflow          => w_dataflow,
-            i_params            => w_params_sp,
-            i_valid_psum_out    => w_valid_psums_out,
-            i_gnt_psum_idx_d    => w_gnt_psum_idx_d,
-            o_address_psum      => w_write_adr_psum,
-            o_suppress_out      => w_write_suppress_psum,
-            o_word_offsets      => w_psum_word_offsets,
-            o_word_offset_valid => w_psum_word_offsets_valid
         );
 
     -- construct the o_status record

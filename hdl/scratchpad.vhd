@@ -28,10 +28,9 @@ entity scratchpad is
         dout_valid : out   std_logic;
         dout       : out   std_logic_vector(mem_data_width - 1 downto 0);
 
-        write_adr_psum  : in    std_logic_vector(mem_addr_width - 1 downto 0);
-        write_en_psum   : in    std_logic_vector(word_count - 1 downto 0);
-        write_supp_psum : in    std_logic;
-        din_psum        : in    std_logic_vector(mem_data_width - 1 downto 0);
+        write_adr_psum : in    std_logic_vector(mem_addr_width - 1 downto 0);
+        write_en_psum  : in    std_logic_vector(word_count - 1 downto 0);
+        din_psum       : in    std_logic_vector(mem_data_width - 1 downto 0);
 
         -- external r/w access to scratchpad memories
         ext_en       : in    std_logic;
@@ -66,7 +65,7 @@ begin
     begin
 
         -- enable psum write interface if a request is present (disables external access)
-        psum_interface_active := or write_en_psum and not write_supp_psum;
+        psum_interface_active := or write_en_psum;
 
         if psum_interface_active then
             std_en   <= psum_interface_active;

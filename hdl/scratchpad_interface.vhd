@@ -45,6 +45,7 @@ entity scratchpad_interface is
         -- Data to and from Address generator
         i_address_iact : in    array_t(0 to size_rows - 1)(mem_addr_width - 1 downto 0);
         i_address_wght : in    array_t(0 to size_y - 1)(mem_addr_width - 1 downto 0);
+        i_address_psum : in    array_t(0 to size_x - 1)(mem_addr_width - 1 downto 0);
 
         i_address_iact_valid : in    std_logic_vector(size_rows - 1 downto 0);
         i_address_wght_valid : in    std_logic_vector(size_y - 1 downto 0);
@@ -52,6 +53,7 @@ entity scratchpad_interface is
         -- offsets from psum address generator for image row <-> memory row alignment
         i_psum_word_offsets       : in    array_t(0 to size_x - 1)(word_offset_width - 1 downto 0);
         i_psum_word_offsets_valid : in    std_logic_vector(size_x - 1 downto 0);
+        i_psum_suppress           : in    std_logic_vector(size_x - 1 downto 0);
 
         -- to pause address generator
         o_fifo_iact_address_full : out   std_logic;
@@ -61,7 +63,8 @@ entity scratchpad_interface is
         i_addr_iact_done : in    std_logic;
         i_addr_wght_done : in    std_logic;
 
-        o_valid_psums_out   : out   std_logic_vector(size_x - 1 downto 0); -- to calculate psum address
+        -- to psum address generator
+        o_req_addr_psum     : out   std_logic_vector(size_x - 1 downto 0);
         o_gnt_psum_idx_d    : out   std_logic_vector(addr_width_x - 1 downto 0);
         o_all_psum_finished : out   std_logic;
 
@@ -70,6 +73,7 @@ entity scratchpad_interface is
         o_address_valid : out   std_logic;
 
         o_write_en_psum : out   std_logic_vector(mem_word_count - 1 downto 0);
+        o_addr_psum     : out   std_logic_vector(mem_addr_width - 1 downto 0);
         o_data_psum     : out   std_logic_vector(mem_data_width - 1 downto 0);
 
         -- Data from Scratchpad
@@ -165,12 +169,12 @@ architecture rtl of scratchpad_interface is
     signal r_gnt_psum_idx_d : std_logic_vector(addr_width_x - 1 downto 0) := (others => '0');
 
     constant c_psum_wide_words_width : positive := positive(ceil(log2(real(mem_word_count))));
-    constant c_psum_fifo_width       : integer  := mem_data_width + mem_word_count;
+    constant c_psum_fifo_width       : integer  := mem_data_width + mem_word_count + mem_addr_width;
 
-    signal w_psum_wide_data : array_t(0 to size_x - 1)(mem_data_width - 1 downto 0);
-    -- signal w_word_count_psum : unsigned(c_psum_wide_words_width - 1 downto 0);
-    signal w_psum_valid_out : std_logic;
-    signal w_wen_psum       : std_logic_vector(mem_word_count - 1 downto 0);
+    signal w_psum_wide_data  : array_t(0 to size_x - 1)(mem_data_width - 1 downto 0);
+    signal w_psum_wide_valid : array_t(0 to size_x - 1)(mem_word_count - 1 downto 0);
+    signal w_psum_valid_out  : std_logic;
+    signal w_wen_psum        : std_logic_vector(mem_word_count - 1 downto 0);
 
     signal w_psum_word_offsets       : array_t(0 to size_x - 1)(word_offset_width - 1 downto 0);
     signal r_psum_offset_initialized : std_logic_vector(size_x - 1 downto 0);
@@ -178,7 +182,7 @@ architecture rtl of scratchpad_interface is
     signal w_psum_offset_empty       : std_logic_vector(size_x - 1 downto 0);
 
     signal w_rd_en_psum_f : std_logic_vector(size_x - 1 downto 0);
-    signal w_wr_en_psum_f : array_t(0 to size_x - 1)(mem_word_count - 1 downto 0);
+    signal w_wr_en_psum_f : std_logic_vector(size_x - 1 downto 0);
     signal w_din_psum_f   : array_t(0 to size_x - 1)(c_psum_fifo_width - 1 downto 0);
     signal w_dout_psum_f  : array_t(0 to size_x - 1)(c_psum_fifo_width - 1 downto 0);
     signal w_full_psum_f  : std_logic_vector(size_x - 1 downto 0);
@@ -577,13 +581,14 @@ begin
                 i_valid  => i_psums_valid(x) and i_psums_halfword(x),
                 i_last   => i_psums_last(x),
                 i_data   => i_psums(x)(data_width_input - 1 downto 0),
-                i_offset => unsigned(w_psum_word_offsets(x)),
-                o_valid  => w_wr_en_psum_f(x),
+                i_offset => unsigned(i_psum_word_offsets(x)),
+                o_valid  => w_psum_wide_valid(x),
                 o_data   => w_psum_wide_data(x)
             );
 
         -- store wide data words & number of valid words in fifo_psum_out
-        w_din_psum_f(x) <= w_wr_en_psum_f(x) & w_psum_wide_data(x);
+        w_din_psum_f(x)   <= w_psum_wide_valid(x) & i_address_psum(x) & w_psum_wide_data(x);
+        w_wr_en_psum_f(x) <= (or w_psum_wide_valid(x)) and not i_psum_suppress(x);
 
         fifo_psum_out : entity accel.dc_fifo
             generic map (
@@ -594,7 +599,7 @@ begin
             port map (
                 wr_clk      => clk,
                 rst         => not rstn,
-                wr_en       => or w_wr_en_psum_f(x),
+                wr_en       => w_wr_en_psum_f(x),
                 din         => w_din_psum_f(x),
                 full        => w_full_psum_f(x),
                 almost_full => open,
@@ -607,7 +612,9 @@ begin
                 empty       => w_empty_psum_f(x)
             );
 
-        assert rstn = '0' or i_psums_valid(x) = '0' or w_full_psum_f(x) = '0'
+        o_req_addr_psum(x) <= or w_psum_wide_valid(x);
+
+        assert rstn = '0' or w_wr_en_psum_f(x) = '0' or w_full_psum_f(x) = '0'
             report "push to full psum fifo " & integer'image(x)
             severity warning;
 
@@ -634,23 +641,12 @@ begin
         );
 
     -- unpack data from psum fifo
-    -- w_word_count_psum <= unsigned(w_data_psum(c_psum_fifo_width - 1 downto mem_data_width));
-    w_wen_psum  <= w_data_psum(c_psum_fifo_width - 1 downto mem_data_width);
+    w_wen_psum  <= w_data_psum(c_psum_fifo_width - 1 downto mem_data_width + mem_addr_width);
+    o_addr_psum <= w_data_psum(mem_data_width + mem_addr_width - 1 downto mem_data_width);
     o_data_psum <= w_data_psum(mem_data_width - 1 downto 0);
 
-    -- generate write enable from psum fifo word count
-    -- psum_wen_gen : accel.write_enable_gen
-    --     generic map (
-    --         count_width => c_psum_wide_words_width,
-    --         wen_width => mem_word_count
-    --     )
-    --     port map (--         i_count => w_word_count_psum,
-    --         o_wen => w_wen_psum
-    --     );
-
-    o_write_en_psum   <= w_wen_psum when w_psum_valid_out = '1' else (others => '0');
-    o_valid_psums_out <= w_valid_psum_f;
-    o_gnt_psum_idx_d  <= r_gnt_psum_idx_d;
+    o_write_en_psum  <= w_wen_psum when w_psum_valid_out = '1' else (others => '0');
+    o_gnt_psum_idx_d <= r_gnt_psum_idx_d;
 
     sync_init_done : entity accel.bit_sync
         port map (
@@ -703,50 +699,16 @@ begin
 
     word_offset_sync : for x in 0 to size_x - 1 generate
 
-        fifo : entity accel.dc_fifo
-            generic map (
-                mem_size => 4,
-                stages   => 2
-            )
-            port map (
-                wr_clk => clk_sp,
-                rst    => '0',
-                wr_en  => i_psum_word_offsets_valid(x),
-                din    => i_psum_word_offsets(x),
-                keep   => '0',
-                drop   => '0',
-                rd_clk => clk,
-                rd_en  => r_psum_offset_rd_en(x),
-                dout   => w_psum_word_offsets(x),
-                empty  => w_psum_offset_empty(x)
-            );
-
         sample_word_offset : process is
         begin
 
             wait until rising_edge(clk);
 
-            if not w_psum_offset_empty(x) then
-                r_psum_offset_rd_en(x) <= '0';
-            end if;
-
-            if i_start = '0' or rstn = '0' then
-                r_psum_offset_rd_en(x)       <= '0';
-                r_psum_offset_initialized(x) <= '0';
-            elsif not w_psum_offset_empty(x) and not r_psum_offset_initialized(x) then
-                r_psum_offset_rd_en(x)       <= '1';
-                r_psum_offset_initialized(x) <= '1';
-            elsif i_psums_last(x) then
-                r_psum_offset_rd_en(x) <= '1';
+            if i_psum_word_offsets_valid(x) then
+                w_psum_word_offsets(x) <= i_psum_word_offsets(x);
             end if;
 
         end process sample_word_offset;
-
-        -- note: this assertion does not catch a corner case when offset was just updated one
-        -- cycle before a new valid psum - however then the parallelizer has not sampled it yet
-        assert rstn = '0' or r_psum_offset_rd_en(x) = '0' or i_psums_valid(x) = '0'
-            report "new psum in column " & integer'image(x) & " while still waiting for offset"
-            severity warning;
 
     end generate word_offset_sync;
 

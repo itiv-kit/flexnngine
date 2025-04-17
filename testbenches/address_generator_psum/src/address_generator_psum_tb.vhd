@@ -36,15 +36,14 @@ architecture imp of address_generator_psum_tb is
     signal i_start          : std_logic;
     signal i_dataflow       : std_logic;
     signal i_valid_psum_out : std_logic_vector(size_x - 1 downto 0);
-    signal i_gnt_psum_idx_d : std_logic_vector(size_x_width - 1 downto 0);
-    signal o_address_psum   : std_logic_vector(addr_width - 1 downto 0);
-    signal o_suppress_out   : std_logic;
-
-    signal i_gnt_psum_idx_d_int : integer;
+    signal o_address_psum   : array_t(0 to size_x - 1)(addr_width - 1 downto 0);
+    signal o_suppress_out   : std_logic_vector(size_x - 1 downto 0);
 
     signal tb_wen : std_logic                                := '0';
     signal wen    : std_logic                                := '0';
     signal din    : std_logic_vector(mem_width - 1 downto 0) := (others => '0');
+    signal addr   : std_logic_vector(addr_width - 1 downto 0);
+    signal gnt    : natural                                  := 0;
 
     signal i_params : parameters_t := (
                                         kernel_size => kernel_size,
@@ -81,7 +80,6 @@ begin
             i_dataflow       => i_dataflow,
             i_params         => i_params,
             i_valid_psum_out => i_valid_psum_out,
-            i_gnt_psum_idx_d => i_gnt_psum_idx_d,
             o_address_psum   => o_address_psum,
             o_suppress_out   => o_suppress_out
         );
@@ -95,7 +93,7 @@ begin
             clk   => clk,
             wena  => wen,
             wenb  => '0',
-            addra => o_address_psum,
+            addra => addr,
             addrb => (others => '0'),
             dina  => din,
             dinb  => (others => '0'),
@@ -103,8 +101,8 @@ begin
             doutb => open
         );
 
-    wen              <= tb_wen and not o_suppress_out;
-    i_gnt_psum_idx_d <= std_logic_vector(to_unsigned(i_gnt_psum_idx_d_int, size_x_width));
+    addr <= o_address_psum(gnt);
+    wen  <= tb_wen and not o_suppress_out(gnt);
 
     gen_clk : process (clk) is
     begin
@@ -148,9 +146,8 @@ begin
 
     begin
 
-        tb_wen               <= '0';
-        i_gnt_psum_idx_d_int <= 0;
-        i_valid_psum_out     <= (others => '0');
+        tb_wen           <= '0';
+        i_valid_psum_out <= (others => '0');
 
         for count_dataflow in 0 to 1 loop
 
@@ -183,7 +180,7 @@ begin
                             current_row := (step * size_x + start_row + pe_x) mod (image_height + kernel_size - 1);
                             -- dummy output data is generated as 1..x for each row, up to x*x. channels are + 1000 each
                             din(data_width - 1 downto 0) <= std_logic_vector(to_unsigned(current_row * image_width + img_x + 1000 * m0 + 10000 * count_dataflow + 1, data_width));
-                            i_gnt_psum_idx_d_int         <= pe_x;
+                            gnt                          <= pe_x;
                             i_valid_psum_out             <= (others => '0');
                             i_valid_psum_out(pe_x)       <= '1';
 
@@ -191,9 +188,8 @@ begin
 
                         -- one cycle delay for after each burst
                         wait until rising_edge(clk);
-                        tb_wen               <= '0';
-                        i_gnt_psum_idx_d_int <= 0;
-                        i_valid_psum_out     <= (others => '0');
+                        tb_wen           <= '0';
+                        i_valid_psum_out <= (others => '0');
 
                     end loop;
 

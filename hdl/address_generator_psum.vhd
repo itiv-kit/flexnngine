@@ -27,10 +27,9 @@ entity address_generator_psum is
         i_params   : in    parameters_t;
 
         i_valid_psum_out : in    std_logic_vector(size_x - 1 downto 0);
-        i_gnt_psum_idx_d : in    std_logic_vector(addr_width_x - 1 downto 0);
 
-        o_address_psum      : out   std_logic_vector(mem_addr_width - 1 downto 0);
-        o_suppress_out      : out   std_logic;
+        o_address_psum      : out   array_t(0 to size_x - 1)(mem_addr_width - 1 downto 0);
+        o_suppress_out      : out   std_logic_vector(size_x - 1 downto 0);
         o_word_offsets      : out   array_t(0 to size_x - 1)(word_offset_width - 1 downto 0);
         o_word_offset_valid : out   std_logic_vector(size_x - 1 downto 0)
     );
@@ -49,7 +48,6 @@ architecture rtl of address_generator_psum is
 
     signal r_next_address : uns_array_t(0 to size_x - 1)(addr_width_bytewise - 1 downto 0);
     signal r_address_psum : uns_array_t(0 to size_x - 1)(addr_width_bytewise - 1 downto 0);
-    signal w_address_mux  : array_t    (0 to size_x - 1)(mem_addr_width - 1 downto 0);
 
     signal r_next_address_valid : std_logic_vector(0 to size_x - 1);
     signal r_suppress_next_row  : std_logic_vector(0 to size_x - 1);
@@ -60,9 +58,8 @@ architecture rtl of address_generator_psum is
     signal r_count_m0 : uint10_line_t(0 to size_x - 1);
     signal r_count_h2 : uint10_line_t(0 to size_x - 1);
 
-    signal r_start_delay  : std_logic;
-    signal r_start_event  : std_logic;
-    signal r_suppress_out : std_logic_vector(0 to size_x - 1);
+    signal r_start_delay : std_logic;
+    signal r_start_event : std_logic;
 
     signal r_image_size : integer; -- output image size per channel, currently rectangular images only = w1*w1
 
@@ -72,25 +69,10 @@ begin
     r_start_event <= i_start and not r_start_delay;
     r_image_size  <= i_params.w1 * i_params.w1 when rising_edge(clk);
 
-    -- Multiplex addresses for PE colums according to current psum output fifo grant
-    mux_psum_adr : entity accel.mux
-        generic map (
-            input_width   => mem_addr_width,
-            input_num     => size_x,
-            address_width => addr_width_x
-        )
-        port map (
-            v_i => w_address_mux,
-            sel => i_gnt_psum_idx_d,
-            z_o => o_address_psum
-        );
-
-    o_suppress_out <= r_suppress_out(to_integer(unsigned(i_gnt_psum_idx_d)));
-
     gen_counter : for x in 0 to size_x - 1 generate
 
-        o_word_offsets(x) <= std_logic_vector(r_next_address(x)(word_offset_width - 1 downto 0));
-        w_address_mux(x)  <= std_logic_vector(r_address_psum(x)(addr_width_bytewise - 1 downto word_offset_width));
+        o_word_offsets(x) <= std_logic_vector(r_address_psum(x)(word_offset_width - 1 downto 0));
+        o_address_psum(x) <= std_logic_vector(r_address_psum(x)(addr_width_bytewise - 1 downto word_offset_width));
 
         p_psum_counter : process is
 
@@ -109,7 +91,7 @@ begin
             o_word_offset_valid(x) <= '0';
 
             if not rstn then
-                r_suppress_out(x) <= '0';
+                o_suppress_out(x) <= '0';
 
                 r_next_address_valid(x) <= '1'; -- will be reset on r_start_event
                 r_suppress_next_row(x)  <= '0';
@@ -197,7 +179,7 @@ begin
                     v_count_w1 := 0;
 
                     r_address_psum(x)       <= to_unsigned(v_new_addr, addr_width_bytewise);
-                    r_suppress_out(x)       <= '0';
+                    o_suppress_out(x)       <= '0';
                     r_next_address_valid(x) <= '0'; -- immediately trigger calculation of subsequent address
                 elsif i_valid_psum_out(x) then
                     -- common output of one word (write_size pixels)
@@ -208,7 +190,7 @@ begin
                         r_address_psum(x)       <= r_next_address(x);
                         r_next_address_valid(x) <= '0';
 
-                        r_suppress_out(x) <= r_suppress_next_row(x) or r_suppress_next_col(x);
+                        o_suppress_out(x) <= r_suppress_next_row(x) or r_suppress_next_col(x);
                     else
                         -- we are within a image row
                         if write_size > 1 and v_count_w1 = 0 then
