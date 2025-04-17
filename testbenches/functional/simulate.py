@@ -566,7 +566,7 @@ presets = {
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_addr_width = 16,
                                   iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
-                                  clk_period = [10], clk_sp_period = [1], dataflow=[0]), start_gui = True),
+                                  clk_period = [10], clk_sp_period = [10], dataflow=[0]), start_gui = True),
 
     # Test with different dataflow. Kernel_size 1,3 and medium image size 16, 10-200 channels
     'rs_df_channels_10..200': Setting(
@@ -575,7 +575,7 @@ presets = {
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_addr_width = 15,
                                   iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
-                                  clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
+                                  clk_period = [10], clk_sp_period = [10], dataflow=[0,1])),
 
     # Test with different dataflow. Kernel_size 3 and large image size 124, 3 channels
     'channels_3': Setting(
@@ -584,7 +584,7 @@ presets = {
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_addr_width = 15,
                                   iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
-                                  clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
+                                  clk_period = [10], clk_sp_period = [10], dataflow=[0,1])),
 
     # Test with different FIFO sizes. Kernel_size 1,3 and medium image size 16, 40 channels
     'in_fifos_5..512': Setting(
@@ -593,7 +593,7 @@ presets = {
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_addr_width = 15,
                                   iact_fifo_size = [5, 10, 15, 30, 64, 128, 512], wght_fifo_size = [5, 10, 15, 30, 64, 128, 512], psum_fifo_size = [32],
-                                  clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
+                                  clk_period = [10], clk_sp_period = [10], dataflow=[0,1])),
 
     # Test with different Line buffer sizes. Kernel_size 1,3 and medium image size 16, 40 channels, DF 0
     'rs_lb_wght_32..1024_df0': Setting(
@@ -602,7 +602,7 @@ presets = {
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [], line_length_psum = [128], line_length_wght = [32, 48, 64, 96, 128, 256, 512, 1024],
                                 mem_addr_width = 15,
                                 iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
-                                clk_period = [10], clk_sp_period = [1], dataflow=[0])),
+                                clk_period = [10], clk_sp_period = [10], dataflow=[0])),
 
     'hw_rs_array_x_size': Setting(
                       Convolution(image_size = [16, 32], kernel_size = [1, 3, 5], input_channels = [40],
@@ -610,7 +610,7 @@ presets = {
                       Accelerator(size_x = [5,10,15,20,25,50,100], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_addr_width = 15,
                                   iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
-                                  clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
+                                  clk_period = [10], clk_sp_period = [10], dataflow=[0,1])),
 
     'hw_rs_array_y_size': Setting(
                       Convolution(image_size = [16, 32], kernel_size = [1, 3, 5], input_channels = [40],
@@ -618,7 +618,7 @@ presets = {
                       Accelerator(size_x = [10], size_y = [5,10,15,20,25,50,100], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_addr_width = 15,
                                   iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
-                                  clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
+                                  clk_period = [10], clk_sp_period = [10], dataflow=[0,1])),
 
     'rs_df_clk_sp_10x7': Setting(
                       Convolution(image_size = [32], kernel_size = [1, 3], input_channels = [40],
@@ -643,7 +643,7 @@ presets = {
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [], line_length_psum = [128], line_length_wght = [32, 48, 64, 96, 128, 256, 512, 1024],
                                 mem_addr_width = 15,
                                 iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
-                                clk_period = [10], clk_sp_period = [1], dataflow=[1])),
+                                clk_period = [10], clk_sp_period = [10], dataflow=[1])),
 
     # small test - 20 simulations
     'rs_df_channels_10..13': Setting(
@@ -652,7 +652,7 @@ presets = {
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [512], line_length_wght = [64],
                                 mem_addr_width = 15,
                                 iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
-                                clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
+                                clk_period = [10], clk_sp_period = [10], dataflow=[0,1])),
 
     # the test-conv2d.cpp configuration
     'hw_defaults_minimal': Setting(
@@ -661,7 +661,7 @@ presets = {
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                 mem_addr_width = 15,
                                 iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
-                                clk_period = [10], clk_sp_period = [1], dataflow=[0]), start_gui = True),
+                                clk_period = [10], clk_sp_period = [10], dataflow=[0]), start_gui = True),
 
     # a configuration for continuous integration, testing the most important set of features
     'ci': Setting(
@@ -670,7 +670,7 @@ presets = {
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                 mem_addr_width = 15,
                                 iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
-                                clk_period = [10], clk_sp_period = [1], dataflow=[0,1])),
+                                clk_period = [10], clk_sp_period = [10], dataflow=[0,1])),
 }
 
 if __name__ == "__main__":
