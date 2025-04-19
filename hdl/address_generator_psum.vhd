@@ -55,15 +55,17 @@ architecture rtl of address_generator_psum is
     signal r_start_delay : std_logic;
     signal r_start_event : std_logic;
 
-    signal r_image_size : integer; -- output image size per channel, currently rectangular images only = w1*w1
-    signal r_write_size : integer range 1 to write_size; -- pixels per output word (64bit/8bit for int8, 64bit/16bit for int16)
+    signal r_image_size   : integer;                       -- output image size per channel, currently rectangular images only = w1*w1
+    signal r_chunk_size   : integer range 1 to write_size; -- pixels per output word (64bit/8bit for int8, 64bit/16bit for int16)
+    signal r_element_size : integer range 1 to 4;          -- bytes per output pixel (1 for 8bit, 2 for 16 bit)
 
 begin
 
-    r_start_delay <= i_start when rising_edge(clk);
-    r_start_event <= i_start and not r_start_delay;
-    r_image_size  <= i_params.w1 * i_params.w1 when rising_edge(clk);
-    r_write_size  <= write_size when i_params.requant_enab else write_size / 2 when rising_edge(clk);
+    r_start_delay  <= i_start when rising_edge(clk);
+    r_start_event  <= i_start and not r_start_delay;
+    r_image_size   <= i_params.w1 * i_params.w1 when rising_edge(clk);
+    r_chunk_size   <= write_size when i_params.requant_enab else write_size / 2 when rising_edge(clk);
+    r_element_size <= 1 when i_params.requant_enab else 2 when rising_edge(clk);
 
     gen_counter : for x in 0 to size_x - 1 generate
 
@@ -145,7 +147,7 @@ begin
                 v_new_addr := v_new_addr + v_count_m0 / mem_columns * i_params.stride_psum_och * write_size;
 
                 -- finally, add the row offset
-                v_new_addr := v_new_addr + v_cur_row * i_params.w1;
+                v_new_addr := v_new_addr + v_cur_row * i_params.w1 * r_element_size;
 
                 if (r_next_address_valid(x) = '0' or r_start_event = '1') and not v_done then
                     r_next_address(x)       <= to_unsigned(v_new_addr, addr_width_bytewise);
@@ -174,8 +176,8 @@ begin
                     o_suppress_out(x)       <= '0';
                     r_next_address_valid(x) <= '0'; -- immediately trigger calculation of subsequent address
                 elsif i_valid_psum_out(x) then
-                    -- common output of one word (write_size pixels)
-                    if v_count_w1 >= i_params.w1 - r_write_size then
+                    -- common output of one word (r_chunk_size pixels / write_size bytes)
+                    if v_count_w1 >= i_params.w1 - r_chunk_size then
                         -- one row is done
                         v_count_w1 := 0;
 
@@ -185,11 +187,13 @@ begin
                         o_suppress_out(x) <= r_suppress_next_row(x) or r_suppress_next_col(x);
                     else
                         -- we are within a image row
-                        if r_write_size > 1 and v_count_w1 = 0 then
-                            v_offset   := to_integer(r_address_psum(x)(mem_offset_width - 1 downto 0));
-                            v_count_w1 := r_write_size - v_offset; -- TODO: offset for raw psums?
+                        if r_chunk_size > 1 and v_count_w1 = 0 then
+                            -- when writing chunks of > 1 output words at once, the first word may be only partially valid.
+                            -- use the lower part of the address to calculate the byte offset of the first write of this row
+                            v_offset   := to_integer(r_address_psum(x)(mem_offset_width - 1 downto 0)) / r_element_size; -- is this efficient?
+                            v_count_w1 := r_chunk_size - v_offset;
                         else
-                            v_count_w1 := v_count_w1 + r_write_size;
+                            v_count_w1 := v_count_w1 + r_chunk_size;
                         end if;
                         r_address_psum(x) <= r_address_psum(x) + write_size;
                     end if;

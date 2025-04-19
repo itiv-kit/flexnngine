@@ -175,10 +175,6 @@ architecture rtl of scratchpad_interface is
     signal w_psum_address : array_t(0 to size_x - 1)(mem_addr_width - 1 downto 0);
     signal w_psum_offset  : array_t(0 to size_x - 1)(mem_offset_width - 1 downto 0);
 
-    -- TODO: we just assume raw is double the size of non-raw (16bit vs 8bit) and give it one bit more
-    -- signal w_psum_address_raw : array_t(0 to size_x - 1)(mem_addr_width - 1 downto 0);
-    -- signal w_psum_offset_raw  : array_t(0 to size_x - 1)(mem_offset_width - 1 downto 0);
-
     signal w_rd_en_psum_f : std_logic_vector(size_x - 1 downto 0);
     signal w_wr_en_psum_f : std_logic_vector(size_x - 1 downto 0);
     signal w_din_psum_f   : array_t(0 to size_x - 1)(c_psum_fifo_width - 1 downto 0);
@@ -586,10 +582,7 @@ begin
                 o_data   => w_psum_wide_data(x)
             );
 
-        -- w_psum_address_raw(x) <= i_address_psum(x)(mem_addr_width + mem_offset_width - 1 downto mem_offset_width);
-        -- w_psum_offset_raw(x)  <= i_address_psum(x)(mem_offset_width - 1 downto 0);
-
-        psum_parallel_requantized_raw : entity accel.parallelizer
+        psum_parallel_raw : entity accel.parallelizer
             port map (
                 clk      => clk,
                 rstn     => rstn,
@@ -602,8 +595,9 @@ begin
             );
 
         -- select correct parallelizer depending on data format (raw vs requantized), and add pipeline stage
-        process is
+        sel_psum_fifo_input : process is
         begin
+
             wait until rising_edge(clk);
 
             r_psums_halfword_d(x) <= i_psums_halfword(x);
@@ -616,7 +610,10 @@ begin
                 w_wr_en_psum_f(x) <= (or w_psum_wide_valid_raw(x)) and not i_psum_suppress(x);
                 w_din_psum_f(x)   <= w_psum_wide_valid_raw(x) & w_psum_address(x) & w_psum_wide_data_raw(x);
             end if;
-        end process;
+
+        end process sel_psum_fifo_input;
+
+        o_req_addr_psum(x) <= or w_psum_wide_valid(x) when i_psums_halfword(x) else or w_psum_wide_valid_raw(x);
 
         fifo_psum_out : entity accel.dc_fifo
             generic map (
@@ -639,8 +636,6 @@ begin
                 valid       => w_valid_psum_f(x),
                 empty       => w_empty_psum_f(x)
             );
-
-        o_req_addr_psum(x) <= or w_psum_wide_valid(x);
 
         assert rstn = '0' or w_wr_en_psum_f(x) = '0' or w_full_psum_f(x) = '0'
             report "push to full psum fifo " & integer'image(x)

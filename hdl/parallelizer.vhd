@@ -37,6 +37,7 @@ architecture behavioral of parallelizer is
     signal valid_words : std_logic_vector(c_words - 1 downto 0);
 
     -- repeat_bits("010",3) => "000111000"
+
     function repeat_bits (input : in std_logic_vector; times : in positive) return std_logic_vector is
 
         variable res : std_logic_vector(input'length * times - 1 downto 0);
@@ -72,7 +73,8 @@ begin
             o_valid     <= (o_valid'range => '0');
         else
             if idle = '1' then
-                counter <= to_integer(i_offset(c_counter_width - 1 downto 0));
+                -- use uppermost bits for offset, as counter is more narrow for multi-byte i_data words
+                counter <= to_integer(i_offset(i_offset'left downto i_offset'left - c_counter_width + 1));
             end if;
 
             if full = '1' then
@@ -100,7 +102,7 @@ begin
                 else
                     valid_words(counter) <= '1';
 
-                    shift_reg(i_data'length * (counter + 1 ) - 1 downto i_data'length * counter) <= i_data;
+                    shift_reg(i_data'length * (counter + 1) - 1 downto i_data'length * counter) <= i_data;
                 end if;
 
                 if counter = c_words - 1 or i_last = '1' then

@@ -13,9 +13,10 @@ library ieee;
 
 entity serializer is
     generic (
-        in_width  : integer := 128; -- width of the input data in bits
-        out_width : integer := 8;   -- width of the output data in bits
-        max_count : integer := integer(in_width / out_width)
+        in_width   : integer := 128;  -- width of the input data in bits
+        out_width  : integer := 8;    -- width of the output data in bits
+        max_count  : integer := integer(in_width / out_width);
+        hold_valid : boolean := false -- if true, valid will be held at 1 also when if i_ready is 0 (similar to AXI Stream)
     );
     port (
         clk  : in    std_logic;
