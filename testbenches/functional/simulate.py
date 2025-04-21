@@ -12,7 +12,6 @@ import argparse
 import itertools
 from enum import IntEnum
 
-@dataclass
 class ActivationMode(IntEnum):
     passthrough = 0
     relu = 1
