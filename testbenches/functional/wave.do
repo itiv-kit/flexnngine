@@ -139,6 +139,7 @@ add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/r_next_base
 add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/r_next_words
 add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/r_count_w1
 add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/r_count_c1
+add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/r_count_h1
 add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/r_count_h2
 add wave -noupdate -group ADR_iact -radix symbolic ${addr_gen_path}/r_next_base_last
 add wave -noupdate -group ADR_iact -radix symbolic ${addr_gen_path}/r_cur_base_last

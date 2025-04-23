@@ -142,6 +142,7 @@ begin
                                           '0';
     end generate g_psum_commands;
 
+    params.dataflow     <= g_dataflow;
     params.inputchs     <= g_inputchs;
     params.outputchs    <= g_outputchs;
     params.image_y      <= g_image_y;
