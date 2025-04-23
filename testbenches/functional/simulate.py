@@ -276,6 +276,8 @@ class Test:
 
         # psum stride must be multiple of word size, still pack as tightly as possible
         self.stride_psum_och = math.ceil(self.W1 * self.W1 / self.accelerator.spad_word_size)
+        if not self.convolution.requantize:
+            self.stride_psum_och *= 2 # non-requantized / raw 16-bit psums require twice the space
 
         # fixed random seed for reproducibility
         np.random.seed(2)
