@@ -176,35 +176,19 @@ begin
 
         case r_state is
 
-            when s_output =>
-
-                w_mux_read_offset_psum   <= r_read_offset_psum_d;
-                w_mux_update_offset_psum <= r_update_offset_psum_d;
-                w_mux_command_psum       <= r_command_psum_d;
-
             when s_calculate =>
 
                 w_mux_read_offset_psum   <= r_read_offset_psum;
                 w_mux_update_offset_psum <= r_update_offset_psum;
-                w_mux_command_psum       <= r_command_psum_d;
-
-            when s_incr_c1 =>
-
-                w_mux_read_offset_psum   <= r_read_offset_psum_d;
-                w_mux_update_offset_psum <= r_update_offset_psum_d;
-                w_mux_command_psum       <= r_command_psum_d;
-
-            when s_incr_h1 =>
-
-                w_mux_read_offset_psum   <= r_read_offset_psum_d;
-                w_mux_update_offset_psum <= r_update_offset_psum_d;
-                w_mux_command_psum       <= r_command_psum_d;
 
             when others =>
 
-                null;
+                w_mux_read_offset_psum   <= r_read_offset_psum_d;
+                w_mux_update_offset_psum <= r_update_offset_psum_d;
 
         end case;
+
+        w_mux_command_psum <= r_command_psum_d;
 
     end process switch_state;
 
