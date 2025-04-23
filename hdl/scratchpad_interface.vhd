@@ -192,7 +192,7 @@ architecture rtl of scratchpad_interface is
     signal r_start_delay : std_logic;
     signal r_start_sp    : std_logic;
     signal r_pause_iact  : std_logic_vector(size_rows - 1 downto 0);
-    signal r_startup     : std_logic_vector(10 downto 0); /* TODO Depending on clk_sp / clk factor */
+    signal r_startup     : std_logic_vector(10 downto 0); -- TODO Depending on clk_sp / clk factor
 
     signal r_preload_fifos_done : std_logic;
 
@@ -348,9 +348,9 @@ begin
     r_gnt_load_idx_d <= w_gnt_load_idx when rising_edge(clk_sp);
     r_gnt_psum_idx_d <= w_gnt_psum_idx when rising_edge(clk_sp);
 
-    w_arb_req_iact <= (others => '0') when i_start = '0' or r_done_iact = '1' else not w_almost_full_iact_f;
-    w_arb_req_wght <= (others => '0') when i_start = '0' or r_done_wght = '1' else not w_almost_full_wght_f;
-    w_arb_req_psum <= (others => '0') when i_start = '0' else not w_empty_psum_f;
+    w_arb_req_iact <= (others => '0') when r_start_sp = '0' or r_done_iact = '1' else not w_almost_full_iact_f;
+    w_arb_req_wght <= (others => '0') when r_start_sp = '0' or r_done_wght = '1' else not w_almost_full_wght_f;
+    w_arb_req_psum <= (others => '0') when r_start_sp = '0' else not w_empty_psum_f;
 
     o_fifo_iact_address_full <= or w_full_iact_address_f;
     o_fifo_wght_address_full <= or w_full_wght_address_f;
