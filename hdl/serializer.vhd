@@ -37,6 +37,7 @@ architecture behavioral of serializer is
     signal counter   : integer range 0 to max_count - 1 := 0;
     signal shift_reg : std_logic_vector(in_width - 1 downto 0);
     signal has_data  : std_logic;
+    signal valid     : std_logic;
 
 begin
 
@@ -48,12 +49,12 @@ begin
         if not rstn then
             counter  <= 0;
             has_data <= '0';
-            o_valid  <= '0';
+            valid    <= '0';
         else
             if i_valid and not has_data then
                 shift_reg <= i_data;
                 has_data  <= '1';
-                o_valid   <= '1';
+                valid     <= '1';
                 counter   <= 0;
             end if;
 
@@ -62,7 +63,7 @@ begin
                 if counter = max_count - 1 then
                     counter  <= 0;
                     has_data <= '0';
-                    o_valid  <= '0';
+                    valid    <= '0';
                 else
                     counter <= counter + 1;
                 end if;
@@ -73,5 +74,6 @@ begin
 
     o_data  <= shift_reg(out_width - 1 downto 0);
     o_ready <= not has_data;
+    o_valid <= valid when hold_valid or i_ready = '1' else '0';
 
 end architecture behavioral;
