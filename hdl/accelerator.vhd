@@ -128,8 +128,6 @@ architecture rtl of accelerator is
     signal w_enable_if : std_logic;
     signal w_dataflow  : std_logic;
 
-    signal w_params_sp      : parameters_t;
-    signal r_params_sp_pipe : parameters_pipe_t(2 downto 0);
     signal r_status_pipe    : status_info_pipe_t(2 downto 0);
     signal w_status_spad_if : status_info_spadif_t;
     signal w_cyclectr       : unsigned(31 downto 0);
@@ -149,8 +147,7 @@ architecture rtl of accelerator is
     signal w_address_wght_done  : std_logic;
 
     attribute async_reg : string;
-    attribute async_reg of r_params_sp_pipe : signal is "TRUE";
-    attribute async_reg of r_status_pipe    : signal is "TRUE";
+    attribute async_reg of r_status_pipe : signal is "TRUE";
 
 begin
 
@@ -388,10 +385,6 @@ begin
     -- add a pipeline to relax timing on the status record signals
     r_status_pipe(r_status_pipe'high downto 1) <= r_status_pipe(r_status_pipe'high - 1 downto 0) when rising_edge(clk);
     o_status                                   <= r_status_pipe(r_status_pipe'high);
-
-    r_params_sp_pipe(0)                              <= i_params when rising_edge(clk_sp);
-    r_params_sp_pipe(r_params_sp_pipe'high downto 1) <= r_params_sp_pipe(r_params_sp_pipe'high - 1 downto 0) when rising_edge(clk_sp);
-    w_params_sp                                      <= r_params_sp_pipe(r_params_sp_pipe'high);
 
     assert g_dataflow = 0 or max_output_channels >= size_y
         report "Dataflow 1 requires max_output_channels to be at least size_y"
