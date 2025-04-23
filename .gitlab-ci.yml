@@ -215,4 +215,4 @@ functional:
     stage: functional_verification
     script:
         - cd testbenches/functional
-        - python3 simulate.py --preset ci
+        - python3 simulate.py --preset ci --pool 8
