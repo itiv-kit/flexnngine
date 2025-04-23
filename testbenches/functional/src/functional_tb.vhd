@@ -18,8 +18,8 @@ entity functional_tb is
         data_width_input : positive := 8; -- Width of the input data (weights, iacts)
         data_width_psum  : positive := 16;
 
-        line_length_iact : positive := 64; /* TODO check influence on tiling - does not work for length 32, kernel 4 and channels 10. Does not work for length 30, kernel 3 and channels 10 */
-        line_length_wght : positive := 64; /* see above */
+        line_length_iact : positive := 64; -- TODO check influence on tiling - does not work for length 32, kernel 4 and channels 10. Does not work for length 30, kernel 3 and channels 10
+        line_length_wght : positive := 64; -- see above
         line_length_psum : positive := 128;
 
         mem_word_count : positive := 8;
@@ -129,7 +129,7 @@ begin
     r_iact_command     <= << signal accelerator_inst.pe_array_inst.pe_inst_y(0).pe_inst_x(0).pe_north.pe_inst.line_buffer_iact.i_command : command_lb_t >>;
     r_iact_read_offset <= << signal accelerator_inst.pe_array_inst.pe_inst_y(0).pe_inst_x(0).pe_north.pe_inst.line_buffer_iact.i_read_offset : std_logic_vector(addr_width_iact - 1 downto 0) >>;
 
-    r_psum_commands_tmp <= << signal accelerator_inst.control_address_generator_inst.g_control.control_inst.o_command_psum : command_lb_row_col_t >>;
+    r_psum_commands_tmp <= << signal accelerator_inst.control_address_generator_inst.o_command_psum : command_lb_row_col_t >>;
 
     g_psum_commands : for y in 0 to size_y - 1 generate
         r_psum_commands(y)             <= r_psum_commands_tmp(y,0);
@@ -269,7 +269,7 @@ begin
 
         assert line_length_psum >= g_image_x - g_kernel_size
             report "Psum buffer has to hold output values of one row, must not be smaller than output row size"
-            severity failure; /* TODO To be changed by splitting the task and propagating as many psums that the buffer can hold through the array at once */
+            severity failure; -- TODO To be changed by splitting the task and propagating as many psums that the buffer can hold through the array at once
 
         wait;
 
@@ -317,72 +317,6 @@ begin
         end if;
 
     end process p_sum_shrink;
-
-    /*p_check_img : for y in 0 to size_rows - 1 generate
-
-        p_check_image_vals : process is
-        begin
-
-            for i in 0 to g_image_x * g_inputchs * g_h2 - 1 loop
-
-                wait until rising_edge(clk) and i_data_iact_valid(y) = '1';
-
-                if i_data_iact(y) /= std_logic_vector(to_signed(s_input_image(y, i), data_width_input)) then
-                    assert i_data_iact(y) = std_logic_vector(to_signed(s_input_image(y, i), data_width_input))
-                        report "Input iact " & integer'image(i) & " wrong. Iact is " & integer'image(to_integer(signed(i_data_iact(y)))) & " - should be "
-                               & integer'image(s_input_image(y, i))
-                        severity warning;
-                else
-                -- report "Got correct iact " & integer'image(to_integer(signed(i_data_iact(y)))) & " (" & integer'image(i) & ")";
-                end if;
-
-            end loop;
-
-            while true loop
-
-                assert i_data_iact_valid(y) = '0'
-                    report "Input data iact should not be valid!"
-                    severity warning;
-
-                wait until i_data_iact_valid(y)'event;
-
-            end loop;
-
-        end process p_check_image_vals;
-
-    end generate p_check_img;*/
-
-    /*p_check_wght : for y in 0 to size_y - 1 generate
-
-        p_check_wght_vals : process is
-        begin
-
-            for i in 0 to g_kernel_size * g_inputchs * g_tiles_y - 1 loop
-
-                wait until rising_edge(clk) and i_data_wght_valid(y) = '1';
-
-                assert i_data_wght(y) = std_logic_vector(to_signed(s_input_weights(y, i), data_width_input))
-                    report "Input wght (" & integer'image(y) & ") wrong. Wght is " & integer'image(to_integer(signed(i_data_wght(y)))) & " - should be "
-                           & integer'image(s_input_weights(y, i))
-                    severity warning;
-
-                report "Got correct (" & integer'image(y) & ") wght " & integer'image(to_integer(signed(i_data_wght(y))));
-
-            end loop;
-
-            while true loop
-
-                assert i_data_wght_valid(y) = '0'
-                    report "Input data wght should not be valid!"
-                    severity warning;
-
-                wait until i_data_wght_valid(y)'event;
-
-            end loop;
-
-        end process p_check_wght_vals;
-
-    end generate p_check_wght;*/
 
     eval_status : process (clk, rstn) is
 
@@ -520,20 +454,6 @@ begin
                     write(row, integer'image(61));
                     write(row, string'("  "));
                 end if;
-
-                /*if r_preload_fifos_done = '1' and r_enable_pe_array = '0' then
-
-                    -- Preloading FIFOs
-                    write(row, integer'image(0));
-                    write(row, string'("  "));
-
-                elsif r_enable_pe_array = '1' then
-
-
-                    write(row, integer'image(1));
-                    write(row, string'("  "));
-
-                end if;*/
 
                 writeline(outfile, row);
             end if;
