@@ -16,7 +16,6 @@ entity address_generator_psum_tb is
         image_width  : positive := 9;  --! output image width
         size_y       : positive := 10; --! accelerator height
         size_x       : positive := 7;  --! accelerator width
-        size_x_width : positive := 3;  --! width for accelerator with indexing
         addr_width   : positive := 15; --! memory address width
         data_width   : positive := 16; --! psum data width
         kernel_size  : positive := 3;  --! r/s, kernel size
@@ -68,7 +67,6 @@ begin
         generic map (
             size_x         => size_x,
             size_y         => size_y,
-            addr_width_x   => size_x_width,
             mem_addr_width => addr_width,
             mem_columns    => write_size,
             write_size     => write_size
