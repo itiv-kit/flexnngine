@@ -45,6 +45,7 @@ architecture rs_dataflow of address_generator_wght is
 
     signal r_count_s  : uint10_line_t(0 to size_y - 1); -- kernel width
     signal r_count_c1 : integer;
+    signal r_count_h1 : integer;
     signal r_count_h2 : integer;
 
     signal r_next_base_last : std_logic;
@@ -170,6 +171,7 @@ begin
         variable v_och_offset : natural;
         variable v_c1_offset  : natural;
         variable v_c0         : natural;
+        variable v_s_offset   : natural; -- kernel row offset
 
     begin
 
@@ -181,6 +183,7 @@ begin
             r_next_valid     <= '0';
 
             r_count_c1 <= 0;
+            r_count_h1 <= 0;
             r_count_h2 <= 0;
         else
             if i_start and not r_next_base_last and not r_next_valid then
@@ -191,10 +194,18 @@ begin
                     -- all channels of this row loaded, start over and load first c0 set again for next h2 iteration
                     r_count_c1 <= 0;
 
-                    if r_count_h2 /= i_params.h2 - 1 then
-                        r_count_h2 <= r_count_h2 + 1;
+                    -- for trs dataflow, kernels are temporally tiled - for each row, all c1 iterations are processed first
+                    if r_count_h1 /= i_params.kernel_size - 1 and i_params.dataflow = 1 then
+                        r_count_h1 <= r_count_h1 + 1;
                     else
-                        r_next_base_last <= '1';
+                        -- kernel fully processed
+                        r_count_h1 <= 0;
+
+                        if r_count_h2 /= i_params.h2 - 1 then
+                            r_count_h2 <= r_count_h2 + 1;
+                        else
+                            r_next_base_last <= '1';
+                        end if;
                     end if;
                 end if;
 
@@ -206,7 +217,20 @@ begin
 
                 for row in 0 to size_y - 1 loop
 
-                    v_och_offset := to_integer(i_m0_dist(row) - 1); -- offset between output channel kernel sets
+                    if i_params.dataflow = 1 then
+                        v_och_offset := row;                            -- trs dataflow: row equals m0
+                    else
+                        v_och_offset := to_integer(i_m0_dist(row) - 1); -- offset between output channel kernel sets
+                    end if;
+
+                    if i_params.dataflow = 1 then
+                        v_s_offset := r_count_h1;
+                    elsif i_m0_dist(row) > 0 then
+                        -- this is equal to (natural(row) mod i_params.kernel_size), but hopefully more efficient
+                        v_s_offset := row - i_params.kernel_size * to_integer(i_m0_dist(row) - 1);
+                    else
+                        v_s_offset := 0;
+                    end if;
 
                     -- advance in sets of c0 channels (= something like a stride for c0 iterations)
                     v_c1_offset := r_count_c1 * i_params.c0 / read_size; -- TODO: is the division efficient if 2^n?
@@ -215,7 +239,7 @@ begin
                     r_next_base(row) <= to_unsigned(i_params.base_wght +
                                                     v_och_offset * i_params.stride_wght_och +
                                                     v_c1_offset * i_params.stride_wght_kernel +
-                                                    natural(row) mod i_params.kernel_size * i_params.kernel_size,
+                                                    v_s_offset * i_params.kernel_size,
                                                     mem_addr_width);
 
                     -- number of words to load for c0 channels

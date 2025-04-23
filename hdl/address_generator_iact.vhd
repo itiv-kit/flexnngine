@@ -45,6 +45,7 @@ architecture rs_dataflow of address_generator_iact is
 
     signal r_count_w1 : uint10_line_t(0 to size_rows - 1);
     signal r_count_c1 : integer;
+    signal r_count_h1 : integer;
     signal r_count_h2 : integer;
 
     signal r_next_base_last : std_logic;
@@ -79,7 +80,7 @@ begin
                     if i_fifo_full_iact = '0' then
                         if r_count_words(i) /= r_words(i) - 1 then
                             -- loading a row, load the specified number of words to get w0 channels
-                            -- TODO: for partial loads, set valid bits for first/last load
+                            -- TODO: if partial loads need to be supported, set valid bits for first/last load
                             r_count_words(i) <= r_count_words(i) + 1;
                             r_addr(i)        <= r_addr(i) + i_params.stride_iact_hw * read_size;
                         else
@@ -139,7 +140,7 @@ begin
         end process iact_address_out;
 
         o_address_iact(i)       <= std_logic_vector(r_addr(i));
-        o_address_iact_valid(i) <= '1' when r_addr_valid(i) = '1' and (not fifo_full_write_protect or i_fifo_full_iact = '0') else '0';
+        o_address_iact_valid(i) <= '1' when r_addr_valid(i) = '1' and (not fifo_full_write_protect or i_fifo_full_iact = '0') and (i_params.dataflow = 0 or i >= size_y - 1) else '0';
 
     end generate iact_address_out;
 
@@ -177,6 +178,7 @@ begin
             r_next_valid     <= '0';
 
             r_count_c1 <= 0;
+            r_count_h1 <= 0;
             r_count_h2 <= 0;
         else
             if i_start and not r_next_base_last and not r_next_valid then
@@ -187,10 +189,18 @@ begin
                     -- all channels of this row loaded, proceed to next row
                     r_count_c1 <= 0;
 
-                    if r_count_h2 /= i_params.h2 - 1 then
-                        r_count_h2 <= r_count_h2 + 1;
+                    -- for trs dataflow, read kernel_size successive rows per PE row
+                    if r_count_h1 /= i_params.kernel_size - 1 and i_params.dataflow = 1 then
+                        r_count_h1 <= r_count_h1 + 1;
                     else
-                        r_next_base_last <= '1';
+                        -- all kernel_size rows processed
+                        r_count_h1 <= 0;
+
+                        if r_count_h2 /= i_params.h2 - 1 then
+                            r_count_h2 <= r_count_h2 + 1;
+                        else
+                            r_next_base_last <= '1';
+                        end if;
                     end if;
                 end if;
 
@@ -202,8 +212,14 @@ begin
 
                 for row in 0 to size_rows - 1 loop
 
-                    -- row differs for each row, i.e. address generator instance
-                    v_row := r_count_h2 * size_x + row;
+                    -- row differs for each diagonal PE row, i.e. address generator instance
+                    v_row := r_count_h2 * size_x + r_count_h1 + row;
+
+                    -- trs dataflow feeds bottom rows only, row 0 starts at PE row size_y - 1
+                    -- PE rows 0 .. size_y - 2 get bogus r_next_base addresses which are suppressed on the output stage
+                    if i_params.dataflow = 1 and row >= size_y - 1 then
+                        v_row := v_row - (size_y - 1);
+                    end if;
 
                     v_row_stride := i_params.stride_iact_w * read_size; -- w stride is unpacked to single words on reshaped spad side
 
