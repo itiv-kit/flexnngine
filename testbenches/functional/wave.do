@@ -124,7 +124,7 @@ add wave -noupdate -group FIFO_wght_address -radix unsigned /functional_tb/accel
 add wave -noupdate -group FIFO_wght_address -radix symbolic /functional_tb/accelerator_inst/scratchpad_interface_inst/w_full_wght_address_f
 add wave -noupdate -group FIFO_wght_address -radix symbolic /functional_tb/accelerator_inst/scratchpad_interface_inst/w_empty_wght_address_f
 
-quietly set addr_gen_path "/functional_tb/accelerator_inst/control_address_generator_inst/g_address_generator/address_generator_iact_inst"
+quietly set addr_gen_path "/functional_tb/accelerator_inst/control_address_generator_inst/address_generator_iact_inst"
 add wave -noupdate -group ADR_iact -radix symbolic ${addr_gen_path}/i_start
 add wave -noupdate -group ADR_iact -radix symbolic ${addr_gen_path}/i_fifo_full_iact
 add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/o_address_iact
@@ -145,7 +145,7 @@ add wave -noupdate -group ADR_iact -radix symbolic ${addr_gen_path}/r_next_base_
 add wave -noupdate -group ADR_iact -radix symbolic ${addr_gen_path}/r_cur_base_last
 add wave -noupdate -group ADR_iact -radix symbolic ${addr_gen_path}/r_done
 
-quietly set addr_gen_path "/functional_tb/accelerator_inst/control_address_generator_inst/g_address_generator/address_generator_wght_inst"
+quietly set addr_gen_path "/functional_tb/accelerator_inst/control_address_generator_inst/address_generator_wght_inst"
 add wave -noupdate -group ADR_wght -radix symbolic ${addr_gen_path}/i_start
 add wave -noupdate -group ADR_wght -radix symbolic ${addr_gen_path}/i_fifo_full_wght
 add wave -noupdate -group ADR_wght -radix unsigned ${addr_gen_path}/o_address_wght

@@ -9,9 +9,6 @@ library ieee;
 
 library accel;
     use accel.utilities.all;
-    use accel.control;
-    use accel.pe_array;
-    use accel.address_generator;
 
 entity functional_tb is
     generic (
