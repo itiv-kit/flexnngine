@@ -410,8 +410,9 @@ begin
   o_rst   <= slv_regs(0)(0);
   o_start <= slv_regs(0)(1);
 
-  o_params.requant_enab <= slv_regs(0)(2) = '1';
-  o_params.mode_act     <= mode_activation_t'val(to_integer(unsigned(slv_regs(0)(5 downto 3))));
+  o_params.requant_enab  <= slv_regs(0)(2) = '1';
+  o_params.mode_act      <= mode_activation_t'val(to_integer(unsigned(slv_regs(0)(5 downto 3))));
+  o_params.psum_throttle <= to_integer(unsigned(slv_regs(0)(31 downto 24)));
 
   o_params.dataflow     <= dataflow;
   o_params.inputchs     <= to_integer(unsigned(slv_regs( 2)( 9 downto 0)));
