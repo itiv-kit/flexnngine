@@ -39,18 +39,19 @@ class Accelerator:
 
     def __init__(
         self,
-        size_x,
-        size_y,
-        line_length_iact,
-        line_length_psum,
-        line_length_wght,
-        mem_addr_width,
-        iact_fifo_size,
-        wght_fifo_size,
-        psum_fifo_size,
-        clk_period,
-        clk_sp_period,
-        dataflow,
+        size_x = 7,
+        size_y = 10,
+        line_length_iact = 64,
+        line_length_psum = 128,
+        line_length_wght = 64,
+        mem_addr_width = 15,
+        iact_fifo_size = 16,
+        wght_fifo_size = 16,
+        psum_fifo_size = 32,
+        clk_period = 10,
+        clk_sp_period = 10,
+        dataflow = 0,
+        throttle = None, # determine automatically
     ):
         self.size_x = size_x
         self.size_y = size_y
@@ -64,6 +65,7 @@ class Accelerator:
         self.clk_period = clk_period
         self.clk_sp_period = clk_sp_period
         self.dataflow = dataflow
+        self.throttle = throttle
         self.spad_word_size = 8
         self.mem_size = 2 ** mem_addr_width * self.spad_word_size
 
@@ -108,6 +110,13 @@ def write_memory_file_int8(filename, image, wordsize=32):
 
 def align_to_add(value, divider):
     return (value + divider - 1) // divider * divider
+
+def as_list(maybe_list):
+    try:
+        _ = iter(maybe_list)
+        return maybe_list
+    except TypeError:
+        return [maybe_list]
 
 class Test:
     def __init__(self, name, convolution, accelerator, gui=True):
@@ -271,6 +280,22 @@ class Test:
         if not self.convolution.requantize:
             self.stride_psum_och *= 2 # non-requantized / raw 16-bit psums require twice the space
 
+        if self.accelerator.throttle is None:
+            # automatically throttle psum output if we expect the bandwidth to be insufficient, since there is no backpressure mechanism
+            # calculate an estimate by comparing scratchpad and psum output bandwidth
+            pixel_size = 1 if self.convolution.requantize else 2
+            output_phase_size = self.accelerator.size_x * self.M0 * self.W1 * pixel_size
+            psum_fifo_size = self.accelerator.size_x * self.accelerator.psum_fifo_size * self.accelerator.spad_word_size
+            store_rate = self.accelerator.spad_word_size * self.accelerator.clk_sp_period / self.accelerator.clk_period
+            output_rate = self.accelerator.size_x * pixel_size
+            rate_factor = store_rate / output_rate * (1 + psum_fifo_size / output_phase_size)
+            self.psum_throttle = max(0, min(255, math.ceil(255.0 * (1 - 0.9 * rate_factor)))) # 0.9 as safety margin
+            if self.psum_throttle > 0:
+                print(f"Warning: psum overflows expected, throttling output by {self.psum_throttle} / 256")
+        else:
+            print(f"using fixed throttle of {self.accelerator.throttle}")
+            self.psum_throttle = self.accelerator.throttle
+
         # fixed random seed for reproducibility
         np.random.seed(2)
 
@@ -347,11 +372,11 @@ class Test:
         if self.convolution.requantize:
             min_vals = np.min(convolved_images, axis=(1,2))
             max_vals = np.max(convolved_images, axis=(1,2))
-            for n, (min, max) in enumerate(np.dstack([min_vals, max_vals])[0]):
-                if max == min: # hack for the rare case of same-value images
+            for n, (min_val, max_val) in enumerate(np.dstack([min_vals, max_vals])[0]):
+                if max_val == min_val: # hack for the rare case of same-value images
                     zeropt_scale_vals[n] = [0.0, 1.0]
                 else:
-                    zeropt_scale_vals[n] = np.linalg.solve([[1, max], [1, min]], [127, -128])
+                    zeropt_scale_vals[n] = np.linalg.solve([[1, max_val], [1, min_val]], [127, -128])
                 print(f"Scaling output channel {n} with {zeropt_scale_vals[n][1]}, zeropoint {zeropt_scale_vals[n][0]}")
 
             convolved_images_requant = convolved_images * zeropt_scale_vals[:, 1, None, None] + zeropt_scale_vals[:, 0, None, None]
@@ -443,6 +468,7 @@ class Test:
             'g_c0_last_c1':       self.C0_last_c1,
             'g_c0w0':             self.C0W0,
             'g_c0w0_last_c1':     self.C0W0_last_c1,
+            'g_psum_throttle':    self.psum_throttle,
             'g_stride_iact_w':    self.stride_iact_w,
             'g_stride_iact_hw':   self.stride_iact_hw,
             'g_stride_wght_krnl': self.stride_wght_kernel,
@@ -686,6 +712,7 @@ if __name__ == "__main__":
     parser.add_argument('--clk-sp',                                 help='Override preset scratchpad clock speed')
     parser.add_argument('--size-x',                                 help='Override preset pe array x size')
     parser.add_argument('--size-y',                                 help='Override preset pe array y size')
+    parser.add_argument('--throttle',                               help='Override preset psum throttle (0..255)')
     parser.add_argument('--bias',                                   help='Override preset bias values (same bias for all och)')
     parser.add_argument('--requantize',                             help='Override preset requantization (1/0)')
     parser.add_argument('--activation',                             help='Enable activation (0=off, 1=ReLU)')
@@ -744,6 +771,8 @@ if __name__ == "__main__":
             setting.accelerator.size_x = [int(x) for x in args.size_x.split(',')]
         if args.size_y:
             setting.accelerator.size_y = [int(x) for x in args.size_y.split(',')]
+        if args.throttle:
+            setting.accelerator.throttle = [int(x) for x in args.throttle.split(',')]
         if args.bias:
             setting.convolution.bias = [int(x) for x in args.bias.split(',')]
         if args.requantize:
@@ -764,25 +793,26 @@ if __name__ == "__main__":
     # generate configurations settings for all permutations
     settings = []
     for sim in configurations:
-        for hw, rs, c, oc, df, li, lw, lp, fifoi, fifow, fifop, clk, clk_sp, x, y, bias, rq, act in itertools.product(
-                sim.convolution.image_size,
-                sim.convolution.kernel_size,
-                sim.convolution.input_channels,
-                sim.convolution.output_channels,
-                sim.accelerator.dataflow,
-                sim.accelerator.line_length_iact,
-                sim.accelerator.line_length_wght,
-                sim.accelerator.line_length_psum,
-                sim.accelerator.iact_fifo_size,
-                sim.accelerator.wght_fifo_size,
-                sim.accelerator.psum_fifo_size,
-                sim.accelerator.clk_period,
-                sim.accelerator.clk_sp_period,
-                sim.accelerator.size_x,
-                sim.accelerator.size_y,
-                sim.convolution.bias,
-                sim.convolution.requantize,
-                sim.convolution.activation,
+        for hw, rs, c, oc, df, li, lw, lp, fifoi, fifow, fifop, clk, clk_sp, x, y, thr, bias, rq, act in itertools.product(
+                as_list(sim.convolution.image_size),
+                as_list(sim.convolution.kernel_size),
+                as_list(sim.convolution.input_channels),
+                as_list(sim.convolution.output_channels),
+                as_list(sim.accelerator.dataflow),
+                as_list(sim.accelerator.line_length_iact),
+                as_list(sim.accelerator.line_length_wght),
+                as_list(sim.accelerator.line_length_psum),
+                as_list(sim.accelerator.iact_fifo_size),
+                as_list(sim.accelerator.wght_fifo_size),
+                as_list(sim.accelerator.psum_fifo_size),
+                as_list(sim.accelerator.clk_period),
+                as_list(sim.accelerator.clk_sp_period),
+                as_list(sim.accelerator.size_x),
+                as_list(sim.accelerator.size_y),
+                as_list(sim.accelerator.throttle),
+                as_list(sim.convolution.bias),
+                as_list(sim.convolution.requantize),
+                as_list(sim.convolution.activation),
             ):
             settings.append(
                 Setting(
@@ -800,6 +830,7 @@ if __name__ == "__main__":
                         clk,
                         clk_sp,
                         df,
+                        thr,
                     ),
                     sim.start_gui
                 )
