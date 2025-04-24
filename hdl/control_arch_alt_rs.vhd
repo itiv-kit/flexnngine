@@ -9,29 +9,29 @@ architecture alternative_rs_dataflow of control is
 
     signal r_state : t_control_state;
 
-    signal r_count_c0w0 : integer range 0 to 2048; -- range 0 to 511
+    signal r_count_c0w0 : integer range 0 to max_line_length_wght;
     signal r_count_c1   : integer range 0 to 1023;
     signal r_count_w1   : integer range 0 to 1023;
-    signal r_count_h2   : integer range 0 to 127;
-    signal r_count_h1   : integer range 0 to 127;
+    signal r_count_h2   : integer range 0 to 1023;
+    signal r_count_h1   : integer range 0 to 31;
 
-    signal w_c0w0         : integer range 0 to 1023;
-    signal w_c0w0_last_c1 : integer range 0 to 1023;
+    signal w_c0w0         : integer range 0 to max_line_length_wght;
+    signal w_c0w0_last_c1 : integer range 0 to max_line_length_wght;
 
-    signal w_c0         : integer range 0 to 1023;
-    signal w_c0_last_c1 : integer range 0 to 1023;
+    signal w_c0         : integer range 0 to max_line_length_wght;
+    signal w_c0_last_c1 : integer range 0 to max_line_length_wght;
 
-    signal w_h2           : integer range 0 to 127;
-    signal w_rows_last_h2 : integer range 0 to 127;
+    signal w_h2           : integer range 0 to 1023;
+    signal w_rows_last_h2 : integer range 0 to max_size_x;
 
-    signal w_w1 : integer range 0 to 1023;
+    signal w_w1 : integer range 0 to max_line_length_psum;
     signal w_c1 : integer range 0 to 1023;
 
     signal r_incr_w1 : std_logic;
 
-    signal w_m0         : integer range 0 to 1023;
+    signal w_m0         : integer range 0 to max_output_channels;
     signal r_m0_dist    : uns_array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
-    signal w_m0_last_m1 : integer range 0 to 1023;
+    signal w_m0_last_m1 : integer range 0 to max_output_channels;
 
     signal r_command_iact       : command_lb_array_t(0 to size_y);
     signal r_read_offset_iact   : array_t(0 to size_y)(addr_width_iact - 1 downto 0);
@@ -145,60 +145,6 @@ begin
         end generate gen_delay_x;
 
     end generate gen_delay_y;
-
-    /*gen_command_delay : for y in 0 to size_y - 1 generate
-
-        p_command_delay : process(clk, rstn) is
-        begin
-
-            if not rstn then
-
-                o_command(y, 0) <= c_pe_conv_mult;
-                o_command_iact(y, 0) <= c_lb_idle;
-                o_command_wght(y, 0) <= c_lb_idle;
-                o_command_psum(y, 0) <= c_lb_idle;
-                o_update_offset_iact(y, 0) <= (others => '0');
-                o_update_offset_wght(y, 0) <= (others => '0');
-                o_update_offset_psum(y, 0) <= (others => '0');
-                o_read_offset_iact(y, 0) <= (others => '0');
-                o_read_offset_wght(y, 0) <= (others => '0');
-                o_read_offset_psum(y, 0) <= (others => '0');
-
-            elsif rising_edge(clk) then
-
-                if r_state /= s_output and y /= size_y - 1 then
-
-                    o_command(y, 0) <= o_command(y+1,0);
-                    o_command_iact(y, 0) <= o_command_iact(y+1,0);
-                    o_command_wght(y, 0) <= o_command_wght(y+1,0);
-                    o_command_psum(y, 0) <= o_command_psum(y+1,0);
-                    o_update_offset_iact(y, 0) <= o_update_offset_iact(y+1,0);
-                    o_update_offset_wght(y, 0) <= o_update_offset_wght(y+1,0);
-                    o_update_offset_psum(y, 0) <= o_update_offset_psum(y+1,0);
-                    o_read_offset_iact(y, 0) <= o_read_offset_iact(y+1,0);
-                    o_read_offset_wght(y, 0) <= o_read_offset_wght(y+1,0);
-                    o_read_offset_psum(y, 0) <= o_read_offset_psum(y+1,0);
-
-                else
-
-                    o_command(y, 0) <= r_command(y);
-                    o_command_iact(y, 0) <= r_command_iact(y);
-                    o_command_wght(y, 0) <= r_command_wght(y);
-                    o_command_psum(y, 0) <= w_mux_command_psum(y);
-                    o_update_offset_iact(y, 0) <= r_update_offset_iact(y);
-                    o_update_offset_wght(y, 0) <= r_update_offset_wght(y);
-                    o_update_offset_psum(y, 0) <= w_mux_update_offset_psum(y);
-                    o_read_offset_iact(y, 0) <= r_read_offset_iact(y);
-                    o_read_offset_wght(y, 0) <= r_read_offset_wght(y);
-                    o_read_offset_psum(y, 0) <= w_mux_read_offset_psum(y);
-
-                end if;
-
-            end if;
-
-        end process p_command_delay;
-
-    end generate gen_command_delay;*/
 
     switch_state : process (all) is
     begin
@@ -345,7 +291,7 @@ begin
                             end if;
                         else
                             -- Delay counter after shrinking for new values to arrive in the buffer
-                            if r_count_w1 /= 2 then -- r_W1 - 1 then /* TODO changed - check! */
+                            if r_count_w1 /= 2 then
                                 r_count_w1 <= r_count_w1 + 1;
                             elsif r_count_h2 = w_h2 then
                                 -- All h2 done and output
@@ -358,7 +304,6 @@ begin
                                 r_count_c0w0 <= 0;
                                 r_state      <= s_calculate;
                             end if;
-                        -- Output done, reset psum etc?
                         end if;
                     end if;
 
@@ -502,13 +447,6 @@ begin
 
                     r_command_wght <= (others => c_lb_idle);
 
-                    /*if w_c1 > 1 then
-                        if r_count_c0w0 = 0 and r_count_w1 = 0 then
-                            r_command_wght     <= (others => c_lb_shrink);
-                            r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * o_c0_last_c1, addr_width_wght)));
-                        end if;
-                    end if;*/
-
                 when others =>
 
                     null;
@@ -585,8 +523,6 @@ begin
 
                     when s_output =>
 
-                        if i < w_m0 * i_params.kernel_size then
-                        end if;
                         r_command_psum(i)       <= c_lb_idle;
                         r_read_offset_psum(i)   <= (others => '0');
                         r_update_offset_psum(i) <= (others => '0');
@@ -602,12 +538,6 @@ begin
 
                             if r_count_c0w0 = i + 2 then
                                 r_command_psum(i) <= c_lb_read;
-                            /*elsif w_output_sequence(i) = i_params.kernel_size - r_count_c0w0 - 2 and r_count_c0w0 < i_params.kernel_size + 1 then
-                                r_command_psum(i) <= c_lb_read_update;
-                            elsif r_count_c0w0 = i_params.kernel_size then
-                                r_command_psum(i) <= c_lb_idle;
-                            elsif w_output_sequence(i) = i_params.kernel_size - r_count_c0w0 - 1 + i and r_count_c0w0 >= i_params.kernel_size + 1 then
-                                r_command_psum(i) <= c_lb_read;*/
                             else
                                 r_command_psum(i) <= c_lb_idle;
                             end if;

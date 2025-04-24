@@ -61,7 +61,7 @@ package utilities is
         image_x       : integer range 0 to max_line_length_psum;
         kernel_size   : integer range 0 to 31;
         c1            : integer range 0 to 1023;
-        w1            : integer range 0 to 1023;
+        w1            : integer range 0 to max_line_length_psum;
         h2            : integer range 0 to 1023;
         m0            : integer range 0 to max_output_channels;
         m0_last_m1    : integer range 0 to max_output_channels;
