@@ -84,7 +84,7 @@ package utilities is
         stride_iact_w      : integer range 0 to 131071; -- mem cols word count of c0*c1*w1 columns (outside / "standard" spad view)
         stride_iact_hw     : integer range 0 to 131071; -- mem cols word count of an h*w image
         stride_wght_kernel : integer range 0 to 63;     -- offset between full kernels in bytes (e.g. 9 for packed 3x3 kernels)
-        stride_wght_och    : integer range 0 to 1023;   -- offset between each output channel kernel set (e.g. 2*9 for packed c=16 * 3x3, read size 8 kernels per och)
+        stride_wght_och    : integer range 0 to 4095;   -- offset between each output channel kernel set (e.g. 2*9 for packed c=16 * 3x3, read size 8 kernels per och)
         stride_psum_och    : integer range 0 to 4095;   -- offset between output channels within a scratchpad column in units of read_size (e.g. 16*16/8=32 for a 16x16 output image, read size 8)
     end record parameters_t;
 
