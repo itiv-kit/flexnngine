@@ -112,11 +112,8 @@ architecture behavioral of pe is
     signal w_data_in_iact_valid : std_logic;
     signal w_data_in_iact       : std_logic_vector(data_width_iact - 1 downto 0);
 
-    signal i_data_in_valid_chg : std_logic;
-    signal r_enable            : std_logic;
-    signal r_enable_d          : std_logic;
-    signal r_enable_dd         : std_logic;
-    signal r_enable_ddd        : std_logic;
+    signal r_enable   : std_logic;
+    signal r_enable_d : std_logic;
 
 begin
 
@@ -181,6 +178,8 @@ begin
         if not rstn then
             r_command_read_psum <= '0';
         elsif rising_edge(clk) then
+            r_enable   <= i_enable;
+            r_enable_d <= r_enable;
             if r_enable_d then
                 if i_command_psum = c_lb_read then
                     r_command_read_psum <= '1';
@@ -435,17 +434,10 @@ begin
             address_width => 1
         )
         port map (
-            v_i(0)    => i_data_in_valid_chg,
+            v_i(0)    => i_data_in_valid,
             sel(0)    => r_sel_conv_gemm,
             z_o(0)(0) => w_demux_input_psum_valid,
             z_o(1)(0) => w_demux_input_iact_valid
         );
-
-    r_enable            <= i_enable when rising_edge(clk);
-    r_enable_d          <= r_enable when rising_edge(clk);
-    r_enable_dd         <= r_enable_d when rising_edge(clk);
-    r_enable_ddd        <= r_enable_dd when rising_edge(clk);
-    i_data_in_valid_chg <= '0' when r_sel_mult_psum = '1' and r_enable_ddd = '0' else
-                           i_data_in_valid; -- 0 if enable off and psum path active
 
 end architecture behavioral;
