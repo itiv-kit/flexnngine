@@ -142,20 +142,18 @@ class Test:
             self.W1 = self.convolution.image_size - self.convolution.kernel_size + 1
             self.M0_last_m1 = 1 # not used yet
 
-            self.line_length_wght_usable = self.accelerator.line_length_wght - 28
+            self.line_length_wght_usable = self.accelerator.line_length_wght - 1
 
             self.H2 = math.ceil(
                 (self.convolution.image_size - self.convolution.kernel_size + 1)
                 / self.accelerator.size_x
             )
-
-            self.C1 = math.ceil(self.convolution.input_channels * self.convolution.kernel_size / self.line_length_wght_usable)
-            self.C0 = math.floor(self.convolution.input_channels / self.C1)
-
-            self.C0_last_c1 = self.convolution.input_channels - (self.C1 - 1) * self.C0
             self.rows_last_h2 = (self.convolution.image_size - self.convolution.kernel_size + 1) - (self.H2 - 1) * self.accelerator.size_x
-            self.C0W0 = self.C0 * self.convolution.kernel_size
-            self.C0W0_last_c1 = self.C0_last_c1 * self.convolution.kernel_size
+
+            self.C0 = math.floor(self.line_length_wght_usable / self.convolution.kernel_size / self.accelerator.spad_word_size) * self.accelerator.spad_word_size
+            if self.C0 == 0:
+                print(f"Error: rs={self.convolution.kernel_size} does not fit into usable line length {self.line_length_wght_usable}")
+                return False
 
             self.C1 = math.ceil(self.convolution.input_channels / self.C0)
             self.C0_last_c1 = self.convolution.input_channels - (self.C1 - 1) * self.C0
@@ -208,22 +206,16 @@ class Test:
 
             self.W1 = self.convolution.image_size - self.convolution.kernel_size + 1
             self.M0_last_m1 = 1 # not used yet
+            self.rows_last_h2 = 1 # not required for dataflow 0
 
             if self.M0 == 0:
                 self.H2 = math.ceil(self.W1 / self.accelerator.size_x)
             else:
                 self.H2 = math.ceil(self.convolution.image_size / self.accelerator.size_x)
 
-            self.C1 = math.ceil(self.convolution.input_channels * self.convolution.kernel_size / self.line_length_wght_usable)
-            # self.C0 = math.floor(self.convolution.input_channels / self.C1)
-            self.C0 = math.floor(self.line_length_wght_usable / self.convolution.kernel_size / 8) * 8
-
-            self.C0_last_c1 = self.convolution.input_channels - (self.C1 - 1) * self.C0
-            self.rows_last_h2 = 1 # not required for dataflow 0
-            self.C0W0 = self.C0 * self.convolution.kernel_size
-            self.C0W0_last_c1 = self.C0_last_c1 * self.convolution.kernel_size
-
+            self.C0 = math.floor(self.line_length_wght_usable / self.convolution.kernel_size / self.accelerator.spad_word_size) * self.accelerator.spad_word_size
             self.C1 = math.ceil(self.convolution.input_channels / self.C0)
+
             self.C0_last_c1 = self.convolution.input_channels - (self.C1 - 1) * self.C0
             self.C0W0 = self.C0 * self.convolution.kernel_size
             self.C0W0_last_c1 = self.C0_last_c1 * self.convolution.kernel_size
