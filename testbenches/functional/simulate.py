@@ -138,20 +138,29 @@ class Test:
         print(f'Generating test: {test_name}')
         test_dir.mkdir(parents=True, exist_ok=True)
         self.test_dir = test_dir
+        if not self._calculate_parameters():
+            return False
         return self._generate_stimuli()
 
-    def _generate_stimuli(self):
-        print(f'Generating stimuli for test: {self.name}')
+    def _calculate_parameters(self):
+        self.H1 = self.accelerator.size_x
+        self.W1 = self.convolution.image_size - self.convolution.kernel_size + 1
+        self.M0_last_m1 = 1 # not used yet
+        self.rows_last_h2 = 1 # only required for dataflow 1
+        self.line_length_wght_usable = self.accelerator.line_length_wght - 1 # TODO: check why this is necessary
 
-        # calculate accelerator parameters
+        self.C0 = math.floor(self.line_length_wght_usable / self.convolution.kernel_size / self.accelerator.spad_word_size) * self.accelerator.spad_word_size
+        if self.C0 == 0:
+            print(f"Error: rs={self.convolution.kernel_size} does not fit into usable line length {self.line_length_wght_usable}")
+            return False
+
+        self.C1 = math.ceil(self.convolution.input_channels / self.C0)
+        self.C0_last_c1 = self.convolution.input_channels - (self.C1 - 1) * self.C0
+        self.C0W0 = self.C0 * self.convolution.kernel_size
+        self.C0W0_last_c1 = self.C0_last_c1 * self.convolution.kernel_size
+
         if self.accelerator.dataflow == 1:
             self.M0 = self.accelerator.size_y
-            self.H1 = self.accelerator.size_x
-
-            self.W1 = self.convolution.image_size - self.convolution.kernel_size + 1
-            self.M0_last_m1 = 1 # not used yet
-
-            self.line_length_wght_usable = self.accelerator.line_length_wght - 1
 
             self.H2 = math.ceil(
                 (self.convolution.image_size - self.convolution.kernel_size + 1)
@@ -159,113 +168,51 @@ class Test:
             )
             self.rows_last_h2 = (self.convolution.image_size - self.convolution.kernel_size + 1) - (self.H2 - 1) * self.accelerator.size_x
 
-            self.C0 = math.floor(self.line_length_wght_usable / self.convolution.kernel_size / self.accelerator.spad_word_size) * self.accelerator.spad_word_size
-            if self.C0 == 0:
-                print(f"Error: rs={self.convolution.kernel_size} does not fit into usable line length {self.line_length_wght_usable}")
-                return False
-
-            self.C1 = math.ceil(self.convolution.input_channels / self.C0)
-            self.C0_last_c1 = self.convolution.input_channels - (self.C1 - 1) * self.C0
-            self.C0W0 = self.C0 * self.convolution.kernel_size
-            self.C0W0_last_c1 = self.C0_last_c1 * self.convolution.kernel_size
-
-            # C0W0 must not be too short to allow for disabling of PE array while reading data
-            if self.C0W0_last_c1 < 6:
-                self.C1 = self.C1 - 1
-                self.C0_last_c1 = self.convolution.input_channels - (self.C1 - 1) * self.C0
-                self.C0W0 = self.C0 * self.convolution.kernel_size
-                self.C0W0_last_c1 = self.C0_last_c1 * self.convolution.kernel_size
-
-            if (self.C0W0 * (self.C1-1) + self.C0W0_last_c1) != (self.convolution.input_channels * self.convolution.kernel_size):
-                print("H2 = ", self.H2)
-                print("rows_last_h2 = ", self.rows_last_h2)
-                print("C1 = ", self.C1)
-                print("C0 = ", self.C0)
-                print("C0_last_c1 = ", self.C0_last_c1)
-                print("C0W0 = ", self.C0W0)
-                print("C0W0_last_c1 = ", self.C0W0_last_c1)
-                print("MISMATCH")
-                return False
-
-            if self.C0W0_last_c1 < 6:
-                print("H2 = ", self.H2)
-                print("rows_last_h2 = ", self.rows_last_h2)
-                print("C1 = ", self.C1)
-                print("C0 = ", self.C0)
-                print("C0_last_c1 = ", self.C0_last_c1)
-                print("C0W0 = ", self.C0W0)
-                print("C0W0_last_c1 = ", self.C0W0_last_c1)
-                return False
-
-            if self.C0W0_last_c1 >= self.accelerator.line_length_wght:
-                print("H2 = ", self.H2)
-                print("rows_last_h2 = ", self.rows_last_h2)
-                print("C1 = ", self.C1)
-                print("C0 = ", self.C0)
-                print("C0_last_c1 = ", self.C0_last_c1)
-                print("C0W0 = ", self.C0W0)
-                print("C0W0_last_c1 = ", self.C0W0_last_c1)
-                return False
-
         else:
-            self.line_length_wght_usable = self.accelerator.line_length_wght - 1
-
             self.M0 = math.floor(self.accelerator.size_y / self.convolution.kernel_size)
-            self.H1 = self.accelerator.size_x
-
-            self.W1 = self.convolution.image_size - self.convolution.kernel_size + 1
-            self.M0_last_m1 = 1 # not used yet
-            self.rows_last_h2 = 1 # not required for dataflow 0
 
             if self.M0 == 0:
                 self.H2 = math.ceil(self.W1 / self.accelerator.size_x)
             else:
                 self.H2 = math.ceil(self.convolution.image_size / self.accelerator.size_x)
 
-            self.C0 = math.floor(self.line_length_wght_usable / self.convolution.kernel_size / self.accelerator.spad_word_size) * self.accelerator.spad_word_size
-            self.C1 = math.ceil(self.convolution.input_channels / self.C0)
-
+        # C0W0 must not be too short to allow for disabling of PE array while reading data
+        if self.C0W0_last_c1 < 6:
+            self.C1 = self.C1 - 1
             self.C0_last_c1 = self.convolution.input_channels - (self.C1 - 1) * self.C0
             self.C0W0 = self.C0 * self.convolution.kernel_size
             self.C0W0_last_c1 = self.C0_last_c1 * self.convolution.kernel_size
 
-            # C0W0 must not be too short to allow for disabling of PE array while reading data
-            if self.C0W0_last_c1 < 6:
-                self.C1 = self.C1 - 1
-                self.C0_last_c1 = self.convolution.input_channels - (self.C1 - 1) * self.C0
-                self.C0W0 = self.C0 * self.convolution.kernel_size
-                self.C0W0_last_c1 = self.C0_last_c1 * self.convolution.kernel_size
+        if (self.C0W0 * (self.C1-1) + self.C0W0_last_c1) != (self.convolution.input_channels * self.convolution.kernel_size):
+            print("H2 = ", self.H2)
+            print("rows_last_h2 = ", self.rows_last_h2)
+            print("C1 = ", self.C1)
+            print("C0 = ", self.C0)
+            print("C0_last_c1 = ", self.C0_last_c1)
+            print("C0W0 = ", self.C0W0)
+            print("C0W0_last_c1 = ", self.C0W0_last_c1)
+            print("MISMATCH")
+            return False
 
-            if (self.C0W0 * (self.C1-1) + self.C0W0_last_c1) != (self.convolution.input_channels * self.convolution.kernel_size):
-                print("H2 = ", self.H2)
-                print("rows_last_h2 = ", self.rows_last_h2)
-                print("C1 = ", self.C1)
-                print("C0 = ", self.C0)
-                print("C0_last_c1 = ", self.C0_last_c1)
-                print("C0W0 = ", self.C0W0)
-                print("C0W0_last_c1 = ", self.C0W0_last_c1)
-                print("MISMATCH")
-                return False
+        if self.C0W0_last_c1 < 6:
+            print("H2 = ", self.H2)
+            print("rows_last_h2 = ", self.rows_last_h2)
+            print("C1 = ", self.C1)
+            print("C0 = ", self.C0)
+            print("C0_last_c1 = ", self.C0_last_c1)
+            print("C0W0 = ", self.C0W0)
+            print("C0W0_last_c1 = ", self.C0W0_last_c1)
+            return False
 
-            if self.C0W0_last_c1 < 6:
-                print("H2 = ", self.H2)
-                print("rows_last_h2 = ", self.rows_last_h2)
-                print("C1 = ", self.C1)
-                print("C0 = ", self.C0)
-                print("C0_last_c1 = ", self.C0_last_c1)
-                print("C0W0 = ", self.C0W0)
-                print("C0W0_last_c1 = ", self.C0W0_last_c1)
-                return False
-
-            if self.C0W0_last_c1 >= self.accelerator.line_length_wght:
-                print("H2 = ", self.H2)
-                print("rows_last_h2 = ", self.rows_last_h2)
-                print("C1 = ", self.C1)
-                print("C0 = ", self.C0)
-                print("C0_last_c1 = ", self.C0_last_c1)
-                print("C0W0 = ", self.C0W0)
-                print("C0W0_last_c1 = ", self.C0W0_last_c1)
-                return False
+        if self.C0W0_last_c1 >= self.accelerator.line_length_wght:
+            print("H2 = ", self.H2)
+            print("rows_last_h2 = ", self.rows_last_h2)
+            print("C1 = ", self.C1)
+            print("C0 = ", self.C0)
+            print("C0_last_c1 = ", self.C0_last_c1)
+            print("C0W0 = ", self.C0W0)
+            print("C0W0_last_c1 = ", self.C0W0_last_c1)
+            return False
 
         # calculate parameters for scratchpad data layout
         self.stride_iact_w = math.ceil(self.convolution.image_size / self.accelerator.spad_word_size)
@@ -295,6 +242,11 @@ class Test:
         else:
             print(f"using fixed throttle of {self.accelerator.throttle}")
             self.psum_throttle = self.accelerator.throttle
+
+        return True
+
+    def _generate_stimuli(self):
+        print(f'Generating stimuli for test: {self.name}')
 
         # fixed random seed for reproducibility
         np.random.seed(2)
@@ -572,12 +524,10 @@ class Test:
 
 def run_test(setting):
     test = Test(setting.name, setting.convolution, setting.accelerator, setting.start_gui)
-    gen_test = test.generate_test(setting.name, Path("test") / setting.name)
-    if gen_test:
-        return test.run()
-    else:
+    if not test.generate_test(setting.name, Path("test") / setting.name):
         print("Error while generating test: ", setting.name)
         return False
+    return test.run()
 
 presets = {
     'default': Setting(
