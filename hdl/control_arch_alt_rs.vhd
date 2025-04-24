@@ -146,6 +146,9 @@ begin
 
     end generate gen_delay_y;
 
+    r_update_offset_iact <= (others => (others => '0'));
+    r_update_offset_wght <= (others => (others => '0'));
+
     switch_state : process (all) is
     begin
 
@@ -200,44 +203,37 @@ begin
 
                     if o_enable = '1' then
                         r_incr_w1 <= '0';
-                        if r_count_h2 /= w_h2 then
-                            if r_count_h1 /= i_params.kernel_size then
-                                if r_count_c1 /= w_c1 then
-                                    if r_count_w1 /= w_w1 then
-                                        if not((r_count_c0w0 = w_c0w0 - 1 and r_count_c1 /= w_c1 - 1) or
-                                               (r_count_c0w0 = w_c0w0_last_c1 - 1 and r_count_c1 = w_c1 - 1)) then
-                                            r_count_c0w0 <= r_count_c0w0 + 1;
-                                            r_incr_w1    <= '0';
-                                        else
-                                            -- shift kernel - increment w1
-                                            if r_incr_w1 = '1' then
-                                                r_count_w1   <= r_count_w1 + 1;
-                                                r_count_c0w0 <= 0;
-                                                r_incr_w1    <= '0';
-                                            else
-                                                r_incr_w1 <= '1';
-                                            end if;
-                                        end if;
-                                    else
-                                        -- Increment c1
-                                        -- Don't reset psums, but remove values from iact & wght buffers
-                                        r_count_c1 <= r_count_c1 + 1;
-                                        r_count_w1 <= 0;
-
-                                        if r_count_c1 /= w_c1 - 1 then
-                                            -- Only perform iact & wght shrink if not last c1 done!
-                                            r_state <= s_incr_c1;
-                                        else
-                                            -- Increment h1, process next kernel row
-                                            r_state    <= s_incr_h1;
-                                            r_count_h1 <= r_count_h1 + 1;
-                                            r_count_c1 <= 0;
-                                        end if;
-                                    end if;
+                        if r_count_h2 /= w_h2 and r_count_h1 /= i_params.kernel_size and r_count_c1 /= w_c1 then
+                            if r_count_w1 /= w_w1 then
+                                if not((r_count_c0w0 = w_c0w0 - 1 and r_count_c1 /= w_c1 - 1) or
+                                       (r_count_c0w0 = w_c0w0_last_c1 - 1 and r_count_c1 = w_c1 - 1)) then
+                                    r_count_c0w0 <= r_count_c0w0 + 1;
+                                    r_incr_w1    <= '0';
                                 else
+                                    -- shift kernel - increment w1
+                                    if r_incr_w1 = '1' then
+                                        r_count_w1   <= r_count_w1 + 1;
+                                        r_count_c0w0 <= 0;
+                                        r_incr_w1    <= '0';
+                                    else
+                                        r_incr_w1 <= '1';
+                                    end if;
                                 end if;
                             else
-                            -- Switch to output state done in incr_h1 state
+                                -- Increment c1
+                                -- Don't reset psums, but remove values from iact & wght buffers
+                                r_count_c1 <= r_count_c1 + 1;
+                                r_count_w1 <= 0;
+
+                                if r_count_c1 /= w_c1 - 1 then
+                                    -- Only perform iact & wght shrink if not last c1 done!
+                                    r_state <= s_incr_c1;
+                                else
+                                    -- Increment h1, process next kernel row
+                                    r_state    <= s_incr_h1;
+                                    r_count_h1 <= r_count_h1 + 1;
+                                    r_count_c1 <= 0;
+                                end if;
                             end if;
                         else
                         -- DONE for now (not tiled for PSUM Line Buffer Length)
@@ -323,11 +319,8 @@ begin
     begin
 
         if not rstn then
-            r_command_iact       <= (others => c_lb_idle);
-            r_read_offset_iact   <= (others => (others => '0'));
-            r_update_offset_iact <= (others => (others => '0'));
+            r_command_iact <= (others => c_lb_idle);
         elsif rising_edge(clk) and o_enable = '1' then
-            r_update_offset_iact <= (others => (others => '0'));
 
             case r_state is
 
@@ -343,8 +336,7 @@ begin
                         r_command_iact <= (others => c_lb_shrink);
                     elsif r_count_w1 = w_w1 then
                         -- Tile y change
-                        r_command_iact     <= (others => c_lb_idle);
-                        r_read_offset_iact <= (others => (others => '0'));
+                        r_command_iact <= (others => c_lb_idle);
                     else
                         r_command_iact     <= (others => c_lb_read);
                         r_read_offset_iact <= (others => std_logic_vector(to_unsigned(r_count_c0w0, addr_width_iact)));
@@ -352,8 +344,7 @@ begin
 
                 when s_incr_c1 =>
 
-                    r_command_iact     <= (others => c_lb_idle);
-                    r_read_offset_iact <= (others => (others => '0'));
+                    r_command_iact <= (others => c_lb_idle);
 
                     if r_count_w1 = 0 then
                         r_command_iact     <= (others => c_lb_shrink);
@@ -362,8 +353,7 @@ begin
 
                 when s_incr_h1 =>
 
-                    r_command_iact     <= (others => c_lb_idle);
-                    r_read_offset_iact <= (others => (others => '0'));
+                    r_command_iact <= (others => c_lb_idle);
 
                     if r_count_w1 = 0 then
                         r_command_iact     <= (others => c_lb_shrink);
@@ -372,18 +362,7 @@ begin
 
                 when s_output =>
 
-                    r_command_iact     <= (others => c_lb_idle);
-                    r_read_offset_iact <= (others => (others => '0'));
-
-                    if r_count_c0w0 = 0 and r_count_w1 = 0 then
-                        if w_c1 > 1 then
-                        -- r_command_iact     <= (others => c_lb_shrink);
-                        -- r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0_last_c1 - w_c0_last_c1, addr_width_iact)));
-                        else
-                        -- r_command_iact     <= (others => c_lb_shrink);
-                        -- r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * i_params.inputchs - i_params.inputchs, addr_width_iact)));
-                        end if;
-                    end if;
+                    r_command_iact <= (others => c_lb_idle);
 
                 when others =>
 
@@ -399,34 +378,25 @@ begin
     begin
 
         if not rstn then
-            r_command_wght       <= (others => c_lb_idle);
-            r_read_offset_wght   <= (others => (others => '0'));
-            r_update_offset_wght <= (others => (others => '0'));
+            r_command_wght <= (others => c_lb_idle);
         elsif rising_edge(clk) and o_enable = '1' then
-            r_update_offset_wght <= (others => (others => '0'));
 
             case r_state is
 
                 when s_calculate =>
 
-                    if r_incr_w1 = '1' then
-                        -- shift kernel - increment w1
-                        r_command_wght     <= (others => c_lb_idle);
-                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(0, addr_width_wght)));
-                    elsif r_count_w1 = w_w1 then
-                        -- Tile y change
+                    r_read_offset_wght <= (others => std_logic_vector(to_unsigned(r_count_c0w0, addr_width_wght)));
 
-                        r_command_wght     <= (others => c_lb_idle);
-                        r_read_offset_wght <= (others => (others => '0'));
+                    if r_incr_w1 = '1' or r_count_w1 = w_w1 then
+                        -- shift kernel - increment w1 / Tile y change
+                        r_command_wght <= (others => c_lb_idle);
                     else
-                        r_command_wght     <= (others => c_lb_read);
-                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(r_count_c0w0, addr_width_wght)));
+                        r_command_wght <= (others => c_lb_read);
                     end if;
 
                 when s_incr_c1 =>
 
-                    r_command_wght     <= (others => c_lb_idle);
-                    r_read_offset_wght <= (others => (others => '0'));
+                    r_command_wght <= (others => c_lb_idle);
 
                     if r_count_w1 = 0 then
                         r_command_wght     <= (others => c_lb_shrink);
@@ -435,8 +405,7 @@ begin
 
                 when s_incr_h1 =>
 
-                    r_command_wght     <= (others => c_lb_idle);
-                    r_read_offset_wght <= (others => (others => '0'));
+                    r_command_wght <= (others => c_lb_idle);
 
                     if r_count_w1 = 0 then
                         r_command_wght     <= (others => c_lb_shrink);
@@ -470,13 +439,11 @@ begin
             elsif rising_edge(clk) then
                 if r_state = s_output then
                     if r_count_c0w0 = i + 2 then
-                        r_command(i) <= c_pe_conv_mult; -- c_pe_gemm_psum;
+                        r_command(i) <= c_pe_conv_mult;
                     elsif r_count_c0w0 > size_y + 3 then
                         r_command(i) <= c_pe_gemm_mult;
                     elsif r_count_w1 = 2 and r_count_c0w0 > 1 then
-                        r_command(i) <= c_pe_conv_pass; -- c_pe_gemm_psum;
-                    else
-                    -- r_command(i) <= c_pe_conv_psum;
+                        r_command(i) <= c_pe_conv_pass;
                     end if;
                 elsif r_state = s_calculate then
                     r_command(i) <= c_pe_gemm_mult;
@@ -490,42 +457,30 @@ begin
         begin
 
             if not rstn then
-                r_command_psum(i)       <= c_lb_idle;
-                r_read_offset_psum(i)   <= (others => '0');
-                r_update_offset_psum(i) <= (others => '0');
+                r_command_psum(i) <= c_lb_idle;
             elsif rising_edge(clk) and o_enable = '1' then
 
                 case r_state is
 
                     when s_calculate =>
 
-                        if r_incr_w1 = '1' then
-                            -- shift kernel - increment w1
-                            r_command_psum(i)       <= c_lb_idle;
-                            r_read_offset_psum(i)   <= std_logic_vector(to_unsigned(0, addr_width_psum));
-                            r_update_offset_psum(i) <= r_read_offset_psum(i);
-                        elsif r_count_w1 = w_w1 then
-                            -- Tile y change
-                            r_command_psum(i)       <= c_lb_idle;
-                            r_read_offset_psum(i)   <= (others => '0');
-                            r_update_offset_psum(i) <= (others => '0');
+                        r_read_offset_psum(i)   <= std_logic_vector(to_unsigned(r_count_w1, addr_width_psum));
+                        r_update_offset_psum(i) <= r_read_offset_psum(i);
+
+                        if r_incr_w1 = '1' or r_count_w1 = w_w1 then
+                            -- shift kernel - increment w1 / Tile y change
+                            r_command_psum(i) <= c_lb_idle;
                         else
-                            r_command_psum(i)       <= c_lb_read_update;
-                            r_read_offset_psum(i)   <= std_logic_vector(to_unsigned(r_count_w1, addr_width_psum));
-                            r_update_offset_psum(i) <= r_read_offset_psum(i);
+                            r_command_psum(i) <= c_lb_read_update;
                         end if;
 
                     when s_incr_c1 | s_incr_h1 =>
 
-                        r_command_psum(i)       <= c_lb_idle;
-                        r_read_offset_psum(i)   <= (others => '0');
-                        r_update_offset_psum(i) <= (others => '0');
+                        r_command_psum(i) <= c_lb_idle;
 
                     when s_output =>
 
-                        r_command_psum(i)       <= c_lb_idle;
-                        r_read_offset_psum(i)   <= (others => '0');
-                        r_update_offset_psum(i) <= (others => '0');
+                        r_command_psum(i) <= c_lb_idle;
 
                         if r_count_c0w0 = w_m0 + 3 then
                             -- Remove all stored psums, new tile (h1)
@@ -534,12 +489,9 @@ begin
                                 r_read_offset_psum(i) <= std_logic_vector(to_unsigned(i_params.image_x - i_params.kernel_size + 1, addr_width_psum));
                             end if;
                         else
-                            -- Sum psums vertically across accelerator. Different kernels summed to their top row respectively
-
+                            -- Move psums vertically across accelerator. No accumulation required, sums are already finished
                             if r_count_c0w0 = i + 2 then
                                 r_command_psum(i) <= c_lb_read;
-                            else
-                                r_command_psum(i) <= c_lb_idle;
                             end if;
 
                             r_read_offset_psum(i)   <= std_logic_vector(to_unsigned(r_count_w1, addr_width_psum));
