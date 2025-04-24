@@ -89,6 +89,7 @@ architecture imp of functional_tb is
     signal output_done : boolean;
 
     signal params : parameters_t;
+    signal status : status_info_t;
 
     signal o_psums           : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
     signal o_psums_valid     : std_logic_vector(size_x - 1 downto 0);
@@ -200,6 +201,7 @@ begin
             i_start  => start,
             o_done   => done,
             i_params => params,
+            o_status => status,
             -- memory i/o not used in this testbench
             i_mem_en       => '0',
             i_mem_write_en => (others => '0'),

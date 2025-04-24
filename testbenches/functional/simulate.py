@@ -607,12 +607,12 @@ presets = {
                                   clk_period = [10], clk_sp_period = [10], dataflow=[0,1])),
 
     # Test with different FIFO sizes. Kernel_size 1,3 and medium image size 16, 40 channels
-    'in_fifos_5..512': Setting(
-                      Convolution(image_size = [16], kernel_size = [1,3], input_channels = [40],
+    'in_fifos_sweep': Setting(
+                      Convolution(image_size = [32], kernel_size = [3,5], input_channels = [40],
                                   output_channels = [3], bias = [0], requantize = [False], activation = [ActivationMode.passthrough]),
                       Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                   mem_addr_width = 15,
-                                  iact_fifo_size = [5, 10, 15, 30, 64, 128, 512], wght_fifo_size = [5, 10, 15, 30, 64, 128, 512], psum_fifo_size = [32],
+                                  iact_fifo_size = [4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 32, 64], wght_fifo_size = [4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 32, 64], psum_fifo_size = [32],
                                   clk_period = [10], clk_sp_period = [10], dataflow=[0,1])),
 
     # Test with different Line buffer sizes. Kernel_size 1,3 and medium image size 16, 40 channels, DF 0
