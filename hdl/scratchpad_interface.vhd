@@ -735,7 +735,7 @@ begin
 
             for i in w_full_psum_f'range loop
 
-                if (i_psums_valid(i) and w_full_psum_f(i)) = '1' then
+                if (w_wr_en_psum_f(i) and w_full_psum_f(i)) = '1' then
                     temp := temp + 1;
                 end if;
 
