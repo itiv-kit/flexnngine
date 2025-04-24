@@ -87,6 +87,7 @@ architecture imp of functional_tb is
     signal start       : std_logic;
     signal done        : std_logic;
     signal output_done : boolean;
+    signal eval_done   : boolean := false;
 
     signal params : parameters_t;
     signal status : status_info_t;
@@ -460,6 +461,12 @@ begin
                 end if;
 
                 writeline(outfile, row);
+            end if;
+            if done = '1' and not eval_done then
+                write(row, string'("simulation done, cycle counter: "));
+                write(row, integer'image(to_integer(status.cycle_counter)));
+                writeline(outfile, row);
+                eval_done <= true;
             end if;
         end if;
 
