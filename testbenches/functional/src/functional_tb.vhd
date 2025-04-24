@@ -44,20 +44,21 @@ entity functional_tb is
         g_write_eval : boolean  := false;
         g_iterations : positive := 1;
 
-        g_c1           : positive := 1;
-        g_w1           : positive := 1;
-        g_h2           : positive := 1;
-        g_m0           : positive := 1;
-        g_m0_last_m1   : positive := 1;
-        g_rows_last_h2 : positive := 1;
-        g_c0           : positive := 1;
-        g_c0_last_c1   : positive := 1;
-        g_c0w0         : positive := 1;
-        g_c0w0_last_c1 : positive := 1;
-        g_mode_act     : integer  := 0;
-        g_requant      : integer  := 0;
-        g_postproc     : integer  := 1;
-        g_dataflow     : integer  := 1;
+        g_c1            : positive := 1;
+        g_w1            : positive := 1;
+        g_h2            : positive := 1;
+        g_m0            : positive := 1;
+        g_m0_last_m1    : positive := 1;
+        g_rows_last_h2  : positive := 1;
+        g_c0            : positive := 1;
+        g_c0_last_c1    : positive := 1;
+        g_c0w0          : positive := 1;
+        g_c0w0_last_c1  : positive := 1;
+        g_psum_throttle : integer  := 0;
+        g_mode_act      : integer  := 0;
+        g_requant       : integer  := 0;
+        g_postproc      : integer  := 1;
+        g_dataflow      : integer  := 1;
 
         g_stride_iact_w  : positive := 1;
         g_stride_iact_hw : positive := 1;
@@ -139,28 +140,29 @@ begin
                                           '0';
     end generate g_psum_commands;
 
-    params.dataflow     <= g_dataflow;
-    params.inputchs     <= g_inputchs;
-    params.outputchs    <= g_outputchs;
-    params.image_y      <= g_image_y;
-    params.image_x      <= g_image_x;
-    params.kernel_size  <= g_kernel_size;
-    params.c1           <= g_c1;
-    params.w1           <= g_w1;
-    params.h2           <= g_h2;
-    params.m0           <= g_m0;
-    params.m0_last_m1   <= g_m0_last_m1;
-    params.rows_last_h2 <= g_rows_last_h2;
-    params.c0           <= g_c0;
-    params.c0_last_c1   <= g_c0_last_c1;
-    params.c0w0         <= g_c0w0;
-    params.c0w0_last_c1 <= g_c0w0_last_c1;
-    params.bias         <= (others => g_bias);
-    params.requant_enab <= true when g_requant > 0 else
-                           false;
-    params.mode_act     <= mode_activation_t'val(g_mode_act);
-    params.zeropt_fp32  <= zeropt_fp32;
-    params.scale_fp32   <= scale_fp32;
+    params.dataflow      <= g_dataflow;
+    params.inputchs      <= g_inputchs;
+    params.outputchs     <= g_outputchs;
+    params.image_y       <= g_image_y;
+    params.image_x       <= g_image_x;
+    params.kernel_size   <= g_kernel_size;
+    params.c1            <= g_c1;
+    params.w1            <= g_w1;
+    params.h2            <= g_h2;
+    params.m0            <= g_m0;
+    params.m0_last_m1    <= g_m0_last_m1;
+    params.rows_last_h2  <= g_rows_last_h2;
+    params.c0            <= g_c0;
+    params.c0_last_c1    <= g_c0_last_c1;
+    params.c0w0          <= g_c0w0;
+    params.c0w0_last_c1  <= g_c0w0_last_c1;
+    params.psum_throttle <= g_psum_throttle;
+    params.bias          <= (others => g_bias);
+    params.requant_enab  <= true when g_requant > 0 else
+                            false;
+    params.mode_act      <= mode_activation_t'val(g_mode_act);
+    params.zeropt_fp32   <= zeropt_fp32;
+    params.scale_fp32    <= scale_fp32;
 
     params.stride_iact_w  <= g_stride_iact_w;
     params.stride_iact_hw <= g_stride_iact_hw;

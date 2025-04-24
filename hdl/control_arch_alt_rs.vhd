@@ -57,6 +57,9 @@ architecture alternative_rs_dataflow of control is
 
     signal r_command : command_pe_array_t(0 to size_y);
 
+    signal r_output_throttle : std_logic;
+    signal r_output_counter  : integer range 0 to 255;
+
 begin
 
     o_done <= '1' when r_state = s_done else '0';
@@ -67,11 +70,37 @@ begin
 
     -- Do not stop when filling read/update pipeline
     o_enable <= i_enable_if when r_state /= s_output else -- r_count_c0w0 > 1 and
-                '1' when r_state = s_output else
+                r_output_throttle when r_state = s_output else
                 '0';
 
     o_pause_iact <= '1' when r_state = s_output else
                     '0';
+
+    -- allow to throttle the output phase
+    -- this mechanism is very simple by just pulling o_enable low
+    -- a better solution would be to drive r_command_psum with some idle commands appropriately
+    p_output_throttle : process is
+    begin
+
+        wait until rising_edge(clk);
+
+        if rstn = '0' or r_state /= s_output then
+            r_output_counter <= 0;
+        else
+            if r_output_counter = 0 then
+                r_output_counter <= 255;
+            else
+                r_output_counter <= r_output_counter - 1;
+            end if;
+        end if;
+
+        if r_output_counter < i_params.psum_throttle then
+            r_output_throttle <= '0';
+        else
+            r_output_throttle <= '1';
+        end if;
+
+    end process p_output_throttle;
 
     r_command_psum_d       <= r_command_psum when rising_edge(clk);
     r_read_offset_psum_d   <= r_read_offset_psum when rising_edge(clk);
@@ -305,30 +334,32 @@ begin
 
                 when s_output =>
 
-                    -- Command counter for output commands (psum accumulation and psum read)
-                    if r_count_c0w0 /= w_m0 + 4 then -- i_params.kernel_size + w_m0 then /* TODO Change to allow for multiple kernel data to be output */
-                        if r_count_w1 /= w_w1 - 1 then
-                            r_count_w1 <= r_count_w1 + 1;
-                        else
-                            r_count_w1   <= 0;
-                            r_count_c0w0 <= r_count_c0w0 + 1;
-                        end if;
-                    else
-                        -- Delay counter after shrinking for new values to arrive in the buffer
-                        if r_count_w1 /= 2 then -- r_W1 - 1 then /* TODO changed - check! */
-                            r_count_w1 <= r_count_w1 + 1;
-                        elsif r_count_h2 = w_h2 then
-                            -- All h2 done and output
-                            if i_all_psum_finished = '1' then
-                                r_state <= s_done;
+                    if o_enable = '1' then
+                        -- Command counter for output commands (psum accumulation and psum read)
+                        if r_count_c0w0 /= w_m0 + 4 then -- i_params.kernel_size + w_m0 then /* TODO Change to allow for multiple kernel data to be output */
+                            if r_count_w1 /= w_w1 - 1 then
+                                r_count_w1 <= r_count_w1 + 1;
+                            else
+                                r_count_w1   <= 0;
+                                r_count_c0w0 <= r_count_c0w0 + 1;
                             end if;
                         else
-                            r_count_c1   <= 0;
-                            r_count_w1   <= 0;
-                            r_count_c0w0 <= 0;
-                            r_state      <= s_calculate;
+                            -- Delay counter after shrinking for new values to arrive in the buffer
+                            if r_count_w1 /= 2 then -- r_W1 - 1 then /* TODO changed - check! */
+                                r_count_w1 <= r_count_w1 + 1;
+                            elsif r_count_h2 = w_h2 then
+                                -- All h2 done and output
+                                if i_all_psum_finished = '1' then
+                                    r_state <= s_done;
+                                end if;
+                            else
+                                r_count_c1   <= 0;
+                                r_count_w1   <= 0;
+                                r_count_c0w0 <= 0;
+                                r_state      <= s_calculate;
+                            end if;
+                        -- Output done, reset psum etc?
                         end if;
-                    -- Output done, reset psum etc?
                     end if;
 
                 when s_done =>
