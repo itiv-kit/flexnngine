@@ -55,6 +55,9 @@ entity functional_tb is
         g_c0w0          : positive := 1;
         g_c0w0_last_c1  : positive := 1;
         g_psum_throttle : integer  := 0;
+        g_mode_pad      : integer  := 0;
+        g_pad_x         : integer  := 0;
+        g_pad_y         : integer  := 0;
         g_mode_act      : integer  := 0;
         g_requant       : integer  := 0;
         g_postproc      : integer  := 1;
@@ -69,7 +72,8 @@ entity functional_tb is
 
         g_iact_base_addr : integer := 0;
         g_wght_base_addr : integer := 0;
-        g_psum_base_addr : integer := 0
+        g_psum_base_addr : integer := 0;
+        g_pad_base_addr  : integer := 0
     );
 end entity functional_tb;
 
@@ -159,10 +163,13 @@ begin
     params.c0w0          <= g_c0w0;
     params.c0w0_last_c1  <= g_c0w0_last_c1;
     params.psum_throttle <= g_psum_throttle;
+    params.mode_pad      <= mode_padding_t'val(g_mode_pad);
+    params.pad_x         <= g_pad_x;
+    params.pad_y         <= g_pad_y;
     params.bias          <= (others => g_bias);
+    params.mode_act      <= mode_activation_t'val(g_mode_act);
     params.requant_enab  <= true when g_requant > 0 else
                             false;
-    params.mode_act      <= mode_activation_t'val(g_mode_act);
     params.zeropt_fp32   <= zeropt_fp32;
     params.scale_fp32    <= scale_fp32;
 
@@ -176,6 +183,7 @@ begin
     params.base_iact <= g_iact_base_addr;
     params.base_wght <= g_wght_base_addr;
     params.base_psum <= g_psum_base_addr;
+    params.base_pad  <= g_pad_base_addr;
 
     accelerator_inst : entity accel.accelerator
         generic map (
@@ -329,7 +337,7 @@ begin
         variable row     : line;
 
         -- Signals for evaluation
-        alias r_state                 is << signal accelerator_inst.control_address_generator_inst.g_control.control_inst.r_state : t_control_state >>;
+        alias r_state                 is << signal accelerator_inst.control_address_generator_inst.g_control.control_inst.r_state : control_state_t >>;
         alias r_preload_fifos_started is << signal accelerator_inst.scratchpad_interface_inst.i_start : std_logic >>;
         alias r_preload_fifos_done    is << signal accelerator_inst.scratchpad_interface_inst.r_preload_fifos_done : std_logic >>;
         alias r_write_en_psum         is << signal accelerator_inst.scratchpad_interface_inst.o_write_en_psum : std_logic_vector(7 downto 0) >>;
@@ -530,9 +538,9 @@ begin
             idx       := 0;
             word_idx  := 0;
 
-            for row in 0 to g_image_y - g_kernel_size loop
+            for row in 0 to g_image_y - g_kernel_size + 2 * params.pad_y loop
 
-                for pix in 0 to g_image_x - g_kernel_size loop
+                for pix in 0 to params.w1 - 1 loop
 
                     data                                 := (others => '0');
                     data(actual_data_width - 1 downto 0) := ram_cols(column)(base_addr + idx)(actual_data_width * (word_idx + 1) - 1 downto actual_data_width * word_idx);

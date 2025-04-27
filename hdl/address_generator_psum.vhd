@@ -57,7 +57,7 @@ architecture rtl of address_generator_psum is
     signal r_init        : std_logic;
 
     signal r_image_size   : integer;                       -- output image size per channel, currently rectangular images only = w1*w1
-    signal r_chunk_size   : integer range 1 to write_size; -- pixels per output word (64bit/8bit for int8, 64bit/16bit for int16)
+    signal r_chunk_size   : integer range 1 to write_size; -- pixels per output word (64bit/8bit=8 for int8, 64bit/16bit=4 for int16)
     signal r_element_size : integer range 1 to 4;          -- bytes per output pixel (1 for 8bit, 2 for 16 bit)
 
 begin
@@ -133,8 +133,8 @@ begin
                 end if;
 
                 --  wrap at input image size
-                if v_cur_row >= i_params.w1 + i_params.kernel_size - 1 then
-                    v_cur_row := v_cur_row - (i_params.w1 + i_params.kernel_size - 1);
+                if v_cur_row >= i_params.w1 + i_params.kernel_size - 1 - i_params.pad_y then
+                    v_cur_row := v_cur_row - (i_params.w1 + i_params.kernel_size - 1 - i_params.pad_y);
                 end if;
 
                 -- start with the base address

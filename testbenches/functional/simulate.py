@@ -16,12 +16,19 @@ class ActivationMode(IntEnum):
     passthrough = 0
     relu = 1
 
+class PaddingMode(IntEnum):
+    none = 0
+    zero = 1 # pad with zeros
+    duplicate = 2 # pad with value at edge
+
 @dataclass
 class Convolution:
     """Class to represent a convolution operation."""
 
     def __init__(
-        self, image_size, kernel_size, input_channels, output_channels, bias=0, requantize=False, activation=ActivationMode.passthrough, input_bits=4
+        self, image_size, kernel_size, input_channels, output_channels, bias=0,
+        requantize=False, activation=ActivationMode.passthrough, input_bits=4,
+        padding=PaddingMode.none
     ):
         self.image_size = image_size
         self.kernel_size = kernel_size
@@ -31,6 +38,15 @@ class Convolution:
         self.bias = bias
         self.requantize = requantize
         self.activation = activation
+        self.padding = padding
+
+        # for now only same-size padding is supported
+        # pad_x is added to both left and right edges
+        # pad_y is added to both top and bottom edges
+        if padding != PaddingMode.none:
+            self.pad_x = self.pad_y = (kernel_size - 1) // 2
+        else:
+            self.pad_x = self.pad_y = 0
 
 
 @dataclass
@@ -84,6 +100,7 @@ class Setting:
         rs = self.convolution.kernel_size
         c = self.convolution.input_channels
         oc = self.convolution.output_channels
+        pd = self.convolution.pad_y
         df = self.accelerator.dataflow
         li = self.accelerator.line_length_iact
         lw = self.accelerator.line_length_wght
@@ -97,7 +114,7 @@ class Setting:
         y = self.accelerator.size_y
         bias = abs(self.convolution.bias) if not isinstance(self.convolution.bias, list) else 'X'
         rq = int(self.convolution.requantize) if not isinstance(self.convolution.requantize, list) else 'X'
-        return f'HW_{hw}_RS_{rs}_C_{c}_Li_{li}_Lw_{lw}_Lp_{lp}_Fi_{fifoi}_Fw_{fifow}_Fp_{fifop}_Clk_{clk}_ClkSp_{clk_sp}_X_{x}_Y_{y}_Df_{df}_Bi_{bias}_Rq_{rq}'
+        return f'HW{hw}_RS{rs}_C{c}_Pd{pd}_Li{li}_Lw{lw}_Lp{lp}_Fi{fifoi}_Fw{fifow}_Fp{fifop}_Clk{clk}_ClkSp{clk_sp}_X{x}_Y{y}_Df{df}_Bi{bias}_Rq{rq}'
 
 def write_memory_file_int8(filename, image, wordsize=32):
     pixels_per_word = wordsize // 8
@@ -128,6 +145,7 @@ class Test:
 
         self.wght_base_addr = None
         self.psum_base_addr = None
+        self.padding_base_addr = None
         self.stride_iact_w = None
         self.stride_iact_hw = None
         self.stride_wght_kernel = None
@@ -144,7 +162,7 @@ class Test:
 
     def _calculate_parameters(self):
         self.H1 = self.accelerator.size_x
-        self.W1 = self.convolution.image_size - self.convolution.kernel_size + 1
+        self.W1 = self.convolution.image_size - self.convolution.kernel_size + 1 + 2 * self.convolution.pad_x
         self.M0_last_m1 = 1 # not used yet
         self.rows_last_h2 = 1 # only required for dataflow 1
         self.line_length_wght_usable = self.accelerator.line_length_wght - 1 # TODO: check why this is necessary
@@ -295,20 +313,22 @@ class Test:
             linear = np.linspace(1, self.convolution.image_size, self.convolution.image_size, dtype=np.int8)
             image = np.stack(self.convolution.input_channels * [self.convolution.image_size * [linear]])
 
+        padded_image = np.pad(image, ((0,0), 2*(self.convolution.pad_y,), 2*(self.convolution.pad_x,)))
+
         # create empty array for all channels of the conved image
         convolved_channels = np.zeros(
             (
                 self.M0,
                 self.convolution.input_channels,
-                self.convolution.image_size - self.convolution.kernel_size + 1,
-                self.convolution.image_size - self.convolution.kernel_size + 1,
+                self.convolution.image_size - self.convolution.kernel_size + 1 + 2 * self.convolution.pad_y,
+                self.convolution.image_size - self.convolution.kernel_size + 1 + 2 * self.convolution.pad_x,
             )
         )
         # iterate over the image and convolve each channel
         for k in range(self.M0):
             for c in range(self.convolution.input_channels):
                 convolved_channels[k, c, :, :] = self._convolution2d(
-                    image[c],
+                    padded_image[c],
                     kernels[k, c]
                 )
 
@@ -353,17 +373,25 @@ class Test:
         # assemble data per memory column and export as txt file for simulation
         for column in range(0, self.accelerator.spad_word_size):
             # TODO: pad channels to multiples of 8 (i.e. image stride)
+            # image is statically allocated to address 0 (default value of g_iact_base_addr)
             image_col = image[column::self.accelerator.spad_word_size].flatten()
             wght_col = kernels_stack_och[column::self.accelerator.spad_word_size].flatten()
+            pad_col = np.zeros(1) # a single element per column for zero padding
 
             # pad the image such that weight data is aligned. technically, multiple of wordsize (currently 8) would suffice.
             image_pad_size = align_to_add(image_col.shape[0], 32)
             image_col_pad = np.resize(image_col, image_pad_size)
-            memory_col = np.concatenate((image_col_pad, wght_col))
+            memory_col = np.concatenate((image_col_pad, wght_col, pad_col))
+            # print(f'col {column} shape {[memory_col.shape]}')
+            np.savetxt(self.test_dir / f"_data_col{column}.txt", memory_col, fmt="%d", delimiter=" ")
 
             if self.wght_base_addr is not None and self.wght_base_addr != image_pad_size:
                 raise RuntimeError(f'weight base address differs between mem columns ({image_pad_size} / {self.wght_base_addr})')
             self.wght_base_addr = image_pad_size
+
+            if self.padding_base_addr is not None and self.padding_base_addr != memory_col.shape[0] - 1:
+                raise RuntimeError(f'weight base address differs between mem columns ({memory_col.shape[0] - 1} / {self.padding_base_addr})')
+            self.padding_base_addr = memory_col.shape[0] - 1
 
             memory_col_pad_size = align_to_add(memory_col.shape[0], 32)
             if self.psum_base_addr is not None and self.psum_base_addr != memory_col_pad_size:
@@ -430,8 +458,12 @@ class Test:
             'g_stride_psum_och':  self.stride_psum_och,
             'g_wght_base_addr':   self.wght_base_addr,
             'g_psum_base_addr':   self.psum_base_addr,
+            'g_pad_base_addr':    self.padding_base_addr,
             'g_clk':              self.accelerator.clk_period,
             'g_clk_sp':           self.accelerator.clk_sp_period,
+            'g_mode_pad':         int(self.convolution.padding),
+            'g_pad_x':            self.convolution.pad_x,
+            'g_pad_y':            self.convolution.pad_y,
             'g_mode_act':         int(self.convolution.activation),
             'g_requant':          1 if self.convolution.requantize else 0,
             'g_postproc':         1 if self.convolution.requantize or self.convolution.bias != 0 or self.convolution.activation != ActivationMode.passthrough else 0,
@@ -668,6 +700,7 @@ if __name__ == "__main__":
     parser.add_argument('--bias',                                   help='Override preset bias values (same bias for all och)')
     parser.add_argument('--requantize',                             help='Override preset requantization (1/0)')
     parser.add_argument('--activation',                             help='Enable activation (0=off, 1=ReLU)')
+    parser.add_argument('--padding',                                help='Enable padding (0=off, 1=zero, 2=duplicate)')
     parser.add_argument('--gui',               action='store_true', help='Override preset to enable GUI')
     parser.add_argument('--no-gui',            action='store_true', help='Override preset to disable GUI / batch mode')
     parser.add_argument('--input-bits',        default=4, type=int, help='Set bit range for iact/wght input values')
@@ -731,6 +764,8 @@ if __name__ == "__main__":
             setting.convolution.requantize = [int(x) > 0 for x in args.requantize.split(',')]
         if args.activation:
             setting.convolution.activation = [ActivationMode(int(x)) for x in args.activation.split(',')]
+        if args.padding:
+            setting.convolution.padding = [PaddingMode(int(x)) for x in args.padding.split(',')]
         if args.gui:
             setting.start_gui = True
         if args.no_gui:
@@ -745,7 +780,7 @@ if __name__ == "__main__":
     # generate configurations settings for all permutations
     settings = []
     for sim in configurations:
-        for hw, rs, c, oc, df, li, lw, lp, fifoi, fifow, fifop, clk, clk_sp, x, y, thr, bias, rq, act in itertools.product(
+        for hw, rs, c, oc, df, li, lw, lp, fifoi, fifow, fifop, clk, clk_sp, x, y, thr, bias, rq, act, pad in itertools.product(
                 as_list(sim.convolution.image_size),
                 as_list(sim.convolution.kernel_size),
                 as_list(sim.convolution.input_channels),
@@ -765,10 +800,11 @@ if __name__ == "__main__":
                 as_list(sim.convolution.bias),
                 as_list(sim.convolution.requantize),
                 as_list(sim.convolution.activation),
+                as_list(sim.convolution.padding),
             ):
             settings.append(
                 Setting(
-                    Convolution(hw, rs, c, oc, bias, rq, act, args.input_bits),
+                    Convolution(hw, rs, c, oc, bias, rq, act, args.input_bits, pad),
                     Accelerator(
                         x,
                         y,

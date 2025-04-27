@@ -7,7 +7,7 @@ library accel;
 
 architecture alternative_rs_dataflow of control is
 
-    signal r_state : t_control_state;
+    signal r_state : control_state_t;
 
     signal r_count_c0w0 : integer range 0 to max_line_length_wght;
     signal r_count_c1   : integer range 0 to 1023;
@@ -239,6 +239,10 @@ begin
                         -- DONE for now (not tiled for PSUM Line Buffer Length)
                         end if;
                     end if;
+
+                when s_incr_w1 =>
+
+                    null;
 
                 when s_incr_c1 =>
 

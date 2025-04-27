@@ -48,14 +48,14 @@ add wave -noupdate -group Scratchpad -radix hexadecimal /functional_tb/accelerat
 add wave -noupdate -group Scratchpad -radix symbolic    /functional_tb/accelerator_inst/scratchpad_inst/write_en_psum
 add wave -noupdate -group Scratchpad -radix unsigned    /functional_tb/accelerator_inst/scratchpad_inst/write_adr_psum
 add wave -noupdate -group Scratchpad -radix hexadecimal /functional_tb/accelerator_inst/scratchpad_inst/din_psum
-add wave -noupdate -expand -group Scratchpad -radix decimal /functional_tb/accelerator_inst/scratchpad_inst/din_psum_byte7
-add wave -noupdate -expand -group Scratchpad -radix decimal /functional_tb/accelerator_inst/scratchpad_inst/din_psum_byte6
-add wave -noupdate -expand -group Scratchpad -radix decimal /functional_tb/accelerator_inst/scratchpad_inst/din_psum_byte5
-add wave -noupdate -expand -group Scratchpad -radix decimal /functional_tb/accelerator_inst/scratchpad_inst/din_psum_byte4
-add wave -noupdate -expand -group Scratchpad -radix decimal /functional_tb/accelerator_inst/scratchpad_inst/din_psum_byte3
-add wave -noupdate -expand -group Scratchpad -radix decimal /functional_tb/accelerator_inst/scratchpad_inst/din_psum_byte2
-add wave -noupdate -expand -group Scratchpad -radix decimal /functional_tb/accelerator_inst/scratchpad_inst/din_psum_byte1
-add wave -noupdate -expand -group Scratchpad -radix decimal /functional_tb/accelerator_inst/scratchpad_inst/din_psum_byte0
+add wave -noupdate -group Scratchpad -radix decimal /functional_tb/accelerator_inst/scratchpad_inst/din_psum_byte7
+add wave -noupdate -group Scratchpad -radix decimal /functional_tb/accelerator_inst/scratchpad_inst/din_psum_byte6
+add wave -noupdate -group Scratchpad -radix decimal /functional_tb/accelerator_inst/scratchpad_inst/din_psum_byte5
+add wave -noupdate -group Scratchpad -radix decimal /functional_tb/accelerator_inst/scratchpad_inst/din_psum_byte4
+add wave -noupdate -group Scratchpad -radix decimal /functional_tb/accelerator_inst/scratchpad_inst/din_psum_byte3
+add wave -noupdate -group Scratchpad -radix decimal /functional_tb/accelerator_inst/scratchpad_inst/din_psum_byte2
+add wave -noupdate -group Scratchpad -radix decimal /functional_tb/accelerator_inst/scratchpad_inst/din_psum_byte1
+add wave -noupdate -group Scratchpad -radix decimal /functional_tb/accelerator_inst/scratchpad_inst/din_psum_byte0
 
 add wave -noupdate -group FIFO_iact -radix symbolic    /functional_tb/accelerator_inst/scratchpad_interface_inst/w_demux_iact_out_valid
 add wave -noupdate -group FIFO_iact -radix hexadecimal /functional_tb/accelerator_inst/scratchpad_interface_inst/i_data
@@ -133,9 +133,11 @@ add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/r_words
 add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/r_count_words
 add wave -noupdate -group ADR_iact -radix symbolic ${addr_gen_path}/r_cur_base_valid
 add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/r_cur_base
+add wave -noupdate -group ADR_iact -radix symbolic ${addr_gen_path}/r_cur_row_pad
 add wave -noupdate -group ADR_iact -radix symbolic ${addr_gen_path}/r_next_used
 add wave -noupdate -group ADR_iact -radix symbolic ${addr_gen_path}/r_next_valid
 add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/r_next_base
+add wave -noupdate -group ADR_iact -radix symbolic ${addr_gen_path}/r_next_row_pad
 add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/r_next_words
 add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/r_count_w1
 add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/r_count_c1
@@ -300,11 +302,18 @@ add wave -noupdate -group Control -radix symbolic /functional_tb/accelerator_ins
 add wave -noupdate -group Control -radix symbolic /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/o_enable
 add wave -noupdate -group Control -radix symbolic /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/o_pause_iact
 add wave -noupdate -group Control -radix symbolic /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_state
+add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_count_c0
+add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_count_w0
 add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_count_c0w0
 add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_count_c1
 add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_count_w1
 add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_count_h2
 add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_incr_w1
+add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_pad_state
+add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_kernel_cols
+add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_count_pad_x
+add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_extra_offset_iact
+add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_extra_offset_wght
 add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/w_output_sequence
 add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_output_throttle
 add wave -noupdate -group Control -radix symbolic /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_command
@@ -429,4 +438,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {100 ns} {1000 ns}
+WaveRestoreZoom {0 ns} {1000 ns}

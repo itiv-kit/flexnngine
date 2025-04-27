@@ -7,14 +7,17 @@ library ieee;
 package utilities is
 
     constant max_output_channels  : integer := 16;  -- maximum number of output channels mapped on array
+    constant max_kernel_size      : integer := 11;
     constant max_size_x           : integer := 32;  -- maximum array size x
     constant max_line_length_iact : integer := 64;
     constant max_line_length_wght : integer := 64;
     constant max_line_length_psum : integer := 128; -- currently equals maximum image width
     constant max_spad_addr_width  : integer := 20;  -- maximum memory address width in bits, can be less physically
 
-    type t_control_state is (s_idle, s_init, s_calculate, s_output, s_incr_c1, s_incr_h1, s_done);
+    type control_state_t is (s_idle, s_init, s_calculate, s_output, s_incr_w1, s_incr_c1, s_incr_h1, s_done);
+    type padding_state_t is (s_none, s_left, s_right);
     type mode_activation_t is (passthrough, relu, sigmoid, leaky_relu, elu);
+    type mode_padding_t is (none, zero, duplicate);
 
     type std_logic_row_col_t is array (natural  range <>, natural range <>) of std_logic;
 
@@ -59,7 +62,7 @@ package utilities is
         outputchs     : integer range 0 to 1023;
         image_y       : integer range 0 to 4095;
         image_x       : integer range 0 to max_line_length_psum;
-        kernel_size   : integer range 0 to 31;
+        kernel_size   : integer range 0 to max_kernel_size;
         c1            : integer range 0 to 1023;
         w1            : integer range 0 to max_line_length_psum;
         h2            : integer range 0 to 1023;
@@ -71,15 +74,19 @@ package utilities is
         c0w0          : integer range 0 to max_line_length_wght;
         c0w0_last_c1  : integer range 0 to max_line_length_wght;
         psum_throttle : integer range 0 to 255;
-        requant_enab  : boolean;
-        mode_act      : mode_activation_t;
+        mode_pad      : mode_padding_t;
+        pad_x         : integer range 0 to max_kernel_size - 1;
+        pad_y         : integer range 0 to max_kernel_size - 1;
         bias          : int_line_t(max_output_channels - 1 downto 0);
+        mode_act      : mode_activation_t;
+        requant_enab  : boolean;
         zeropt_fp32   : array_t(max_output_channels - 1 downto 0)(31 downto 0);
         scale_fp32    : array_t(max_output_channels - 1 downto 0)(31 downto 0);
         -- base/stride count memory words (e.g. 64bit / 8 bytes)
         base_iact : integer range 0 to 2 ** max_spad_addr_width - 1;
         base_wght : integer range 0 to 2 ** max_spad_addr_width - 1;
         base_psum : integer range 0 to 2 ** max_spad_addr_width - 1;
+        base_pad  : integer range 0 to 2 ** max_spad_addr_width - 1; -- base address for padding values (i.e. zeroes)
         -- stride_iact_ch : integer range 0 to max_line_length_psum - 1; -- word count of c0*c1 channels
         stride_iact_w      : integer range 0 to 131071; -- mem cols word count of c0*c1*w1 columns (outside / "standard" spad view)
         stride_iact_hw     : integer range 0 to 131071; -- mem cols word count of an h*w image

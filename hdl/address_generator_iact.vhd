@@ -37,7 +37,7 @@ architecture unified of address_generator_iact is
     signal r_next_words     : uint10_line_t(0 to size_rows - 1); -- shall have range 0 to max_line_length_iact;
     signal r_addr_valid     : std_logic_vector(size_rows - 1 downto 0);
     signal r_addr           : uns_array_t(0 to size_rows - 1)(mem_addr_width - 1 downto 0);
-    signal r_next_valid     : std_logic;
+    signal r_next_valid     : std_logic_vector(0 to size_rows - 1);
     signal r_next_used      : std_logic_vector(0 to size_rows - 1);
     signal r_next_base      : uns_array_t(0 to size_rows - 1)(mem_addr_width - 1 downto 0);
     signal r_cur_base_valid : std_logic_vector(0 to size_rows - 1);
@@ -51,6 +51,8 @@ architecture unified of address_generator_iact is
     signal r_next_base_last : std_logic;
     signal r_cur_base_last  : std_logic_vector(size_rows - 1 downto 0);
     signal r_done           : std_logic_vector(size_rows - 1 downto 0);
+    signal r_next_row_pad   : std_logic_vector(size_rows - 1 downto 0);
+    signal r_cur_row_pad    : std_logic_vector(size_rows - 1 downto 0);
 
 begin
 
@@ -59,33 +61,42 @@ begin
     iact_address_out : for i in 0 to size_rows - 1 generate
 
         iact_address_out : process is
+
+            variable row_active : std_logic;
+            variable next_addr  : unsigned(mem_addr_width - 1 downto 0);
+
         begin
 
             wait until rising_edge(clk);
+
+            row_active := '1' when i_params.dataflow = 0 or i >= size_y - 1 else '0';
 
             if not rstn then
                 r_addr_valid(i) <= '0';
                 r_done(i)       <= '0';
 
-                r_cur_base_valid(i) <= '0'; -- start by requesting the next base address
+                r_cur_base_valid(i) <= '0';        -- start by requesting the next base address
                 r_cur_base_last(i)  <= '0';
+                r_cur_row_pad(i)    <= '0';
                 r_next_used(i)      <= '0';
                 r_count_words(i)    <= 0;
                 r_words(i)          <= 0;
                 r_count_w1(i)       <= 0;
             else
+                next_addr := r_addr(i);
+
                 if i_start = '1' and r_done(i) = '0' and r_cur_base_valid(i) = '1' then
-                    r_addr_valid(i) <= '1'; -- keep valid up in case of backpressure
+                    r_addr_valid(i) <= row_active; -- keep valid up in case of backpressure
 
                     if i_fifo_full_iact = '0' then
                         if r_count_words(i) /= r_words(i) - 1 then
                             -- loading a row, load the specified number of words to get w0 channels
                             -- TODO: if partial loads need to be supported, set valid bits for first/last load
                             r_count_words(i) <= r_count_words(i) + 1;
-                            r_addr(i)        <= r_addr(i) + i_params.stride_iact_hw * read_size;
+                            next_addr        := r_addr(i) + i_params.stride_iact_hw * read_size;
                         else
                             -- reset to base address in any case. if within w1, reuse it and add w1
-                            r_addr(i) <= r_cur_base(i) + r_count_w1(i) + 1;
+                            next_addr := r_cur_base(i) + r_count_w1(i) + 1;
 
                             -- a full set of c0 channels of the current iact pixel is done, advance to next
                             if r_count_w1(i) /= i_params.image_x - 1 then
@@ -111,7 +122,12 @@ begin
                     r_addr_valid(i) <= '0';
                 end if;
 
-                if r_cur_base_valid(i) = '0' and r_next_valid = '1' then
+                -- only advance the address if we are not loading padding data
+                if not r_cur_row_pad(i) then
+                    r_addr(i) <= next_addr;
+                end if;
+
+                if r_cur_base_valid(i) = '0' and r_next_valid(i) = '1' then
                     -- one row is done, load next base address and reset row counter
                     r_words(i)     <= r_next_words(i);
                     r_addr(i)      <= r_next_base(i);
@@ -121,13 +137,14 @@ begin
                     r_count_words(i)    <= 0;
                     r_cur_base_valid(i) <= '1';
                     r_cur_base_last(i)  <= r_next_base_last;
+                    r_cur_row_pad(i)    <= r_next_row_pad(i);
 
                     -- new base address is the first valid address to load
-                    r_addr_valid(i) <= '1';
+                    r_addr_valid(i) <= row_active;
                 end if;
 
                 -- when a new base address is ready, clear the request field
-                if r_next_used(i) = '1' and r_next_valid = '1' then
+                if r_next_used(i) = '1' and or r_next_valid = '0' then
                     r_next_used(i) <= '0';
                 end if;
 
@@ -140,7 +157,7 @@ begin
         end process iact_address_out;
 
         o_address_iact(i)       <= std_logic_vector(r_addr(i));
-        o_address_iact_valid(i) <= '1' when r_addr_valid(i) = '1' and (not fifo_full_write_protect or i_fifo_full_iact = '0') and (i_params.dataflow = 0 or i >= size_y - 1) else '0';
+        o_address_iact_valid(i) <= '1' when r_addr_valid(i) = '1' and (not fifo_full_write_protect or i_fifo_full_iact = '0') else '0';
 
     end generate iact_address_out;
 
@@ -167,6 +184,7 @@ begin
         variable v_row_stride : integer;
         variable v_ch_offset  : integer;
         variable v_c0         : integer;
+        variable v_pad        : boolean;
 
     begin
 
@@ -175,13 +193,14 @@ begin
         -- reset when i_start is deasserted
         if not rstn or (not i_start and r_next_base_last) then
             r_next_base_last <= '0';
-            r_next_valid     <= '0';
+            r_next_valid     <= (others => '0');
 
             r_count_c1 <= 0;
             r_count_h1 <= 0;
             r_count_h2 <= 0;
         else
-            if i_start and not r_next_base_last and not r_next_valid then
+            if i_start and not r_next_base_last and not (or r_next_valid) then
+                -- shared counters for all PE rows
                 if r_count_c1 /= i_params.c1 - 1 then
                     -- next set of channels
                     r_count_c1 <= r_count_c1 + 1;
@@ -221,12 +240,20 @@ begin
                         v_row := v_row - (size_y - 1);
                     end if;
 
-                    v_row_stride := i_params.stride_iact_w * read_size; -- w stride is unpacked to single words on reshaped spad side
-
-                    -- wrap at full image height
-                    if v_row >= i_params.image_y then
-                        v_row := v_row - i_params.image_y;
+                    -- wrap at full image height (including padding if enabled)
+                    if v_row >= i_params.image_y + i_params.pad_y then
+                        v_row := v_row - i_params.image_y - i_params.pad_y;
                     end if;
+
+                    -- when padding is enabled, 0..pad_y-1 and h-pad_y..h-1 rows are skipped (TODO: or duplicated if not zero-padding)
+                    if i_params.mode_pad = zero and v_row < i_params.pad_y then
+                        v_pad := true;
+                    else
+                        v_pad := false;
+                        v_row := v_row - i_params.pad_y;                -- convert "virtual" row number of padded image to physical input image row number
+                    end if;
+
+                    v_row_stride := i_params.stride_iact_w * read_size; -- w stride is unpacked to single words on reshaped spad side
 
                     -- advance in sets of c0 channels (= something like a stride for c0 iterations)
                     v_ch_offset := r_count_c1 * i_params.c0 / read_size; -- TODO: if only multiples of read_size are possible for c0, get rid of division
@@ -237,17 +264,24 @@ begin
                                                     v_ch_offset * i_params.stride_iact_hw * read_size,
                                                     mem_addr_width);
 
+                    -- if padding data needs to be loaded, overwrite with padding data address
+                    if v_pad then
+                        r_next_base(row) <= to_unsigned(i_params.base_pad, mem_addr_width);
+                    end if;
+
                     -- number of words to load for c0 channels
                     -- TODO: valid bits for last word if c0 not multiple of read size
                     r_next_words(row) <= (v_c0 + read_size - 1) / read_size; -- TODO: is this efficient? read_size is power-of-two. could also move - 1 from comparison here
 
+                    r_next_valid(row)   <= '1';
+                    r_next_row_pad(row) <= '1' when v_pad else '0';
+
                 end loop;
 
-                r_next_valid <= '1';
             end if;
 
-            if and r_next_used then
-                r_next_valid <= '0';
+            if or r_next_valid = '1' and r_next_used = r_next_valid then
+                r_next_valid <= (others => '0');
             end if;
         end if;
 

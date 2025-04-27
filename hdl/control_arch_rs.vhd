@@ -7,23 +7,26 @@ library accel;
 
 architecture rs_dataflow of control is
 
-    signal r_state : t_control_state;
+    signal r_state     : control_state_t;
+    signal r_pad_state : padding_state_t;
 
     signal r_count_c0w0 : integer range 0 to max_line_length_wght;
     signal r_count_c1   : integer range 0 to 1023;
     signal r_count_w1   : integer range 0 to 1023;
     signal r_count_h2   : integer range 0 to 1023;
 
-    signal w_c0w0         : integer range 0 to max_line_length_wght;
-    signal w_c0w0_last_c1 : integer range 0 to max_line_length_wght;
+    signal r_kernel_cols : integer range 0 to max_kernel_size - 1;
+    signal r_count_pad_x : integer range 0 to max_kernel_size - 1;
+    signal r_count_w0 : integer range 0 to max_kernel_size;
+    signal r_count_c0 : integer range 0 to max_line_length_wght;
 
-    signal w_c0         : integer range 0 to max_line_length_wght;
-    signal w_c0_last_c1 : integer range 0 to max_line_length_wght;
+    signal r_extra_offset_iact : integer range 0 to max_line_length_wght;
+    signal r_extra_offset_wght : integer range 0 to max_line_length_wght;
 
     signal w_h2 : integer range 0 to 1023;
-
-    signal w_w1 : integer range 0 to max_line_length_psum;
     signal w_c1 : integer range 0 to 1023;
+    signal w_c0 : integer range 0 to max_line_length_wght;
+    signal w_w1 : integer range 0 to max_line_length_psum;
     signal w_m0 : integer range 0 to max_output_channels;
 
     signal r_incr_w1 : std_logic;
@@ -63,9 +66,8 @@ begin
 
     -- Generate enable signal for PE array, propagate input fifo status from scratchpad interface
     -- Do not stop when filling read/update pipeline
-    -- TODO: (r_state = s_incr_c1) necessary?
-    o_enable <= i_enable_if when (r_state = s_calculate or r_state = s_incr_c1) else -- and r_count_c0w0 > 1
-                '1' when r_state = s_output else
+    o_enable <= i_enable_if when r_state = s_calculate else
+                '1' when (r_state = s_output or r_state = s_incr_w1 or r_state = s_incr_c1) else
                 '0';
 
     -- for RS dataflow, the lowest PE row does not get c_pe_conv_pass command and thus does not pass through any data
@@ -161,6 +163,17 @@ begin
 
                 when s_init =>
 
+                    -- start with a partial kernel if padding is requested
+                    r_kernel_cols <= i_params.kernel_size - 1 - i_params.pad_x;
+                    r_count_pad_x <= 0;
+                    if i_params.mode_pad /= none then -- start padding on left edge
+                        r_pad_state         <= s_left;
+                        r_extra_offset_iact <= 0;
+                        r_extra_offset_wght <= w_c0 * (i_params.kernel_size - i_params.pad_x - 1);
+                    else
+                        r_pad_state <= s_none;
+                    end if;
+
                     if o_init_done = '1' then
                         r_state <= s_calculate;
                     end if;
@@ -171,19 +184,16 @@ begin
                         r_incr_w1 <= '0';
                         if r_count_h2 /= w_h2 and r_count_c1 /= w_c1 then
                             if r_count_w1 /= w_w1 then
-                                -- if (r_command_counter /= r_commands_per_tile - 1) or (r_command_counter /= r_commands_last_tile_c - 1) then
-                                if not((r_count_c0w0 = w_c0w0 - 1 and r_count_c1 /= w_c1 - 1) or
-                                       (r_count_c0w0 = w_c0w0_last_c1 - 1 and r_count_c1 = w_c1 - 1)) then
-                                    r_count_c0w0 <= r_count_c0w0 + 1;
-                                    r_incr_w1    <= '0';
+                                r_count_c0w0 <= r_count_c0w0 + 1;
+                                if r_count_c0 /= w_c0 - 1 then
+                                    r_count_c0 <= r_count_c0 + 1;
                                 else
-                                    -- shift kernel - increment w1
-                                    if r_incr_w1 = '1' then
-                                        r_count_w1   <= r_count_w1 + 1;
-                                        r_count_c0w0 <= 0;
-                                        r_incr_w1    <= '0';
+                                    if r_count_w0 /= r_kernel_cols then
+                                        r_count_c0 <= 0;
+                                        r_count_w0 <= r_count_w0 + 1;
                                     else
-                                        r_incr_w1 <= '1';
+                                        -- shift kernel - increment w1
+                                        r_state <= s_incr_w1;
                                     end if;
                                 end if;
                             else
@@ -209,17 +219,61 @@ begin
                         end if;
                     end if;
 
+                when s_incr_w1 =>
+
+                    -- no need to check for o_enable - if buffers are empty, we can still shrink, return to s_calculate and stall there
+                    r_incr_w1 <= '0';
+                    r_state   <= s_calculate;
+                    if r_incr_w1 = '0' then
+                        r_count_w0   <= 0;
+                        r_count_c0   <= 0;
+                        r_count_c0w0 <= 0;
+                        r_count_w1   <= r_count_w1 + 1;
+
+                        if r_pad_state = s_left then -- padding on left side
+                            r_kernel_cols       <= r_kernel_cols + 1;
+                            r_count_pad_x       <= r_count_pad_x + 1;
+                            r_extra_offset_iact <= 0;
+                            r_extra_offset_wght <= r_extra_offset_wght - w_c0;
+                            if r_kernel_cols = i_params.kernel_size - 2 then
+                                r_pad_state <= s_none;
+                            end if;
+
+                        elsif r_pad_state = s_right then -- padding on right side
+                            r_extra_offset_iact <= r_extra_offset_iact + w_c0;
+                            r_extra_offset_wght <= 0;
+                            if r_count_w1 = w_w1 - 1 then -- prepare for next output channel, reset padding to left
+                                r_pad_state         <= s_left;
+                                r_extra_offset_iact <= 0;
+                                r_extra_offset_wght <= w_c0 * (i_params.kernel_size - i_params.pad_x - 1);
+                            else
+                                r_kernel_cols <= r_kernel_cols - 1;
+                                r_count_pad_x <= r_count_pad_x - 1;
+                            end if;
+
+                        else -- only shrink if not within padding columns
+
+                            r_incr_w1           <= '1'; -- trigger buffer shrinks for iact & wght
+                            r_state             <= s_incr_w1; -- stay in this state for one more cycle to clear r_incr_w1
+                            r_extra_offset_iact <= 0;
+                            r_extra_offset_wght <= 0;
+                            if i_params.mode_pad /= none and r_count_w1 = w_w1 - i_params.pad_x - 1 then -- switch to padding on right image edge
+                                r_pad_state   <= s_right;
+                                r_kernel_cols <= r_kernel_cols - 1;
+                                r_count_pad_x <= r_count_pad_x - 1;
+                            end if;
+                        end if;
+                    end if;
+
                 when s_incr_c1 =>
 
-                    if o_enable = '1' then -- necessary?
-                        -- Delay counter after shrinking for new values to arrive in the buffer
-                        if r_count_w1 /= 2 then
-                            r_count_w1 <= r_count_w1 + 1;
-                        else
-                            r_count_w1   <= 0;
-                            r_count_c0w0 <= 0;
-                            r_state      <= s_calculate;
-                        end if;
+                    -- Delay counter after shrinking for new values to arrive in the buffer
+                    if r_count_w1 /= 2 then
+                        r_count_w1 <= r_count_w1 + 1;
+                    else
+                        r_count_w1   <= 0;
+                        r_count_c0w0 <= 0;
+                        r_state      <= s_calculate;
                     end if;
 
                 -- unused in rs dataflow
@@ -277,21 +331,20 @@ begin
 
                 when s_calculate =>
 
-                    if r_incr_w1 = '1' then
-                        -- shift kernel - increment w1
-                        if r_count_c1 /= w_c1 - 1 then
-                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(w_c0, addr_width_iact)));
-                        else
-                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(w_c0_last_c1, addr_width_iact)));
-                        end if;
-                        r_command_iact <= (others => c_lb_shrink);
-                    elsif r_count_w1 = w_w1 then
+                    if r_count_w1 = w_w1 then
                         -- Tile y change
-
                         r_command_iact <= (others => c_lb_idle);
                     else
                         r_command_iact     <= (others => c_lb_read);
-                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned(r_count_c0w0, addr_width_iact)));
+                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned(r_count_c0w0 + r_extra_offset_iact, addr_width_iact)));
+                    end if;
+
+                when s_incr_w1 =>
+
+                    if r_incr_w1 = '1' then
+                        -- shift kernel - increment w1
+                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned(w_c0, addr_width_iact)));
+                        r_command_iact <= (others => c_lb_shrink);
                     end if;
 
                 when s_incr_c1 =>
@@ -300,7 +353,7 @@ begin
 
                     if r_count_w1 = 0 then
                         r_command_iact     <= (others => c_lb_shrink);
-                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0 - w_c0, addr_width_iact)));
+                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned((i_params.kernel_size - 1) * w_c0, addr_width_iact)));
                     end if;
 
                 when s_output =>
@@ -308,13 +361,9 @@ begin
                     r_command_iact <= (others => c_lb_idle);
 
                     if r_count_c0w0 = 0 and r_count_w1 = 0 then
-                        if w_c1 > 1 then
-                            r_command_iact     <= (others => c_lb_shrink);
-                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0_last_c1 - w_c0_last_c1, addr_width_iact)));
-                        else
-                            r_command_iact     <= (others => c_lb_shrink);
-                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * i_params.inputchs - i_params.inputchs, addr_width_iact)));
-                        end if;
+                        r_command_iact <= (others => c_lb_shrink);
+                        -- for c1 = 1, c0 must be set to inputchs (which equals c0_last_c1)
+                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned((i_params.kernel_size - 1) * w_c0, addr_width_iact)));
                     end if;
 
                 when others =>
@@ -338,17 +387,18 @@ begin
 
                 when s_calculate =>
 
-                    if r_incr_w1 = '1' then
-                        -- shift kernel - increment w1
-                        r_command_wght     <= (others => c_lb_idle);
-                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(0, addr_width_wght)));
-                    elsif r_count_w1 = w_w1 then
+                    if r_incr_w1 = '1' or r_count_w1 = w_w1 then
                         -- Tile y change
                         r_command_wght <= (others => c_lb_idle);
                     else
                         r_command_wght     <= (others => c_lb_read);
-                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(r_count_c0w0, addr_width_wght)));
+                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(r_count_c0w0 + r_extra_offset_wght, addr_width_wght)));
                     end if;
+
+                when s_incr_w1 =>
+
+                    -- shift kernel - increment w1
+                    r_command_wght <= (others => c_lb_idle);
 
                 when s_incr_c1 =>
 
@@ -365,7 +415,7 @@ begin
 
                     if r_count_c0w0 = 0 and r_count_w1 = 0 then
                         r_command_wght     <= (others => c_lb_shrink);
-                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0_last_c1, addr_width_wght)));
+                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0, addr_width_wght)));
                     end if;
 
                 when others =>
@@ -440,10 +490,6 @@ begin
                             r_update_offset_psum(i) <= r_read_offset_psum(i);
                         end if;
 
-                    when s_incr_c1 =>
-
-                        r_command_psum(i) <= c_lb_idle;
-
                     when s_output =>
 
                         r_command_psum(i) <= c_lb_idle;
@@ -452,7 +498,7 @@ begin
                             -- Remove all stored psums, new tile (h1)
                             if r_count_w1 = 0 then
                                 r_command_psum(i)     <= c_lb_shrink;
-                                r_read_offset_psum(i) <= std_logic_vector(to_unsigned(i_params.image_x - i_params.kernel_size + 1, addr_width_psum));
+                                r_read_offset_psum(i) <= std_logic_vector(to_unsigned(i_params.w1, addr_width_psum));
                             end if;
                         else
                             -- Sum psums vertically across accelerator. Different kernels summed to their top row respectively
@@ -475,7 +521,7 @@ begin
 
                     when others =>
 
-                        null;
+                        r_command_psum(i) <= c_lb_idle;
 
                 end case;
 
@@ -485,14 +531,11 @@ begin
 
     end generate g_psum_pe_commands;
 
-    w_c1           <= i_params.c1;
-    w_w1           <= i_params.w1;
-    w_h2           <= i_params.h2;
-    w_m0           <= i_params.m0;
-    w_c0           <= i_params.c0;
-    w_c0_last_c1   <= i_params.c0_last_c1;
-    w_c0w0         <= i_params.c0w0;
-    w_c0w0_last_c1 <= i_params.c0w0_last_c1;
+    w_c1   <= i_params.c1;
+    w_w1   <= i_params.w1;
+    w_h2   <= i_params.h2;
+    w_m0   <= i_params.m0;
+    w_c0   <= i_params.c0_last_c1 when r_count_c1 = w_c1 - 1 else i_params.c0;
 
     p_init_m0_dist : process (clk, rstn) is
 
