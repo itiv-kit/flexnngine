@@ -4,10 +4,10 @@
 <svg
    version="1.1"
    id="svg1"
-   width="425.5788"
-   height="252.57846"
-   viewBox="0 0 425.5788 252.57846"
-   sodipodi:docname="tikzonly.svg"
+   width="446.85797"
+   height="265.2074"
+   viewBox="0 0 446.85797 265.2074"
+   sodipodi:docname="architecture-axi.svg"
    inkscape:version="1.4.1 (93de688d07, 2025-03-30)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -25,8 +25,8 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:zoom="2.1987375"
-     inkscape:cx="184.87882"
-     inkscape:cy="130.75686"
+     inkscape:cx="195.11197"
+     inkscape:cy="137.12415"
      inkscape:window-width="2560"
      inkscape:window-height="1382"
      inkscape:window-x="0"
@@ -38,8 +38,8 @@
        y="0"
        inkscape:label="1"
        id="page1"
-       width="425.5788"
-       height="252.57846"
+       width="446.85797"
+       height="265.2074"
        margin="0"
        bleed="0" />
   </sodipodi:namedview>
@@ -47,7 +47,15 @@
      id="g1"
      inkscape:groupmode="layer"
      inkscape:label="1"
-     transform="translate(-5.2114363,-7.0817656)">
+     transform="translate(5.4280394,-0.76730435)">
+    <rect
+       style="fill:#ffffff;stroke-width:16.3265;stroke-linecap:round;stroke-linejoin:round;paint-order:fill markers stroke"
+       id="rect1"
+       width="446.85797"
+       height="265.2074"
+       x="-5.4280391"
+       y="0.76730412"
+       inkscape:label="background" />
     <path
        id="path1"
        d="M 31.1815,31.1815 H 53.85893 V 53.85893 H 31.1815 Z"
