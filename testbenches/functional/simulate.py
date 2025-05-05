@@ -635,7 +635,7 @@ presets = {
 
     # a configuration for continuous integration, testing the most important set of features
     'ci': Setting(
-                    Convolution(image_size = [32], kernel_size = [3], input_channels = [128],
+                    Convolution(image_size = [32], kernel_size = [3,5], input_channels = [16,128],
                                 output_channels = [3], bias = [0,5], requantize = [False,True], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
                                 mem_addr_width = 15,
