@@ -44,6 +44,7 @@ entity acc_axi_regs is
     -- Users to add ports here
     o_rst    : out   std_logic;
     o_start  : out   std_logic;
+    o_irq    : out   std_logic;
     i_done   : in    std_logic;
     o_params : out   parameters_t;
     i_status : in    status_info_t;
@@ -141,8 +142,12 @@ architecture arch_imp of acc_axi_regs is
   signal slv_reg_rden : std_logic;
   signal slv_reg_wren : std_logic;
   signal reg_data_out : std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
-  signal byte_index   : integer;
   signal aw_en        : std_logic;
+
+  -- interrupt status and clear signals
+  signal w_irq_en  : std_logic;
+  signal r_irq_clr : std_logic;
+  signal r_done_d  : std_logic;
 
   constant MAGIC_REG_VALUE : std_logic_vector(31 downto 0) := x"41434304"; -- "ACC" + register set version
 begin
@@ -246,7 +251,9 @@ begin
     if rising_edge(S_AXI_ACLK) then
       if S_AXI_ARESETN = '0' then
         slv_regs <= (others => (others => '0'));
+        r_irq_clr <= '0';
       else
+        r_irq_clr <= '0';
         loc_addr := unsigned(axi_awaddr(ADDR_LSB + OPT_MEM_ADDR_BITS - 1 downto ADDR_LSB));
         if (slv_reg_wren = '1') then
           if to_integer(loc_addr) < NUM_REGS then
@@ -254,6 +261,11 @@ begin
               if (S_AXI_WSTRB(byte_index) = '1') then
                 -- Respective byte enables are asserted as per write strobes
                 slv_regs(to_integer(loc_addr))(byte_index*8+7 downto byte_index*8) <= S_AXI_WDATA(byte_index*8+7 downto byte_index*8);
+
+                -- handle the status register interrupt flag
+                if to_integer(loc_addr) = 1 and byte_index = 0 and S_AXI_WDATA(5) = '0' then
+                  r_irq_clr <= '1';
+                end if;
               end if;
             end loop;
           else
@@ -267,6 +279,7 @@ begin
         slv_regs(1)(2) <= i_status.spadif.spad_iact_done;
         slv_regs(1)(3) <= i_status.spadif.spad_wght_done;
         slv_regs(1)(4) <= i_status.spadif.preload_fifos_done;
+        slv_regs(1)(5) <= o_irq;
         slv_regs(1)(27) <= i_status.spadif.spad_psum_empty;
         slv_regs(1)(28) <= i_status.spadif.spad_iact_full;
         slv_regs(1)(29) <= i_status.spadif.spad_iact_empty;
@@ -406,9 +419,28 @@ begin
     end if;
   end process;
 
+  -- Observe done signal and generate interrupt if enabled
+  process is
+  begin
+    wait until rising_edge (S_AXI_ACLK);
+    if not S_AXI_ARESETN then
+      o_irq    <= '0';
+      r_done_d <= '0';
+    else
+      r_done_d <= i_done;
+      if w_irq_en and i_done and not r_done_d then
+        o_irq <= '1';
+      end if;
+      if o_rst or r_irq_clr or not w_irq_en then
+        o_irq <= '0';
+      end if;
+    end if;
+  end process;
+
   -- Add user logic here
-  o_rst   <= slv_regs(0)(0);
-  o_start <= slv_regs(0)(1);
+  o_rst     <= slv_regs(0)(0);
+  o_start   <= slv_regs(0)(1);
+  w_irq_en  <= slv_regs(0)(6);
 
   o_params.requant_enab  <= slv_regs(0)(2) = '1';
   o_params.mode_act      <= mode_activation_t'val(to_integer(unsigned(slv_regs(0)(5 downto 3))));

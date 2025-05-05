@@ -45,6 +45,8 @@ entity acc_axi_top is
     clk    : in std_logic;
     clk_sp : in std_logic;
 
+    o_irq : out std_logic;
+
     -- unused rst port to make up a valid Vivado interface spec (VLNV)
     i_dummy_rst : in std_logic;
 
@@ -139,6 +141,7 @@ begin
   ) port map (
     o_rst         => w_axi_rst,
     o_start       => w_axi_start,
+    o_irq         => o_irq,
     i_done        => w_axi_done,
     o_params      => w_params,
     i_status      => r_status,
