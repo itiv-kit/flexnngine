@@ -1,53 +1,44 @@
 # FleXNNgine
 
 This is the *Flexible XNN Engine* - a reconfigurable accelerator prototype for CNN processing.
+See [our publication](https://doi.org/10.1145/3649476.3658737) for reference.
+It implements the row stationary dataflow originally published by [Chen et. al.](https://doi.org/10.1109/JSSC.2016.2616357).
 Future extentions will also allow processing of other DNN types through runtime reconfiguration.
+Software for the FPGA prototype can be found in the [flexnngine-driver](https://github.com/itiv-kit/flexnngine-driver) repo.
+
+![FleXNNgine architecture diagram](/docs/architecture-axi.svg)
 
 ## Run the simulation
 Start functional simulation by executing the `simulate.py` in `testbenches/functional`.
-Simulation sets can be appended within `simulate.py`.
-A simulation is started for every possible combination of settings, for example as follows:
+By default, a 2D convolution on a 16x16 image with 64 channels, 3x3 kernels and 3 output channels is run.
+These parameters can be changed on the command line or by using one of the presets defined in `simulate.py`.
+For example, run `python3 simulate.py --hw 32 --rs 5 --ich 16` to use a 32x32 image, 16 channels and 5x5 kernels.
+Data is generated randomly with a fixed seed.
+
+A simulation is started for every possible combination of settings, for example running:
 ```python
-simulation.append(Setting("", Convolution(image_size = [16], kernel_size = [1,3], input_channels = [10+i*10 for i in range(20)], output_channels = [3], input_bits = [4]),
+python3 simulate.py --preset ci
+```
+runs a total of 32 simulations. This is equal to running
+```python
+python3 simulate.py --hw 32 --rs 3,5 --ich 16,128 --bias 0,5 --requantize 0,1 --dataflow 0,1
+```
+and results from the `ci` preset in `simulate.py`:
+```python
+    'ci': Setting(
+                    Convolution(image_size = [32], kernel_size = [3,5], input_channels = [16,128],
+                                output_channels = [3], bias = [0,5], requantize = [False,True], activation = [ActivationMode.passthrough]),
                     Accelerator(size_x = [7], size_y = [10], line_length_iact = [64], line_length_psum = [128], line_length_wght = [64],
-                                mem_size_iact = 20, mem_size_psum = 20, mem_size_wght = 20,
-                                iact_fifo_size = [15], wght_fifo_size = [15], psum_fifo_size = [512],
-                                clk_period = [10], clk_sp_period = [1], dataflow=[0,1]), start_gui=False))
+                                mem_addr_width = 15,
+                                iact_fifo_size = [16], wght_fifo_size = [16], psum_fifo_size = [32],
+                                clk_period = [10], clk_sp_period = [10], dataflow=[0,1])),
 ```
 
-## Useful commands
-**Start python podman container with home directory mapped**
-Simple python env for simulations
-```bash
-podman run -it --name mypython -v /tools:/tools -v $HOME:$HOME -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=unix$DISPLAY --security-opt label=disable python:latest bash
-```
-To restart this container: `podman start -ia mypython`
-
-Jupyter on server with port forwarding:
-```bash
-podman run --rm -u root -e NB_USER=root -e NB_UID=0 -e NB_GID=0 -p 8888:8888 -v "$PWD":/home/root/work --security-opt label=disable quay.io/jupyter/minimal-notebook:latest start-notebook.py --allow-root
-```
-
-The old command using `--uidmap +1000:0` does not work anymore due to a regression in podman.
-
-#### Set all files to VHDL 2008 in Vivado
-```tcl
-set_property FILE_TYPE {VHDL 2008} [get_files *.vhd]
-```
-
-#### Use Vivado IP in Questa
-1. Make sure Questa is in your path, e.g. run `module load questa/2023.4` before launching vivado.
-2. Tools -> Compile Simulation Libraries:
-```tcl
-compile_simlib -simulator questa -family all -language all -library all -dir {./simulation-library/reconfigurable-accelerator.cache/compile_simlib/questa}
-```
-3. Set Vivado simulator to Questa, only create sources checkmark
-4. Simulate in Vivado
-5. Simulate using created .do files or use contents for own .do file
-
-#### Start simulation from terminal
-Add generics to env variable `generics` with `-gGeneric=value`
+## Other testbenches
+For most modules, a designated testbench exits in the `testbenches` folder.
+Run them with Questa:
 ```bash
 module load questa/2023.4
-generics=$generics MTI_VCO_MODE=64 vsim -c -do run_batch.do`
+cd testbenches/address_generator
+vsim -do run.do
 ```
