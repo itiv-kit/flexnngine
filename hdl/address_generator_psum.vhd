@@ -53,7 +53,8 @@ architecture rtl of address_generator_psum is
     signal r_count_h2 : uint10_line_t(0 to size_x - 1);
 
     signal r_start_delay : std_logic;
-    signal r_start_event : std_logic;
+    signal w_start_event : std_logic;
+    signal r_init        : std_logic;
 
     signal r_image_size   : integer;                       -- output image size per channel, currently rectangular images only = w1*w1
     signal r_chunk_size   : integer range 1 to write_size; -- pixels per output word (64bit/8bit for int8, 64bit/16bit for int16)
@@ -62,7 +63,8 @@ architecture rtl of address_generator_psum is
 begin
 
     r_start_delay  <= i_start when rising_edge(clk);
-    r_start_event  <= i_start and not r_start_delay;
+    w_start_event  <= i_start and not r_start_delay;
+    r_init         <= w_start_event when rising_edge(clk);
     r_image_size   <= i_params.w1 * i_params.w1 when rising_edge(clk);
     r_chunk_size   <= write_size when i_params.requant_enab else write_size / 2 when rising_edge(clk);
     r_element_size <= 1 when i_params.requant_enab else 2 when rising_edge(clk);
@@ -88,14 +90,12 @@ begin
             if not rstn then
                 o_suppress_out(x) <= '0';
 
-                r_next_address_valid(x) <= '1'; -- will be reset on r_start_event
-                r_suppress_next_row(x)  <= '0';
-                r_suppress_next_col(x)  <= '0';
+                r_next_address_valid(x) <= '0';
 
                 r_count_w1(x) <= 0;
                 r_count_m0(x) <= 0;
                 r_count_h2(x) <= 0;
-                r_done(x)     <= '0';
+                r_done(x)     <= '1'; -- start in done state, wait until start_event to generate first address
             else
                 v_count_w1 := r_count_w1(x);
                 v_count_m0 := r_count_m0(x);
@@ -105,12 +105,12 @@ begin
                 -- address output/increment and calculation of new base addresses are decoupled
                 -- if timing issues occur, this can be pipelined
 
-                if r_start_event = '1' then
+                if w_start_event = '1' then
                     -- start of a totally new result, reset all counters
                     v_count_m0 := 0;
                     v_count_h2 := 0;
                     v_done     := false;
-                elsif not r_next_address_valid(x) then
+                elsif r_next_address_valid(x) = '0' and not v_done then
                     if v_count_m0 = i_params.m0 - 1 then
                         if v_count_h2 = i_params.h2 - 1 then
                             -- full image processed, don't generate any more addresses
@@ -149,7 +149,7 @@ begin
                 -- finally, add the row offset
                 v_new_addr := v_new_addr + v_cur_row * i_params.w1 * r_element_size;
 
-                if (r_next_address_valid(x) = '0' or r_start_event = '1') and not v_done then
+                if (r_next_address_valid(x) = '0' or w_start_event = '1') and not v_done then
                     r_next_address(x)       <= to_unsigned(v_new_addr, addr_width_bytewise);
                     r_next_address_valid(x) <= '1';
                 end if;
@@ -169,15 +169,9 @@ begin
                     r_suppress_next_col(x) <= '0';
                 end if;
 
-                if r_start_event = '1' then
-                    v_count_w1 := 0;
-
-                    r_address_psum(x)       <= to_unsigned(v_new_addr, addr_width_bytewise);
-                    o_suppress_out(x)       <= '0';
-                    r_next_address_valid(x) <= '0'; -- immediately trigger calculation of subsequent address
-                elsif i_valid_psum_out(x) then
+                if i_valid_psum_out(x) or r_init then
                     -- common output of one word (r_chunk_size pixels / write_size bytes)
-                    if v_count_w1 >= i_params.w1 - r_chunk_size then
+                    if v_count_w1 >= i_params.w1 - r_chunk_size or r_init = '1' then
                         -- one row is done
                         v_count_w1 := 0;
 
