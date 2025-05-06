@@ -173,7 +173,7 @@ architecture rtl of scratchpad_interface is
     signal r_psums_halfword_d    : std_logic_vector(size_x - 1 downto 0);
 
     signal w_psum_address : array_t(0 to size_x - 1)(mem_addr_width - 1 downto 0);
-    signal w_psum_offset  : array_t(0 to size_x - 1)(mem_offset_width - 1 downto 0);
+    signal w_psum_offset  : uns_array_t(0 to size_x - 1)(mem_offset_width - 1 downto 0);
 
     signal w_rd_en_psum_f : std_logic_vector(size_x - 1 downto 0);
     signal w_wr_en_psum_f : std_logic_vector(size_x - 1 downto 0);
@@ -195,6 +195,7 @@ architecture rtl of scratchpad_interface is
     signal r_startup     : std_logic_vector(10 downto 0); -- TODO Depending on clk_sp / clk factor
 
     signal r_preload_fifos_done : std_logic;
+    signal r_all_psum_empty     : std_logic;
 
 begin
 
@@ -568,7 +569,7 @@ begin
     gen_fifo_psum_out : for x in 0 to size_x - 1 generate
 
         w_psum_address(x) <= i_address_psum(x)(mem_addr_width + mem_offset_width - 1 downto mem_offset_width);
-        w_psum_offset(x)  <= i_address_psum(x)(mem_offset_width - 1 downto 0);
+        w_psum_offset(x)  <= unsigned(i_address_psum(x)(mem_offset_width - 1 downto 0));
 
         psum_parallel_requantized : entity accel.parallelizer
             port map (
@@ -577,7 +578,7 @@ begin
                 i_valid  => i_psums_valid(x) and i_psums_halfword(x),
                 i_last   => i_psums_last(x),
                 i_data   => i_psums(x)(data_width_input - 1 downto 0),
-                i_offset => unsigned(w_psum_offset(x)),
+                i_offset => w_psum_offset(x),
                 o_valid  => w_psum_wide_valid(x),
                 o_data   => w_psum_wide_data(x)
             );
@@ -589,7 +590,7 @@ begin
                 i_valid  => i_psums_valid(x) and not i_psums_halfword(x),
                 i_last   => i_psums_last(x),
                 i_data   => i_psums(x),
-                i_offset => unsigned(w_psum_offset(x)),
+                i_offset => w_psum_offset(x),
                 o_valid  => w_psum_wide_valid_raw(x),
                 o_data   => w_psum_wide_data_raw(x)
             );
