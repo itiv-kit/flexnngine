@@ -711,11 +711,13 @@ begin
             o_binary => w_gnt_psum_idx
         );
 
+    r_all_psum_empty <= and w_empty_psum_f when rising_edge(clk_sp);
+
     sync_all_psum_finished : entity accel.bit_sync
         port map (
             clk     => clk,
             rst     => w_rst,
-            bit_in  => and w_empty_psum_f,
+            bit_in  => r_all_psum_empty,
             bit_out => o_all_psum_finished
         );
 
