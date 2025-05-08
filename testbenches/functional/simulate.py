@@ -149,7 +149,9 @@ class Test:
         self.rows_last_h2 = 1 # only required for dataflow 1
         self.line_length_wght_usable = self.accelerator.line_length_wght - 1 # TODO: check why this is necessary
 
-        self.C0 = math.floor(self.line_length_wght_usable / self.convolution.kernel_size / self.accelerator.spad_word_size) * self.accelerator.spad_word_size
+        self.C0 = min(self.convolution.input_channels,
+            math.floor(self.line_length_wght_usable / self.convolution.kernel_size / self.accelerator.spad_word_size) * self.accelerator.spad_word_size
+        )
         if self.C0 == 0:
             print(f"Error: rs={self.convolution.kernel_size} does not fit into usable line length {self.line_length_wght_usable}")
             return False
