@@ -14,7 +14,7 @@ package utilities is
     constant max_line_length_psum : integer := 128; -- currently equals maximum image width
     constant max_spad_addr_width  : integer := 20;  -- maximum memory address width in bits, can be less physically
 
-    type control_state_t is (s_idle, s_init, s_calculate, s_output, s_incr_w1, s_incr_c1, s_incr_h1, s_done);
+    type control_state_t is (s_idle, s_init, s_calculate, s_output, s_incr_w1, s_shrink_w1, s_incr_c1, s_incr_h1, s_done);
     type padding_state_t is (s_none, s_left, s_right);
     type mode_activation_t is (passthrough, relu, sigmoid, leaky_relu, elu);
     type mode_padding_t is (none, zero, duplicate);

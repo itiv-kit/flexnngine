@@ -16,9 +16,8 @@ architecture rs_dataflow of control is
     signal r_count_h2   : integer range 0 to 1023;
 
     signal r_kernel_cols : integer range 0 to max_kernel_size - 1;
-    signal r_count_pad_x : integer range 0 to max_kernel_size - 1;
-    signal r_count_w0 : integer range 0 to max_kernel_size;
-    signal r_count_c0 : integer range 0 to max_line_length_wght;
+    signal r_count_w0    : integer range 0 to max_kernel_size;
+    signal r_count_c0    : integer range 0 to max_line_length_wght;
 
     signal r_extra_offset_iact : integer range 0 to max_line_length_wght;
     signal r_extra_offset_wght : integer range 0 to max_line_length_wght;
@@ -28,8 +27,6 @@ architecture rs_dataflow of control is
     signal w_c0 : integer range 0 to max_line_length_wght;
     signal w_w1 : integer range 0 to max_line_length_psum;
     signal w_m0 : integer range 0 to max_output_channels;
-
-    signal r_incr_w1 : std_logic;
 
     signal r_command_iact       : command_lb_array_t(0 to size_y - 1);
     signal r_read_offset_iact   : array_t(0 to size_y - 1)(addr_width_iact - 1 downto 0);
@@ -67,7 +64,7 @@ begin
     -- Generate enable signal for PE array, propagate input fifo status from scratchpad interface
     -- Do not stop when filling read/update pipeline
     o_enable <= i_enable_if when r_state = s_calculate else
-                '1' when (r_state = s_output or r_state = s_incr_w1 or r_state = s_incr_c1) else
+                '1' when (r_state = s_output or r_state = s_incr_w1 or r_state = s_shrink_w1 or r_state = s_incr_c1) else
                 '0';
 
     -- for RS dataflow, the lowest PE row does not get c_pe_conv_pass command and thus does not pass through any data
@@ -149,7 +146,6 @@ begin
             r_count_w1   <= 0;
             r_count_c1   <= 0;
             r_count_c0w0 <= 0;
-            r_incr_w1    <= '0';
             r_state      <= s_idle;
         elsif rising_edge(clk) then
 
@@ -163,16 +159,11 @@ begin
 
                 when s_init =>
 
-                    -- start with a partial kernel if padding is requested
-                    r_kernel_cols <= i_params.kernel_size - 1 - i_params.pad_x;
-                    r_count_pad_x <= 0;
-                    if i_params.mode_pad /= none then -- start padding on left edge
-                        r_pad_state         <= s_left;
-                        r_extra_offset_iact <= 0;
-                        r_extra_offset_wght <= w_c0 * (i_params.kernel_size - i_params.pad_x - 1);
-                    else
-                        r_pad_state <= s_none;
-                    end if;
+                    r_kernel_cols       <= i_params.kernel_size - 1;
+                    r_count_w1          <= i_params.pad_x; -- start with first non-padded pixel to ensure all data is in iact/wght line buffer
+                    r_pad_state         <= s_none;
+                    r_extra_offset_iact <= 0;
+                    r_extra_offset_wght <= 0;
 
                     if o_init_done = '1' then
                         r_state <= s_calculate;
@@ -181,7 +172,6 @@ begin
                 when s_calculate =>
 
                     if o_enable = '1' then
-                        r_incr_w1 <= '0';
                         if r_count_h2 /= w_h2 and r_count_c1 /= w_c1 then
                             if r_count_w1 /= w_w1 then
                                 r_count_c0w0 <= r_count_c0w0 + 1;
@@ -209,7 +199,6 @@ begin
                                     -- Last c1 done
                                     -- Tile change for tile_y
                                     -- Output intermediate results. Reset Psum and Iact buffer. Wait.
-
                                     r_state    <= s_output;
                                     r_count_h2 <= r_count_h2 + 1;
                                 end if;
@@ -221,49 +210,63 @@ begin
 
                 when s_incr_w1 =>
 
-                    -- no need to check for o_enable - if buffers are empty, we can still shrink, return to s_calculate and stall there
-                    r_incr_w1 <= '0';
-                    r_state   <= s_calculate;
-                    if r_incr_w1 = '0' then
-                        r_count_w0   <= 0;
-                        r_count_c0   <= 0;
-                        r_count_c0w0 <= 0;
-                        r_count_w1   <= r_count_w1 + 1;
+                    r_state      <= s_calculate;
+                    r_count_w0   <= 0;
+                    r_count_c0   <= 0;
+                    r_count_c0w0 <= 0;
 
-                        if r_pad_state = s_left then -- padding on left side
-                            r_kernel_cols       <= r_kernel_cols + 1;
-                            r_count_pad_x       <= r_count_pad_x + 1;
-                            r_extra_offset_iact <= 0;
-                            r_extra_offset_wght <= r_extra_offset_wght - w_c0;
-                            if r_kernel_cols = i_params.kernel_size - 2 then
-                                r_pad_state <= s_none;
-                            end if;
+                    if r_pad_state = s_left then
+                        r_extra_offset_iact <= 0;
+                        r_extra_offset_wght <= r_extra_offset_wght + w_c0;
 
-                        elsif r_pad_state = s_right then -- padding on right side
-                            r_extra_offset_iact <= r_extra_offset_iact + w_c0;
+                        if r_count_w1 = 0 then
+                            r_pad_state         <= s_none;
+                            r_state             <= s_shrink_w1;        -- shrink when last left padding is computed
+                            r_count_w1          <= i_params.pad_x + 1; -- continue with second non-padded pixel
+                            r_kernel_cols       <= i_params.kernel_size - 1;
                             r_extra_offset_wght <= 0;
-                            if r_count_w1 = w_w1 - 1 then -- prepare for next output channel, reset padding to left
-                                r_pad_state         <= s_left;
-                                r_extra_offset_iact <= 0;
-                                r_extra_offset_wght <= w_c0 * (i_params.kernel_size - i_params.pad_x - 1);
-                            else
-                                r_kernel_cols <= r_kernel_cols - 1;
-                                r_count_pad_x <= r_count_pad_x - 1;
-                            end if;
+                        else
+                            r_count_w1    <= r_count_w1 - 1;
+                            r_kernel_cols <= r_kernel_cols - 1;
+                        end if;
+                    elsif r_pad_state = s_right then
+                        r_count_w1          <= r_count_w1 + 1;
+                        r_extra_offset_iact <= r_extra_offset_iact + w_c0;
+                        r_extra_offset_wght <= 0;
 
-                        else -- only shrink if not within padding columns
-
-                            r_incr_w1           <= '1'; -- trigger buffer shrinks for iact & wght
-                            r_state             <= s_incr_w1; -- stay in this state for one more cycle to clear r_incr_w1
+                        -- prepare for next output channel, reset padding
+                        if r_count_w1 = w_w1 - 1 then
+                            r_pad_state         <= s_none;
+                            r_kernel_cols       <= i_params.kernel_size - 1;
                             r_extra_offset_iact <= 0;
-                            r_extra_offset_wght <= 0;
-                            if i_params.mode_pad /= none and r_count_w1 = w_w1 - i_params.pad_x - 1 then -- switch to padding on right image edge
-                                r_pad_state   <= s_right;
-                                r_kernel_cols <= r_kernel_cols - 1;
-                                r_count_pad_x <= r_count_pad_x - 1;
-                            end if;
+                        else
+                            r_kernel_cols <= r_kernel_cols - 1;
+                        end if;
+                    else
+                        -- trigger buffer shrinks for iact & wght
+                        r_state             <= s_shrink_w1;
+                        r_count_w1          <= r_count_w1 + 1;
+                        r_extra_offset_iact <= 0;
+                        r_extra_offset_wght <= 0;
+
+                        if i_params.mode_pad /= none and r_count_w1 = i_params.pad_x then
+                            -- left padding is computed backwards, start when pixel 0 has been computed
+                            r_count_w1          <= r_count_w1 - 1;
+                            r_pad_state         <= s_left;
+                            r_kernel_cols       <= r_kernel_cols - 1;
+                            r_extra_offset_wght <= w_c0;
+                            r_state             <= s_calculate; -- do not shrink buffers, we need the data for left padding
+                        elsif i_params.mode_pad /= none and r_count_w1 = w_w1 - i_params.pad_x - 1 then
+                            -- switch to padding on right image edge
+                            r_pad_state   <= s_right;
+                            r_kernel_cols <= r_kernel_cols - 1;
                         end if;
                     end if;
+
+                when s_shrink_w1 =>
+
+                    -- no need to check for o_enable - if buffers are empty, we can still shrink, return to s_calculate and stall there
+                    r_state <= s_calculate;
 
                 when s_incr_c1 =>
 
@@ -271,7 +274,7 @@ begin
                     if r_count_w1 /= 2 then
                         r_count_w1 <= r_count_w1 + 1;
                     else
-                        r_count_w1   <= 0;
+                        r_count_w1   <= i_params.pad_x;
                         r_count_c0w0 <= 0;
                         r_state      <= s_calculate;
                     end if;
@@ -301,7 +304,7 @@ begin
                             end if;
                         else
                             r_count_c1   <= 0;
-                            r_count_w1   <= 0;
+                            r_count_w1   <= i_params.pad_x;
                             r_count_c0w0 <= 0;
                             r_state      <= s_calculate;
                         end if;
@@ -339,13 +342,11 @@ begin
                         r_read_offset_iact <= (others => std_logic_vector(to_unsigned(r_count_c0w0 + r_extra_offset_iact, addr_width_iact)));
                     end if;
 
-                when s_incr_w1 =>
+                when s_shrink_w1 =>
 
-                    if r_incr_w1 = '1' then
-                        -- shift kernel - increment w1
-                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned(w_c0, addr_width_iact)));
-                        r_command_iact <= (others => c_lb_shrink);
-                    end if;
+                    -- shift kernel - increment w1
+                    r_command_iact     <= (others => c_lb_shrink);
+                    r_read_offset_iact <= (others => std_logic_vector(to_unsigned(w_c0, addr_width_iact)));
 
                 when s_incr_c1 =>
 
@@ -387,7 +388,7 @@ begin
 
                 when s_calculate =>
 
-                    if r_incr_w1 = '1' or r_count_w1 = w_w1 then
+                    if r_count_w1 = w_w1 then
                         -- Tile y change
                         r_command_wght <= (others => c_lb_idle);
                     else
@@ -395,7 +396,7 @@ begin
                         r_read_offset_wght <= (others => std_logic_vector(to_unsigned(r_count_c0w0 + r_extra_offset_wght, addr_width_wght)));
                     end if;
 
-                when s_incr_w1 =>
+                when s_incr_w1 | s_shrink_w1 =>
 
                     -- shift kernel - increment w1
                     r_command_wght <= (others => c_lb_idle);
@@ -481,7 +482,7 @@ begin
 
                     when s_calculate =>
 
-                        if r_incr_w1 = '1' or r_count_w1 = w_w1 then
+                        if r_count_w1 = w_w1 then
                             -- shift kernel - increment w1 / Tile y change
                             r_command_psum(i) <= c_lb_idle;
                         else
@@ -531,11 +532,11 @@ begin
 
     end generate g_psum_pe_commands;
 
-    w_c1   <= i_params.c1;
-    w_w1   <= i_params.w1;
-    w_h2   <= i_params.h2;
-    w_m0   <= i_params.m0;
-    w_c0   <= i_params.c0_last_c1 when r_count_c1 = w_c1 - 1 else i_params.c0;
+    w_c1 <= i_params.c1;
+    w_w1 <= i_params.w1;
+    w_h2 <= i_params.h2;
+    w_m0 <= i_params.m0;
+    w_c0 <= i_params.c0_last_c1 when r_count_c1 = w_c1 - 1 else i_params.c0;
 
     p_init_m0_dist : process (clk, rstn) is
 

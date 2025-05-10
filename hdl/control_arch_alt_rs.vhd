@@ -240,7 +240,7 @@ begin
                         end if;
                     end if;
 
-                when s_incr_w1 =>
+                when s_incr_w1 | s_shrink_w1 =>
 
                     null;
 
