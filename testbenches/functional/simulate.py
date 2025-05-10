@@ -19,7 +19,7 @@ class ActivationMode(IntEnum):
 class PaddingMode(IntEnum):
     none = 0
     zero = 1 # pad with zeros
-    duplicate = 2 # pad with value at edge
+    # duplicate = 2 # pad with value at edge
 
 @dataclass
 class Convolution:
@@ -700,7 +700,7 @@ if __name__ == "__main__":
     parser.add_argument('--bias',                                   help='Override preset bias values (same bias for all och)')
     parser.add_argument('--requantize',                             help='Override preset requantization (1/0)')
     parser.add_argument('--activation',                             help='Enable activation (0=off, 1=ReLU)')
-    parser.add_argument('--padding',                                help='Enable padding (0=off, 1=zero, 2=duplicate)')
+    parser.add_argument('--padding',                                help='Enable padding (0=off, 1=same size zero padding)')
     parser.add_argument('--gui',               action='store_true', help='Override preset to enable GUI')
     parser.add_argument('--no-gui',            action='store_true', help='Override preset to disable GUI / batch mode')
     parser.add_argument('--input-bits',        default=4, type=int, help='Set bit range for iact/wght input values')

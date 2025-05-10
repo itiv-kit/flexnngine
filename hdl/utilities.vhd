@@ -17,7 +17,7 @@ package utilities is
     type control_state_t is (s_idle, s_init, s_calculate, s_output, s_incr_w1, s_shrink_w1, s_incr_c1, s_incr_h1, s_done);
     type padding_state_t is (s_none, s_left, s_right);
     type mode_activation_t is (passthrough, relu, sigmoid, leaky_relu, elu);
-    type mode_padding_t is (none, zero, duplicate);
+    type mode_padding_t is (none, zero); -- "duplicate" not implemented yet
 
     type std_logic_row_col_t is array (natural  range <>, natural range <>) of std_logic;
 
