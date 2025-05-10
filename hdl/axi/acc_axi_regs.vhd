@@ -11,7 +11,7 @@ entity acc_axi_regs is
   generic (
     -- Users to add parameters here
     -- number of registers to present, rest is read 0 / writes ignored
-    NUM_REGS : integer := 82;
+    NUM_REGS : integer := 88;
 
     -- static accelerator hardware info
     size_x : positive := 5;
@@ -149,7 +149,7 @@ architecture arch_imp of acc_axi_regs is
   signal r_irq_clr : std_logic;
   signal r_done_d  : std_logic;
 
-  constant MAGIC_REG_VALUE : std_logic_vector(31 downto 0) := x"41434304"; -- "ACC" + register set version
+  constant MAGIC_REG_VALUE : std_logic_vector(31 downto 0) := x"41434305"; -- "ACC" + register set version
 begin
   -- I/O Connections assignments
 
@@ -292,18 +292,18 @@ begin
           1 => to_stdlogic(postproc_enabled),
           others => '0'
         );
-        slv_regs(25) <= std_logic_vector(resize(to_unsigned(size_y, 16) & to_unsigned(size_x, 16), C_S_AXI_DATA_WIDTH));
-        slv_regs(26) <= std_logic_vector(resize(to_unsigned(line_length_wght, 16) & to_unsigned(line_length_iact, 16), C_S_AXI_DATA_WIDTH));
-        slv_regs(27) <= std_logic_vector(resize(to_unsigned(line_length_psum, 16), C_S_AXI_DATA_WIDTH));
-        slv_regs(28) <= std_logic_vector(resize(to_unsigned(data_width_psum, 8) & to_unsigned(data_width_wght, 8) & to_unsigned(data_width_iact, 8), C_S_AXI_DATA_WIDTH));
-        slv_regs(29) <= std_logic_vector(resize(to_unsigned(mem_word_count, 8) & to_unsigned(mem_addr_width, 8), C_S_AXI_DATA_WIDTH));
-        slv_regs(30) <= std_logic_vector(resize(capabilities & to_unsigned(max_output_channels, 8), C_S_AXI_DATA_WIDTH));
+        slv_regs(32) <= std_logic_vector(resize(to_unsigned(size_y, 16) & to_unsigned(size_x, 16), C_S_AXI_DATA_WIDTH));
+        slv_regs(33) <= std_logic_vector(resize(to_unsigned(line_length_wght, 16) & to_unsigned(line_length_iact, 16), C_S_AXI_DATA_WIDTH));
+        slv_regs(34) <= std_logic_vector(resize(to_unsigned(line_length_psum, 16), C_S_AXI_DATA_WIDTH));
+        slv_regs(35) <= std_logic_vector(resize(to_unsigned(data_width_psum, 8) & to_unsigned(data_width_wght, 8) & to_unsigned(data_width_iact, 8), C_S_AXI_DATA_WIDTH));
+        slv_regs(36) <= std_logic_vector(resize(to_unsigned(mem_word_count, 8) & to_unsigned(mem_addr_width, 8), C_S_AXI_DATA_WIDTH));
+        slv_regs(37) <= std_logic_vector(resize(capabilities & to_unsigned(max_output_channels, 8), C_S_AXI_DATA_WIDTH));
 
         slv_regs(31)(MAGIC_REG_VALUE'range) <= MAGIC_REG_VALUE;
 
         -- debug status registers
-        slv_regs(80) <= std_logic_vector(resize(i_status.cycle_counter, C_S_AXI_DATA_WIDTH));
-        slv_regs(81) <= std_logic_vector(resize(i_status.spadif.psum_overflows, C_S_AXI_DATA_WIDTH));
+        slv_regs(38) <= std_logic_vector(resize(i_status.cycle_counter, C_S_AXI_DATA_WIDTH));
+        slv_regs(39) <= std_logic_vector(resize(i_status.spadif.psum_overflows, C_S_AXI_DATA_WIDTH));
       end if;
     end if;
   end process;
@@ -438,45 +438,49 @@ begin
   end process;
 
   -- Add user logic here
-  o_rst     <= slv_regs(0)(0);
-  o_start   <= slv_regs(0)(1);
-  w_irq_en  <= slv_regs(0)(6);
+  o_rst    <= slv_regs(0)(0);
+  o_start  <= slv_regs(0)(1);
+  w_irq_en <= slv_regs(0)(6);
 
+  o_params.dataflow      <= dataflow; -- currently fixed from generics
   o_params.requant_enab  <= slv_regs(0)(2) = '1';
   o_params.mode_act      <= mode_activation_t'val(to_integer(unsigned(slv_regs(0)(5 downto 3))));
-  o_params.psum_throttle <= to_integer(unsigned(slv_regs(0)(31 downto 24)));
+  o_params.mode_pad      <= mode_padding_t'val(to_integer(unsigned(slv_regs(0)(7 downto 7))));
 
-  o_params.dataflow     <= dataflow;
-  o_params.inputchs     <= to_integer(unsigned(slv_regs( 2)( 9 downto 0)));
-  o_params.outputchs    <= to_integer(unsigned(slv_regs( 3)( 9 downto 0)));
-  o_params.image_y      <= to_integer(unsigned(slv_regs( 4)(11 downto 0)));
-  o_params.image_x      <= to_integer(unsigned(slv_regs( 5)(11 downto 0)));
-  o_params.kernel_size  <= to_integer(unsigned(slv_regs( 6)( 4 downto 0)));
-  o_params.c1           <= to_integer(unsigned(slv_regs( 7)( 9 downto 0)));
-  o_params.w1           <= to_integer(unsigned(slv_regs( 8)( 9 downto 0)));
-  o_params.h2           <= to_integer(unsigned(slv_regs( 9)( 9 downto 0)));
-  o_params.m0           <= to_integer(unsigned(slv_regs(10)( 9 downto 0)));
-  o_params.m0_last_m1   <= to_integer(unsigned(slv_regs(11)( 9 downto 0)));
-  o_params.rows_last_h2 <= to_integer(unsigned(slv_regs(12)( 9 downto 0)));
-  o_params.c0           <= to_integer(unsigned(slv_regs(13)( 9 downto 0)));
-  o_params.c0_last_c1   <= to_integer(unsigned(slv_regs(14)( 9 downto 0)));
-  o_params.c0w0         <= to_integer(unsigned(slv_regs(15)( 9 downto 0)));
-  o_params.c0w0_last_c1 <= to_integer(unsigned(slv_regs(16)( 9 downto 0)));
+  o_params.inputchs      <= to_integer(unsigned(slv_regs( 2)( 9 downto 0)));
+  o_params.outputchs     <= to_integer(unsigned(slv_regs( 3)( 9 downto 0)));
+  o_params.image_y       <= to_integer(unsigned(slv_regs( 4)(11 downto 0)));
+  o_params.image_x       <= to_integer(unsigned(slv_regs( 5)(11 downto 0)));
+  o_params.kernel_size   <= to_integer(unsigned(slv_regs( 6)( 4 downto 0)));
+  o_params.c1            <= to_integer(unsigned(slv_regs( 7)( 9 downto 0)));
+  o_params.w1            <= to_integer(unsigned(slv_regs( 8)( 9 downto 0)));
+  o_params.h2            <= to_integer(unsigned(slv_regs( 9)( 9 downto 0)));
+  o_params.m0            <= to_integer(unsigned(slv_regs(10)( 9 downto 0)));
+  o_params.m0_last_m1    <= to_integer(unsigned(slv_regs(11)( 9 downto 0)));
+  o_params.rows_last_h2  <= to_integer(unsigned(slv_regs(12)( 9 downto 0)));
+  o_params.c0            <= to_integer(unsigned(slv_regs(13)( 9 downto 0)));
+  o_params.c0_last_c1    <= to_integer(unsigned(slv_regs(14)( 9 downto 0)));
+  o_params.c0w0          <= to_integer(unsigned(slv_regs(15)( 9 downto 0)));
+  o_params.c0w0_last_c1  <= to_integer(unsigned(slv_regs(16)( 9 downto 0)));
+  o_params.psum_throttle <= to_integer(unsigned(slv_regs(17)( 7 downto 0)));
+  o_params.pad_x         <= to_integer(unsigned(slv_regs(18)( 3 downto 0)));
+  o_params.pad_y         <= to_integer(unsigned(slv_regs(18)(11 downto 8)));
 
-  o_params.base_iact          <= to_integer(unsigned(slv_regs(17)(max_spad_addr_width - 1 downto 0)));
-  o_params.base_wght          <= to_integer(unsigned(slv_regs(18)(max_spad_addr_width - 1 downto 0)));
-  o_params.base_psum          <= to_integer(unsigned(slv_regs(19)(max_spad_addr_width - 1 downto 0)));
-  o_params.stride_iact_w      <= to_integer(unsigned(slv_regs(20)(16 downto 0)));
-  o_params.stride_iact_hw     <= to_integer(unsigned(slv_regs(21)(16 downto 0)));
-  o_params.stride_wght_kernel <= to_integer(unsigned(slv_regs(22)( 5 downto 0)));
-  o_params.stride_wght_och    <= to_integer(unsigned(slv_regs(23)(11 downto 0)));
-  o_params.stride_psum_och    <= to_integer(unsigned(slv_regs(24)(11 downto 0)));
+  o_params.base_iact          <= to_integer(unsigned(slv_regs(19)(max_spad_addr_width - 1 downto 0)));
+  o_params.base_wght          <= to_integer(unsigned(slv_regs(20)(max_spad_addr_width - 1 downto 0)));
+  o_params.base_psum          <= to_integer(unsigned(slv_regs(21)(max_spad_addr_width - 1 downto 0)));
+  o_params.base_pad           <= to_integer(unsigned(slv_regs(22)(max_spad_addr_width - 1 downto 0)));
+  o_params.stride_iact_w      <= to_integer(unsigned(slv_regs(23)(16 downto 0)));
+  o_params.stride_iact_hw     <= to_integer(unsigned(slv_regs(24)(16 downto 0)));
+  o_params.stride_wght_kernel <= to_integer(unsigned(slv_regs(25)( 5 downto 0)));
+  o_params.stride_wght_och    <= to_integer(unsigned(slv_regs(26)(11 downto 0)));
+  o_params.stride_psum_och    <= to_integer(unsigned(slv_regs(27)(11 downto 0)));
 
   -- registers for bias, scale, zeropt per output channel, limited by maximum m0 value max_output_channels
   g_bias_req_regs : for x in 0 to max_output_channels - 1 generate
-    o_params.bias(x)        <= to_integer(unsigned(slv_regs(32 + x)(15 downto 0)));
-    o_params.scale_fp32(x)  <= slv_regs(32 + 1 * max_output_channels + x)(31 downto 0);
-    o_params.zeropt_fp32(x) <= slv_regs(32 + 2 * max_output_channels + x)(31 downto 0);
+    o_params.bias(x)        <= to_integer(unsigned(slv_regs(40 + x)(15 downto 0)));
+    o_params.scale_fp32(x)  <= slv_regs(40 + 1 * max_output_channels + x)(31 downto 0);
+    o_params.zeropt_fp32(x) <= slv_regs(40 + 2 * max_output_channels + x)(31 downto 0);
   end generate g_bias_req_regs;
   -- User logic ends
 
