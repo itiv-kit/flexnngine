@@ -323,7 +323,7 @@ begin
 
     end process p_command_counter;
 
-    p_iact_commands : process (clk, rstn) is
+    p_iact_commands : process (clk, rstn, o_enable) is
     begin
 
         if not rstn then
@@ -377,7 +377,7 @@ begin
 
     end process p_iact_commands;
 
-    p_wght_commands : process (clk, rstn) is
+    p_wght_commands : process (clk, rstn, o_enable) is
     begin
 
         if not rstn then
@@ -471,7 +471,7 @@ begin
         end process p_command;
 
         -- Control PSUM commands (idle/read/read_update)
-        p_psum_commands : process (clk, rstn) is
+        p_psum_commands : process (clk, rstn, o_enable) is
         begin
 
             if not rstn then
