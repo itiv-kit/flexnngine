@@ -14,8 +14,7 @@ entity line_buffer is
     generic (
         line_length : positive := 32; --! Length of the lines in the image
         addr_width  : positive := 5;  --! Address width for the ram_dp subcomponent. ceil(log2(line_length))
-        data_width  : positive := 8;  --! Data width for the ram_dp subcomponent - should be the width of data to be stored (8 / 16 bit?)
-        psum_type   : boolean  := false
+        data_width  : positive := 8   --! Data width for the ram_dp subcomponent - should be the width of data to be stored (8 / 16 bit?)
     );
     port (
         clk                : in    std_logic;                                 --! Clock input
@@ -79,24 +78,9 @@ architecture rtl of line_buffer is
 
     end procedure incr;
 
-    -- Increment by offset
-
-    procedure incr_offset (
-        signal pointer : inout integer;
-        signal offset  : in integer) is
-    begin
-
-        if pointer + offset >= line_length then
-            pointer <= pointer + offset - line_length;
-        else
-            pointer <= pointer + offset;
-        end if;
-
-    end procedure incr_offset;
-
     -- Increment by offset variable
 
-    procedure incr_offset_v (
+    procedure incr_offset (
         variable pointer : inout integer;
         variable offset  : in integer) is
     begin
@@ -107,7 +91,7 @@ architecture rtl of line_buffer is
             pointer := pointer + offset;
         end if;
 
-    end procedure incr_offset_v;
+    end procedure incr_offset;
 
 begin
 
@@ -115,7 +99,7 @@ begin
     begin
 
         if rising_edge(clk) then
-            if i_enable = '1' or psum_type = true then
+            if i_enable = '1' then
                 if i_command = c_lb_read or i_command = c_lb_read_update then
                     assert to_integer(unsigned(i_read_offset)) <= r_fill_count
                         report "Error: reading from offset " & integer'image(to_integer(unsigned(i_read_offset))) & " ; Fill count only " & integer'image(r_fill_count)
@@ -147,6 +131,9 @@ begin
             doutb => doutb
         );
 
+    r_wenb <= '0';
+    r_dinb <= (others => '0');
+
     -- Process to store input values that are valid
     write_val : process (clk, rstn) is
 
@@ -156,17 +143,18 @@ begin
     begin
 
         if not rstn then
-            r_wena         <= '0';
-            r_addra        <= (others => '0');
-            r_dina         <= (others => '0');
-            r_pointer_tail <= 0;
+            r_wena           <= '0';
+            r_addra          <= (others => '0');
+            r_dina           <= (others => '0');
+            r_pointer_tail   <= 0;
+            r_buffer_full_wr <= '0';
         elsif rising_edge(clk) then
             -- Update data
             if r_command_delay(2) = c_lb_read_update then
                 v_pointer_update := r_pointer_head;
                 if or r_update_offset_delay(2) /= '0' then -- only calculate offset if update_offset not zero
                     v_offset := to_integer(unsigned(r_update_offset_delay(2)));
-                    incr_offset_v(v_pointer_update, v_offset);
+                    incr_offset(v_pointer_update, v_offset);
                 end if;
                 r_wena  <= '1';
                 r_addra <= std_logic_vector(to_unsigned(v_pointer_update, addr_width));
@@ -183,12 +171,10 @@ begin
                 end if;
             -- Idle
             else
-                r_wena  <= '0';
-                r_addra <= (others => '0');
-                r_dina  <= (others => '0');
+                r_wena <= '0';
                 -- clear the buffer full flag if pointers differ or in the special case of shrinking the complete
                 -- buffer at once, where r_pointer_head does not change even though the buffer is empty now
-                if r_pointer_tail /= r_pointer_head or (i_command = c_lb_shrink and w_read_offset = line_length) then
+                if r_pointer_tail /= r_pointer_head or (i_command = c_lb_shrink and w_read_offset = line_length - 1) then
                     r_buffer_full_wr <= '0';
                 end if;
             end if;
@@ -230,7 +216,7 @@ begin
             r_command_delay        <= (others => c_lb_idle);
             r_update_offset_delay  <= (others => (others => '0'));
         elsif rising_edge(clk) then
-            if i_enable = '1' or psum_type = true then
+            if i_enable = '1' then
                 r_forward_update_delay <= r_forward_update_delay(0) & w_forward_update;
                 r_command_delay        <= (i_command, r_command_delay(0), r_command_delay(1));
                 r_update_offset_delay  <= (i_update_offset, r_update_offset_delay(0), r_update_offset_delay(1));
@@ -243,24 +229,21 @@ begin
     read_command : process (clk, rstn) is
 
         variable v_pointer_read : integer;
+        variable v_read_offset  : integer;
         variable v_offset       : integer;
 
     begin
 
         if not rstn then
-            r_wenb           <= '0';
             r_addrb          <= (others => '0');
-            r_dinb           <= (others => '0');
             r_pointer_head   <= 0;
             v_pointer_read   := 0;
             o_data_valid     <= '0';
             r_data_out_valid <= '0';
         elsif rising_edge(clk) then
-            if i_enable = '1' or psum_type = true then
-                o_data_valid <= r_data_out_valid;
-                r_wenb       <= '0';
-                r_addrb      <= (others => '0');
-                r_dinb       <= (others => '0');
+            if i_enable = '1' then
+                o_data_valid   <= r_data_out_valid;
+                v_pointer_read := r_pointer_head;
 
                 case i_command is
 
@@ -272,11 +255,10 @@ begin
                     -- read
                     when c_lb_read =>
 
-                        v_pointer_read := r_pointer_head;
                         -- only calculate offset if read_offset not zero
                         if or i_read_offset /= '0' then
                             v_offset := to_integer(unsigned(i_read_offset));
-                            incr_offset_v(v_pointer_read, v_offset);
+                            incr_offset(v_pointer_read, v_offset);
                         end if;
                         -- read at pointer_read_v that was offset from pointer_head_s by read_offset
                         r_addrb          <= std_logic_vector(to_unsigned(v_pointer_read, addr_width));
@@ -285,11 +267,10 @@ begin
                     -- read / update
                     when c_lb_read_update =>
 
-                        v_pointer_read := r_pointer_head;
                         -- only calculate offset if read_offset not zero
                         if or i_read_offset /= '0' then
                             v_offset := to_integer(unsigned(i_read_offset));
-                            incr_offset_v(v_pointer_read, v_offset);
+                            incr_offset(v_pointer_read, v_offset);
                         end if;
                         -- read at pointer_read_v that was offset from pointer_head_s by read_offset
                         r_addrb          <= std_logic_vector(to_unsigned(v_pointer_read, addr_width));
@@ -298,9 +279,12 @@ begin
                     -- shrink
                     when c_lb_shrink =>
 
+                        -- the number of shinked elements is w_read_offset + 1 to allow shrinking the full buffer
+                        -- shrinks with size 0 do not make sense and are not supported
                         r_data_out_valid <= '0';
-                        -- incr(pointer_head_s);
-                        incr_offset(r_pointer_head, w_read_offset);
+                        v_read_offset    := w_read_offset + 1;
+                        incr_offset(v_pointer_read, v_read_offset);
+                        r_pointer_head   <= v_pointer_read;
 
                     when others =>
 

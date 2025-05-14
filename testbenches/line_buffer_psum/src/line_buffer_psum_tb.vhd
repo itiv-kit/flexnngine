@@ -15,8 +15,8 @@ library accel;
 
 entity line_buffer_psum_tb is
     generic (
-        line_length    : positive := 7;  --! Length of the lines in the test image
-        command_length : positive := 17; --! Number of commands in the test
+        line_length    : positive := 8;  --! Length of the lines in the test image
+        command_length : positive := 19; --! Number of commands in the test
         output_length  : positive := 12; --! Number of outputs expected
         addr_width     : positive := 3;  --! Address width for the ram_dp component
         data_width     : positive := 8;  --! 8 bit data being saved
@@ -69,15 +69,16 @@ architecture imp of line_buffer_psum_tb is
         (c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update,
          c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update,
          c_lb_idle, c_lb_read_update, c_lb_read_update, c_lb_read_update,
-         c_lb_idle, c_lb_read , c_lb_read , c_lb_read, c_lb_idle)
+         c_lb_idle, c_lb_read , c_lb_read, c_lb_read, c_lb_idle,
+         c_lb_shrink, c_lb_idle)
     );
 
     constant read_offset_sequence : integer_t(0 to command_length - 1) := (
-        (0,0,0,0,0,1,1,1,0,2,2,2,0,0,1,2,0)
+        (0,0,0,0,0,1,1,1,0,2,2,2,0,0,1,2,0,7,0)
     );
 
     constant update_offset_sequence : integer_t(0 to command_length - 1) := (
-        (0,0,0,0,0,1,1,1,0,2,2,2,0,0,0,0,0)
+        (0,0,0,0,0,1,1,1,0,2,2,2,0,0,0,0,0,0,0)
     );
 
     -- Kernel 5 px
@@ -192,6 +193,7 @@ begin
     end process stimuli_commands;
 
     output_check : process is
+        alias fill_count is << signal line_buffer_inst.r_fill_count : integer range 0 to line_length >>;
     begin
 
         output_loop_lines : for i in 0 to output_length - 1 loop
@@ -217,6 +219,10 @@ begin
         -- Check if result valid signal is set to zero afterwards
         assert data_out_valid = '0'
             report "Result valid should be zero"
+            severity failure;
+
+        assert fill_count = 0
+            report "Fill count should be zero after final shrink"
             severity failure;
 
         wait for 50 ns;

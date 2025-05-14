@@ -346,7 +346,7 @@ begin
 
                     -- shift kernel - increment w1
                     r_command_iact     <= (others => c_lb_shrink);
-                    r_read_offset_iact <= (others => std_logic_vector(to_unsigned(w_c0, addr_width_iact)));
+                    r_read_offset_iact <= (others => std_logic_vector(to_unsigned(w_c0 - 1, addr_width_iact)));
 
                 when s_incr_c1 =>
 
@@ -354,7 +354,7 @@ begin
 
                     if r_count_w1 = 0 then
                         r_command_iact     <= (others => c_lb_shrink);
-                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned((i_params.kernel_size - 1) * w_c0, addr_width_iact)));
+                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned((i_params.kernel_size - 1) * w_c0 - 1, addr_width_iact)));
                     end if;
 
                 when s_output =>
@@ -364,7 +364,7 @@ begin
                     if r_count_c0w0 = 0 and r_count_w1 = 0 then
                         r_command_iact <= (others => c_lb_shrink);
                         -- for c1 = 1, c0 must be set to inputchs (which equals c0_last_c1)
-                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned((i_params.kernel_size - 1) * w_c0, addr_width_iact)));
+                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned((i_params.kernel_size - 1) * w_c0 - 1, addr_width_iact)));
                     end if;
 
                 when others =>
@@ -407,7 +407,7 @@ begin
 
                     if r_count_w1 = 0 then
                         r_command_wght     <= (others => c_lb_shrink);
-                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0, addr_width_wght)));
+                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0 - 1, addr_width_wght)));
                     end if;
 
                 when s_output =>
@@ -416,7 +416,7 @@ begin
 
                     if r_count_c0w0 = 0 and r_count_w1 = 0 then
                         r_command_wght     <= (others => c_lb_shrink);
-                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0, addr_width_wght)));
+                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0 - 1, addr_width_wght)));
                     end if;
 
                 when others =>
@@ -499,7 +499,7 @@ begin
                             -- Remove all stored psums, new tile (h1)
                             if r_count_w1 = 0 then
                                 r_command_psum(i)     <= c_lb_shrink;
-                                r_read_offset_psum(i) <= std_logic_vector(to_unsigned(i_params.w1, addr_width_psum));
+                                r_read_offset_psum(i) <= std_logic_vector(to_unsigned(i_params.w1 - 1, addr_width_psum));
                             end if;
                         else
                             -- Sum psums vertically across accelerator. Different kernels summed to their top row respectively

@@ -235,8 +235,7 @@ begin
         generic map (
             line_length => line_length_iact,
             addr_width  => addr_width_iact,
-            data_width  => data_width_iact,
-            psum_type   => false
+            data_width  => data_width_iact
         )
         port map (
             clk                => clk,
@@ -258,13 +257,12 @@ begin
         generic map (
             line_length => line_length_psum,
             addr_width  => addr_width_psum,
-            data_width  => data_width_psum,
-            psum_type   => true
+            data_width  => data_width_psum
         )
         port map (
             clk                => clk,
             rstn               => rstn,
-            i_enable           => i_enable,
+            i_enable           => '1',
             i_data             => i_data_in_psum,
             i_data_valid       => i_data_in_psum_valid,
             o_data             => w_data_psum,
@@ -281,8 +279,7 @@ begin
         generic map (
             line_length => line_length_wght,
             addr_width  => addr_width_wght,
-            data_width  => data_width_wght,
-            psum_type   => false
+            data_width  => data_width_wght
         )
         port map (
             clk                => clk,
