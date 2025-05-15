@@ -193,7 +193,13 @@ begin
     end process stimuli_commands;
 
     output_check : process is
-        alias fill_count is << signal line_buffer_inst.r_fill_count : integer range 0 to line_length >>;
+
+        -- vsg does not understand hierarchical alias with integer range
+
+        subtype fill_count_t is integer range 0 to line_length;
+
+        alias fill_count is << signal line_buffer_inst.r_fill_count : fill_count_t >>;
+
     begin
 
         output_loop_lines : for i in 0 to output_length - 1 loop
