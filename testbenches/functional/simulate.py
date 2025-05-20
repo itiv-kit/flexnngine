@@ -400,9 +400,11 @@ class Test:
 
             write_memory_file_int8(self.test_dir / f"_mem_col{column}.txt", memory_col, wordsize=64)
 
-        alloc_size_per_column = self.psum_base_addr + self.convolved_images_stack.size // 8
-        if alloc_size_per_column > self.accelerator.mem_size / 8:
-            raise RuntimeError(f'scratchpad memory too small (need {alloc_size_per_column * 8} bytes, got {self.accelerator.mem_size})')
+        column_size = self.accelerator.mem_size // 8
+        psum_size = self.stride_psum_och * self.accelerator.spad_word_size * math.ceil(self.convolution.output_channels / 8)
+        alloc_size_per_column = self.psum_base_addr + psum_size
+        if alloc_size_per_column > column_size:
+            raise RuntimeError(f'scratchpad memory too small (need {alloc_size_per_column}, got {column_size} bytes per column)')
 
         return True
 
