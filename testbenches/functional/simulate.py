@@ -247,7 +247,7 @@ class Test:
         if not self.convolution.requantize:
             self.stride_psum_och *= 2 # non-requantized / raw 16-bit psums require twice the space
 
-        if self.accelerator.throttle is None:
+        if self.accelerator.dataflow == 1 and self.accelerator.throttle is None:
             # automatically throttle psum output if we expect the bandwidth to be insufficient, since there is no backpressure mechanism
             # calculate an estimate by comparing scratchpad and psum output bandwidth
             pixel_size = 1 if self.convolution.requantize else 2
