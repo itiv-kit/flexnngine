@@ -474,7 +474,7 @@ begin
   o_params.stride_iact_hw     <= to_integer(unsigned(slv_regs(24)(16 downto 0)));
   o_params.stride_wght_kernel <= to_integer(unsigned(slv_regs(25)( 5 downto 0)));
   o_params.stride_wght_och    <= to_integer(unsigned(slv_regs(26)(11 downto 0)));
-  o_params.stride_psum_och    <= to_integer(unsigned(slv_regs(27)(11 downto 0)));
+  o_params.stride_psum_och    <= to_integer(unsigned(slv_regs(27)(12 downto 0)));
 
   -- registers for bias, scale, zeropt per output channel, limited by maximum m0 value max_output_channels
   g_bias_req_regs : for x in 0 to max_output_channels - 1 generate
