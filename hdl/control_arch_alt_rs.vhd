@@ -333,9 +333,9 @@ begin
                     if r_incr_w1 = '1' then
                         -- shift kernel - increment w1
                         if r_count_c1 /= w_c1 - 1 then
-                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(w_c0, addr_width_iact)));
+                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(w_c0 - 1, addr_width_iact)));
                         else
-                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(w_c0_last_c1, addr_width_iact)));
+                            r_read_offset_iact <= (others => std_logic_vector(to_unsigned(w_c0_last_c1 - 1, addr_width_iact)));
                         end if;
                         r_command_iact <= (others => c_lb_shrink);
                     elsif r_count_w1 = w_w1 then
@@ -352,7 +352,7 @@ begin
 
                     if r_count_w1 = 0 then
                         r_command_iact     <= (others => c_lb_shrink);
-                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0 - w_c0, addr_width_iact)));
+                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0 - w_c0 - 1, addr_width_iact)));
                     end if;
 
                 when s_incr_h1 =>
@@ -361,7 +361,7 @@ begin
 
                     if r_count_w1 = 0 then
                         r_command_iact     <= (others => c_lb_shrink);
-                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0_last_c1 - w_c0_last_c1, addr_width_iact)));
+                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0_last_c1 - w_c0_last_c1 - 1, addr_width_iact)));
                     end if;
 
                 when s_output =>
@@ -404,7 +404,7 @@ begin
 
                     if r_count_w1 = 0 then
                         r_command_wght     <= (others => c_lb_shrink);
-                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0, addr_width_wght)));
+                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0 - 1, addr_width_wght)));
                     end if;
 
                 when s_incr_h1 =>
@@ -413,7 +413,7 @@ begin
 
                     if r_count_w1 = 0 then
                         r_command_wght     <= (others => c_lb_shrink);
-                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0_last_c1, addr_width_wght)));
+                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0_last_c1 - 1, addr_width_wght)));
                     end if;
 
                 when s_output =>
@@ -490,7 +490,7 @@ begin
                             -- Remove all stored psums, new tile (h1)
                             if r_count_w1 = 0 then
                                 r_command_psum(i)     <= c_lb_shrink;
-                                r_read_offset_psum(i) <= std_logic_vector(to_unsigned(i_params.image_x - i_params.kernel_size + 1, addr_width_psum));
+                                r_read_offset_psum(i) <= std_logic_vector(to_unsigned(i_params.image_x - i_params.kernel_size, addr_width_psum));
                             end if;
                         else
                             -- Move psums vertically across accelerator. No accumulation required, sums are already finished

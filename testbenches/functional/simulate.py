@@ -188,6 +188,9 @@ class Test:
             )
             self.rows_last_h2 = (self.convolution.image_size - self.convolution.kernel_size + 1) - (self.H2 - 1) * self.accelerator.size_x
 
+            if self.convolution.padding != PaddingMode.none:
+                raise RuntimeError("No padding support for dataflow 1 yet!")
+
         else:
             self.M0 = math.floor(self.accelerator.size_y / self.convolution.kernel_size)
 
