@@ -4,33 +4,17 @@ library ieee;
     use std.env.finish;
     use std.env.stop;
 
+library accel;
+
 entity mac_tb is
     generic (
         input_width  : positive := 8;
         acc_width    : positive := 16;
-        output_width : positive := 17
+        output_width : positive := 16
     );
 end entity mac_tb;
 
 architecture rtl of mac_tb is
-
-    component mac is
-        generic (
-            input_width  : positive := input_width;
-            acc_width    : positive := acc_width;
-            output_width : positive := output_width
-        );
-        port (
-            clk            : in    std_logic;
-            rstn           : in    std_logic;
-            i_en           : in    std_logic;
-            i_data_a       : in    std_logic_vector(input_width - 1 downto 0);
-            i_data_w       : in    std_logic_vector(input_width - 1 downto 0);
-            i_data_acc     : in    std_logic_vector(acc_width - 1 downto 0);
-            o_result       : out   std_logic_vector(output_width - 1 downto 0);
-            o_result_valid : out   std_logic
-        );
-    end component mac;
 
     signal clk          : std_logic := '1';
     signal rstn         : std_logic;
@@ -41,60 +25,57 @@ architecture rtl of mac_tb is
     signal data_in_acc  : std_logic_vector(acc_width - 1 downto 0);
     signal result       : std_logic_vector(output_width - 1 downto 0);
 
-    type input_type is array (natural range<>) of std_logic_vector(input_width - 1 downto 0);
+    type input_type is array (natural range<>) of signed(input_width - 1 downto 0);
 
-    type input_type_acc is array (natural range<>) of std_logic_vector(acc_width - 1 downto 0);
+    type input_type_acc is array (natural range<>) of signed(acc_width - 1 downto 0);
 
     type output_type is array (natural range<>) of integer;
 
-    constant number_tests : positive := 6;
+    constant number_tests : positive := 12;
 
-    --   Input a for the multiplication
-    constant test_inputs_a : input_type(0 to number_tests - 1) :=
-  (
-    "00000010",
-    "00000010",
-    "00000010",
-    "11101101",
-    "00000010",
-    "01111111"
-  );
-    --   Input b for the multiplication
-    constant test_inputs_w : input_type(0 to number_tests - 1) :=
-  (
-    "00000010",
-    "00000100",
-    "11101101",
-    "11101101",
-    "00010001",
-    "01111111"
-  );
-    --   Input for the accumulation
-    constant test_inputs_acc : input_type_acc(0 to number_tests - 1) :=
-  (
-    "0000000000000001",
-    "0000000000000000",
-    "0000000000000000",
-    "0000000000000000",
-    "0100000000000000",
-    "0111111111111111"
-  );
+    type equation_t is record
+        a      : signed(input_width - 1 downto 0);
+        w      : signed(input_width - 1 downto 0);
+        acc    : signed(acc_width - 1 downto 0);
+        output : signed(output_width - 1 downto 0);
+    end record equation_t;
 
-    -- Expected outputs
-    constant test_outputs : output_type (0 to number_tests - 1) :=
-  (
-    5,
-    8,
-    -38,
-    361,
-    16418,
-    48896
-  );
+    function make_equation(a : integer; w : integer; acc : integer; output : integer) return equation_t is
+        variable eq : equation_t;
+    begin
+
+        eq.a      := to_signed(a,      input_width);
+        eq.w      := to_signed(w,      input_width);
+        eq.acc    := to_signed(acc,    acc_width);
+        eq.output := to_signed(output, output_width);
+        return eq;
+
+    end function make_equation;
+
+    type equation_arr_t is array (natural range <>) of equation_t;
+
+    -- test values a, w, acc, output for the equation a * w + acc = output
+    -- output should be clamped to min/max of output_width
+    -- -> check for output_width = 16 bit, this overflows quickly
+    constant equations : equation_arr_t(0 to number_tests - 1) := (
+        make_equation(   2,    2,      1,      5),
+        make_equation(   2,    4,      0,      8),
+        make_equation(   2,  -19,      0,    -38),
+        make_equation( -19,  -19,      0,    361),
+        make_equation(   2,   17,  16384,  16418),
+        make_equation( 127,  127,      0,  16129), -- test max mult width positive
+        make_equation(-127, -127,      0,  16129), -- test max mult width inverse
+        make_equation( 127, -127,      0, -16129), -- test max mult width negative
+        make_equation(   8,    2, -32768, -32752), -- test maximum negative acc
+        make_equation(   8,    2,  32767,  32767), -- test acc overflow (instead of actual result 32783 or overflow to -32753)
+        make_equation( 127,  127,  32767,  32767), -- test mult & acc overflow (instead of actual result 48896)
+        make_equation(   8,   -2, -32768, -32768)  -- test negative acc overflow (instead of actual result -32784)
+    );
 
 begin
 
     -- Unit under test
-    uut : component mac
+    uut : entity accel.mac(structural)
         generic map (
             input_width  => input_width,
             acc_width    => acc_width,
@@ -144,9 +125,9 @@ begin
                 en <= '1';
             end if;
 
-            data_in_a   <= test_inputs_a(i);
-            data_in_w   <= test_inputs_w(i);
-            data_in_acc <= test_inputs_acc(i);
+            data_in_a   <= std_logic_vector(equations(i).a);
+            data_in_w   <= std_logic_vector(equations(i).w);
+            data_in_acc <= std_logic_vector(equations(i).acc);
 
         end loop;
 
@@ -160,6 +141,8 @@ begin
 
     -- Output checking process
     output_check : process is
+        variable expected : signed(output_width - 1 downto 0);
+        variable signed_out : signed(output_width - 1 downto 0);
     begin
 
         output_loop : for i in 0 to number_tests - 1 loop
@@ -171,11 +154,14 @@ begin
                 wait until rising_edge(clk) and result_valid = '1';
             end if;
 
-            assert result = std_logic_vector(to_signed(test_outputs(i), output_width))
-                report "Output wrong. Result is " & integer'image(to_integer(signed(result))) & " - should be " & integer'image(test_outputs(i))
+            expected   := equations(i).output;
+            signed_out := signed(result);
+
+            assert signed_out = expected
+                report "Output wrong. Result is " & integer'image(to_integer(signed_out)) & " - should be " & integer'image(to_integer(expected))
                 severity failure;
 
-            report "Got correct result " & integer'image(to_integer(signed(result)));
+            report "Got correct result " & integer'image(to_integer(signed_out));
 
         end loop;
 
