@@ -341,6 +341,9 @@ class Test:
         # add bias to all channels
         convolved_images += self.convolution.bias
 
+        # clamp values to accumulator range (TODO: make variable for arbitrary-size accumulator)
+        np.clip(convolved_images, a_min=-32768, a_max=32767, out=convolved_images)
+
         if self.convolution.activation == ActivationMode.relu:
             convolved_images = np.maximum(convolved_images, 0)
 
@@ -358,6 +361,9 @@ class Test:
 
             convolved_images_requant = convolved_images * zeropt_scale_vals[:, 1, None, None] + zeropt_scale_vals[:, 0, None, None]
             convolved_images = np.rint(convolved_images_requant)
+
+            # clip to iact range (int8)
+            np.clip(convolved_images, a_min=-128, a_max=127, out=convolved_images)
 
         # stack image, kernels and convolved images
         # (make them 2D by unrolling all dimensions vertically except for the last one)
