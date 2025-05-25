@@ -10,8 +10,7 @@ library accel;
 
 entity psum_bias is
     generic (
-        data_width_psum : positive := 16;
-        use_output_reg  : boolean  := true
+        data_width_psum : positive := 16
     );
     port (
         clk  : in    std_logic;
@@ -33,36 +32,28 @@ end entity psum_bias;
 
 architecture behavioral of psum_bias is
 
-    signal w_bias_in  : signed(data_width_psum - 1 downto 0);
-    signal w_data_in  : signed(data_width_psum - 1 downto 0);
-    signal w_data_out : signed(data_width_psum - 1 downto 0);
+    signal w_bias_in : std_logic_vector(data_width_psum - 1 downto 0);
 
 begin
 
-    w_bias_in <= to_signed(i_params.bias(i_channel), 16) when rising_edge(clk);
-    w_data_in <= signed(i_psum);
+    w_bias_in <= std_logic_vector(to_signed(i_params.bias(i_channel), 16)) when rising_edge(clk);
 
-    p_add_bias : process (all) is
-    begin
+    o_psum_last <= i_psum_last when rising_edge(clk);
+    o_channel   <= i_channel when rising_edge(clk);
 
-        w_data_out <= w_data_in + w_bias_in;
-
-    end process p_add_bias;
-
-    output_reg_gen : if use_output_reg generate
-
-        o_psum_valid <= i_psum_valid when rising_edge(clk);
-        o_psum_last  <= i_psum_last when rising_edge(clk);
-        o_psum       <= std_logic_vector(w_data_out) when rising_edge(clk);
-        o_channel    <= i_channel when rising_edge(clk);
-
-    else generate
-
-        o_psum_valid <= i_psum_valid;
-        o_psum_last  <= i_psum_last;
-        o_psum       <= std_logic_vector(w_data_out);
-        o_channel    <= i_channel;
-
-    end generate output_reg_gen;
+    acc_1 : entity accel.acc
+        generic map (
+            input_width  => data_width_psum,
+            output_width => data_width_psum
+        )
+        port map (
+            clk            => clk,
+            rstn           => rstn,
+            i_en           => i_psum_valid,
+            i_data_a       => i_psum,
+            i_data_b       => w_bias_in,
+            o_result       => o_psum,
+            o_result_valid => o_psum_valid
+        );
 
 end architecture behavioral;
