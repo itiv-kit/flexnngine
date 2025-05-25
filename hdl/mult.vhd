@@ -27,14 +27,11 @@ begin
     begin
 
         if not rstn then
-            o_result       <= (others => '0');
             o_result_valid <= '0';
         elsif rising_edge(clk) then
-            if i_en = '0' then
-                o_result_valid <= '0';
-            else
-                o_result       <= std_logic_vector(resize(signed(i_data_a) * signed(i_data_b), output_width));
-                o_result_valid <= '1';
+            o_result_valid <= i_en;
+            if i_en then
+                o_result <= std_logic_vector(resize(signed(i_data_a) * signed(i_data_b), output_width));
             end if;
         end if;
 
