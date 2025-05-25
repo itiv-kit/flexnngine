@@ -40,8 +40,10 @@ architecture rtl of mac_tb is
         output : signed(output_width - 1 downto 0);
     end record equation_t;
 
-    function make_equation(a : integer; w : integer; acc : integer; output : integer) return equation_t is
+    function make_equation (a : integer; w : integer; acc : integer; output : integer) return equation_t is
+
         variable eq : equation_t;
+
     begin
 
         eq.a      := to_signed(a,      input_width);
@@ -61,7 +63,7 @@ architecture rtl of mac_tb is
         make_equation(   2,    2,      1,      5),
         make_equation(   2,    4,      0,      8),
         make_equation(   2,  -19,      0,    -38),
-        make_equation( -19,  -19,      0,    361),
+        make_equation(-19,  -19,      0,    361),
         make_equation(   2,   17,  16384,  16418),
         make_equation( 127,  127,      0,  16129), -- test max mult width positive
         make_equation(-127, -127,      0,  16129), -- test max mult width inverse
@@ -141,8 +143,10 @@ begin
 
     -- Output checking process
     output_check : process is
-        variable expected : signed(output_width - 1 downto 0);
+
+        variable expected   : signed(output_width - 1 downto 0);
         variable signed_out : signed(output_width - 1 downto 0);
+
     begin
 
         output_loop : for i in 0 to number_tests - 1 loop
