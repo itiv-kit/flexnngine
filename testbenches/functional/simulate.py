@@ -152,6 +152,8 @@ class Test:
         self.stride_wght_och = None
         self.stride_psum_och = None
 
+        self.clip_count = 0
+
     def generate_test(self, test_name, test_dir):
         print(f'Generating test: {test_name}')
         test_dir.mkdir(parents=True, exist_ok=True)
@@ -268,6 +270,19 @@ class Test:
 
         return True
 
+    # wrapper around np.clip tracking how many overflows occurred
+    def clip(self, values, out=None):
+        # range of the accumulator
+        limit_min = -32768
+        limit_max =  32767
+
+        clipped = np.clip(values, a_min=limit_min, a_max=limit_max, out=out)
+        if out is not None:
+            clipped = out
+        self.clip_count += values.size - np.sum(np.equal(values, clipped))
+
+        return clipped
+
     def _generate_stimuli(self):
         print(f'Generating stimuli for test: {self.name}')
 
@@ -316,36 +331,40 @@ class Test:
             linear = np.linspace(1, self.convolution.image_size, self.convolution.image_size, dtype=np.int8)
             image = np.stack(self.convolution.input_channels * [self.convolution.image_size * [linear]])
 
+        if args.only_first_ich:
+            image[1:].fill(0)
+
         padded_image = np.pad(image, ((0,0), 2*(self.convolution.pad_y,), 2*(self.convolution.pad_x,)))
 
-        # create empty array for all channels of the conved image
-        convolved_channels = np.zeros(
+        # create empty array for all channels of the conv'd image
+        convolved_images = np.zeros(
             (
                 self.M0,
-                self.convolution.input_channels,
                 self.convolution.image_size - self.convolution.kernel_size + 1 + 2 * self.convolution.pad_y,
                 self.convolution.image_size - self.convolution.kernel_size + 1 + 2 * self.convolution.pad_x,
             )
         )
         # iterate over the image and convolve each channel
-        for k in range(self.M0):
-            for c in range(self.convolution.input_channels):
-                convolved_channels[k, c, :, :] = self._convolution2d(
-                    padded_image[c],
-                    kernels[k, c]
-                )
+        # note on the loop ordering: we simulate the HWC processing order of the hardware
+        # to get the same results in case of accumulator saturation
+        for m in range(self.M0):
+            for h in range(convolved_images.shape[1]):
+                for w in range(convolved_images.shape[2]):
+                    for r in reversed(range(self.convolution.kernel_size)): # kernel rows
+                        accumulator = 0
+                        for s in range(self.convolution.kernel_size): # kernel columns
+                            c_slice = padded_image[:, h + r, w + s]
+                            for c in range(self.convolution.input_channels):
+                                weight = kernels[m, c, r, s]
+                                product = c_slice[c] * weight
+                                accumulator = self.clip(accumulator + product)
+                        convolved_images[m, h, w] = self.clip(convolved_images[m, h, w] + accumulator)
 
-        # sum over all channels
-        convolved_images = np.sum(convolved_channels, axis=1)
-
-        # add bias to all channels
-        convolved_images += self.convolution.bias
-
-        # clamp values to accumulator range (TODO: make variable for arbitrary-size accumulator)
-        np.clip(convolved_images, a_min=-32768, a_max=32767, out=convolved_images)
+        # add bias to all channels and again clamp values to accumulator range
+        self.clip(convolved_images + self.convolution.bias, out=convolved_images)
 
         if self.convolution.activation == ActivationMode.relu:
-            convolved_images = np.maximum(convolved_images, 0)
+            np.maximum(convolved_images, 0, out=convolved_images)
 
         # if requant is enabled, find a suitable scaling value per output channel
         zeropt_scale_vals = np.zeros((self.M0, 2))
@@ -363,7 +382,15 @@ class Test:
             convolved_images = np.rint(convolved_images_requant)
 
             # clip to iact range (int8)
-            np.clip(convolved_images, a_min=-128, a_max=127, out=convolved_images)
+            convolved_images_clip = np.clip(convolved_images, a_min=-128, a_max=127)
+            requant_clip_count = convolved_images.size - np.sum(np.equal(convolved_images, convolved_images_clip))
+            if requant_clip_count > 0:
+                # should not happen if above requant factor calculation is correct
+                print(f'Warning: {requant_clip_count} values saturated after requantizing. Consider different scaling')
+            convolved_images = convolved_images_clip
+
+        if self.clip_count > 0:
+            print(f'Warning: {self.clip_count} accumulations saturated. Consider larger accumulator (psum width).')
 
         # stack image, kernels and convolved images
         # (make them 2D by unrolling all dimensions vertically except for the last one)
@@ -720,6 +747,7 @@ if __name__ == "__main__":
     parser.add_argument('--same-kernels-och',  action='store_true', help='Use the same kernels for all output channels (M0)')
     parser.add_argument('--same-kernels-ich',  action='store_true', help='Use the same kernels for all input channels (C1*C0)')
     parser.add_argument('--only-first-och',    action='store_true', help='Zero-out kernels for m0 > 0')
+    parser.add_argument('--only-first-ich',    action='store_true', help='Zero-out images for c > 0')
     parser.add_argument('--linear-image',      action='store_true', help='Generate a input image with linearly increasing pixels instead of random')
     args = parser.parse_args()
 
