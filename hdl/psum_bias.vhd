@@ -36,7 +36,7 @@ architecture behavioral of psum_bias is
 
 begin
 
-    w_bias_in <= std_logic_vector(to_signed(i_params.bias(i_channel), 16)) when rising_edge(clk);
+    w_bias_in <= std_logic_vector(to_signed(i_params.bias(i_channel), data_width_psum)) when rising_edge(clk);
 
     o_psum_last <= i_psum_last when rising_edge(clk);
     o_channel   <= i_channel when rising_edge(clk);

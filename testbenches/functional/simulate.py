@@ -84,6 +84,7 @@ class Accelerator:
         self.throttle = throttle
         self.spad_word_size = 8
         self.mem_size = 2 ** mem_addr_width * self.spad_word_size
+        self.data_width_psum = 20
 
 
 @dataclass
@@ -115,6 +116,7 @@ class Setting:
         bias = abs(self.convolution.bias) if not isinstance(self.convolution.bias, list) else 'X'
         rq = int(self.convolution.requantize) if not isinstance(self.convolution.requantize, list) else 'X'
         return f'HW{hw}_RS{rs}_C{c}_Pd{pd}_Li{li}_Lw{lw}_Lp{lp}_Fi{fifoi}_Fw{fifow}_Fp{fifop}_Clk{clk}_ClkSp{clk_sp}_X{x}_Y{y}_Df{df}_Bi{bias}_Rq{rq}'
+
 
 def write_memory_file_int8(filename, image, wordsize=32):
     pixels_per_word = wordsize // 8
@@ -273,8 +275,8 @@ class Test:
     # wrapper around np.clip tracking how many overflows occurred
     def clip(self, values, out=None):
         # range of the accumulator
-        limit_min = -32768
-        limit_max =  32767
+        limit_min = - 1 * 2 ** (self.accelerator.data_width_psum - 1)
+        limit_max = - 1 + 2 ** (self.accelerator.data_width_psum - 1)
 
         clipped = np.clip(values, a_min=limit_min, a_max=limit_max, out=out)
         if out is not None:
@@ -469,6 +471,7 @@ class Test:
             'g_inputchs':         self.convolution.input_channels,
             'g_outputchs':        self.M0, # currently fixed to M0, TODO: make smaller count possible
             'g_bias':             self.convolution.bias,
+            'data_width_psum':    self.accelerator.data_width_psum,
             'line_length_wght':   self.accelerator.line_length_wght,
             'line_length_iact':   self.accelerator.line_length_iact,
             'line_length_psum':   self.accelerator.line_length_psum,

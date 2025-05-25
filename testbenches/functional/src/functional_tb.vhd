@@ -16,7 +16,7 @@ entity functional_tb is
         size_y : positive := 10;
 
         data_width_input : positive := 8; -- Width of the input data (weights, iacts)
-        data_width_psum  : positive := 16;
+        data_width_psum  : positive := 20;
 
         line_length_iact : positive := 64; -- TODO check influence on tiling - does not work for length 32, kernel 4 and channels 10. Does not work for length 30, kernel 3 and channels 10
         line_length_wght : positive := 64; -- see above

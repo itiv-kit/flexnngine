@@ -192,10 +192,11 @@ add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator
 add wave -noupdate -group PSUM_OUTPUT -radix unsigned /functional_tb/accelerator_inst/scratchpad_interface_inst/w_psum_offset
 
 add wave -noupdate -group PSUM_OUTPUT -radix symbolic    /functional_tb/accelerator_inst/scratchpad_interface_inst/w_wr_en_psum_f
-add wave -noupdate -group PSUM_OUTPUT -radix symbolic    /functional_tb/accelerator_inst/scratchpad_interface_inst/w_psum_wide_valid
-add wave -noupdate -group PSUM_OUTPUT -radix hexadecimal /functional_tb/accelerator_inst/scratchpad_interface_inst/w_psum_wide_data
-add wave -noupdate -group PSUM_OUTPUT -radix symbolic    /functional_tb/accelerator_inst/scratchpad_interface_inst/w_psum_wide_valid_raw
-add wave -noupdate -group PSUM_OUTPUT -radix hexadecimal /functional_tb/accelerator_inst/scratchpad_interface_inst/w_psum_wide_data_raw
+add wave -noupdate -group PSUM_OUTPUT -radix symbolic    /functional_tb/accelerator_inst/scratchpad_interface_inst/w_psum_packed_valid
+add wave -noupdate -group PSUM_OUTPUT -radix hexadecimal /functional_tb/accelerator_inst/scratchpad_interface_inst/w_psum_packed
+add wave -noupdate -group PSUM_OUTPUT -radix symbolic    /functional_tb/accelerator_inst/scratchpad_interface_inst/w_psum_packed_raw_valid
+add wave -noupdate -group PSUM_OUTPUT -radix hexadecimal /functional_tb/accelerator_inst/scratchpad_interface_inst/w_psum_packed_raw
+add wave -noupdate -group PSUM_OUTPUT -radix hexadecimal /functional_tb/accelerator_inst/scratchpad_interface_inst/w_psum_packed_raw_pad
 add wave -noupdate -group PSUM_OUTPUT -radix hexadecimal /functional_tb/accelerator_inst/scratchpad_interface_inst/w_din_psum_f
 add wave -noupdate -group PSUM_OUTPUT -radix symbolic    /functional_tb/accelerator_inst/scratchpad_interface_inst/w_full_psum_f
 add wave -noupdate -group PSUM_OUTPUT -radix unsigned    /functional_tb/accelerator_inst/scratchpad_interface_inst/w_gnt_psum_idx
@@ -312,7 +313,6 @@ add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_ins
 add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_incr_w1
 add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_pad_state
 add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_kernel_cols
-add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_count_pad_x
 add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_extra_offset_iact
 add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_extra_offset_wght
 add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_output_sequence

@@ -102,6 +102,10 @@ architecture rtl of scratchpad_interface is
     constant load_channels   : integer := size_rows + size_y;
     constant addr_width_load : integer := integer(ceil(log2(real(load_channels))));
 
+    -- psum width can any integer. when storing raw psums to memory, round up to next power-of-two.
+    constant data_width_psum_raw_mem : integer := integer(2 ** ceil(log2(real(data_width_psum))));
+    constant raw_psums_per_mem_word  : integer := mem_data_width / data_width_psum_raw_mem;
+
     -- merged load address vectors for unified scratchpad access
     signal w_arb_req_load         : std_logic_vector(load_channels - 1 downto 0);
     signal w_load_address_f       : array_t(0 to load_channels - 1)(mem_addr_width - 1 downto 0);
@@ -164,13 +168,14 @@ architecture rtl of scratchpad_interface is
     constant c_psum_wide_words_width : positive := positive(ceil(log2(real(mem_word_count))));
     constant c_psum_fifo_width       : integer  := mem_data_width + mem_word_count + mem_addr_width;
 
-    signal w_psum_wide_data      : array_t(0 to size_x - 1)(mem_data_width - 1 downto 0);
-    signal w_psum_wide_data_raw  : array_t(0 to size_x - 1)(mem_data_width - 1 downto 0);
-    signal w_psum_wide_valid     : array_t(0 to size_x - 1)(mem_word_count - 1 downto 0);
-    signal w_psum_wide_valid_raw : array_t(0 to size_x - 1)(mem_word_count - 1 downto 0);
-    signal w_psum_valid_out      : std_logic;
-    signal w_wen_psum            : std_logic_vector(mem_word_count - 1 downto 0);
-    signal r_psums_halfword_d    : std_logic_vector(size_x - 1 downto 0);
+    signal w_psum_packed_valid     : array_t(0 to size_x - 1)(mem_word_count - 1 downto 0);
+    signal w_psum_packed           : array_t(0 to size_x - 1)(mem_data_width - 1 downto 0);
+    signal w_psum_packed_raw_valid : array_t(0 to size_x - 1)(mem_word_count - 1 downto 0);
+    signal w_psum_packed_raw       : array_t(0 to size_x - 1)(raw_psums_per_mem_word * data_width_psum - 1 downto 0);
+    signal w_psum_packed_raw_pad   : array_t(0 to size_x - 1)(mem_data_width - 1 downto 0);
+    signal w_psum_valid_out        : std_logic;
+    signal w_wen_psum              : std_logic_vector(mem_word_count - 1 downto 0);
+    signal r_psums_halfword_d      : std_logic_vector(size_x - 1 downto 0);
 
     signal w_psum_address : array_t(0 to size_x - 1)(mem_addr_width - 1 downto 0);
     signal w_psum_offset  : uns_array_t(0 to size_x - 1)(mem_offset_width - 1 downto 0);
@@ -579,8 +584,8 @@ begin
                 i_last   => i_psums_last(x),
                 i_data   => i_psums(x)(data_width_input - 1 downto 0),
                 i_offset => w_psum_offset(x),
-                o_valid  => w_psum_wide_valid(x),
-                o_data   => w_psum_wide_data(x)
+                o_valid  => w_psum_packed_valid(x),
+                o_data   => w_psum_packed(x)
             );
 
         psum_parallel_raw : entity accel.parallelizer
@@ -591,9 +596,17 @@ begin
                 i_last   => i_psums_last(x),
                 i_data   => i_psums(x),
                 i_offset => w_psum_offset(x),
-                o_valid  => w_psum_wide_valid_raw(x),
-                o_data   => w_psum_wide_data_raw(x)
+                o_valid  => w_psum_packed_raw_valid(x),
+                o_data   => w_psum_packed_raw(x)
             );
+
+        -- zero-pad raw psums if necessary to make power-of-two words each
+        gen_psum_raw_pad : for n in 0 to raw_psums_per_mem_word - 1 generate
+            w_psum_packed_raw_pad(x)(data_width_psum_raw_mem * n + data_width_psum - 1 downto data_width_psum_raw_mem * n)
+                <= w_psum_packed_raw(x)(data_width_psum * (n + 1) - 1 downto data_width_psum * n);
+            w_psum_packed_raw_pad(x)(data_width_psum_raw_mem * (n + 1) - 1 downto data_width_psum_raw_mem * n + data_width_psum)
+                <= (others => '0');
+        end generate;
 
         -- select correct parallelizer depending on data format (raw vs requantized), and add pipeline stage
         sel_psum_fifo_input : process is
@@ -605,16 +618,16 @@ begin
 
             -- store wide data words & number of valid words in fifo_psum_out
             if r_psums_halfword_d(x) then
-                w_wr_en_psum_f(x) <= (or w_psum_wide_valid(x)) and not i_psum_suppress(x);
-                w_din_psum_f(x)   <= w_psum_wide_valid(x) & w_psum_address(x) & w_psum_wide_data(x);
+                w_wr_en_psum_f(x) <= (or w_psum_packed_valid(x)) and not i_psum_suppress(x);
+                w_din_psum_f(x)   <= w_psum_packed_valid(x) & w_psum_address(x) & w_psum_packed(x);
             else
-                w_wr_en_psum_f(x) <= (or w_psum_wide_valid_raw(x)) and not i_psum_suppress(x);
-                w_din_psum_f(x)   <= w_psum_wide_valid_raw(x) & w_psum_address(x) & w_psum_wide_data_raw(x);
+                w_wr_en_psum_f(x) <= (or w_psum_packed_raw_valid(x)) and not i_psum_suppress(x);
+                w_din_psum_f(x)   <= w_psum_packed_raw_valid(x) & w_psum_address(x) & w_psum_packed_raw_pad(x);
             end if;
 
         end process sel_psum_fifo_input;
 
-        o_req_addr_psum(x) <= or w_psum_wide_valid(x) when i_psums_halfword(x) else or w_psum_wide_valid_raw(x);
+        o_req_addr_psum(x) <= or w_psum_packed_valid(x) when i_psums_halfword(x) else or w_psum_packed_raw_valid(x);
 
         fifo_psum_out : entity accel.dc_fifo
             generic map (
