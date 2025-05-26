@@ -85,6 +85,7 @@ class Accelerator:
         self.spad_word_size = 8
         self.mem_size = 2 ** mem_addr_width * self.spad_word_size
         self.data_width_psum = 20
+        self.bytes_per_raw_psum = 2 ** (round(math.ceil(math.log2(self.data_width_psum))) - 3)
 
 
 @dataclass
@@ -252,12 +253,12 @@ class Test:
         # psum stride must be multiple of word size, still pack as tightly as possible
         self.stride_psum_och = math.ceil(self.W1 * self.W1 / self.accelerator.spad_word_size)
         if not self.convolution.requantize:
-            self.stride_psum_och *= 2 # non-requantized / raw 16-bit psums require twice the space
+            self.stride_psum_och *= self.accelerator.bytes_per_raw_psum # non-requantized / raw more space (e.g. 20bit psums are stored to mem as 32-bit values)
 
         if self.accelerator.dataflow == 1 and self.accelerator.throttle is None:
             # automatically throttle psum output if we expect the bandwidth to be insufficient, since there is no backpressure mechanism
             # calculate an estimate by comparing scratchpad and psum output bandwidth
-            pixel_size = 1 if self.convolution.requantize else 2
+            pixel_size = 1 if self.convolution.requantize else self.accelerator.bytes_per_raw_psum
             output_phase_size = self.accelerator.size_x * self.M0 * self.W1 * pixel_size
             psum_fifo_size = self.accelerator.size_x * self.accelerator.psum_fifo_size * self.accelerator.spad_word_size
             store_rate = self.accelerator.spad_word_size * self.accelerator.clk_sp_period / self.accelerator.clk_period

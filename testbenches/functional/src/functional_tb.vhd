@@ -507,24 +507,24 @@ begin
         variable word_idx  : integer;
         variable column    : integer;
         variable base_addr : integer;
-        variable data      : std_logic_vector(data_width_psum - 1 downto 0);
+        variable data      : std_logic_vector(mem_data_width - 1 downto 0);
 
-        variable actual_data_width : integer;
-        variable actual_word_count : integer;
+        variable data_width_usable  : integer; -- actual usable bits per word
+        variable word_width_mem     : integer; -- data width of a single word in memory, maybe padded
+        variable words_per_mem_word : integer; -- number of words per memory word
 
     begin
 
         output_done <= false;
 
         if g_requant > 0 then
-            actual_data_width := data_width_input;
-            actual_word_count := mem_word_count;
-        -- assert mem_data_width = mem_data_width
-        --     report "subword readout for requantized data only available for equal iact / psum mem width"
-        --     severity error;
+            data_width_usable  := data_width_input;
+            word_width_mem     := data_width_input;
+            words_per_mem_word := mem_word_count;
         else
-            actual_data_width := data_width_psum;
-            actual_word_count := mem_data_width / data_width_psum;
+            data_width_usable  := data_width_psum;
+            word_width_mem     := integer(2 ** ceil(log2(real(data_width_psum)))); -- round up to next power-of-two
+            words_per_mem_word := mem_data_width / word_width_mem;
         end if;
 
         wait until done = '1';
@@ -543,11 +543,11 @@ begin
                 for pix in 0 to params.w1 - 1 loop
 
                     data                                 := (others => '0');
-                    data(actual_data_width - 1 downto 0) := ram_cols(column)(base_addr + idx)(actual_data_width * (word_idx + 1) - 1 downto actual_data_width * word_idx);
-                    write(outline, integer'image(to_integer(signed(data(actual_data_width - 1 downto 0)))));
+                    data(data_width_usable - 1 downto 0) := ram_cols(column)(base_addr + idx)(word_width_mem * word_idx + data_width_usable - 1 downto word_width_mem * word_idx);
+                    write(outline, integer'image(to_integer(signed(data(data_width_usable - 1 downto 0)))));
                     write(outline, string'(" "));
 
-                    if word_idx = actual_word_count - 1 then
+                    if word_idx = words_per_mem_word - 1 then
                         word_idx := 0;
                         idx      := idx + 1;
                     else
