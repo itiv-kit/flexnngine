@@ -28,9 +28,10 @@ end entity parallelizer;
 
 architecture behavioral of parallelizer is
 
-    constant c_words         : integer  := integer(o_data'length / i_data'length);
-    constant c_counter_width : positive := positive(ceil(log2(real(c_words))));
-    signal   counter         : integer range 0 to c_words - 1;
+    constant c_words          : integer  := integer(o_data'length / i_data'length);
+    constant c_counter_width  : positive := positive(ceil(log2(real(c_words))));
+    constant c_bytes_per_word : positive := positive(ceil(real(i_data'length) / 8.0));
+    signal   counter          : integer range 0 to c_words - 1;
 
     signal full, idle  : std_logic;
     signal shift_reg   : std_logic_vector(o_data'range);
@@ -81,7 +82,7 @@ begin
                 o_data <= shift_reg;
 
                 if byte_wise_valid then
-                    o_valid <= repeat_bits(valid_words, i_data'length / 8);
+                    o_valid <= repeat_bits(valid_words, c_bytes_per_word);
                 else
                     o_valid <= valid_words;
                 end if;
