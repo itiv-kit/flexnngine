@@ -51,6 +51,7 @@ architecture imp of address_generator_psum_tb is
                                         h2 => (image_width + size_x - 1) / size_x,
                                         requant_enab => true,
                                         mode_act => passthrough,
+                                        mode_pad => none,
                                         bias => (others => 0),
                                         zeropt_fp32 => (others => (others => '0')),
                                         scale_fp32 => (others => (others => '0')),
