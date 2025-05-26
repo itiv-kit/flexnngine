@@ -12,6 +12,9 @@ entity control_address_generator is
         size_y    : positive := 5;
         size_rows : positive := 9;
 
+        data_width_input : positive := 8;
+        data_width_psum  : positive := 16;
+
         addr_width_rows : positive := 4;
         addr_width_y    : positive := 3;
         addr_width_x    : positive := 3;
@@ -213,11 +216,13 @@ begin
 
     address_generator_psum_inst : entity accel.address_generator_psum
         generic map (
-            size_x         => size_x,
-            size_y         => size_y,
-            mem_addr_width => mem_addr_width,
-            mem_columns    => mem_word_count,
-            write_size     => mem_word_count
+            size_x           => size_x,
+            size_y           => size_y,
+            data_width_input => data_width_input,
+            data_width_psum  => data_width_psum,
+            mem_addr_width   => mem_addr_width,
+            mem_columns      => mem_word_count,
+            write_size       => mem_word_count
         )
         port map (
             clk              => clk,

@@ -11,6 +11,9 @@ entity address_generator_psum is
         size_x : positive := 5;
         size_y : positive := 5;
 
+        data_width_input : positive := 8;
+        data_width_psum  : positive := 16;
+
         mem_addr_width : positive := 15;
         mem_columns    : positive := 8;
 
@@ -40,6 +43,9 @@ architecture rtl of address_generator_psum is
     -- this is the columns size in bytes
     constant mem_col_offset : positive := 2 ** mem_addr_width / mem_columns * write_size;
 
+    constant bytes_input : positive := integer(2 ** ceil(log2(real(data_width_input) / 8.0)));
+    constant bytes_psum  : positive := integer(2 ** ceil(log2(real(data_width_psum) / 8.0)));
+
     signal r_next_address : uns_array_t(0 to size_x - 1)(addr_width_bytewise - 1 downto 0);
     signal r_address_psum : uns_array_t(0 to size_x - 1)(addr_width_bytewise - 1 downto 0);
 
@@ -58,7 +64,7 @@ architecture rtl of address_generator_psum is
 
     signal r_image_size   : integer;                       -- output image size per channel, currently rectangular images only = w1*w1
     signal r_chunk_size   : integer range 1 to write_size; -- pixels per output word (64bit/8bit=8 for int8, 64bit/16bit=4 for int16)
-    signal r_element_size : integer range 1 to 4;          -- bytes per output pixel (1 for 8bit, 2 for 16 bit)
+    signal r_element_size : integer range 1 to 4;          -- bytes per output pixel (1 for 8bit, 2 for 16 bit, 4 for 32 bit)
 
 begin
 
@@ -66,8 +72,8 @@ begin
     w_start_event  <= i_start and not r_start_delay;
     r_init         <= w_start_event when rising_edge(clk);
     r_image_size   <= i_params.w1 * i_params.w1 when rising_edge(clk);
-    r_chunk_size   <= write_size when i_params.requant_enab else write_size / 2 when rising_edge(clk);
-    r_element_size <= 1 when i_params.requant_enab else 2 when rising_edge(clk);
+    r_chunk_size   <= write_size / bytes_input when i_params.requant_enab else write_size / bytes_psum when rising_edge(clk);
+    r_element_size <= bytes_input when i_params.requant_enab else bytes_psum when rising_edge(clk);
 
     gen_counter : for x in 0 to size_x - 1 generate
 

@@ -233,6 +233,8 @@ begin
             size_x           => size_x,
             size_y           => size_y,
             size_rows        => size_rows,
+            data_width_input => data_width_input,
+            data_width_psum  => data_width_psum,
             addr_width_rows  => addr_width_rows,
             addr_width_y     => addr_width_y,
             addr_width_x     => addr_width_x,
