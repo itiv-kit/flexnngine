@@ -142,11 +142,7 @@ begin
     begin
 
         if not rstn then
-            r_count_h2   <= 0;
-            r_count_w1   <= 0;
-            r_count_c1   <= 0;
-            r_count_c0w0 <= 0;
-            r_state      <= s_idle;
+            r_state <= s_idle;
         elsif rising_edge(clk) then
 
             case r_state is
@@ -164,6 +160,9 @@ begin
                     r_pad_state         <= s_none;
                     r_extra_offset_iact <= 0;
                     r_extra_offset_wght <= 0;
+                    r_count_h2          <= 0;
+                    r_count_c1          <= 0;
+                    r_count_c0w0        <= 0;
 
                     if o_init_done = '1' then
                         r_state <= s_calculate;
@@ -545,11 +544,7 @@ begin
     begin
 
         if not rstn then
-            r_m0_count_idx    <= 0;
-            r_m0_count_kernel <= 0;
-            v_m0_count        := 1;
-            r_m0_dist         <= (others => (others => '0'));
-            o_init_done       <= '0';
+            o_init_done <= '0';
         elsif rising_edge(clk) then
             if r_state = s_idle then
                 r_m0_count_idx    <= 0;

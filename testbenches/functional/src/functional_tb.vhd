@@ -92,6 +92,9 @@ architecture imp of functional_tb is
     signal done        : std_logic;
     signal output_done : boolean;
     signal eval_done   : boolean := false;
+    signal iteration   : integer := 0;
+
+    type string_pointer is access string;
 
     signal params : parameters_t;
     signal status : status_info_t;
@@ -231,7 +234,7 @@ begin
 
         wait for 20 ns;
 
-        for iteration in 1 to g_iterations loop
+        while iteration < g_iterations loop
 
             wait until rising_edge(clk);
             start <= '1';
@@ -239,9 +242,10 @@ begin
             wait until done = '1' and output_done;
             wait for 100 ns;
             wait until rising_edge(clk);
-            start <= '0';
+            start     <= '0';
+            iteration <= iteration + 1;
 
-            wait for 100 ns;
+            wait for 1000 ns;
 
         end loop;
 
@@ -501,7 +505,8 @@ begin
 
     write_outputs : process is
 
-        file     outfile   : text open write_mode is g_files_dir & "_output.txt";
+        variable file_ptr  : string_pointer;
+        file     outfile   : text;
         variable outline   : line;
         variable idx       : integer;
         variable word_idx  : integer;
@@ -529,7 +534,15 @@ begin
 
         wait until done = '1';
 
+        if iteration > 0 then
+            file_ptr := new string'(g_files_dir & "_output_" & integer'image(iteration) & ".txt");
+        else
+            file_ptr := new string'(g_files_dir & "_output.txt");
+        end if;
+
         wait for 1000 ns;
+
+        file_open(outfile, file_ptr.all, write_mode);
 
         for m0 in 0 to g_m0 - 1 loop
 
@@ -564,6 +577,9 @@ begin
 
         report "Writing outputs is finished."
             severity note;
+
+        file_close(outfile);
+        deallocate(file_ptr);
 
         output_done <= true;
 
