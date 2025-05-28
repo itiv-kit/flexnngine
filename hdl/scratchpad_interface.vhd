@@ -613,7 +613,7 @@ begin
             w_psum_packed_raw_pad(x)(data_width_psum_raw_mem * n + data_width_psum - 1 downto data_width_psum_raw_mem * n)
                 <= w_psum_packed_raw(x)(data_width_psum * (n + 1) - 1 downto data_width_psum * n);
             w_psum_packed_raw_pad(x)(data_width_psum_raw_mem * (n + 1) - 1 downto data_width_psum_raw_mem * n + data_width_psum)
-                <= (others => '0');
+                <= (others => w_psum_packed_raw(x)(data_width_psum * (n + 1) - 1)); -- replicate sign bit on full word for valid full-size integers
             w_psum_packed_raw_pad_valid(x)(bytes_per_raw_psum_mem * n + bytes_per_raw_psum - 1 downto bytes_per_raw_psum_mem * n)
                 <= w_psum_packed_raw_valid(x)(bytes_per_raw_psum * (n + 1) - 1 downto bytes_per_raw_psum * n);
             w_psum_packed_raw_pad_valid(x)(bytes_per_raw_psum_mem * (n + 1) - 1 downto bytes_per_raw_psum_mem * n + bytes_per_raw_psum)
