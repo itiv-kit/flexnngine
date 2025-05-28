@@ -84,7 +84,7 @@ class Accelerator:
         self.throttle = throttle
         self.spad_word_size = 8
         self.mem_size = 2 ** mem_addr_width * self.spad_word_size
-        self.data_width_psum = 20
+        self.data_width_psum = 24
         self.bytes_per_raw_psum = 2 ** (round(math.ceil(math.log2(self.data_width_psum))) - 3)
 
 
