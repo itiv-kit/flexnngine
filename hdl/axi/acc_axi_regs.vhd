@@ -478,7 +478,7 @@ begin
 
   -- registers for bias, scale, zeropt per output channel, limited by maximum m0 value max_output_channels
   g_bias_req_regs : for x in 0 to max_output_channels - 1 generate
-    o_params.bias(x)        <= to_integer(unsigned(slv_regs(40 + x)(15 downto 0)));
+    o_params.bias(x)        <= to_integer(unsigned(slv_regs(40 + x)(data_width_psum - 1 downto 0)));
     o_params.scale_fp32(x)  <= slv_regs(40 + 1 * max_output_channels + x)(31 downto 0);
     o_params.zeropt_fp32(x) <= slv_regs(40 + 2 * max_output_channels + x)(31 downto 0);
   end generate g_bias_req_regs;
