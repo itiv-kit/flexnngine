@@ -877,3 +877,5 @@ if __name__ == "__main__":
     outputs = pool.map(run_test, settings)
 
     print("Outputs: ", outputs)
+
+    sys.exit(outputs.count(False))
