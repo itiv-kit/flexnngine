@@ -264,11 +264,10 @@ class Test:
             store_rate = self.accelerator.spad_word_size * self.accelerator.clk_sp_period / self.accelerator.clk_period
             output_rate = self.accelerator.size_x * pixel_size
             rate_factor = store_rate / output_rate * (1 + psum_fifo_size / output_phase_size)
-            self.psum_throttle = max(0, min(255, math.ceil(255.0 * (1 - 0.9 * rate_factor)))) # 0.9 as safety margin
+            self.psum_throttle = max(0, min(255, math.ceil(255.0 * (1 - 0.8 * rate_factor)))) # 0.8 as safety margin
             if self.psum_throttle > 0:
                 print(f"Warning: psum overflows expected, throttling output by {self.psum_throttle} / 256")
         else:
-            print(f"using fixed throttle of {self.accelerator.throttle}")
             self.psum_throttle = self.accelerator.throttle
 
         return True
