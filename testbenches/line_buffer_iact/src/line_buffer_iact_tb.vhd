@@ -218,14 +218,14 @@ begin
 
                 end loop;
 
-                read_offset <= std_logic_vector(to_unsigned(1, addr_width));
+                read_offset <= std_logic_vector(to_unsigned(0, addr_width));
                 command     <= c_lb_shrink;
 
             end loop;
 
             wait until rising_edge(clk);
 
-            read_offset <= std_logic_vector(to_unsigned(kernel_size - 1, addr_width));
+            read_offset <= std_logic_vector(to_unsigned(kernel_size - 2, addr_width));
             command     <= c_lb_shrink;
 
             wait until rising_edge(clk) and enable = '1';

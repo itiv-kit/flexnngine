@@ -48,7 +48,7 @@ architecture imp of line_buffer_wght_tb is
     );
 
     constant read_offset_sequence : integer_t(0 to command_length - 1) := (
-        (0,1,2,0,3,4,5,3/*to shrink tree values*/,0,1,2,0,3,4,5,0)
+        (0,1,2,0,3,4,5,2/*to shrink tree values*/,0,1,2,0,3,4,5,0)
     );
 
     constant expected_data_out : integer_t(0 to output_length - 1) := (
