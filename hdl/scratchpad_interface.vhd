@@ -205,6 +205,7 @@ architecture rtl of scratchpad_interface is
     signal r_startup     : std_logic_vector(10 downto 0); -- TODO Depending on clk_sp / clk factor
 
     signal r_preload_fifos_done : std_logic;
+    signal r_psum_empty_pipe    : std_logic_vector(0 to mem_word_count);
     signal r_all_psum_empty     : std_logic;
 
 begin
@@ -739,7 +740,15 @@ begin
             o_binary => w_gnt_psum_idx
         );
 
-    r_all_psum_empty <= and w_empty_psum_f when rising_edge(clk_sp);
+    p_gen_psum_finished : process is
+    begin
+
+        wait until rising_edge(clk);
+        r_psum_empty_pipe(0)                           <= and w_empty_psum_f;
+        r_psum_empty_pipe(1 to r_psum_empty_pipe'high) <= r_psum_empty_pipe(0 to r_psum_empty_pipe'high - 1);
+        r_all_psum_empty                               <= and r_psum_empty_pipe;
+
+    end process p_gen_psum_finished;
 
     sync_all_psum_finished : entity accel.bit_sync
         port map (
