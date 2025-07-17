@@ -146,12 +146,11 @@ begin
         if not rstn then
             r_state <= s_idle;
         elsif rising_edge(clk) then
-
             if r_count_c1 = w_c1 - 1 then
-                w_c0 <= i_params.c0_last_c1;
+                w_c0              <= i_params.c0_last_c1;
                 r_c0_final_shrink <= i_params.c0w0_last_c1 - i_params.c0_last_c1;
             else
-                w_c0 <= i_params.c0;
+                w_c0              <= i_params.c0;
                 r_c0_final_shrink <= i_params.c0w0 - i_params.c0;
             end if;
 
@@ -416,7 +415,7 @@ begin
 
                     if r_count_w1 = 0 then
                         r_command_wght     <= (others => c_lb_shrink);
-                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0 - 1, addr_width_wght)));
+                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_params.c0w0 - 1, addr_width_wght)));
                     end if;
 
                 when s_output =>
@@ -425,7 +424,7 @@ begin
 
                     if r_count_c0w0 = 0 and r_count_w1 = 0 then
                         r_command_wght     <= (others => c_lb_shrink);
-                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_params.kernel_size * w_c0 - 1, addr_width_wght)));
+                        r_read_offset_wght <= (others => std_logic_vector(to_unsigned(i_params.c0w0_last_c1 - 1, addr_width_wght)));
                     end if;
 
                 when others =>
