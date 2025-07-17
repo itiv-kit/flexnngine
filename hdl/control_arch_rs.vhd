@@ -28,6 +28,8 @@ architecture rs_dataflow of control is
     signal w_w1 : integer range 0 to max_line_length_psum;
     signal w_m0 : integer range 0 to max_output_channels;
 
+    signal r_c0_final_shrink : integer range 0 to max_line_length_wght;
+
     signal r_command_iact       : command_lb_array_t(0 to size_y - 1);
     signal r_read_offset_iact   : array_t(0 to size_y - 1)(addr_width_iact - 1 downto 0);
     signal r_update_offset_iact : array_t(0 to size_y - 1)(addr_width_iact - 1 downto 0);
@@ -144,6 +146,14 @@ begin
         if not rstn then
             r_state <= s_idle;
         elsif rising_edge(clk) then
+
+            if r_count_c1 = w_c1 - 1 then
+                w_c0 <= i_params.c0_last_c1;
+                r_c0_final_shrink <= i_params.c0w0_last_c1 - i_params.c0_last_c1;
+            else
+                w_c0 <= i_params.c0;
+                r_c0_final_shrink <= i_params.c0w0 - i_params.c0;
+            end if;
 
             case r_state is
 
@@ -353,7 +363,7 @@ begin
 
                     if r_count_w1 = 0 then
                         r_command_iact     <= (others => c_lb_shrink);
-                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned((i_params.kernel_size - 1) * w_c0 - 1, addr_width_iact)));
+                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned(r_c0_final_shrink - 1, addr_width_iact)));
                     end if;
 
                 when s_output =>
@@ -363,7 +373,7 @@ begin
                     if r_count_c0w0 = 0 and r_count_w1 = 0 then
                         r_command_iact <= (others => c_lb_shrink);
                         -- for c1 = 1, c0 must be set to inputchs (which equals c0_last_c1)
-                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned((i_params.kernel_size - 1) * w_c0 - 1, addr_width_iact)));
+                        r_read_offset_iact <= (others => std_logic_vector(to_unsigned(r_c0_final_shrink - 1, addr_width_iact)));
                     end if;
 
                 when others =>
@@ -535,7 +545,6 @@ begin
     w_w1 <= i_params.w1;
     w_h2 <= i_params.h2;
     w_m0 <= i_params.m0;
-    w_c0 <= i_params.c0_last_c1 when r_count_c1 = w_c1 - 1 else i_params.c0;
 
     p_init_m0_dist : process (clk, rstn) is
 
