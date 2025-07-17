@@ -309,6 +309,10 @@ class Test:
             for m0 in range(0, self.M0):
                 kernels[m0] = np.broadcast_to(kernels[m0][0], (self.convolution.input_channels,) + kernels[m0][0].shape)
 
+        if args.only_first_kernel:
+            # DEBUG: zero out all but first kernel for all output channels
+            kernels[:,1:,:,:] = 0
+
         if args.same_kernels_och:
             # DEBUG: just copy the first set of kernels for all output channels
             kernels = np.broadcast_to(kernels[0], (self.M0,) + kernels[0].shape)
@@ -751,6 +755,7 @@ if __name__ == "__main__":
     parser.add_argument('--same-kernels-ich',  action='store_true', help='Use the same kernels for all input channels (C1*C0)')
     parser.add_argument('--only-first-och',    action='store_true', help='Zero-out kernels for m0 > 0')
     parser.add_argument('--only-first-ich',    action='store_true', help='Zero-out images for c > 0')
+    parser.add_argument('--only-first-kernel', action='store_true', help='Zero-out kernels for c > 0')
     parser.add_argument('--linear-image',      action='store_true', help='Generate a input image with linearly increasing pixels instead of random')
     args = parser.parse_args()
 
