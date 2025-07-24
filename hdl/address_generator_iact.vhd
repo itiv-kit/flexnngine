@@ -250,10 +250,10 @@ begin
                         v_pad := true;
                     else
                         v_pad := false;
-                        v_row := v_row - i_params.pad_y;                -- convert "virtual" row number of padded image to physical input image row number
+                        v_row := v_row - i_params.pad_y;    -- convert "virtual" row number of padded image to physical input image row number
                     end if;
 
-                    v_row_stride := i_params.stride_iact_w * read_size; -- w stride is unpacked to single words on reshaped spad side
+                    v_row_stride := i_params.stride_iact_w; -- w stride is unpacked to single words on reshaped spad side
 
                     -- advance in sets of c0 channels (= something like a stride for c0 iterations)
                     v_ch_offset := r_count_c1 * i_params.c0 / read_size; -- TODO: if only multiples of read_size are possible for c0, get rid of division
