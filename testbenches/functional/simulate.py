@@ -304,10 +304,19 @@ class Test:
             ),
         )
 
+        if args.bullseye_kernel:
+            kernels[:,:,:,:] = 0
+            center = self.convolution.kernel_size // 2
+            kernels[:,:,center,center] = 1
+
         if args.same_kernels_ich:
             # DEBUG: just copy the first kernel this output channel
             for m0 in range(0, self.M0):
                 kernels[m0] = np.broadcast_to(kernels[m0][0], (self.convolution.input_channels,) + kernels[m0][0].shape)
+
+        if args.only_first_och:
+            # DEBUG: zero out all but first output channel
+            kernels[1:,:,:,:] = 0
 
         if args.only_first_kernel:
             # DEBUG: zero out all but first kernel for all output channels
@@ -316,10 +325,6 @@ class Test:
         if args.same_kernels_och:
             # DEBUG: just copy the first set of kernels for all output channels
             kernels = np.broadcast_to(kernels[0], (self.M0,) + kernels[0].shape)
-
-        if args.only_first_och:
-            # DEBUG: zero out all but first output channel
-            kernels = np.stack([kernels[0]] + (self.M0-1) * [np.zeros(kernels[0].shape)])
 
         # create array with random input activations (three dimensional "image")
         image = np.random.randint(
@@ -756,6 +761,7 @@ if __name__ == "__main__":
     parser.add_argument('--only-first-och',    action='store_true', help='Zero-out kernels for m0 > 0')
     parser.add_argument('--only-first-ich',    action='store_true', help='Zero-out images for c > 0')
     parser.add_argument('--only-first-kernel', action='store_true', help='Zero-out kernels for c > 0')
+    parser.add_argument('--bullseye-kernel',   action='store_true', help='Set all kernels to a 1:1 copy kernel with a 1 in the center, others zero')
     parser.add_argument('--linear-image',      action='store_true', help='Generate a input image with linearly increasing pixels instead of random')
     args = parser.parse_args()
 
