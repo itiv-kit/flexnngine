@@ -202,7 +202,8 @@ class Test:
             if self.M0 == 0:
                 self.H2 = math.ceil(self.W1 / self.accelerator.size_x)
             else:
-                self.H2 = math.ceil(self.convolution.image_size / self.accelerator.size_x)
+                # add just one side of padding to the image height, since upper + lower row of zeros is shared
+                self.H2 = math.ceil((self.convolution.image_size + self.convolution.pad_x) / self.accelerator.size_x)
 
         # C0W0 must not be too short to allow for disabling of PE array while reading data
         if self.C0W0_last_c1 < 6:
