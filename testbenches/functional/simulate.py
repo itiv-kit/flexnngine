@@ -428,8 +428,8 @@ class Test:
 
             # pad the image such that weight data is aligned. technically, multiple of wordsize (currently 8) would suffice.
             image_pad_size = align_to_add(image_col.shape[0], 32)
-            image_col_pad = np.resize(image_col, image_pad_size)
-            memory_col = np.concatenate((image_col_pad, wght_col, pad_col))
+            image_col.resize(image_pad_size)
+            memory_col = np.concatenate((image_col, wght_col, pad_col))
             # print(f'col {column} shape {[memory_col.shape]}')
             np.savetxt(self.test_dir / f"_data_col{column}.txt", memory_col, fmt="%d", delimiter=" ")
 
