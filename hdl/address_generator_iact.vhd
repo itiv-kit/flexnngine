@@ -93,7 +93,7 @@ begin
                             -- loading a row, load the specified number of words to get w0 channels
                             -- TODO: if partial loads need to be supported, set valid bits for first/last load
                             r_count_words(i) <= r_count_words(i) + 1;
-                            next_addr        := r_addr(i) + i_params.stride_iact_hw * read_size;
+                            next_addr        := r_addr(i) + i_params.stride_iact_hw;
                         else
                             -- reset to base address in any case. if within w1, reuse it and add w1
                             next_addr := r_cur_base(i) + r_count_w1(i) + 1;
@@ -261,7 +261,7 @@ begin
                     -- base address for next set of c0 channels
                     r_next_base(row) <= to_unsigned(i_params.base_iact +
                                                     v_row * v_row_stride +
-                                                    v_ch_offset * i_params.stride_iact_hw * read_size,
+                                                    v_ch_offset * i_params.stride_iact_hw,
                                                     mem_addr_width);
 
                     -- if padding data needs to be loaded, overwrite with padding data address

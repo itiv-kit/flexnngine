@@ -245,7 +245,7 @@ class Test:
 
         # calculate parameters for scratchpad data layout
         self.stride_iact_w = self.convolution.image_size
-        self.stride_iact_hw = math.ceil(self.convolution.image_size * self.convolution.image_size / self.accelerator.spad_word_size)
+        self.stride_iact_hw = self.convolution.image_size * self.convolution.image_size
 
         # tightly packed kernels without padding between single kernels or output channel kernel sets
         self.stride_wght_kernel = self.convolution.kernel_size * self.convolution.kernel_size
