@@ -81,13 +81,14 @@ begin
 
         p_psum_counter : process is
 
-            variable v_count_w1 : integer; -- output channel counter
-            variable v_count_m0 : integer; -- output width counter
-            variable v_count_h2 : integer; -- output step counter (h2 = number of steps for whole image height)
-            variable v_cur_row  : integer; -- current row
-            variable v_offset   : integer; -- offset of the address to full write_size memory words
-            variable v_new_addr : integer;
-            variable v_done     : boolean;
+            variable v_count_w1   : integer; -- output channel counter
+            variable v_count_m0   : integer; -- output width counter
+            variable v_count_h2   : integer; -- output step counter (h2 = number of steps for whole image height)
+            variable v_cur_row    : integer; -- current row
+            variable v_offset     : integer; -- offset of the address to full write_size memory words
+            variable v_write_size : integer; -- number of bytes written in the current cycle
+            variable v_new_addr   : integer;
+            variable v_done       : boolean;
 
         begin
 
@@ -176,8 +177,18 @@ begin
                 end if;
 
                 if i_valid_psum_out(x) or r_init then
-                    -- common output of one word (r_chunk_size pixels / write_size bytes)
-                    if v_count_w1 >= i_params.w1 - r_chunk_size or r_init = '1' then
+                    -- calculate the number of bytes that were written in the current i_valid_psum_out step
+                    if r_chunk_size > 1 and v_count_w1 = 0 then
+                        -- when writing multiple output pixels at once, the first word may be only partially valid.
+                        -- use the lower part of the address to calculate the byte offset of the first write of this row
+                        v_offset     := to_integer(r_address_psum(x)(mem_offset_width - 1 downto 0)) / r_element_size; -- is this efficient?
+                        v_write_size := r_chunk_size - v_offset;
+                    else
+                        v_write_size := r_chunk_size;
+                    end if;
+
+                    -- generate actual output addresses for words of r_chunk_size pixels (= write_size bytes) or less on row borders
+                    if v_count_w1 + v_write_size >= i_params.w1 or r_init = '1' then
                         -- one row is done
                         v_count_w1 := 0;
 
@@ -186,15 +197,8 @@ begin
 
                         o_suppress_out(x) <= r_suppress_next_row(x) or r_suppress_next_col(x);
                     else
-                        -- we are within a image row
-                        if r_chunk_size > 1 and v_count_w1 = 0 then
-                            -- when writing chunks of > 1 output words at once, the first word may be only partially valid.
-                            -- use the lower part of the address to calculate the byte offset of the first write of this row
-                            v_offset   := to_integer(r_address_psum(x)(mem_offset_width - 1 downto 0)) / r_element_size; -- is this efficient?
-                            v_count_w1 := r_chunk_size - v_offset;
-                        else
-                            v_count_w1 := v_count_w1 + r_chunk_size;
-                        end if;
+                        v_count_w1 := v_count_w1 + v_write_size;
+
                         r_address_psum(x) <= r_address_psum(x) + write_size;
                     end if;
                 end if;
