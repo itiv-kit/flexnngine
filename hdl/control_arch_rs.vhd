@@ -388,7 +388,7 @@ begin
 
                     r_command_iact <= (others => c_lb_idle);
 
-                    if r_count_c0w0 = 0 and r_count_w1 = 0 then
+                    if r_count_c0w0 = 0 and r_count_w1 = 0 and r_c0_final_shrink > 0 then
                         r_command_iact <= (others => c_lb_shrink);
                         -- for c1 = 1, c0 must be set to inputchs (which equals c0_last_c1)
                         r_read_offset_iact <= (others => std_logic_vector(to_unsigned(r_c0_final_shrink - 1, addr_width_iact)));
