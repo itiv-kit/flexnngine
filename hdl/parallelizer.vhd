@@ -109,10 +109,9 @@ begin
                 if counter = c_words - 1 or i_last = '1' then
                     full <= '1';
 
+                    counter <= 0;
                     if i_last = '1' then
-                        idle <= '1';
-                    else
-                        counter <= 0;
+                        idle <= '1'; -- this will set the counter to i_offset if we have at least one idle cycle in between
                     end if;
                 else
                     counter <= counter + 1;
