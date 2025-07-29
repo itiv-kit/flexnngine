@@ -139,10 +139,12 @@ begin
                     v_cur_row := v_cur_row + v_count_m0 * i_params.kernel_size;
                 end if;
 
-                --  wrap at input image size
-                if v_cur_row >= i_params.w1 + i_params.kernel_size - 1 - i_params.pad_y then
-                    v_cur_row := v_cur_row - (i_params.w1 + i_params.kernel_size - 1 - i_params.pad_y);
-                end if;
+                -- wrap at input image size. TODO: get rid of the loop, maybe stay in one pipeline stage until criteria is met
+                while v_cur_row >= i_params.image_y + i_params.pad_y loop
+
+                    v_cur_row := v_cur_row - (i_params.image_y + i_params.pad_y);
+
+                end loop;
 
                 -- start with the base address
                 v_new_addr := i_params.base_psum;

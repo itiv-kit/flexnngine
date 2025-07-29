@@ -241,9 +241,12 @@ begin
                     end if;
 
                     -- wrap at full image height (including padding if enabled)
-                    if v_row >= i_params.image_y + i_params.pad_y then
+                    -- TODO: this while must be super inefficient in hardware, optimize it!
+                    while v_row >= i_params.image_y + i_params.pad_y loop
+
                         v_row := v_row - i_params.image_y - i_params.pad_y;
-                    end if;
+
+                    end loop;
 
                     -- when padding is enabled, 0..pad_y-1 and h-pad_y..h-1 rows are skipped (TODO: or duplicated if not zero-padding)
                     if i_params.mode_pad = zero and v_row < i_params.pad_y then
