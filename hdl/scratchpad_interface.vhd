@@ -196,7 +196,7 @@ architecture rtl of scratchpad_interface is
     signal w_psum_out     : array_t(0 to size_x - 1)(c_psum_fifo_width - 1 downto 0);
     signal w_data_psum    : std_logic_vector(c_psum_fifo_width - 1 downto 0);
 
-    signal r_done_iact_pipe, r_done_wght_pipe : std_logic_vector(4 downto 0); -- >= number of sync stages in iact/wght dc_fifo
+    signal r_done_iact_pipe, r_done_wght_pipe : std_logic_vector(6 downto 0); -- >= number of sync stages in iact/wght dc_fifo
     signal r_done_iact,      r_done_wght      : std_logic;
 
     signal r_start_delay : std_logic;
@@ -265,12 +265,20 @@ begin
             r_done_iact_pipe <= (others => '0');
             r_done_wght_pipe <= (others => '0');
         else
-            if not r_done_iact and i_addr_iact_done and (and w_empty_iact_address_f(size_rows - 1 downto size_y - 1)) and (and w_empty_iact_f(size_rows - 1 downto size_y - 1)) then
-                r_done_iact_pipe(0) <= '1';
+            if not r_done_iact then
+                if i_addr_iact_done and (and w_empty_iact_address_f(size_rows - 1 downto size_y - 1)) and (and w_empty_iact_f(size_rows - 1 downto size_y - 1)) then
+                    r_done_iact_pipe(0) <= '1';
+                else
+                    r_done_iact_pipe(0) <= '0';
+                end if;
             end if;
 
-            if not r_done_wght and i_addr_wght_done and (and w_empty_wght_address_f) and (and w_empty_wght_f) then
-                r_done_wght_pipe(0) <= '1';
+            if not r_done_wght then
+                if i_addr_wght_done and (and w_empty_wght_address_f) and (and w_empty_wght_f) then
+                    r_done_wght_pipe(0) <= '1';
+                else
+                    r_done_wght_pipe(0) <= '0';
+                end if;
             end if;
 
             r_done_iact_pipe(r_done_iact_pipe'high downto 1) <= r_done_iact_pipe(r_done_iact_pipe'high - 1 downto 0);
