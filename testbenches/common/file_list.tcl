@@ -28,6 +28,7 @@ set HDL_FILE_NAMES [list \
     "${HDL_DIR}/address_generator_iact.vhd" \
     "${HDL_DIR}/address_generator_wght.vhd" \
     "${HDL_DIR}/address_generator_psum.vhd" \
+    "${HDL_DIR}/throttle.vhd" \
     "${HDL_DIR}/control.vhd" \
     "${HDL_DIR}/control_address_generator.vhd" \
     "${HDL_DIR}/control_arch_rs.vhd" \

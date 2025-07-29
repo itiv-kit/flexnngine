@@ -57,8 +57,8 @@ architecture alternative_rs_dataflow of control is
 
     signal r_command : command_pe_array_t(0 to size_y);
 
+    signal w_throttle_rstn   : std_logic;
     signal r_output_throttle : std_logic;
-    signal r_output_counter  : integer range 0 to 255;
 
 begin
 
@@ -76,31 +76,18 @@ begin
     o_pause_iact <= '1' when r_state = s_output else
                     '0';
 
-    -- allow to throttle the output phase
-    -- this mechanism is very simple by just pulling o_enable low
-    -- a better solution would be to drive r_command_psum with some idle commands appropriately
-    p_output_throttle : process is
-    begin
+    w_throttle_rstn <= rstn when r_state = s_output else '0';
 
-        wait until rising_edge(clk);
-
-        if rstn = '0' or r_state /= s_output then
-            r_output_counter <= 0;
-        else
-            if r_output_counter = 0 then
-                r_output_counter <= 255;
-            else
-                r_output_counter <= r_output_counter - 1;
-            end if;
-        end if;
-
-        if r_output_counter < i_params.psum_throttle then
-            r_output_throttle <= '0';
-        else
-            r_output_throttle <= '1';
-        end if;
-
-    end process p_output_throttle;
+    throttle_inst : entity accel.throttle
+        generic map (
+            counter_width => 8
+        )
+        port map (
+            clk                => clk,
+            rstn               => w_throttle_rstn,
+            i_throttle_level   => to_unsigned(i_params.psum_throttle, 8),
+            o_throttled_enable => r_output_throttle
+        );
 
     r_command_psum_d       <= r_command_psum when rising_edge(clk);
     r_read_offset_psum_d   <= r_read_offset_psum when rising_edge(clk);
