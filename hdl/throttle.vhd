@@ -16,34 +16,26 @@ end entity throttle;
 
 architecture syn of throttle is
 
-    constant c_cnt_max : integer := 2 ** counter_width - 1;
-    signal   r_counter : integer range 0 to c_cnt_max;
+    signal r_counter : unsigned (counter_width downto 0); -- one more bit as delta-sigma output
 
 begin
 
     -- allow to throttle the output phase
-    -- this mechanism is very simple by just pulling o_enable low
+    -- this mechanism is very simple by just pulling o_throttled_enable low
     -- a better solution would be to drive r_command_psum with some idle commands appropriately
+    -- we use a delta-sigma modulation approach to achieve fine-grained toggling of o_throttled_enable
     p_output_throttle : process is
     begin
 
         wait until rising_edge(clk);
 
-        if rstn = '0' then
-            r_counter <= 0;
+        if rstn = '0' or i_throttle_level = 0 then
+            r_counter <= (others => '0');
         else
-            if r_counter = 0 then
-                r_counter <= c_cnt_max;
-            else
-                r_counter <= r_counter - 1;
-            end if;
+            r_counter <= r_counter + i_throttle_level;
         end if;
 
-        if r_counter < to_integer(i_throttle_level) then
-            o_throttled_enable <= '0';
-        else
-            o_throttled_enable <= '1';
-        end if;
+        o_throttled_enable <= not r_counter(counter_width);
 
     end process p_output_throttle;
 
