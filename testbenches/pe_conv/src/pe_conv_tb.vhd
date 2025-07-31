@@ -63,8 +63,6 @@ architecture imp of pe_conv_tb is
 
     -- Test data
 
-    -- type command_t is (c_idle, c_read, c_read_update, c_shrink);
-
     type command_array_lb_t is array(natural range <>, natural range <>) of command_lb_t;
 
     type command_array_pe_t is array(natural range <>) of command_pe_t;
@@ -105,7 +103,7 @@ architecture imp of pe_conv_tb is
     );
 
     constant input_read_offset : offset_array_t(0 to 2, 0 to command_length - 1) := (
-        (0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1,0,1,2,1,0), -- iact
+        (0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0), -- iact
         (0,0,0,0,0,1,1,1,0,2,2,2,0,3,3,3,0,4,4,4,0), -- psum
         (0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,0)  -- wght
     );

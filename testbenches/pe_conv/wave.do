@@ -15,19 +15,19 @@ add wave -noupdate -expand -group {Line_Buffer Command in} -radix unsigned /pe_c
 add wave -noupdate -expand -group {Line_Buffer Command in} -radix unsigned /pe_conv_tb/command_psum
 add wave -noupdate -expand -group {Line_Buffer Command in} -radix unsigned /pe_conv_tb/command_wght
 
-add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_iact/data_out
-add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_iact/data_out_valid
-add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_psum/data_out
-add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_psum/data_out_valid
-add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_psum/update_val
-add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_psum/update_offset
-add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_wght/data_out
-add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_wght/data_out_valid
+add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_iact/o_data
+add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_iact/o_data_valid
+add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_psum/o_data
+add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_psum/o_data_valid
+add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_psum/i_update_val
+add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_psum/i_update_offset
+add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_wght/o_data
+add wave -noupdate -expand -group {Line_Buffer Data out} -radix unsigned /pe_conv_tb/pe_inst/line_buffer_wght/o_data_valid
 
 add wave -noupdate -expand -group Pe_output -radix unsigned /pe_conv_tb/data_out
 add wave -noupdate -expand -group Pe_output -radix unsigned /pe_conv_tb/data_out_valid
 
-add wave -noupdate -expand -group RAM_internal -radix unsigned /pe_conv_tb/pe_inst/sel_mult_psum
+add wave -noupdate -expand -group RAM_internal -radix unsigned /pe_conv_tb/pe_inst/r_sel_mult_psum
 add wave -noupdate -expand -group RAM_internal -radix unsigned /pe_conv_tb/pe_inst/line_buffer_iact/ram/ram_instance
 add wave -noupdate -expand -group RAM_internal -radix unsigned /pe_conv_tb/pe_inst/line_buffer_psum/ram/ram_instance
 add wave -noupdate -expand -group RAM_internal -radix unsigned /pe_conv_tb/pe_inst/line_buffer_wght/ram/ram_instance
