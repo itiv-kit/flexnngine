@@ -12,15 +12,15 @@ library accel;
 
 entity address_generator_psum_tb is
     generic (
-        image_height : positive := 9;  --! output image height
-        image_width  : positive := 9;  --! output image width
-        size_y       : positive := 10; --! accelerator height
-        size_x       : positive := 7;  --! accelerator width
-        addr_width   : positive := 15; --! memory address width
-        data_width   : positive := 16; --! psum data width
-        kernel_size  : positive := 3;  --! r/s, kernel size
-        kernel_count : positive := 3;  --! m0, number of mapped kernels
-        write_size   : positive := 1   --! number of data_width words per write (> 1 not supported in testbench yet!)
+        output_height : positive := 9;  --! output image height
+        output_width  : positive := 9;  --! output image width
+        size_y        : positive := 10; --! accelerator height
+        size_x        : positive := 7;  --! accelerator width
+        addr_width    : positive := 15; --! memory address width
+        data_width    : positive := 16; --! psum data width
+        kernel_size   : positive := 3;  --! r/s, kernel size
+        kernel_count  : positive := 3;  --! m0, number of mapped kernels
+        write_size    : positive := 1   --! number of data_width words per write (> 1 not supported in testbench yet!)
     );
 end entity address_generator_psum_tb;
 
@@ -45,10 +45,12 @@ architecture imp of address_generator_psum_tb is
     signal gnt    : natural                                  := 0;
 
     signal i_params : parameters_t := (
+                                        image_x => output_width + kernel_size - 1,
+                                        image_y => output_height + kernel_size - 1,
                                         kernel_size => kernel_size,
-                                        w1 => image_width,
+                                        w1 => output_width,
                                         m0 => kernel_count,
-                                        h2 => (image_width + size_x - 1) / size_x,
+                                        h2 => (output_width + size_x - 1) / size_x,
                                         requant_enab => true,
                                         mode_act => passthrough,
                                         mode_pad => none,
@@ -56,7 +58,7 @@ architecture imp of address_generator_psum_tb is
                                         zeropt_fp32 => (others => (others => '0')),
                                         scale_fp32 => (others => (others => '0')),
                                         base_psum => 0,
-                                        stride_psum_och => integer(ceil(real(image_height * image_width) / real(write_size))),
+                                        stride_psum_och => integer(ceil(real(output_height * output_width) / real(write_size))),
                                         others => 0
                                     );
 
@@ -170,15 +172,15 @@ begin
                         start_row := m0 * kernel_size;
                     end if;
 
-                    for img_x in 0 to image_width - 1 loop
+                    for img_x in 0 to output_width - 1 loop
 
                         for pe_x in 0 to size_x - 1 loop
 
                             wait until rising_edge(clk);
                             tb_wen      <= '1';
-                            current_row := (step * size_x + start_row + pe_x) mod (image_height + kernel_size - 1);
+                            current_row := (step * size_x + start_row + pe_x) mod (output_height + kernel_size - 1);
                             -- dummy output data is generated as 1..x for each row, up to x*x. channels are + 1000 each
-                            din(data_width - 1 downto 0) <= std_logic_vector(to_unsigned(current_row * image_width + img_x + 1000 * m0 + 10000 * count_dataflow + 1, data_width));
+                            din(data_width - 1 downto 0) <= std_logic_vector(to_unsigned(current_row * output_width + img_x + 1000 * m0 + 10000 * count_dataflow + 1, data_width));
                             gnt                          <= pe_x;
                             i_valid_psum_out             <= (others => '0');
                             i_valid_psum_out(pe_x)       <= '1';
@@ -222,9 +224,9 @@ begin
 
         for kernel in 0 to kernel_count - 1 loop
 
-            for pixel in 0 to image_height * image_width - 1 loop
+            for pixel in 0 to output_height * output_width - 1 loop
 
-                idx    := kernel * image_height * image_width + pixel;
+                idx    := kernel * output_height * output_width + pixel;
                 expect := 1000 * kernel + pixel + 1;
 
                 if i_dataflow = '1' then
