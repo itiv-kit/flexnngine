@@ -257,12 +257,18 @@ begin
                             r_count_c0w0 <= 0;
                             r_count_h1   <= 0;
                             r_count_h2   <= r_count_h2 + 1;
-                            r_state      <= s_output;
+                            r_state      <= s_output_prepare;
                         else
                             r_count_w1   <= 0;
                             r_count_c0w0 <= 0;
                             r_state      <= s_calculate;
                         end if;
+                    end if;
+
+                when s_output_prepare =>
+
+                    if i_all_psum_finished = '1' then
+                        r_state <= s_output;
                     end if;
 
                 when s_output =>

@@ -224,7 +224,7 @@ begin
                                     -- Last c1 done
                                     -- Tile change for tile_y
                                     -- Output intermediate results. Reset Psum and Iact buffer. Wait.
-                                    r_state    <= s_output;
+                                    r_state    <= s_output_prepare;
                                     r_count_h2 <= r_count_h2 + 1;
                                 end if;
                             end if;
@@ -308,6 +308,12 @@ begin
                 when s_incr_h1 =>
 
                     null;
+
+                when s_output_prepare =>
+
+                    if i_all_psum_finished = '1' then
+                        r_state <= s_output;
+                    end if;
 
                 when s_output =>
 
