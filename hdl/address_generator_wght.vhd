@@ -56,7 +56,7 @@ begin
 
     o_wght_done <= and r_done;
 
-    wght_address_out : for i in 0 to size_y - 1 generate
+    gen_wght_address_out : for i in 0 to size_y - 1 generate
 
         wght_address_out : process is
         begin
@@ -143,7 +143,7 @@ begin
         o_address_wght(i)       <= std_logic_vector(r_addr(i));
         o_address_wght_valid(i) <= '1' when r_addr_valid(i) = '1' and (not fifo_full_write_protect or i_fifo_full_wght = '0') else '0';
 
-    end generate wght_address_out;
+    end generate gen_wght_address_out;
 
     -- address pattern for spad_reshape with cols=8, kernel r,s=3,3, channels=16, acc size 5x5, output channels m0=3
     -- channel_set 0: load one column of 8 weights from m0=0 r=0 into row 0

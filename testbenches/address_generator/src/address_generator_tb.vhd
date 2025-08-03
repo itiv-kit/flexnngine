@@ -156,7 +156,7 @@ begin
             rsh_dout     => mem_rsh_dout
         );
 
-    fifo_iact_address : for y in 0 to size_rows - 1 generate
+    gen_fifo_iact_address : for y in 0 to size_rows - 1 generate
 
         fifo_iact_address : entity accel.fifo
             generic map (
@@ -173,7 +173,7 @@ begin
                 empty => fifo_empty(y)
             );
 
-    end generate fifo_iact_address;
+    end generate gen_fifo_iact_address;
 
     gen_clk : process (clk) is
     begin

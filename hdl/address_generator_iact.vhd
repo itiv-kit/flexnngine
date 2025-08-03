@@ -58,7 +58,7 @@ begin
 
     o_iact_done <= and r_done;
 
-    iact_address_out : for i in 0 to size_rows - 1 generate
+    gen_iact_address_out : for i in 0 to size_rows - 1 generate
 
         iact_address_out : process is
 
@@ -159,7 +159,7 @@ begin
         o_address_iact(i)       <= std_logic_vector(r_addr(i));
         o_address_iact_valid(i) <= '1' when r_addr_valid(i) = '1' and (not fifo_full_write_protect or i_fifo_full_iact = '0') else '0';
 
-    end generate iact_address_out;
+    end generate gen_iact_address_out;
 
     -- address pattern for spad_reshape with cols=8, image h,w=8,8, channels=16, acc size 5x5
     -- channel_set 0: load one column of 8 channels from h=0 into row 0
