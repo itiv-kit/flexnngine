@@ -16,7 +16,6 @@ entity address_generator_tb is
         addr_width_x        : positive := 3; --! array pe index bit width
         addr_width_y        : positive := 3; --! array pe index bit width
         addr_width_iact_mem : positive := 16;
-        addr_width_wght_mem : positive := 16;
         read_size           : positive := 8; -- columns of word_size words
         word_size           : positive := 8
     );
@@ -47,6 +46,7 @@ architecture imp of address_generator_tb is
         scale_fp32   => (others => (others => '0')),
         zeropt_fp32  => (others => (others => '0')),
         mode_act     => passthrough,
+        mode_pad     => none,
         bias         => (others => 0),
         requant_enab => true,
         base_iact    => 0,
@@ -65,30 +65,16 @@ architecture imp of address_generator_tb is
     signal done  : boolean   := false;
     signal start : std_logic := '0';
 
-    signal o_iact_done : std_logic;
-    -- signal o_wght_done : std_logic;
-
-    signal i_fifo_full_iact : std_logic := '0';
-    -- signal i_fifo_full_wght : std_logic := '0';
-
-    signal o_address_iact : array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
-    -- -- signal o_address_wght       : array_t(0 to size_y - 1)(addr_width_wght_mem - 1 downto 0);
+    signal o_iact_done          : std_logic;
+    signal i_fifo_full_iact     : std_logic := '0';
+    signal o_address_iact       : array_t(0 to size_rows - 1)(addr_width_iact_mem - 1 downto 0);
     signal o_address_iact_valid : std_logic_vector(size_rows - 1 downto 0);
-    -- signal o_address_wght_valid : std_logic_vector(size_y - 1 downto 0);
 
     type ram_type is array (0 to (2 ** addr_width_iact_mem / read_size) - 1) of std_logic_vector(mem_data_width - 1 downto 0);
-
-    -- "standard" interface for non-reshaped data I/O
-    -- signal std_en       : std_logic;
-    -- signal std_write_en : std_logic_vector(cols - 1 downto 0);
-    -- signal std_addr     : std_logic_vector(addr_width - 1 downto 0);
-    -- signal std_din      : std_logic_vector(data_width - 1 downto 0);
-    -- signal std_dout     : std_logic_vector(data_width - 1 downto 0);
 
     -- "reshaped" interface to read nchw <-> nhwc reshaped data (currently read only)
     signal mem_rsh_en   : std_logic;
     signal mem_rsh_addr : std_logic_vector(addr_width_iact_mem - 1 downto 0);
-    signal mem_rsh_din  : std_logic_vector(mem_data_width - 1 downto 0);
     signal mem_rsh_dout : std_logic_vector(mem_data_width - 1 downto 0);
 
     signal fifo_rd    : std_logic_vector(0 to size_rows - 1);
@@ -103,18 +89,13 @@ architecture imp of address_generator_tb is
 
 begin
 
-    dut : entity accel.address_generator_iact(rs_dataflow)
+    dut : entity accel.address_generator_iact(unified)
         generic map (
-            size_x              => size_x,
-            size_y              => size_y,
-            size_rows           => size_x + size_y - 1,
-            line_length_iact    => 64,
-            line_length_psum    => 128,
-            line_length_wght    => 64,
-            addr_width_x        => addr_width_x,
-            addr_width_y        => addr_width_y,
-            addr_width_iact_mem => addr_width_iact_mem,
-            addr_width_wght_mem => addr_width_wght_mem
+            size_x         => size_x,
+            size_y         => size_y,
+            size_rows      => size_x + size_y - 1,
+            mem_addr_width => addr_width_iact_mem,
+            read_size      => read_size
         )
         port map (
             clk                  => clk,
@@ -125,11 +106,6 @@ begin
             i_fifo_full_iact     => i_fifo_full_iact,
             o_address_iact       => o_address_iact,
             o_address_iact_valid => o_address_iact_valid
-        -- i_m0_dist            => w_m0_dist,
-        -- o_wght_done          => o_wght_done,
-        -- i_fifo_full_wght     => i_fifo_full_wght,
-        -- o_address_wght       => o_address_wght,
-        -- o_address_wght_valid => o_address_wght_valid
         );
 
     mem : entity accel.spad_reshape
@@ -138,22 +114,16 @@ begin
             addr_width => addr_width_iact_mem
         )
         port map (
-            clk  => clk,
-            rstn => rstn,
-            -- std_en       => std_en,
-            -- std_write_en => std_write_en,
-            -- std_addr     => std_addr,
-            -- std_din      => std_din,
-            -- std_dout     => std_dout,
-            std_en       => '0',
-            std_write_en => (others => '0'),
-            std_addr     => (others => '0'),
-            std_din      => (others => '0'),
-            std_dout     => open,
-            rsh_en       => mem_rsh_en,
-            rsh_addr     => mem_rsh_addr,
-            rsh_din      => mem_rsh_din,
-            rsh_dout     => mem_rsh_dout
+            clk      => clk,
+            rstn     => rstn,
+            std_en   => '0',
+            std_wen  => (others => '0'),
+            std_addr => (others => '0'),
+            std_din  => (others => '0'),
+            std_dout => open,
+            rsh_en   => mem_rsh_en,
+            rsh_addr => mem_rsh_addr,
+            rsh_dout => mem_rsh_dout
         );
 
     gen_fifo_iact_address : for y in 0 to size_rows - 1 generate
@@ -356,10 +326,10 @@ begin
 
         if o_iact_done and not mem_rsh_en_delay and and fifo_empty then
 
-            for row in 0 to size_rows - 1 loop
+            for r in 0 to size_rows - 1 loop
 
-                assert row_cnt(row) = params.c1 * params.h2
-                    report "row " & integer'image(row) & " incomplete"
+                assert row_cnt(r) = params.c1 * params.h2
+                    report "row " & integer'image(r) & " incomplete"
                     severity failure;
 
             end loop;

@@ -102,6 +102,7 @@ begin
             scale_fp32   => (others => (others => '0')),
             zeropt_fp32  => (others => (others => '0')),
             mode_act     => passthrough,
+            mode_pad     => none,
             bias         => (others => 0),
             requant_enab => true,
             others       => 0

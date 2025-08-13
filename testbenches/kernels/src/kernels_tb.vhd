@@ -1,38 +1,30 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
-    use work.utilities.all;
-    use work.control;
-    use work.pe_array;
-    use work.address_generator;
-    use std.env.finish;
-    use std.env.stop;
     use ieee.math_real.ceil;
     use ieee.math_real.floor;
     use ieee.math_real.log2;
+    use std.env.finish;
+    use std.env.stop;
     use std.textio.all;
+
+library accel;
+    use accel.utilities.all;
 
 entity kernels_tb is
     generic (
         size_x : positive := 7;
         size_y : positive := 10;
 
-        data_width_iact      : positive := 8;  -- Width of the input data (weights, iacts)
-        line_length_iact     : positive := 32; /* TODO check influence on tiling - does not work for length 32, kernel 4 and channels 10. Does not work for length 30, kernel 3 and channels 10*/
-        addr_width_iact      : positive := 5;
-        spad_addr_width_iact : positive := 16;
+        line_length_iact : positive := 32; /* TODO check influence on tiling - does not work for length 32, kernel 4 and channels 10. Does not work for length 30, kernel 3 and channels 10*/
+        line_length_psum : positive := 128;
+        line_length_wght : positive := 32; /* TODO check influence on tiling - does not work for length 32, kernel 4 and channels 10. Does not work for length 30, kernel 3 and channels 10*/
 
-        data_width_psum      : positive := 16; -- or 17??
-        line_length_psum     : positive := 128;
-        addr_width_psum      : positive := 7;
-        spad_addr_width_psum : positive := 16;
+        data_width_input : positive := 8;  -- Width of the input data (weights, iacts)
+        data_width_psum  : positive := 16; -- or 17??
 
-        data_width_wght      : positive := 8;
-        line_length_wght     : positive := 32; /* TODO check influence on tiling - does not work for length 32, kernel 4 and channels 10. Does not work for length 30, kernel 3 and channels 10*/
-        addr_width_wght      : positive := 5;
-        spad_addr_width_wght : positive := 15;
-
-        fifo_width : positive := 16;
+        mem_word_count : positive := 8;
+        mem_addr_width : positive := 15;
 
         g_channels    : positive := 8;
         g_image_y     : positive := 16;
@@ -57,19 +49,20 @@ end entity kernels_tb;
 
 architecture imp of kernels_tb is
 
-    constant size_rows : positive := size_x + size_y - 1;
+    constant size_rows      : positive := size_x + size_y - 1;
+    constant mem_data_width : positive := mem_word_count * data_width_input;
 
     signal clk    : std_logic := '0';
     signal clk_sp : std_logic := '0';
     signal rstn   : std_logic;
 
-    signal start : std_logic;
+    signal start, done : std_logic;
 
     signal o_psums           : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
     signal o_psums_valid     : std_logic_vector(size_x - 1 downto 0);
-    signal i_data_iact       : array_t (0 to size_rows - 1)(data_width_iact - 1 downto 0);
+    signal i_data_iact       : array_t (0 to size_rows - 1)(data_width_input - 1 downto 0);
     signal i_data_iact_valid : std_logic_vector(size_rows - 1 downto 0);
-    signal i_data_wght       : array_t (0 to size_y - 1)(data_width_wght - 1 downto 0);
+    signal i_data_wght       : array_t (0 to size_y - 1)(data_width_input - 1 downto 0);
     signal i_data_wght_valid : std_logic_vector(size_y - 1 downto 0);
 
     signal s_input_image     : int_image_t(0 to size_rows - 1, 0 to g_image_x * g_channels * g_h2 - 1);         -- 2, because two tile_y
@@ -78,52 +71,45 @@ architecture imp of kernels_tb is
 
     signal write_en_iact : std_logic;
     signal write_en_wght : std_logic;
-    signal din_iact      : std_logic_vector(data_width_iact - 1 downto 0);
-    signal din_wght      : std_logic_vector(data_width_wght - 1 downto 0);
+    signal din_iact      : std_logic_vector(data_width_input - 1 downto 0);
+    signal din_wght      : std_logic_vector(data_width_input - 1 downto 0);
 
-    signal start_adr : std_logic;
-    signal w_h2      : integer;
-    signal w_m0      : integer;
+    signal w_h2 : integer;
+    signal w_m0 : integer;
 
-    type ram_type is array (0 to 2 ** spad_addr_width_psum - 1) of std_logic_vector(data_width_psum - 1 downto 0);
-
-    signal psum_ram_instance : ram_type;
+    type   ram_type is array (0 to 2 ** mem_addr_width / mem_word_count - 1) of std_logic_vector(mem_data_width - 1 downto 0);
+    type   ram_cols_type is array(0 to mem_word_count) of ram_type;
+    signal ram_cols : ram_cols_type;
 
     type t_state is (s_calculate, s_output, s_incr_c1);
 
-    signal r_state : t_state;
-
     signal params : parameters_t := (
-                                      kernel_size => g_kernel_size,
-                                      image_x => g_image_x,
-                                      image_y => g_image_y,
-                                      inputchs => g_channels,
-                                      w1 => g_image_x,
-                                      m0 => 1,
-                                      requant_enab => false,
-                                      mode_act => passthrough,
-                                      bias => (others => 0),
-                                      zeropt_fp32 => (others => (others => '0')),
-                                      scale_fp32 => (others => (others => '0')),
-                                      others => 0
-                                  );
+                                     kernel_size => g_kernel_size,
+                                     image_x => g_image_x,
+                                     image_y => g_image_y,
+                                     inputchs => g_channels,
+                                     w1 => g_image_x,
+                                     m0 => 1,
+                                     requant_enab => false,
+                                     mode_act => passthrough,
+                                     mode_pad => none,
+                                     bias => (others => 0),
+                                     zeropt_fp32 => (others => (others => '0')),
+                                     scale_fp32 => (others => (others => '0')),
+                                     others => 0
+                                    );
 
 begin
 
     o_psums           <= << signal accelerator_inst.w_psums : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0) >>;
     o_psums_valid     <= << signal accelerator_inst.w_psums_valid : std_logic_vector(size_x - 1 downto 0) >>;
-    i_data_iact       <= << signal accelerator_inst.w_data_iact : array_t (0 to size_rows - 1)(data_width_iact - 1 downto 0) >>;
+    i_data_iact       <= << signal accelerator_inst.w_data_iact : array_t (0 to size_rows - 1)(data_width_input - 1 downto 0) >>;
     i_data_iact_valid <= << signal accelerator_inst.w_data_iact_valid : std_logic_vector(size_rows - 1 downto 0) >>;
-    i_data_wght       <= << signal accelerator_inst.w_data_wght : array_t (0 to size_y - 1)(data_width_wght - 1 downto 0) >>;
+    i_data_wght       <= << signal accelerator_inst.w_data_wght : array_t (0 to size_y - 1)(data_width_input - 1 downto 0) >>;
     i_data_wght_valid <= << signal accelerator_inst.w_data_wght_valid : std_logic_vector(size_y - 1 downto 0) >>;
-    -- psum_ram_instance := << shared variable accelerator_inst.scratchpad_inst.ram_dp_psum.ram_instance : ram_type >>;
 
-    psum_ram_instance <= << signal accelerator_inst.scratchpad_init_inst.scratchpad_inst.ram_dp_psum.r_ram_instance : ram_type >>;
-
-    w_h2      <= << signal accelerator_inst.w_h2 : integer >>;
-    w_m0      <= << signal accelerator_inst.w_m0 : integer >>;
-    start_adr <= << signal accelerator_inst.address_generator_inst.i_start : std_logic >>;
-    r_state   <= << signal accelerator_inst.control_inst.r_state : t_state >>;
+    w_h2 <= << signal accelerator_inst.w_h2 : integer >>;
+    w_m0 <= << signal accelerator_inst.w_m0 : integer >>;
 
     write_en_iact <= '0';
     write_en_wght <= '0';
@@ -132,46 +118,26 @@ begin
 
     accelerator_inst : entity work.accelerator
         generic map (
-            size_x               => size_x,
-            size_y               => size_y,
-            data_width_iact      => data_width_iact,
-            line_length_iact     => line_length_iact,
-            addr_width_iact      => addr_width_iact,
-            data_width_psum      => data_width_psum,
-            line_length_psum     => line_length_psum,
-            addr_width_psum      => addr_width_psum,
-            data_width_wght      => data_width_wght,
-            line_length_wght     => line_length_wght,
-            addr_width_wght      => addr_width_wght,
-            spad_addr_width_iact => spad_addr_width_iact,
-            spad_addr_width_psum => spad_addr_width_psum,
-            spad_addr_width_wght => spad_addr_width_wght,
-            fifo_width           => fifo_width,
-            g_iact_fifo_size     => g_iact_fifo_size,
-            g_wght_fifo_size     => g_wght_fifo_size,
-            g_psum_fifo_size     => g_psum_fifo_size,
-            g_files_dir          => g_files_dir,
-            g_init_sp            => g_init_sp
+            size_x           => size_x,
+            size_y           => size_y,
+            line_length_iact => line_length_iact,
+            line_length_wght => line_length_wght,
+            line_length_psum => line_length_psum,
+            data_width_input => data_width_input,
+            data_width_psum  => data_width_psum
         )
         port map (
-            clk             => clk,
-            rstn            => rstn,
-            clk_sp          => clk_sp,
-            clk_sp_ext      => clk_sp,
-            i_start         => start,
-            i_params        => params,
-            i_en_iact       => '0',
-            i_en_wght       => '0',
-            i_en_psum       => '0',
-            i_write_en_iact => (others => '0'),
-            i_write_en_wght => (others => '0'),
-            i_write_en_psum => (others => '0'),
-            i_addr_iact     => (others => '0'),
-            i_addr_wght     => (others => '0'),
-            i_addr_psum     => (others => '0'),
-            i_din_iact      => (others => '0'),
-            i_din_wght      => (others => '0'),
-            i_din_psum      => (others => '0')
+            clk            => clk,
+            rstn           => rstn,
+            clk_sp         => clk_sp,
+            i_start        => start,
+            o_done         => done,
+            i_params       => params,
+            o_status       => open,
+            i_mem_en       => '0',
+            i_mem_write_en => (others => '0'),
+            i_mem_addr     => (others => '0'),
+            i_mem_din      => (others => '0')
         );
 
     rstn_gen : process is
@@ -220,18 +186,6 @@ begin
             report "Psum buffer has to hold output values of one row, must not be smaller than output row size"
             severity failure; /* TODO To be changed by splitting the task and propagating as many psums that the buffer can hold through the array at once */
 
-        assert addr_width_iact = integer(ceil(log2(real(line_length_iact))))
-            report "Check iact address width!"
-            severity failure;
-
-        assert addr_width_psum = integer(ceil(log2(real(line_length_psum))))
-            report "Check psum address width!"
-            severity failure;
-
-        assert addr_width_wght = integer(ceil(log2(real(line_length_wght))))
-            report "Check wght address width!"
-            severity failure;
-
         wait;
 
     end process p_constant_check;
@@ -255,8 +209,8 @@ begin
 
                 wait until rising_edge(clk) and i_data_iact_valid(y) = '1';
 
-                if i_data_iact(y) /= std_logic_vector(to_signed(s_input_image(y, i), data_width_iact)) then
-                    assert i_data_iact(y) = std_logic_vector(to_signed(s_input_image(y, i), data_width_iact))
+                if i_data_iact(y) /= std_logic_vector(to_signed(s_input_image(y, i), data_width_input)) then
+                    assert i_data_iact(y) = std_logic_vector(to_signed(s_input_image(y, i), data_width_input))
                         report "Input iact " & integer'image(i) & " wrong. Iact is " & integer'image(to_integer(signed(i_data_iact(y)))) & " - should be "
                                & integer'image(s_input_image(y, i))
                         severity warning;
@@ -289,7 +243,7 @@ begin
 
                 wait until rising_edge(clk) and i_data_wght_valid(y) = '1';
 
-                assert i_data_wght(y) = std_logic_vector(to_signed(s_input_weights(y, i), data_width_wght))
+                assert i_data_wght(y) = std_logic_vector(to_signed(s_input_weights(y, i), data_width_input))
                     report "Input wght (" & integer'image(y) & ") wrong. Wght is " & integer'image(to_integer(signed(i_data_wght(y)))) & " - should be "
                            & integer'image(s_input_weights(y, i))
                     severity warning;
@@ -319,31 +273,14 @@ begin
 
     begin
 
-        wait until r_state = s_output;
-
-        output_while : while true loop
-
-            output_for : for j in 0 to w_m0 * w_h2 * (g_image_x - g_kernel_size + 1) loop
-
-                wait for 100 ns;
-
-                if r_state /= s_output then
-                    exit output_for;
-                end if;
-
-            end loop output_for;
-
-            if r_state = s_output then
-                exit output_while;
-            end if;
-
-        end loop output_while;
+        wait until done = '1';
 
         wait for 2000 ns;
 
-        for i in 0 to 2 ** spad_addr_width_psum - 1 loop
+        -- TODO: fix writeout for multi-column spad
+        for i in 0 to 2 ** mem_addr_width / mem_word_count - 1 loop
 
-            write(row, integer'image(to_integer(signed(psum_ram_instance(i)))));
+            write(row, integer'image(to_integer(signed(ram_cols(0)(i)))));
             writeline(outfile, row);
 
         end loop;
@@ -355,5 +292,24 @@ begin
         wait;
 
     end process write_outputs;
+
+    -- assemble all scratchpad columns into ram_cols for easy access
+
+    gen_ram_alias : for i in 0 to mem_word_count - 1 generate
+
+        ram_alias : process is
+
+            alias ram is << variable ^.accelerator_inst.scratchpad_inst.ram.gen_cols(i).ram.ram : ram_type >>;
+
+        begin
+
+            wait until done = '1';
+            wait for 900 ns;
+            ram_cols(i) <= ram;
+            wait;
+
+        end process ram_alias;
+
+    end generate gen_ram_alias;
 
 end architecture imp;

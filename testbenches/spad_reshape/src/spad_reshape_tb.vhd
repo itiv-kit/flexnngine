@@ -37,11 +37,11 @@ architecture imp of spad_reshape_tb is
     signal rst : std_logic := '1';
 
     -- "standard" interface for non-reshaped data I/O
-    signal std_en       : std_logic;
-    signal std_write_en : std_logic_vector(cols - 1 downto 0);
-    signal std_addr     : std_logic_vector(addr_width - 1 downto 0);
-    signal std_din      : std_logic_vector(data_width - 1 downto 0);
-    signal std_dout     : std_logic_vector(data_width - 1 downto 0);
+    signal std_en   : std_logic;
+    signal std_wen  : std_logic_vector(cols - 1 downto 0);
+    signal std_addr : std_logic_vector(addr_width - 1 downto 0);
+    signal std_din  : std_logic_vector(data_width - 1 downto 0);
+    signal std_dout : std_logic_vector(data_width - 1 downto 0);
 
     -- "reshaped" interface to read nchw <-> nhwc reshaped data (currently read only)
     signal rsh_en   : std_logic;
@@ -57,16 +57,16 @@ begin
             addr_width => addr_width
         )
         port map (
-            clk          => clk,
-            rstn         => not rst,
-            std_en       => std_en,
-            std_write_en => std_write_en,
-            std_addr     => std_addr,
-            std_din      => std_din,
-            std_dout     => std_dout,
-            rsh_en       => rsh_en,
-            rsh_addr     => rsh_addr,
-            rsh_dout     => rsh_dout
+            clk      => clk,
+            rstn     => not rst,
+            std_en   => std_en,
+            std_wen  => std_wen,
+            std_addr => std_addr,
+            std_din  => std_din,
+            std_dout => std_dout,
+            rsh_en   => rsh_en,
+            rsh_addr => rsh_addr,
+            rsh_dout => rsh_dout
         );
 
     gen_clk : process (clk) is
@@ -95,8 +95,8 @@ begin
 
     begin
 
-        std_en       <= '0';
-        std_write_en <= (others => '0');
+        std_en  <= '0';
+        std_wen <= (others => '0');
 
         if rst = '0' then
             wait until rst = '0';
@@ -114,10 +114,10 @@ begin
 
                 wait until rising_edge(clk);
 
-                std_en       <= '1';
-                std_write_en <= (others => '1');
-                std_addr     <= std_logic_vector(address);
-                std_din      <= (others => '0');
+                std_en   <= '1';
+                std_wen  <= (others => '1');
+                std_addr <= std_logic_vector(address);
+                std_din  <= (others => '0');
 
                 for w in 0 to cols - 1 loop
 
@@ -132,12 +132,12 @@ begin
 
             wait until rising_edge(clk);
 
-            std_en       <= '0';
-            std_write_en <= (others => '0');
+            std_en  <= '0';
+            std_wen <= (others => '0');
 
         end loop;
 
-        std_write_en <= (others => '0');
+        std_wen <= (others => '0');
 
         wait for 200 ns;
 

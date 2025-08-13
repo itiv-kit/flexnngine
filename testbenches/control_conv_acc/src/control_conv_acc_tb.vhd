@@ -1,37 +1,28 @@
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
-    use work.utilities.all;
-    use work.control;
-    use work.pe_array;
-    use work.address_generator;
-    use std.env.finish;
-    use std.env.stop;
     use ieee.math_real.ceil;
     use ieee.math_real.log2;
+    use std.env.finish;
+    use std.env.stop;
+
+library accel;
+    use accel.utilities.all;
 
 entity control_conv_acc_tb is
     generic (
         size_x : positive := 5;
         size_y : positive := 5;
 
-        data_width_iact  : positive := 8; -- Width of the input data (weights, iacts)
         line_length_iact : positive := 32;
+        line_length_wght : positive := 32;
+        line_length_psum : positive := 127;
+
+        data_width_input : positive := 8; -- Width of the input data (weights, iacts)
         addr_width_iact  : positive := 5;
 
-        data_width_psum  : positive := 16; -- or 17??
-        line_length_psum : positive := 127;
-        addr_width_psum  : positive := 7;
-
-        data_width_wght  : positive := 8;
-        line_length_wght : positive := 32;
-        addr_width_wght  : positive := 5;
-
-        spad_ext_addr_width_iact : positive := 15;
-        spad_ext_addr_width_psum : positive := 15;
-        spad_ext_addr_width_wght : positive := 15;
-
-        fifo_width : positive := 16;
+        data_width_psum : positive := 16; -- or 17??
+        addr_width_psum : positive := 7;
 
         g_channels    : positive := 10;
         g_image_y     : positive := 29;
@@ -54,9 +45,9 @@ architecture imp of control_conv_acc_tb is
 
     signal o_psums           : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
     signal o_psums_valid     : std_logic_vector(size_x - 1 downto 0);
-    signal i_data_iact       : array_t (0 to size_rows - 1)(data_width_iact - 1 downto 0);
+    signal i_data_iact       : array_t (0 to size_rows - 1)(data_width_input - 1 downto 0);
     signal i_data_iact_valid : std_logic_vector(size_rows - 1 downto 0);
-    signal i_data_wght       : array_t (0 to size_y - 1)(data_width_wght - 1 downto 0);
+    signal i_data_wght       : array_t (0 to size_y - 1)(data_width_input - 1 downto 0);
     signal i_data_wght_valid : std_logic_vector(size_y - 1 downto 0);
 
     signal s_input_image     : int_image_t(0 to size_rows - 1, 0 to g_image_x * g_channels * g_h2 - 1);         -- 2, because two tile_y
@@ -64,67 +55,52 @@ architecture imp of control_conv_acc_tb is
     signal s_expected_output : int_image_t(0 to g_image_y - g_kernel_size, 0 to g_image_x - g_kernel_size);
 
     signal params : parameters_t := (
-                                      kernel_size => g_kernel_size,
-                                      image_x => g_image_x,
-                                      image_y => g_image_y,
-                                      inputchs => g_channels,
-                                      w1 => g_image_x,
-                                      m0 => 1,
-                                      requant_enab => false,
-                                      mode_act => passthrough,
-                                      bias => (others => 0),
-                                      zeropt_fp32 => (others => (others => '0')),
-                                      scale_fp32 => (others => (others => '0')),
-                                      others => 0
-                                  );
+                                     kernel_size => g_kernel_size,
+                                     image_x => g_image_x,
+                                     image_y => g_image_y,
+                                     inputchs => g_channels,
+                                     w1 => g_image_x,
+                                     m0 => 1,
+                                     requant_enab => false,
+                                     mode_act => passthrough,
+                                     mode_pad => none,
+                                     bias => (others => 0),
+                                     zeropt_fp32 => (others => (others => '0')),
+                                     scale_fp32 => (others => (others => '0')),
+                                     others => 0
+                                    );
 
 begin
 
     o_psums           <= << signal accelerator_inst.w_psums : array_t(0 to size_x - 1)(data_width_psum - 1 downto 0) >>;
     o_psums_valid     <= << signal accelerator_inst.w_psums_valid : std_logic_vector(size_x - 1 downto 0) >>;
-    i_data_iact       <= << signal accelerator_inst.w_data_iact : array_t (0 to size_rows - 1)(data_width_iact - 1 downto 0) >>;
+    i_data_iact       <= << signal accelerator_inst.w_data_iact : array_t (0 to size_rows - 1)(data_width_input - 1 downto 0) >>;
     i_data_iact_valid <= << signal accelerator_inst.w_data_iact_valid : std_logic_vector(size_rows - 1 downto 0) >>;
-    i_data_wght       <= << signal accelerator_inst.w_data_wght : array_t (0 to size_y - 1)(data_width_wght - 1 downto 0) >>;
+    i_data_wght       <= << signal accelerator_inst.w_data_wght : array_t (0 to size_y - 1)(data_width_input - 1 downto 0) >>;
     i_data_wght_valid <= << signal accelerator_inst.w_data_wght_valid : std_logic_vector(size_y - 1 downto 0) >>;
 
     accelerator_inst : entity work.accelerator
         generic map (
             size_x           => size_x,
             size_y           => size_y,
-            data_width_iact  => data_width_iact,
             line_length_iact => line_length_iact,
-            addr_width_iact  => addr_width_iact,
-            data_width_psum  => data_width_psum,
-            line_length_psum => line_length_psum,
-            addr_width_psum  => addr_width_psum,
-            data_width_wght  => data_width_wght,
             line_length_wght => line_length_wght,
-            addr_width_wght  => addr_width_wght,
-            fifo_width       => fifo_width,
-
-            spad_ext_addr_width_iact => spad_ext_addr_width_iact,
-            spad_ext_addr_width_psum => spad_ext_addr_width_psum,
-            spad_ext_addr_width_wght => spad_ext_addr_width_wght
+            line_length_psum => line_length_psum,
+            data_width_input => data_width_input,
+            data_width_psum  => data_width_psum
         )
         port map (
-            clk             => clk,
-            rstn            => rstn,
-            clk_sp          => clk_sp,
-            clk_sp_ext      => clk_sp,
-            i_start         => start,
-            i_params        => params,
-            i_en_iact       => '0',
-            i_en_wght       => '0',
-            i_en_psum       => '0',
-            i_write_en_iact => (others => '0'),
-            i_write_en_wght => (others => '0'),
-            i_write_en_psum => (others => '0'),
-            i_addr_iact     => (others => '0'),
-            i_addr_wght     => (others => '0'),
-            i_addr_psum     => (others => '0'),
-            i_din_iact      => (others => '0'),
-            i_din_wght      => (others => '0'),
-            i_din_psum      => (others => '0')
+            clk            => clk,
+            rstn           => rstn,
+            clk_sp         => clk_sp,
+            i_start        => start,
+            o_done         => open,
+            i_params       => params,
+            o_status       => open,
+            i_mem_en       => '0',
+            i_mem_write_en => (others => '0'),
+            i_mem_addr     => (others => '0'),
+            i_mem_din      => (others => '0')
         );
 
     rstn_gen : process is
@@ -173,18 +149,6 @@ begin
             report "Psum buffer has to hold output values of one row, must not be smaller than output row size"
             severity failure; /* TODO To be changed by splitting the task and propagating as many psums that the buffer can hold through the array at once */
 
-        assert addr_width_iact = integer(ceil(log2(real(line_length_iact))))
-            report "Check iact address width!"
-            severity failure;
-
-        assert addr_width_psum = integer(ceil(log2(real(line_length_psum))))
-            report "Check psum address width!"
-            severity failure;
-
-        assert addr_width_wght = integer(ceil(log2(real(line_length_wght))))
-            report "Check wght address width!"
-            severity failure;
-
         wait;
 
     end process p_constant_check;
@@ -208,7 +172,7 @@ begin
 
                 wait until rising_edge(clk) and i_data_iact_valid(y) = '1';
 
-                assert i_data_iact(y) = std_logic_vector(to_signed(s_input_image(y, i), data_width_iact))
+                assert i_data_iact(y) = std_logic_vector(to_signed(s_input_image(y, i), data_width_input))
                     report "Input iact " & integer'image(i) & " wrong. Iact is " & integer'image(to_integer(signed(i_data_iact(y)))) & " - should be "
                            & integer'image(s_input_image(y, i))
                     severity failure;
@@ -240,7 +204,7 @@ begin
 
                 wait until rising_edge(clk) and i_data_wght_valid(y) = '1';
 
-                assert i_data_wght(y) = std_logic_vector(to_signed(s_input_weights(y, i), data_width_wght))
+                assert i_data_wght(y) = std_logic_vector(to_signed(s_input_weights(y, i), data_width_input))
                     report "Input wght (" & integer'image(y) & ") wrong. Wght is " & integer'image(to_integer(signed(i_data_wght(y)))) & " - should be "
                            & integer'image(s_input_weights(y, i))
                     severity failure;
