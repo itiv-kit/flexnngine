@@ -45,22 +45,22 @@ architecture imp of address_generator_psum_tb is
     signal gnt    : natural                                  := 0;
 
     signal i_params : parameters_t := (
-                                        image_x => output_width + kernel_size - 1,
-                                        image_y => output_height + kernel_size - 1,
-                                        kernel_size => kernel_size,
-                                        w1 => output_width,
-                                        m0 => kernel_count,
-                                        h2 => (output_width + size_x - 1) / size_x,
-                                        requant_enab => true,
-                                        mode_act => passthrough,
-                                        mode_pad => none,
-                                        bias => (others => 0),
-                                        zeropt_fp32 => (others => (others => '0')),
-                                        scale_fp32 => (others => (others => '0')),
-                                        base_psum => 0,
-                                        stride_psum_och => integer(ceil(real(output_height * output_width) / real(write_size))),
-                                        others => 0
-                                    );
+                                       image_x => output_width + kernel_size - 1,
+                                       image_y => output_height + kernel_size - 1,
+                                       kernel_size => kernel_size,
+                                       w1 => output_width,
+                                       m0 => kernel_count,
+                                       h2 => (output_width + size_x - 1) / size_x,
+                                       requant_enab => true,
+                                       mode_act => passthrough,
+                                       mode_pad => none,
+                                       bias => (others => 0),
+                                       zeropt_fp32 => (others => (others => '0')),
+                                       scale_fp32 => (others => (others => '0')),
+                                       base_psum => 0,
+                                       stride_psum_och => integer(ceil(real(output_height * output_width) / real(write_size))),
+                                       others => 0
+                                      );
 
     type ram_type is array (0 to 2 ** addr_width - 1) of std_logic_vector(mem_width - 1 downto 0);
 
