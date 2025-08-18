@@ -218,6 +218,8 @@ for {set x 0} {$x < $size_x} {incr x} {
     add wave -noupdate -group PSUM_OUTPUT -group "para${x}" -radix symbolic    ${para_path}/valid_words
 }
 
+add wave -noupdate -group Postprocessing -radix unsigned /functional_tb/accelerator_inst/postproc_inst/i_data_valid
+add wave -noupdate -group Postprocessing -radix unsigned /functional_tb/accelerator_inst/postproc_inst/w_i_data_last
 add wave -noupdate -group Postprocessing -radix unsigned /functional_tb/accelerator_inst/postproc_inst/r_count_w1
 add wave -noupdate -group Postprocessing -radix unsigned /functional_tb/accelerator_inst/postproc_inst/r_current_channel
 add wave -noupdate -group Postprocessing -radix symbolic /functional_tb/accelerator_inst/postproc_inst/w_psums_bias_valid
