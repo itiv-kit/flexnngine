@@ -346,6 +346,12 @@ class Test:
             linear = np.linspace(1, self.convolution.image_size, self.convolution.image_size, dtype=np.int8)
             image = np.stack(self.convolution.input_channels * [self.convolution.image_size * [linear]])
 
+        if args.row_number_image:
+            # DEBUG: transposed version of linear_image -> each row has all elements equal the row number
+            linear = np.linspace(1, self.convolution.image_size, self.convolution.image_size, dtype=np.int8)
+            channel = np.stack(self.convolution.image_size * [linear]).T
+            image = np.stack(self.convolution.input_channels * [channel])
+
         if args.only_first_ich:
             image[1:].fill(0)
 
@@ -767,6 +773,7 @@ if __name__ == "__main__":
     parser.add_argument('--only-first-kernel', action='store_true', help='Zero-out kernels for c > 0')
     parser.add_argument('--bullseye-kernel',   action='store_true', help='Set all kernels to a 1:1 copy kernel with a 1 in the center, others zero')
     parser.add_argument('--linear-image',      action='store_true', help='Generate a input image with linearly increasing pixels instead of random')
+    parser.add_argument('--row-number-image',  action='store_true', help='Generate a input image each pixel equal to the number of the row its in')
     args = parser.parse_args()
 
     if args.list_presets:
