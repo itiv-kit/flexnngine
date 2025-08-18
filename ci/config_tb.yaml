@@ -31,3 +31,5 @@ rule:
     disable: true
   element_association_100:
     disable: true
+  instantiation_036:
+    disable: true

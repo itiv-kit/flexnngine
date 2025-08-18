@@ -31,7 +31,7 @@ package body gray_code is
 
         bin(bin'high) := gray(gray'high);
 
-        for i in gray'high-1 downto 0 loop
+        for i in gray'high - 1 downto 0 loop
 
             bin(i) := gray(i) xor bin(i + 1);
 

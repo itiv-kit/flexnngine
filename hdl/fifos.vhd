@@ -78,7 +78,7 @@ end entity fifo;
 
 architecture wrap of fifo is
 
-    type   memory_t is array(0 to mem_size - 1) of std_logic_vector(din'length-1 downto 0);
+    type   memory_t is array(0 to mem_size - 1) of std_logic_vector(din'length - 1 downto 0);
     signal memory              : memory_t;
     signal wrcnt,    rdcnt     : natural range 0 to mem_size - 1 := 0;
     signal full_loc, empty_loc : boolean;
@@ -134,7 +134,7 @@ end architecture wrap;
 
 architecture nowrap of fifo is
 
-    type   memory_t is array(0 to mem_size - 1) of std_logic_vector(din'length-1 downto 0);
+    type   memory_t is array(0 to mem_size - 1) of std_logic_vector(din'length - 1 downto 0);
     signal memory              : memory_t;
     signal wrcnt,    rdcnt     : natural range 0 to mem_size - 1 := 0;
     signal full_loc, empty_loc : boolean;
@@ -217,7 +217,7 @@ end entity dc_fifo;
 
 architecture behav of dc_fifo is
 
-    type   memory_t is array(0 to mem_size - 1) of std_logic_vector(din'length-1 downto 0);
+    type   memory_t is array(0 to mem_size - 1) of std_logic_vector(din'length - 1 downto 0);
     signal memory                : memory_t;
     signal wrcnt                 : natural range 0 to mem_size - 1 := 0;
     signal wrcnt_pkt             : natural range 0 to mem_size - 1 := 0;

@@ -94,7 +94,7 @@ begin
         if rst = '1' then
             sr <= (others => '0');
         else
-            sr <= bit_in & sr(1 to sr'right-1);
+            sr <= bit_in & sr(1 to sr'right - 1);
         end if;
 
     end process reg;

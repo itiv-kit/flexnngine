@@ -26,3 +26,5 @@ rule:
   process_035:
     comment_line_ends_group: true
     compact_alignment: true
+  instantiation_036:
+    disable: true
