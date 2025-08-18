@@ -143,6 +143,7 @@ add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/r_count_w1
 add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/r_count_c1
 add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/r_count_h1
 add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/r_count_h2
+add wave -noupdate -group ADR_iact -radix unsigned ${addr_gen_path}/r_count_m1
 add wave -noupdate -group ADR_iact -radix symbolic ${addr_gen_path}/r_next_base_last
 add wave -noupdate -group ADR_iact -radix symbolic ${addr_gen_path}/r_cur_base_last
 add wave -noupdate -group ADR_iact -radix symbolic ${addr_gen_path}/r_done
@@ -163,6 +164,7 @@ add wave -noupdate -group ADR_wght -radix unsigned ${addr_gen_path}/r_cur_base
 add wave -noupdate -group ADR_wght -radix unsigned ${addr_gen_path}/r_count_s
 add wave -noupdate -group ADR_wght -radix unsigned ${addr_gen_path}/r_count_c1
 add wave -noupdate -group ADR_wght -radix unsigned ${addr_gen_path}/r_count_h2
+add wave -noupdate -group ADR_wght -radix unsigned ${addr_gen_path}/r_count_m1
 add wave -noupdate -group ADR_wght -radix symbolic ${addr_gen_path}/r_next_base_last
 add wave -noupdate -group ADR_wght -radix symbolic ${addr_gen_path}/r_cur_base_last
 add wave -noupdate -group ADR_wght -radix symbolic ${addr_gen_path}/r_done
@@ -174,6 +176,7 @@ add wave -noupdate -group PSUM_OUTPUT -group addrgen -radix symbolic /functional
 add wave -noupdate -group PSUM_OUTPUT -group addrgen -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/address_generator_psum_inst/r_chunk_size
 add wave -noupdate -group PSUM_OUTPUT -group addrgen -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/address_generator_psum_inst/r_count_w1
 add wave -noupdate -group PSUM_OUTPUT -group addrgen -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/address_generator_psum_inst/r_count_m0
+add wave -noupdate -group PSUM_OUTPUT -group addrgen -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/address_generator_psum_inst/r_count_m1
 add wave -noupdate -group PSUM_OUTPUT -group addrgen -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/address_generator_psum_inst/r_count_h2
 add wave -noupdate -group PSUM_OUTPUT -group addrgen -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/address_generator_psum_inst/r_next_address
 add wave -noupdate -group PSUM_OUTPUT -group addrgen -radix symbolic /functional_tb/accelerator_inst/control_address_generator_inst/address_generator_psum_inst/r_next_address_valid
@@ -312,6 +315,7 @@ add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_ins
 add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_count_c1
 add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_count_w1
 add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_count_h2
+add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_count_m1
 add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_incr_w1
 add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_pad_state
 add wave -noupdate -group Control -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/g_control/control_inst/r_kernel_cols

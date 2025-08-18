@@ -40,7 +40,7 @@ end entity address_generator_psum;
 architecture rtl of address_generator_psum is
 
     -- consecutive output channels are placed in one column of spad_reshape each
-    -- this is the columns size in bytes
+    -- this is the size of each column in bytes
     constant mem_col_offset : positive := 2 ** mem_addr_width / mem_columns * write_size;
 
     constant bytes_input : positive := integer(2 ** ceil(log2(real(data_width_input) / 8.0)));
@@ -56,6 +56,7 @@ architecture rtl of address_generator_psum is
 
     signal r_count_w1 : uint10_line_t(0 to size_x - 1);
     signal r_count_m0 : uint10_line_t(0 to size_x - 1);
+    signal r_count_m1 : uint10_line_t(0 to size_x - 1);
     signal r_count_h2 : uint10_line_t(0 to size_x - 1);
 
     signal r_start_delay : std_logic;
@@ -82,9 +83,11 @@ begin
         p_psum_counter : process is
 
             variable v_count_w1   : integer; -- output channel counter
-            variable v_count_m0   : integer; -- output width counter
+            variable v_count_m0   : integer; -- counts output channels mapped to one column spatially
+            variable v_count_m1   : integer; -- counts sets of m0 output channels processed temporally
             variable v_count_h2   : integer; -- output step counter (h2 = number of steps for whole image height)
             variable v_cur_row    : integer; -- current row
+            variable v_outputch   : integer; -- the output channel currently being written
             variable v_offset     : integer; -- offset of the address to full write_size memory words
             variable v_write_size : integer; -- number of bytes written in the current cycle
             variable v_new_addr   : integer;
@@ -101,11 +104,13 @@ begin
 
                 r_count_w1(x) <= 0;
                 r_count_m0(x) <= 0;
+                r_count_m1(x) <= 0;
                 r_count_h2(x) <= 0;
                 r_done(x)     <= '1'; -- start in done state, wait until start_event to generate first address
             else
                 v_count_w1 := r_count_w1(x);
                 v_count_m0 := r_count_m0(x);
+                v_count_m1 := r_count_m1(x);
                 v_count_h2 := r_count_h2(x);
                 v_done     := r_done(x) = '1';
 
@@ -115,16 +120,23 @@ begin
                 if w_start_event = '1' then
                     -- start of a totally new result, reset all counters
                     v_count_m0 := 0;
+                    v_count_m1 := 0;
                     v_count_h2 := 0;
                     v_done     := false;
                 elsif r_next_address_valid(x) = '0' and not v_done then
                     if v_count_m0 = i_params.m0 - 1 then
+                        v_count_m0 := 0;
                         if v_count_h2 = i_params.h2 - 1 then
-                            -- full image processed, don't generate any more addresses
-                            v_done := true;
+                            v_count_h2 := 0;
+                            if v_count_m1 = i_params.m1 - 1 then
+                                -- full image processed, don't generate any more addresses
+                                v_done := true;
+                            else
+                                -- one set of spatially mapped output channels (m0) done, start all over for the next set
+                                v_count_m1 := v_count_m1 + 1;
+                            end if;
                         else
                             -- all kernels of this step done, prepare for next step
-                            v_count_m0 := 0;
                             v_count_h2 := v_count_h2 + 1;
                         end if;
                     else
@@ -146,14 +158,17 @@ begin
 
                 end loop;
 
+                -- calculate the current output channel from m0/m1 loop counters. could also be counted in a standalone register to reduce complexity.
+                v_outputch := v_count_m1 * i_params.m0 + v_count_m0;
+
                 -- start with the base address
                 v_new_addr := i_params.base_psum;
 
                 -- jump to the respective output channel column
-                v_new_addr := v_new_addr + v_count_m0 mod mem_columns * mem_col_offset;
+                v_new_addr := v_new_addr + v_outputch mod mem_columns * mem_col_offset;
 
                 -- if more than mem_columns output channels, put output channels after each other (with stride offset)
-                v_new_addr := v_new_addr + v_count_m0 / mem_columns * i_params.stride_psum_och * write_size;
+                v_new_addr := v_new_addr + v_outputch / mem_columns * i_params.stride_psum_och * write_size;
 
                 -- finally, add the row offset
                 v_new_addr := v_new_addr + v_cur_row * i_params.w1 * r_element_size;
@@ -207,6 +222,7 @@ begin
 
                 r_count_w1(x) <= v_count_w1;
                 r_count_m0(x) <= v_count_m0;
+                r_count_m1(x) <= v_count_m1;
                 r_count_h2(x) <= v_count_h2;
                 r_done(x)     <= '1' when v_done else '0';
             end if;

@@ -14,6 +14,7 @@ architecture rs_dataflow of control is
     signal r_count_c1   : integer range 0 to 1023;
     signal r_count_w1   : integer range 0 to 1023;
     signal r_count_h2   : integer range 0 to 1023;
+    signal r_count_m1   : integer range 0 to 1023;
 
     signal r_kernel_cols : integer range 0 to max_kernel_size - 1;
     signal r_count_w0    : integer range 0 to max_kernel_size;
@@ -186,6 +187,7 @@ begin
                     r_pad_state         <= s_none;
                     r_extra_offset_iact <= 0;
                     r_extra_offset_wght <= 0;
+                    r_count_m1          <= 0;
                     r_count_h2          <= 0;
                     r_count_c1          <= 0;
                     r_count_c0w0        <= 0;
@@ -197,39 +199,36 @@ begin
                 when s_calculate =>
 
                     if o_enable = '1' then
-                        if r_count_h2 /= w_h2 and r_count_c1 /= w_c1 then
-                            if r_count_w1 /= w_w1 then
-                                r_count_c0w0 <= r_count_c0w0 + 1;
-                                if r_count_c0 /= w_c0 - 1 then
-                                    r_count_c0 <= r_count_c0 + 1;
-                                else
-                                    if r_count_w0 /= r_kernel_cols then
-                                        r_count_c0 <= 0;
-                                        r_count_w0 <= r_count_w0 + 1;
-                                    else
-                                        -- shift kernel - increment w1
-                                        r_state <= s_incr_w1;
-                                    end if;
-                                end if;
+                        if r_count_w1 /= w_w1 then
+                            r_count_c0w0 <= r_count_c0w0 + 1;
+                            if r_count_c0 /= w_c0 - 1 then
+                                r_count_c0 <= r_count_c0 + 1;
                             else
-                                -- Increment c1
-                                -- Don't reset psums, but remove values from iact & wght buffers
-                                r_count_c1 <= r_count_c1 + 1;
-                                r_count_w1 <= 0;
-
-                                if r_count_c1 /= w_c1 - 1 then
-                                    -- Only perform iact & wght shrink if not last c1 done!
-                                    r_state <= s_incr_c1;
+                                if r_count_w0 /= r_kernel_cols then
+                                    r_count_c0 <= 0;
+                                    r_count_w0 <= r_count_w0 + 1;
                                 else
-                                    -- Last c1 done
-                                    -- Tile change for tile_y
-                                    -- Output intermediate results. Reset Psum and Iact buffer. Wait.
-                                    r_state    <= s_output_prepare;
-                                    r_count_h2 <= r_count_h2 + 1;
+                                    -- shift kernel - increment w1
+                                    r_state <= s_incr_w1;
                                 end if;
                             end if;
                         else
-                        -- DONE for now (not tiled for PSUM Line Buffer Length)
+                            -- Increment c1
+                            -- Don't reset psums, but remove values from iact & wght buffers
+                            r_count_c1   <= r_count_c1 + 1;
+                            r_count_w1   <= 0;
+                            r_count_c0w0 <= 0;
+
+                            if r_count_c1 /= w_c1 - 1 then
+                                -- Only perform iact & wght shrink if not last c1 done!
+                                r_state <= s_incr_c1;
+                            else
+                                -- Last c1 done
+                                -- Tile change for tile_y
+                                -- Output intermediate results. Reset Psum and Iact buffer. Wait.
+                                r_state    <= s_output_prepare;
+                                r_count_c1 <= 0;
+                            end if;
                         end if;
                     end if;
 
@@ -317,9 +316,11 @@ begin
 
                 when s_output =>
 
+                    r_count_c1 <= 0;
+
                     if o_enable = '1' then
                         -- Command counter for output commands (psum accumulation and psum read)
-                        if r_count_c0w0 /= i_params.kernel_size + w_m0 + 1 then -- i_params.kernel_size + w_m0 then /* TODO Change to allow for multiple kernel data to be output */
+                        if r_count_c0w0 /= i_params.kernel_size + w_m0 + 1 then
                             if r_count_w1 /= w_w1 - 1 then
                                 r_count_w1 <= r_count_w1 + 1;
                             else
@@ -327,20 +328,30 @@ begin
                                 r_count_c0w0 <= r_count_c0w0 + 1;
                             end if;
                         else
-                            -- Delay counter after shrinking for new values to arrive in the buffer
-                            if r_count_w1 /= 2 then -- r_W1 - 1 then /* TODO changed - check! */
+                            -- arbitrary delay after shrinking to allow for new values to arrive in the line buffers
+                            if r_count_w1 /= 2 then
                                 r_count_w1 <= r_count_w1 + 1;
-                            elsif r_count_h2 = w_h2 then
-                                if i_all_psum_finished = '1' then
-                                    r_state <= s_done;
-                                end if;
                             else
-                                r_count_c1   <= 0;
-                                r_count_w1   <= i_params.pad_x;
-                                r_count_c0w0 <= 0;
-                                r_state      <= s_calculate;
+                                -- one full image done, continue if more output channels need to be processed
+                                -- or stop when all output channels are calculated
+                                if r_count_h2 = w_h2 - 1 and r_count_m1 = i_params.m1 - 1 then
+                                    if i_all_psum_finished = '1' then
+                                        r_state <= s_done;
+                                    end if;
+                                else
+                                    if r_count_h2 = w_h2 - 1 then
+                                        -- continue calculation for next m1 iteration
+                                        r_count_h2 <= 0;
+                                        r_count_m1 <= r_count_m1 + 1;
+                                    else
+                                        -- continue calculation for next h2 iteration
+                                        r_count_h2 <= r_count_h2 + 1;
+                                    end if;
+                                    r_count_w1   <= i_params.pad_x;
+                                    r_count_c0w0 <= 0;
+                                    r_state      <= s_calculate;
+                                end if;
                             end if;
-                        -- Output done, reset psum etc?
                         end if;
                     end if;
 

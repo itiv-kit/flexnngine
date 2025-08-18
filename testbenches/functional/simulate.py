@@ -168,7 +168,6 @@ class Test:
     def _calculate_parameters(self):
         self.H1 = self.accelerator.size_x
         self.W1 = self.convolution.image_size - self.convolution.kernel_size + 1 + 2 * self.convolution.pad_x
-        self.M0_last_m1 = 1 # not used yet
         self.rows_last_h2 = 1 # only required for dataflow 1
         self.line_length_wght_usable = self.accelerator.line_length_wght - 1 # TODO: check why this is necessary
 
@@ -186,6 +185,8 @@ class Test:
 
         if self.accelerator.dataflow == 1:
             self.M0 = self.accelerator.size_y
+            self.M1 = 1 # no output channel tiling yet
+            self.M0_last_m1 = 1 # not used yet
 
             self.H2 = math.ceil(
                 (self.convolution.image_size - self.convolution.kernel_size + 1)
@@ -198,8 +199,10 @@ class Test:
 
         else:
             self.M0 = math.floor(self.accelerator.size_y / self.convolution.kernel_size)
+            self.M1 = math.ceil(self.convolution.output_channels / self.M0)
+            self.M0_last_m1 = self.convolution.output_channels - (self.M1 - 1) * self.M0
 
-            if self.M0 == 0:
+            if self.M0 == 0: # TODO: only happens when kernel is larger than size_y - is this supported at all?
                 self.H2 = math.ceil(self.W1 / self.accelerator.size_x)
             else:
                 # add just one side of padding to the image height, since upper + lower row of zeros is shared
@@ -503,6 +506,7 @@ class Test:
             'g_c1':               self.C1,
             'g_w1':               self.W1,
             'g_h2':               self.H2,
+            'g_m1':               self.M1,
             'g_m0':               self.M0,
             'g_m0_last_m1':       self.M0_last_m1,
             'g_rows_last_h2':     self.rows_last_h2,

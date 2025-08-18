@@ -47,6 +47,7 @@ entity functional_tb is
         g_c1            : positive := 1;
         g_w1            : positive := 1;
         g_h2            : positive := 1;
+        g_m1            : positive := 1;
         g_m0            : positive := 1;
         g_m0_last_m1    : positive := 1;
         g_rows_last_h2  : positive := 1;
@@ -158,6 +159,7 @@ begin
     params.c1            <= g_c1;
     params.w1            <= g_w1;
     params.h2            <= g_h2;
+    params.m1            <= g_m1;
     params.m0            <= g_m0;
     params.m0_last_m1    <= g_m0_last_m1;
     params.rows_last_h2  <= g_rows_last_h2;

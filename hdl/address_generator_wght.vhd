@@ -47,6 +47,7 @@ architecture unified of address_generator_wght is
     signal r_count_c1 : integer;
     signal r_count_h1 : integer;
     signal r_count_h2 : integer;
+    signal r_count_m1 : integer;
 
     signal r_next_base_last : std_logic;
     signal r_cur_base_last  : std_logic_vector(size_y - 1 downto 0);
@@ -185,6 +186,7 @@ begin
             r_count_c1 <= 0;
             r_count_h1 <= 0;
             r_count_h2 <= 0;
+            r_count_m1 <= 0;
         else
             if i_start and not r_next_base_last and not r_next_valid then
                 if r_count_c1 /= i_params.c1 - 1 then
@@ -203,6 +205,9 @@ begin
 
                         if r_count_h2 /= i_params.h2 - 1 then
                             r_count_h2 <= r_count_h2 + 1;
+                        elsif r_count_m1 /= i_params.m1 - 1 then
+                            r_count_m1 <= r_count_m1 + 1;
+                            r_count_h2 <= 0;
                         else
                             r_next_base_last <= '1';
                         end if;
@@ -217,10 +222,12 @@ begin
 
                 for row in 0 to size_y - 1 loop
 
+                    v_och_offset := r_count_m1 * i_params.m0;
+
                     if i_params.dataflow = 1 then
-                        v_och_offset := row;                            -- trs dataflow: row equals m0
+                        v_och_offset := v_och_offset + row;                            -- trs dataflow: row equals m0
                     else
-                        v_och_offset := to_integer(i_m0_dist(row) - 1); -- offset between output channel kernel sets
+                        v_och_offset := v_och_offset + to_integer(i_m0_dist(row) - 1); -- offset between output channel kernel sets
                     end if;
 
                     if i_params.dataflow = 1 then

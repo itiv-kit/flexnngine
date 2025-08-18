@@ -66,6 +66,7 @@ package utilities is
         c1            : integer range 0 to 1023;
         w1            : integer range 0 to max_line_length_psum;
         h2            : integer range 0 to 1023;
+        m1            : integer range 0 to 1023;
         m0            : integer range 0 to max_output_channels;
         m0_last_m1    : integer range 0 to max_output_channels;
         rows_last_h2  : integer range 0 to max_size_x;

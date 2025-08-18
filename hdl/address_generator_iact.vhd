@@ -47,6 +47,7 @@ architecture unified of address_generator_iact is
     signal r_count_c1 : integer;
     signal r_count_h1 : integer;
     signal r_count_h2 : integer;
+    signal r_count_m1 : integer;
 
     signal r_next_base_last : std_logic;
     signal r_cur_base_last  : std_logic_vector(size_rows - 1 downto 0);
@@ -198,6 +199,7 @@ begin
             r_count_c1 <= 0;
             r_count_h1 <= 0;
             r_count_h2 <= 0;
+            r_count_m1 <= 0;
         else
             if i_start and not r_next_base_last and not (or r_next_valid) then
                 -- shared counters for all PE rows
@@ -217,6 +219,9 @@ begin
 
                         if r_count_h2 /= i_params.h2 - 1 then
                             r_count_h2 <= r_count_h2 + 1;
+                        elsif r_count_m1 /= i_params.m1 - 1 then
+                            r_count_m1 <= r_count_m1 + 1;
+                            r_count_h2 <= 0;
                         else
                             r_next_base_last <= '1';
                         end if;
