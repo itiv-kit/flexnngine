@@ -455,26 +455,27 @@ begin
   o_params.c1            <= to_integer(unsigned(slv_regs( 7)( 9 downto 0)));
   o_params.w1            <= to_integer(unsigned(slv_regs( 8)( 9 downto 0)));
   o_params.h2            <= to_integer(unsigned(slv_regs( 9)( 9 downto 0)));
-  o_params.m0            <= to_integer(unsigned(slv_regs(10)( 9 downto 0)));
-  o_params.m0_last_m1    <= to_integer(unsigned(slv_regs(11)( 9 downto 0)));
-  o_params.rows_last_h2  <= to_integer(unsigned(slv_regs(12)( 9 downto 0)));
-  o_params.c0            <= to_integer(unsigned(slv_regs(13)( 9 downto 0)));
-  o_params.c0_last_c1    <= to_integer(unsigned(slv_regs(14)( 9 downto 0)));
-  o_params.c0w0          <= to_integer(unsigned(slv_regs(15)( 9 downto 0)));
-  o_params.c0w0_last_c1  <= to_integer(unsigned(slv_regs(16)( 9 downto 0)));
-  o_params.psum_throttle <= to_integer(unsigned(slv_regs(17)( 7 downto 0)));
-  o_params.pad_x         <= to_integer(unsigned(slv_regs(18)( 3 downto 0)));
-  o_params.pad_y         <= to_integer(unsigned(slv_regs(18)(11 downto 8)));
+  o_params.m1            <= to_integer(unsigned(slv_regs(10)( 9 downto 0)));
+  o_params.m0            <= to_integer(unsigned(slv_regs(11)( 9 downto 0)));
+  o_params.m0_last_m1    <= to_integer(unsigned(slv_regs(12)( 9 downto 0)));
+  o_params.rows_last_h2  <= to_integer(unsigned(slv_regs(13)( 9 downto 0)));
+  o_params.c0            <= to_integer(unsigned(slv_regs(14)( 9 downto 0)));
+  o_params.c0_last_c1    <= to_integer(unsigned(slv_regs(15)( 9 downto 0)));
+  o_params.c0w0          <= to_integer(unsigned(slv_regs(16)( 9 downto 0)));
+  o_params.c0w0_last_c1  <= to_integer(unsigned(slv_regs(17)( 9 downto 0)));
+  o_params.psum_throttle <= to_integer(unsigned(slv_regs(18)( 7 downto 0)));
+  o_params.pad_x         <= to_integer(unsigned(slv_regs(19)( 3 downto 0)));
+  o_params.pad_y         <= to_integer(unsigned(slv_regs(20)(11 downto 8)));
 
-  o_params.base_iact          <= to_integer(unsigned(slv_regs(19)(max_spad_addr_width - 1 downto 0)));
-  o_params.base_wght          <= to_integer(unsigned(slv_regs(20)(max_spad_addr_width - 1 downto 0)));
-  o_params.base_psum          <= to_integer(unsigned(slv_regs(21)(max_spad_addr_width - 1 downto 0)));
-  o_params.base_pad           <= to_integer(unsigned(slv_regs(22)(max_spad_addr_width - 1 downto 0)));
-  o_params.stride_iact_w      <= to_integer(unsigned(slv_regs(23)(16 downto 0)));
-  o_params.stride_iact_hw     <= to_integer(unsigned(slv_regs(24)(16 downto 0)));
-  o_params.stride_wght_kernel <= to_integer(unsigned(slv_regs(25)( 5 downto 0)));
-  o_params.stride_wght_och    <= to_integer(unsigned(slv_regs(26)(11 downto 0)));
-  o_params.stride_psum_och    <= to_integer(unsigned(slv_regs(27)(12 downto 0)));
+  o_params.base_iact          <= to_integer(unsigned(slv_regs(20)(max_spad_addr_width - 1 downto 0)));
+  o_params.base_wght          <= to_integer(unsigned(slv_regs(21)(max_spad_addr_width - 1 downto 0)));
+  o_params.base_psum          <= to_integer(unsigned(slv_regs(22)(max_spad_addr_width - 1 downto 0)));
+  o_params.base_pad           <= to_integer(unsigned(slv_regs(23)(max_spad_addr_width - 1 downto 0)));
+  o_params.stride_iact_w      <= to_integer(unsigned(slv_regs(24)(16 downto 0)));
+  o_params.stride_iact_hw     <= to_integer(unsigned(slv_regs(25)(16 downto 0)));
+  o_params.stride_wght_kernel <= to_integer(unsigned(slv_regs(26)( 5 downto 0)));
+  o_params.stride_wght_och    <= to_integer(unsigned(slv_regs(27)(11 downto 0)));
+  o_params.stride_psum_och    <= to_integer(unsigned(slv_regs(28)(12 downto 0)));
 
   -- registers for bias, scale, zeropt per output channel, limited by maximum m0 value max_output_channels
   g_bias_req_regs : for x in 0 to max_output_channels - 1 generate
