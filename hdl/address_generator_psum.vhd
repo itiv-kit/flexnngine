@@ -52,6 +52,7 @@ architecture rtl of address_generator_psum is
     signal r_next_address_valid : std_logic_vector(0 to size_x - 1);
     signal r_suppress_next_row  : std_logic_vector(0 to size_x - 1);
     signal r_suppress_next_col  : std_logic_vector(0 to size_x - 1);
+    signal r_suppress_next_ch   : std_logic_vector(0 to size_x - 1);
     signal r_done               : std_logic_vector(0 to size_x - 1);
 
     signal r_count_w1 : uint10_line_t(0 to size_x - 1);
@@ -193,6 +194,13 @@ begin
                     r_suppress_next_col(x) <= '0';
                 end if;
 
+                -- suppress redundant output channels in the last m1 iteration
+                if v_count_m1 = i_params.m1 - 1 and v_count_m0 >= i_params.m0_last_m1 then
+                    r_suppress_next_ch(x) <= '1';
+                else
+                    r_suppress_next_ch(x) <= '0';
+                end if;
+
                 if i_valid_psum_out(x) or r_init then
                     -- calculate the number of bytes that were written in the current i_valid_psum_out step
                     if r_chunk_size > 1 and v_count_w1 = 0 then
@@ -212,7 +220,7 @@ begin
                         r_address_psum(x)       <= r_next_address(x);
                         r_next_address_valid(x) <= '0';
 
-                        o_suppress_out(x) <= r_suppress_next_row(x) or r_suppress_next_col(x);
+                        o_suppress_out(x) <= r_suppress_next_row(x) or r_suppress_next_col(x) or r_suppress_next_ch(x);
                     else
                         v_count_w1 := v_count_w1 + v_write_size;
 
