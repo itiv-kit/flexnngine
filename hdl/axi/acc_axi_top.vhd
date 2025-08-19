@@ -102,7 +102,7 @@ architecture arch_imp of acc_axi_top is
   attribute x_interface_info      of s00_axi_aclk : signal is "xilinx.com:signal:clock:1.0 s00_axi_aclk CLK";
   attribute x_interface_parameter of s00_axi_aclk : signal is "ASSOCIATED_BUSIF s00_axi, ASSOCIATED_RESET s00_axi_aresetn"; --, FREQ_HZ 125000000
 
-  attribute x_interface_parameter of clk_sp : signal is "XIL_INTERFACENAME scratchpad, MASTER_TYPE BRAM_CTRL, MEM_SIZE 524288, MEM_WIDTH 64, MEM_ECC NONE, READ_WRITE_MODE READ_WRITE, READ_LATENCY 1";
+  attribute x_interface_parameter of clk_sp : signal is "XIL_INTERFACENAME scratchpad, MASTER_TYPE BRAM_CTRL, MEM_SIZE 2097152, MEM_WIDTH 64, MEM_ECC NONE, READ_WRITE_MODE READ_WRITE, READ_LATENCY 1";
 
   attribute x_interface_mode of clk_sp      : signal is "Slave";
   attribute x_interface_info of clk_sp      : signal is "xilinx.com:interface:bram_rtl:1.0 scratchpad CLK";
