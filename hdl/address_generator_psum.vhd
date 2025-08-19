@@ -152,10 +152,15 @@ begin
                     v_cur_row := v_cur_row + v_count_m0 * i_params.kernel_size;
                 end if;
 
-                -- wrap at input image size. TODO: get rid of the loop, maybe stay in one pipeline stage until criteria is met
-                while v_cur_row >= i_params.image_y + i_params.pad_y loop
+                -- wrap at input image size.
+                -- this overflow can happen multiple times for very small images (e.g. 7x7 image on 10x7 accelerator)
+                -- we limit it to 2 for the loop to be synthesizable, thus the minimum image size depends on the array size: size_rows/3=(10+7-1)/3=6
+                -- TODO: when pipelining this, get rid of the loop. maybe stay in one pipeline stage until criteria is met.
+                for iter in 0 to 1 loop
 
-                    v_cur_row := v_cur_row - (i_params.image_y + i_params.pad_y);
+                    if v_cur_row >= i_params.image_y + i_params.pad_y then
+                        v_cur_row := v_cur_row - (i_params.image_y + i_params.pad_y);
+                    end if;
 
                 end loop;
 

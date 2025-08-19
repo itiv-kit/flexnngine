@@ -246,10 +246,13 @@ begin
                     end if;
 
                     -- wrap at full image height (including padding if enabled)
-                    -- TODO: this while must be super inefficient in hardware, optimize it!
-                    while v_row >= i_params.image_y + i_params.pad_y loop
+                    -- this overflow can happen multiple times for very small images (e.g. 7x7 image on 10x7 accelerator)
+                    -- we limit it to 2 for the loop to be synthesizable, thus the minimum image size depends on the array size: size_rows/3=(10+7-1)/3=6
+                    for iter in 0 to 1 loop
 
-                        v_row := v_row - i_params.image_y - i_params.pad_y;
+                        if v_row >= i_params.image_y + i_params.pad_y then
+                            v_row := v_row - i_params.image_y - i_params.pad_y;
+                        end if;
 
                     end loop;
 
