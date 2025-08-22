@@ -149,7 +149,7 @@ architecture arch_imp of acc_axi_regs is
   signal r_irq_clr : std_logic;
   signal r_done_d  : std_logic;
 
-  constant MAGIC_REG_VALUE : std_logic_vector(31 downto 0) := x"41434305"; -- "ACC" + register set version
+  constant MAGIC_REG_VALUE : std_logic_vector(31 downto 0) := x"41434306"; -- "ACC" + register set version
 begin
   -- I/O Connections assignments
 
