@@ -311,6 +311,7 @@ begin
             v_zeropt_scale := read_file_floats(g_files_dir & "_zeropt_scale.txt", 2, max_output_channels);
             -- report "got zeropt " & to_string(to_real(v_zeropt_scale(0,0))) & " and scale " & to_string(to_real(v_zeropt_scale(0,1)));
 
+            -- TODO: implement scaling for an arbitrary number of output channels larger than m0
             for g in 0 to g_m0 - 1 loop
 
                 zeropt_fp32(g) <= to_slv(v_zeropt_scale(g, 0));
@@ -546,10 +547,10 @@ begin
 
         file_open(outfile, file_ptr.all, write_mode);
 
-        for m0 in 0 to g_m0 - 1 loop
+        for och in 0 to g_outputchs - 1 loop
 
-            column    := m0 mod mem_word_count;
-            base_addr := g_psum_base_addr / mem_word_count + m0 / mem_word_count * g_stride_psum_och;
+            column    := och mod mem_word_count;
+            base_addr := g_psum_base_addr / mem_word_count + och / mem_word_count * g_stride_psum_och;
             idx       := 0;
             word_idx  := 0;
 

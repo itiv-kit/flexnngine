@@ -182,6 +182,7 @@ add wave -noupdate -group PSUM_OUTPUT -group addrgen -radix unsigned /functional
 add wave -noupdate -group PSUM_OUTPUT -group addrgen -radix symbolic /functional_tb/accelerator_inst/control_address_generator_inst/address_generator_psum_inst/r_next_address_valid
 add wave -noupdate -group PSUM_OUTPUT -group addrgen -radix symbolic /functional_tb/accelerator_inst/control_address_generator_inst/address_generator_psum_inst/r_suppress_next_row
 add wave -noupdate -group PSUM_OUTPUT -group addrgen -radix symbolic /functional_tb/accelerator_inst/control_address_generator_inst/address_generator_psum_inst/r_suppress_next_col
+add wave -noupdate -group PSUM_OUTPUT -group addrgen -radix symbolic /functional_tb/accelerator_inst/control_address_generator_inst/address_generator_psum_inst/r_suppress_next_ch
 add wave -noupdate -group PSUM_OUTPUT -group addrgen -radix symbolic /functional_tb/accelerator_inst/control_address_generator_inst/address_generator_psum_inst/o_suppress_out
 add wave -noupdate -group PSUM_OUTPUT -group addrgen -radix unsigned /functional_tb/accelerator_inst/control_address_generator_inst/address_generator_psum_inst/o_address_psum
 

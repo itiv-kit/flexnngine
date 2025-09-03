@@ -185,8 +185,6 @@ class Test:
 
         if self.accelerator.dataflow == 1:
             self.M0 = self.accelerator.size_y
-            self.M1 = 1 # no output channel tiling yet
-            self.M0_last_m1 = 1 # not used yet
 
             self.H2 = math.ceil(
                 (self.convolution.image_size - self.convolution.kernel_size + 1)
@@ -199,14 +197,15 @@ class Test:
 
         else:
             self.M0 = math.floor(self.accelerator.size_y / self.convolution.kernel_size)
-            self.M1 = math.ceil(self.convolution.output_channels / self.M0)
-            self.M0_last_m1 = self.convolution.output_channels - (self.M1 - 1) * self.M0
 
             if self.M0 == 0: # TODO: only happens when kernel is larger than size_y - is this supported at all?
                 self.H2 = math.ceil(self.W1 / self.accelerator.size_x)
             else:
                 # add just one side of padding to the image height, since upper + lower row of zeros is shared
                 self.H2 = math.ceil((self.convolution.image_size + self.convolution.pad_x) / self.accelerator.size_x)
+
+        self.M1 = math.ceil(self.convolution.output_channels / self.M0)
+        self.M0_last_m1 = self.convolution.output_channels - (self.M1 - 1) * self.M0
 
         # C0W0 must not be too short to allow for disabling of PE array while reading data
         if self.C0W0_last_c1 < 6:
@@ -298,13 +297,12 @@ class Test:
         # fixed random seed for reproducibility
         np.random.seed(2)
 
-        # create kernels with random filter weights (for input_channels * output_channels (M0))
-        # TODO: can M0 = 0 happen, when looking at code above? then this breaks...
+        # create kernels with random filter weights (for input_channels * output_channels)
         kernels = np.random.randint(
             -(2 ** (self.convolution.input_bits - 1)),
             (2 ** (self.convolution.input_bits - 1)) - 1,
             (
-                self.M0,
+                self.convolution.output_channels,
                 self.convolution.input_channels,
                 self.convolution.kernel_size,
                 self.convolution.kernel_size,
@@ -317,8 +315,8 @@ class Test:
             kernels[:,:,center,center] = 1
 
         if args.same_kernels_ich:
-            # DEBUG: just copy the first kernel this output channel
-            for m0 in range(0, self.M0):
+            # DEBUG: use copy the first kernel of each output channel for all input channels
+            for m0 in range(0, self.convolution.output_channels):
                 kernels[m0] = np.broadcast_to(kernels[m0][0], (self.convolution.input_channels,) + kernels[m0][0].shape)
 
         if args.only_first_och:
@@ -331,7 +329,7 @@ class Test:
 
         if args.same_kernels_och:
             # DEBUG: just copy the first set of kernels for all output channels
-            kernels = np.broadcast_to(kernels[0], (self.M0,) + kernels[0].shape)
+            kernels = np.broadcast_to(kernels[0], (self.convolution.output_channels,) + kernels[0].shape)
 
         # create array with random input activations (three dimensional "image")
         image = np.random.randint(
@@ -363,7 +361,7 @@ class Test:
         # create empty array for all channels of the conv'd image
         convolved_images = np.zeros(
             (
-                self.M0,
+                self.convolution.output_channels,
                 self.convolution.image_size - self.convolution.kernel_size + 1 + 2 * self.convolution.pad_y,
                 self.convolution.image_size - self.convolution.kernel_size + 1 + 2 * self.convolution.pad_x,
             )
@@ -371,7 +369,7 @@ class Test:
         # iterate over the image and convolve each channel
         # note on the loop ordering: we simulate the HWC processing order of the hardware
         # to get the same results in case of accumulator saturation
-        for m in range(self.M0):
+        for m in range(self.convolution.output_channels):
             for h in range(convolved_images.shape[1]):
                 for w in range(convolved_images.shape[2]):
                     for r in reversed(range(self.convolution.kernel_size)): # kernel rows
@@ -391,7 +389,7 @@ class Test:
             np.maximum(convolved_images, 0, out=convolved_images)
 
         # if requant is enabled, find a suitable scaling value per output channel
-        zeropt_scale_vals = np.zeros((self.M0, 2))
+        zeropt_scale_vals = np.zeros((self.convolution.output_channels, 2))
         if self.convolution.requantize:
             min_vals = np.min(convolved_images, axis=(1,2))
             max_vals = np.max(convolved_images, axis=(1,2))
@@ -491,7 +489,7 @@ class Test:
             'g_image_y':          self.convolution.image_size,
             'g_image_x':          self.convolution.image_size,
             'g_inputchs':         self.convolution.input_channels,
-            'g_outputchs':        self.M0, # currently fixed to M0, TODO: make smaller count possible
+            'g_outputchs':        self.convolution.output_channels,
             'g_bias':             self.convolution.bias,
             'data_width_psum':    self.accelerator.data_width_psum,
             'line_length_wght':   self.accelerator.line_length_wght,
