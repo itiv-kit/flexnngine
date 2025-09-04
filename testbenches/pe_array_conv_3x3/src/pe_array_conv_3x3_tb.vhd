@@ -180,8 +180,8 @@ architecture imp of pe_array_conv_3x3_tb is
     );
 
     constant input_read_offset : int_image_t(0 to 2, 0 to command_length - 1) := (
-        (0,1,2,1,0,1,2,1,0,1,2,1,0), -- iact
-        (0,0,0,0,0,1,1,1,0,2,2,2,0), -- psum
+        (0,1,2,0,0,1,2,0,0,1,2,2,0), -- iact
+        (0,0,0,0,1,1,1,0,2,2,2,0,0), -- psum
         (0,1,2,0,0,1,2,0,0,1,2,0,0)  -- wght
     );
 
@@ -191,20 +191,22 @@ architecture imp of pe_array_conv_3x3_tb is
         (0,0,0,0,0,0,0,0,0,0,0,0,0)  -- wght
     );
 
-    constant output_command     : command_lb_row_col_t(0 to 2, 0 to output_command_length - 1) := (
-        (c_lb_idle, c_lb_idle, c_lb_idle, c_lb_read_update, c_lb_read_update,c_lb_read_update,c_lb_read,c_lb_read,c_lb_read,c_lb_idle),                                       -- row 0
-        (c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle),                                  -- row 1
-        (c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle,c_lb_idle, c_lb_idle)                                                         -- row 2
+    constant output_command : command_lb_row_col_t(0 to 2, 0 to output_command_length - 1) := (
+        (c_lb_idle, c_lb_idle, c_lb_idle, c_lb_read_update, c_lb_read_update,c_lb_read_update,c_lb_read,c_lb_read,c_lb_read,c_lb_idle),      -- row 0
+        (c_lb_read_update, c_lb_read_update, c_lb_read_update, c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle), -- row 1
+        (c_lb_read, c_lb_read, c_lb_read, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle, c_lb_idle,c_lb_idle, c_lb_idle)                        -- row 2
     );
-    constant output_pe_command  : command_pe_row_col_t(0 to 2, 0 to output_command_length - 1) := (
-        (c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum, c_pe_conv_psum , c_pe_conv_psum, c_pe_conv_psum ,c_pe_conv_psum,c_pe_conv_psum), -- row 0
-        (c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum , c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum,c_pe_conv_psum,c_pe_conv_psum),  -- row 1
-        (c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum)      -- row 2
+
+    constant output_pe_command : command_pe_row_col_t(0 to 2, 0 to output_command_length - 1) := (
+        (c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum), -- row 0
+        (c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum), -- row 1
+        (c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum, c_pe_conv_psum)  -- row 2
     );
-    constant output_read_offset : int_image_t(0 to 2, 0 to output_command_length - 1)          := (
-        (0,0,0,0,1,2,0,1,2,0),                                                                                                                                                -- row 0
-        (0,1,2,0,1,2,0,0,0,0),                                                                                                                                                -- row 1
-        (0,1,2,0,0,0,0,0,0,0)                                                                                                                                                 -- row 2
+
+    constant output_read_offset : int_image_t(0 to 2, 0 to output_command_length - 1) := (
+        (0,0,0,0,1,2,0,1,2,0), -- row 0
+        (0,1,2,0,1,2,0,0,0,0), -- row 1
+        (0,1,2,0,0,0,0,0,0,0)  -- row 2
     );
 
     constant output_update_offset : int_image_t(0 to 2, 0 to output_command_length - 1) := (
@@ -337,7 +339,8 @@ begin
             s_done            <= false;
         elsif rising_edge(clk) then
             if s_y = image_y then
-                s_done <= true;
+                s_done            <= true;
+                i_data_iact_valid <= (others => '0');
             elsif or o_buffer_full_iact = '0' then
 
                 for i in 0 to size_rows - 1 loop
@@ -392,10 +395,16 @@ begin
     stimuli_commands : process is
     begin
 
-        wait until rstn = '1';
         read_offset_iact <= (others => (others => (others => '0')));
         read_offset_psum <= (others => (others => (others => '0')));
         read_offset_wght <= (others => (others => (others => '0')));
+
+        -- unused in this testbench
+        update_offset_iact <= (others => (others => (others => '0')));
+        update_offset_psum <= (others => (others => (others => '0')));
+        update_offset_wght <= (others => (others => (others => '0')));
+
+        wait until rstn = '1';
 
         report "Waiting until first values in buffer";
 
