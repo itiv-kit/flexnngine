@@ -46,7 +46,6 @@ entity control_address_generator is
         o_pause_iact : out   std_logic;
         o_done       : out   std_logic;
         o_cyclectr   : out   unsigned(31 downto 0);
-        o_m1         : out   integer range 0 to 1023;
 
         i_params : in    parameters_t;
 
@@ -121,7 +120,6 @@ begin
                 i_all_psum_finished  => i_all_psum_finished,
                 i_params             => i_params,
                 o_m0_dist            => w_m0_dist,
-                o_m1                 => o_m1,
                 o_command            => o_command,
                 o_command_iact       => o_command_iact,
                 o_command_psum       => o_command_psum,
@@ -164,7 +162,6 @@ begin
                 i_all_psum_finished  => i_all_psum_finished,
                 i_params             => i_params,
                 o_m0_dist            => w_m0_dist,
-                o_m1                 => o_m1,
                 o_command            => o_command,
                 o_command_iact       => o_command_iact,
                 o_command_psum       => o_command_psum,

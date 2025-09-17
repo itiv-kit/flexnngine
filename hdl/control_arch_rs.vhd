@@ -66,7 +66,6 @@ begin
 
     o_done    <= '1' when r_state = s_done else '0';
     o_m0_dist <= r_m0_dist;
-    o_m1      <= r_count_m1 when rising_edge(clk);
 
     -- Generate enable signal for PE array, propagate input fifo status from scratchpad interface
     -- Do not stop when filling read/update pipeline

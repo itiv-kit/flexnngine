@@ -38,7 +38,6 @@ entity control is
         i_params : in    parameters_t;
 
         o_m0_dist : out   uns_array_t(0 to size_y - 1)(addr_width_y - 1 downto 0);
-        o_m1      : out   integer range 0 to 1023;
 
         o_command      : out   command_pe_row_col_t(0 to size_y - 1, 0 to size_x - 1);
         o_command_iact : out   command_lb_row_col_t(0 to size_y - 1, 0 to size_x - 1);

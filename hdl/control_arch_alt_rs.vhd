@@ -67,7 +67,6 @@ begin
     -- unused by alternative rs dataflow, so drive with constant 0
     r_m0_dist <= (others => (others => '0'));
     o_m0_dist <= r_m0_dist;
-    o_m1      <= 0;
 
     -- Do not stop when filling read/update pipeline
     o_enable <= i_enable_if when r_state /= s_output else -- r_count_c0w0 > 1 and
