@@ -53,7 +53,8 @@ architecture alternative_rs_dataflow of control is
     signal w_mux_update_offset_psum : array_t(0 to size_y)(addr_width_psum - 1 downto 0);
     signal w_mux_command_psum       : command_lb_array_t(0 to size_y);
 
-    signal w_output_sequence : uint10_line_t(0 to size_y - 1);
+    signal w_output_sequence      : uint10_line_t(0 to size_y - 1);
+    signal r_row_start_event_pipe : std_logic_vector(1 downto 0);
 
     signal r_command : command_pe_array_t(0 to size_y);
 
@@ -434,14 +435,24 @@ begin
             if not rstn then
                 r_command(i) <= c_pe_gemm_mult;
             elsif rising_edge(clk) then
+                r_row_start_event_pipe <= (others => '0');
+
                 if r_state = s_output then
                     if r_count_c0w0 = i + 2 then
                         r_command(i) <= c_pe_conv_mult;
                     elsif r_count_c0w0 > size_y + 3 then
                         r_command(i) <= c_pe_gemm_mult;
-                    elsif r_count_w1 = 2 and r_count_c0w0 > 1 then
+                    elsif r_count_c0w0 > 1 and r_row_start_event_pipe(r_row_start_event_pipe'high) = '1' then
+                        -- delay pass mode by exactly 2 cycles, independent of i_enable (since psum linebuffer does not care)
                         r_command(i) <= c_pe_conv_pass;
                     end if;
+
+                    if r_count_w1 = 0 then
+                        r_row_start_event_pipe(0) <= '1';
+                    else
+                        r_row_start_event_pipe(0) <= '0';
+                    end if;
+                    r_row_start_event_pipe(r_row_start_event_pipe'high downto 1) <= r_row_start_event_pipe(r_row_start_event_pipe'high - 1 downto 0);
                 elsif r_state = s_calculate then
                     r_command(i) <= c_pe_gemm_mult;
                 end if;
