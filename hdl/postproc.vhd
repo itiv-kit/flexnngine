@@ -18,6 +18,7 @@ entity postproc is
         rstn : in    std_logic;
 
         i_params : in    parameters_t;
+        i_m1     : in    integer range 0 to 1023;
 
         i_data       : in    array_t(0 to size_x - 1)(data_width_psum - 1 downto 0);
         i_data_valid : in    std_logic_vector(size_x - 1 downto 0);
@@ -42,7 +43,8 @@ architecture behavioral of postproc is
     signal w_psums_act_och   : x_idx_line_t(0 to size_x - 1);
 
     signal r_count_w1        : uint10_line_t(0 to size_x - 1);
-    signal r_current_channel : x_idx_line_t(0 to size_x - 1); -- the number of the output channel (0..m0-1) currently on i_data
+    signal r_current_channel : x_idx_line_t(0 to size_x - 1); -- the number of the output channel currently on i_data
+    signal r_current_m1      : uint10_line_t(0 to size_x - 1);
     signal w_i_data_last     : std_logic_vector(size_x - 1 downto 0);
 
 begin
@@ -138,13 +140,15 @@ begin
             if rstn = '0' then
                 r_count_w1(i)        <= 0;
                 r_current_channel(i) <= 0;
+                r_current_m1(i)      <= 0;
             elsif i_data_valid(i) = '1' then
                 r_count_w1(i) <= r_count_w1(i) + 1;
                 if r_count_w1(i) = i_params.w1 - 1 then
                     r_count_w1(i)        <= 0;
                     r_current_channel(i) <= r_current_channel(i) + 1;
-                    if r_current_channel(i) = i_params.m0 - 1 then
-                        r_current_channel(i) <= 0;
+                    if r_current_channel(i) = (r_current_m1(i) + 1) * i_params.m0 - 1 then
+                        r_current_channel(i) <= i_m1 * i_params.m0;
+                        r_current_m1(i) <= i_m1;
                     end if;
                 end if;
             end if;

@@ -131,6 +131,7 @@ architecture rtl of accelerator is
     signal r_status_pipe    : status_info_pipe_t(2 downto 0);
     signal w_status_spad_if : status_info_spadif_t;
     signal w_cyclectr       : unsigned(31 downto 0);
+    signal w_m1             : integer range 0 to 1023;
 
     signal w_fifo_iact_address_full : std_logic;
     signal w_fifo_wght_address_full : std_logic;
@@ -220,6 +221,7 @@ begin
             clk             => clk,
             rstn            => rstn,
             i_params        => i_params,
+            i_m1            => w_m1,
             i_data          => w_psums_raw,
             i_data_valid    => w_psums_raw_valid,
             o_data          => w_psums,
@@ -261,6 +263,7 @@ begin
             o_pause_iact             => w_pause_iact,
             o_done                   => o_done,
             o_cyclectr               => w_cyclectr,
+            o_m1                     => w_m1,
             i_params                 => i_params,
             o_command                => w_command,
             o_command_iact           => w_command_iact,
