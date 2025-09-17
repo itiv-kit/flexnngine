@@ -623,7 +623,7 @@ def run_test(setting):
     if not test.generate_test(setting.name, Path("test") / setting.name):
         print("Error while generating test: ", setting.name)
         return False
-    return test.run()
+    return (setting.name, test.run())
 
 presets = {
     'default': Setting(
@@ -900,6 +900,12 @@ if __name__ == "__main__":
     pool = Pool(args.pool)
     outputs = pool.map(run_test, settings)
 
-    print("Outputs: ", outputs)
+    if any((not success for name, success in outputs)):
+        print('Failed tests:')
+        for name, success in outputs:
+            if not success:
+                print(' - '+name)
+    else:
+        print('All tests successful!')
 
     sys.exit(outputs.count(False))
