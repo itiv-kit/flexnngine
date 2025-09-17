@@ -383,9 +383,10 @@ for {set x 1} {$x < 5} {incr x} {
 add wave -noupdate -group PEs -radix unsigned /functional_tb/accelerator_inst/w_update_offset_psum
 add wave -noupdate -group PEs -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/i_update_offset_psum
 add wave -noupdate -group PEs -radix unsigned /functional_tb/accelerator_inst/pe_array_inst/i_preload_psum_valid
+for {set x 0} {$x < 1} {incr x} {
 for {set y 0} {$y < $size_y} {incr y} {
-    set group "PE_${y}_0"
-    set pe_path [get_pe_path 0 $y]
+    set group "PE_${y}_${x}"
+    set pe_path [get_pe_path $x $y]
     add wave -noupdate -group PEs -group $group -radix symbolic  ${pe_path}/i_command
     add wave -noupdate -group PEs -group $group -radix symbolic  ${pe_path}/r_sel_mult_psum
     add wave -noupdate -group PEs -group $group -radix symbolic  ${pe_path}/r_sel_conv_gemm
@@ -420,14 +421,15 @@ for {set y 0} {$y < $size_y} {incr y} {
     add wave -noupdate -group PEs -group $group -radix decimal  ${pe_path}/o_data_out_iact
     add wave -noupdate -group PEs -group $group -radix decimal  ${pe_path}/o_data_out_wght_valid
     add wave -noupdate -group PEs -group $group -radix decimal  ${pe_path}/o_data_out_wght
-}
+}}
 
+for {set x 0} {$x < 1} {incr x} {
 for {set y 0} {$y < $size_y} {incr y} {
-    set group "PE_${y}_0"
-    set pe_path [get_pe_path 0 $y]
+    set group "PE_${y}_${x}"
+    set pe_path [get_pe_path $x $y]
     add wave -noupdate -group {PE outputs} -label "$group data_out_valid" -radix decimal  ${pe_path}/o_data_out_valid
     add wave -noupdate -group {PE outputs} -label "$group data_out" -radix decimal  ${pe_path}/o_data_out
-}
+}}
 
 TreeUpdate [SetDefaultTree]
 WaveRestoreCursors {{Cursor 1} {0 ns} 0}
@@ -447,3 +449,4 @@ configure wave -timeline 0
 configure wave -timelineunits ns
 update
 WaveRestoreZoom {0 ns} {1000 ns}
+            
