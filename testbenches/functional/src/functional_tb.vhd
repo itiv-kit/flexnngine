@@ -297,6 +297,7 @@ begin
     p_read_files : process is
 
         variable v_zeropt_scale : float32_arr2d_t(0 to max_output_channels - 1, 0 to 1);
+        variable v_och_to_load  : integer;
 
     begin
 
@@ -312,7 +313,12 @@ begin
             -- report "got zeropt " & to_string(to_real(v_zeropt_scale(0,0))) & " and scale " & to_string(to_real(v_zeropt_scale(0,1)));
 
             -- TODO: implement scaling for an arbitrary number of output channels larger than m0
-            for g in 0 to g_m0 - 1 loop
+            v_och_to_load := g_outputchs;
+            if v_och_to_load > max_output_channels then
+                v_och_to_load := max_output_channels;
+            end if;
+
+            for g in 0 to v_och_to_load - 1 loop
 
                 zeropt_fp32(g) <= to_slv(v_zeropt_scale(g, 0));
                 scale_fp32(g)  <= to_slv(v_zeropt_scale(g, 1));
