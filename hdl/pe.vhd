@@ -149,34 +149,17 @@ begin
 
     end process sel_signals;
 
-    /*sel_mult_psum <= '0' when (command = c_pe_conv_mult or command = c_pe_gemm_mult) and rising_edge(clk) else
-                     '1' when (command = c_pe_conv_psum or command = c_pe_gemm_psum) and rising_edge(clk);
-
-    sel_conv_gemm <= '0' when (command = c_pe_conv_mult or command = c_pe_conv_psum) and rising_edge(clk) else
-                     '1' when (command = c_pe_gemm_mult or command = c_pe_gemm_psum) and rising_edge(clk);*/
-
     w_data_acc_valid  <= (w_data_acc_in1_valid and w_data_acc_in2_valid);
     w_iact_wght_valid <= w_data_iact_valid and w_data_wght_valid;
-
-    /*o_data_out_iact <= i_data_in_iact when rising_edge(clk);
-    o_data_out_wght <= i_data_in_wght when rising_edge(clk);
-
-    o_data_out_iact_valid <= i_data_in_iact_valid when rising_edge(clk);
-    o_data_out_wght_valid <= i_data_in_wght_valid when rising_edge(clk);
-
-    r_data_iact_wide       <= w_demux_input_iact when rising_edge(clk);
-    r_data_iact_wide_valid <= w_demux_input_iact_valid when rising_edge(clk);*/
-
-    -- data_out_valid  <= data_acc_out_valid;
-    -- data_out        <= data_acc_out;
-    -- data_out <= data_acc_in2;
-    -- data_out_valid <= data_acc_in2_valid;
 
     psum_output_valid : process (clk, rstn) is
     begin
 
         if not rstn then
-            r_command_read_psum <= '0';
+            r_command_read_psum       <= '0';
+            r_command_read_psum_delay <= '0';
+            r_enable                  <= '0';
+            r_enable_d                <= '0';
         elsif rising_edge(clk) then
             r_enable   <= i_enable;
             r_enable_d <= r_enable;
@@ -189,26 +172,10 @@ begin
             else
                 r_command_read_psum <= '0';
             end if;
+            r_command_read_psum_delay <= r_command_read_psum;
         end if;
 
     end process psum_output_valid;
-
-    delays : process (clk, rstn) is
-    begin
-
-        if not rstn then
-            r_command_read_psum_delay <= '0';
-        elsif rising_edge(clk) then
-            -- if i_enable then
-            r_command_read_psum_delay <= r_command_read_psum;
-        -- end if;
-        end if;
-
-    end process delays;
-
-    -- r_command_read_psum_delay <= r_command_read_psum;
-    -- r_command_read_iact_delay <= r_command_read_iact;
-    -- r_command_read_wght_delay <= r_command_read_wght;
 
     data_delays : process (clk, rstn) is
     begin
