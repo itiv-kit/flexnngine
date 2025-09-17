@@ -270,7 +270,7 @@ class Test:
                 self.psum_throttle = 0
             else:
                 rate_factor = store_rate / (output_rate * (1 - psum_fifo_size / output_phase_size))
-                self.psum_throttle = max(0, min(255, math.ceil(255.0 * (1 - rate_factor))))
+                self.psum_throttle = max(0, min(255, math.ceil(255.0 * (1 - 0.9 * rate_factor))))
                 if self.psum_throttle > 0:
                     print(f"Warning: psum overflows expected, throttling output by {self.psum_throttle} / 256")
         else:
