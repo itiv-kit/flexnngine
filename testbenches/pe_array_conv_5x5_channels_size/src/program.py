@@ -23,8 +23,7 @@ array = np.zeros((kernel_size * channels + 1) * (image_size - kernel_size + 1) +
 for i in range(image_size - kernel_size + 1):
     for j in range(kernel_size * channels):
         array[i * (kernel_size * channels + 1) + j] = j
-        #array[i*(image_size - kernel_size + 2) + j] = i
-    array[i * (kernel_size * channels + 1) + (kernel_size * channels)] = channels
+    array[i * (kernel_size * channels + 1) + (kernel_size * channels)] = channels - 1
 
 array[-1] = 0
 list_input_read_offset_iact = [str (x) for x in array.tolist()]
@@ -39,7 +38,6 @@ array = np.zeros((kernel_size * channels + 1) * (image_size - kernel_size + 1) +
 for i in range(image_size - kernel_size + 1):
     for j in range(kernel_size * channels):
         array[i * (kernel_size * channels + 1) + j] = j
-        #array[i*(image_size - kernel_size + 2) + j] = i
     array[i * (kernel_size * channels + 1) + (kernel_size * channels)] = 0
 
 array[-1] = 0
@@ -55,7 +53,6 @@ array = np.zeros((kernel_size * channels + 1) * (image_size - kernel_size + 1) +
 for i in range(image_size - kernel_size + 1):
     for j in range(kernel_size * channels):
         array[i * (kernel_size * channels + 1) + j] = i
-        #array[i*(image_size - kernel_size + 2) + j] = i
     array[i * (kernel_size * channels + 1) + (kernel_size * channels)] = 0
 
 array[-1] = 0
@@ -71,7 +68,6 @@ array = np.zeros((kernel_size * channels + 1) * (image_size - kernel_size + 1) +
 for i in range(image_size - kernel_size + 1):
     for j in range(kernel_size * channels):
         array[i * (kernel_size * channels + 1) + j + 1] = i
-        #array[i*(image_size - kernel_size + 2) + j] = i
     array[i * (kernel_size * channels + 1)] = 0
 list_input_update_offset_psum = [str (x) for x in array.tolist()]
 # print('\n')
