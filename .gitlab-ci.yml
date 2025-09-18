@@ -167,7 +167,7 @@ test-pe-array-conv-3x3-wide:
             - testbenches/pe_array_conv_3x3_wide/**
             - .gitlab-ci.yml
     script:
-        - cd testbenches/pe_array_conv_3x3
+        - cd testbenches/pe_array_conv_3x3_wide
         - vsim -batch -nolog -do "../../ci/simulate.tcl"
         - cd ../..
 
