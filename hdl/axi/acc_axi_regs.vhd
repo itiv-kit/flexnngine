@@ -465,7 +465,7 @@ begin
   o_params.c0w0_last_c1  <= to_integer(unsigned(slv_regs(17)( 9 downto 0)));
   o_params.psum_throttle <= to_integer(unsigned(slv_regs(18)( 7 downto 0)));
   o_params.pad_x         <= to_integer(unsigned(slv_regs(19)( 3 downto 0)));
-  o_params.pad_y         <= to_integer(unsigned(slv_regs(20)(11 downto 8)));
+  o_params.pad_y         <= to_integer(unsigned(slv_regs(19)(11 downto 8)));
 
   o_params.base_iact          <= to_integer(unsigned(slv_regs(20)(max_spad_addr_width - 1 downto 0)));
   o_params.base_wght          <= to_integer(unsigned(slv_regs(21)(max_spad_addr_width - 1 downto 0)));
