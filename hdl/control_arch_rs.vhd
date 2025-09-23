@@ -51,7 +51,8 @@ architecture rs_dataflow of control is
     signal w_mux_update_offset_psum : array_t(0 to size_y - 1)(addr_width_psum - 1 downto 0);
     signal w_mux_command_psum       : command_lb_array_t(0 to size_y - 1);
 
-    signal r_output_sequence : uint10_line_t(0 to size_y - 1);
+    signal r_output_sequence      : uint10_line_t(0 to size_y - 1);
+    signal r_row_start_event_pipe : std_logic_vector(1 downto 0);
 
     signal r_command : command_pe_array_t(0 to size_y - 1);
 
@@ -482,7 +483,8 @@ begin
             if not rstn then
                 r_command(i) <= c_pe_conv_mult;
             elsif rising_edge(clk) then
-                r_output_sequence(i) <= (i - (to_integer(r_m0_dist(i))) * i_params.kernel_size + i_params.kernel_size);
+                r_output_sequence(i)   <= (i - (to_integer(r_m0_dist(i))) * i_params.kernel_size + i_params.kernel_size);
+                r_row_start_event_pipe <= (others => '0');
 
                 case r_state is
 
@@ -495,10 +497,18 @@ begin
                         elsif r_count_c0w0 > i_params.kernel_size then
                             if r_output_sequence(i) = i_params.kernel_size - r_count_c0w0 - 1 + to_integer(r_m0_dist(i)) then
                                 r_command(i) <= c_pe_conv_psum;
-                            elsif r_count_w1 = 2 and i /= size_y - 1 then
+                            elsif i /= size_y - 1 and r_row_start_event_pipe(r_row_start_event_pipe'high) = '1' then
+                                -- delay pass mode by exactly 2 cycles, independent of i_enable (since psum linebuffer does not care)
                                 r_command(i) <= c_pe_conv_pass;
                             end if;
                         end if;
+
+                        if r_count_w1 = 0 then
+                            r_row_start_event_pipe(0) <= '1';
+                        else
+                            r_row_start_event_pipe(0) <= '0';
+                        end if;
+                        r_row_start_event_pipe(r_row_start_event_pipe'high downto 1) <= r_row_start_event_pipe(r_row_start_event_pipe'high - 1 downto 0);
 
                     when s_calculate =>
 
