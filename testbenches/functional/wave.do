@@ -225,7 +225,6 @@ for {set x 0} {$x < $size_x} {incr x} {
 add wave -noupdate -group Postprocessing -radix unsigned /functional_tb/accelerator_inst/postproc_inst/i_data_valid
 add wave -noupdate -group Postprocessing -radix unsigned /functional_tb/accelerator_inst/postproc_inst/w_i_data_last
 add wave -noupdate -group Postprocessing -radix unsigned /functional_tb/accelerator_inst/postproc_inst/r_count_w1
-add wave -noupdate -group Postprocessing -radix unsigned /functional_tb/accelerator_inst/postproc_inst/r_count_h2
 add wave -noupdate -group Postprocessing -radix unsigned /functional_tb/accelerator_inst/postproc_inst/r_count_m1
 add wave -noupdate -group Postprocessing -radix unsigned /functional_tb/accelerator_inst/postproc_inst/r_count_rows
 add wave -noupdate -group Postprocessing -radix unsigned /functional_tb/accelerator_inst/postproc_inst/r_current_channel
@@ -390,6 +389,9 @@ for {set x 0} {$x < 1} {incr x} {
 for {set y 0} {$y < $size_y} {incr y} {
     set group "PE_${y}_${x}"
     set pe_path [get_pe_path $x $y]
+    add wave -noupdate -group PEs -group $group -radix symbolic ${pe_path}/r_enable_pipe
+    add wave -noupdate -group PEs -group $group -radix symbolic ${pe_path}/r_command_read_psum
+    add wave -noupdate -group PEs -group $group -radix symbolic ${pe_path}/r_command_read_psum_delay
     add wave -noupdate -group PEs -group $group -radix symbolic ${pe_path}/i_command
     add wave -noupdate -group PEs -group $group -radix symbolic ${pe_path}/r_sel_mult_psum
     add wave -noupdate -group PEs -group $group -radix symbolic ${pe_path}/r_sel_conv_gemm
@@ -452,4 +454,3 @@ configure wave -timeline 0
 configure wave -timelineunits ns
 update
 WaveRestoreZoom {0 ns} {1000 ns}
-            

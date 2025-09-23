@@ -102,6 +102,7 @@ architecture behavioral of pe is
 
     signal r_command_read_psum_delay : std_logic;
     signal r_command_read_psum       : std_logic;
+    signal w_enable_psum             : std_logic;
 
     signal w_demux_input_iact : std_logic_vector(data_width_psum - 1 downto 0);
     signal w_demux_input_psum : std_logic_vector(data_width_psum - 1 downto 0);
@@ -112,8 +113,7 @@ architecture behavioral of pe is
     signal w_data_in_iact_valid : std_logic;
     signal w_data_in_iact       : std_logic_vector(data_width_iact - 1 downto 0);
 
-    signal r_enable   : std_logic;
-    signal r_enable_d : std_logic;
+    signal r_enable_pipe : std_logic_vector(0 to 2);
 
 begin
 
@@ -149,21 +149,21 @@ begin
 
     end process sel_signals;
 
-    w_data_acc_valid  <= (w_data_acc_in1_valid and w_data_acc_in2_valid);
+    w_data_acc_valid  <= w_data_acc_in1_valid and w_data_acc_in2_valid;
     w_iact_wght_valid <= w_data_iact_valid and w_data_wght_valid;
+
+    r_enable_pipe(0) <= i_enable;
 
     psum_output_valid : process (clk, rstn) is
     begin
 
         if not rstn then
-            r_command_read_psum       <= '0';
-            r_command_read_psum_delay <= '0';
-            r_enable                  <= '0';
-            r_enable_d                <= '0';
+            r_command_read_psum                    <= '0';
+            r_command_read_psum_delay              <= '0';
+            r_enable_pipe(1 to r_enable_pipe'high) <= (others => '0');
         elsif rising_edge(clk) then
-            r_enable   <= i_enable;
-            r_enable_d <= r_enable;
-            if r_enable_d then
+            r_enable_pipe(1 to r_enable_pipe'high) <= r_enable_pipe(0 to r_enable_pipe'high - 1);
+            if r_enable_pipe(2) then
                 if i_command_psum = c_lb_read then
                     r_command_read_psum <= '1';
                 else
@@ -176,6 +176,12 @@ begin
         end if;
 
     end process psum_output_valid;
+
+    -- enable signal for the psum linebuffer is a bit sketchy. it is constantly
+    -- enabled since consecutive updates with the same value are fine. however,
+    -- when shrinking we need to make sure to not shrink multiple times in case
+    -- enable goes low. we can't use i_enable
+    w_enable_psum <= r_enable_pipe(2) when i_command_psum = c_lb_shrink else '1';
 
     data_delays : process (clk, rstn) is
     begin
@@ -229,7 +235,7 @@ begin
         port map (
             clk                => clk,
             rstn               => rstn,
-            i_enable           => '1',
+            i_enable           => w_enable_psum,
             i_data             => i_data_in_psum,
             i_data_valid       => i_data_in_psum_valid,
             o_data             => w_data_psum,
