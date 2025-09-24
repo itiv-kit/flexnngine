@@ -21,6 +21,8 @@ entity acc_axi_regs is
     line_length_wght : positive := 64;
     line_length_psum : positive := 128;
 
+    fifo_size_psum : positive := 32;
+
     -- Width of the pe input/output data (weights, iacts, psums)
     data_width_iact : positive := 8;
     data_width_wght : positive := 8;
@@ -294,7 +296,7 @@ begin
         );
         slv_regs(32) <= std_logic_vector(resize(to_unsigned(size_y, 16) & to_unsigned(size_x, 16), C_S_AXI_DATA_WIDTH));
         slv_regs(33) <= std_logic_vector(resize(to_unsigned(line_length_wght, 16) & to_unsigned(line_length_iact, 16), C_S_AXI_DATA_WIDTH));
-        slv_regs(34) <= std_logic_vector(resize(to_unsigned(line_length_psum, 16), C_S_AXI_DATA_WIDTH));
+        slv_regs(34) <= std_logic_vector(resize(to_unsigned(fifo_size_psum, 16) & to_unsigned(line_length_psum, 16), C_S_AXI_DATA_WIDTH));
         slv_regs(35) <= std_logic_vector(resize(to_unsigned(data_width_psum, 8) & to_unsigned(data_width_wght, 8) & to_unsigned(data_width_iact, 8), C_S_AXI_DATA_WIDTH));
         slv_regs(36) <= std_logic_vector(resize(to_unsigned(mem_word_count, 8) & to_unsigned(mem_addr_width, 8), C_S_AXI_DATA_WIDTH));
         slv_regs(37) <= std_logic_vector(resize(capabilities & to_unsigned(max_output_channels, 8), C_S_AXI_DATA_WIDTH));
